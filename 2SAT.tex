@@ -1,0 +1,24 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\begin{document}
+\begin{tikzpicture}[->,sibling distance=10em,
+    every node/.style = {shape=circle, rounded corners,
+        draw, align=center,minimum size=0.8cm,
+    fill=black!20}]]
+    \node (a) at (0, 0) {$a$};
+    \node (b) at (1.4, -1.4) {$b$};
+    \node (nb) at (1.4, 1.4) {$\lnot b$};
+    \node (na) at (2.8, 0) {$\lnot a$};
+    \node (c) at (-2, 0) {$c$};
+    \node (nc) at (4.8, 0) {$\lnot c$};
+    \path[every node/.style={font=\sffamily\small}]
+        (a) edge[bend left] node[right] {} (b)
+        (b) edge[bend left] node[right] {} (a)
+        (c) edge node[right] {} (a)
+        (a) edge node[right] {} (nb)
+        (b) edge node[right] {} (na)
+        (na) edge node[right] {} (nc)
+        (na) edge[bend left] node[right] {} (nb)
+        (nb) edge[bend left] node[right] {} (na);
+\end{tikzpicture}
+\end{document}

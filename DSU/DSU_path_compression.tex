@@ -1,0 +1,49 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\begin{document}
+\noindent
+\begin{minipage}{.45\textwidth}
+    \centering
+    \begin{tikzpicture}[<-,sibling distance=6em,
+        every node/.style = {shape=circle, rounded corners,
+            draw, align=center,minimum size=0.8cm,
+        fill=black!20}]]
+        \node (1) at (0, 0) {1}
+            child {node[fill=black!40] {2}
+                child {node[fill=black!40] {3}
+                    child {node[fill=black!40] {5}
+                        child {node[fill=black!40] {7}}
+                    }
+                    child {node {6}
+                        child {node {8}}
+                    }
+                }
+                child {node {4}}
+            };
+    \end{tikzpicture}
+\end{minipage}
+\begin{minipage}{.1\textwidth}
+    \centering
+    $\Longrightarrow$
+\end{minipage}
+\begin{minipage}{.45\textwidth}
+    \centering
+    \begin{tikzpicture}[<-,sibling distance=4em,
+        every node/.style = {shape=circle, rounded corners,
+            draw, align=center,minimum size=0.8cm,
+        fill=black!20}]]
+        \node (1) at (0, 0) {1}
+            child {node[fill=black!40] {2}
+                child {node {4}}
+            }
+            child {node[fill=black!40] {3}
+                child {node {6} 
+                    child {node {8}}
+                }
+            }
+            child {node[fill=black!40] {5}}
+            child {node[fill=black!40] {7}}
+            ;
+    \end{tikzpicture}
+\end{minipage}
+\end{document}

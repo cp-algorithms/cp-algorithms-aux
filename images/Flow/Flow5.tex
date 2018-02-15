@@ -1,0 +1,31 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+
+\tikzstyle{vertex}=[circle,draw,fill=black!20,minimum size=0.7cm,inner sep=0pt]
+\tikzstyle{selected vertex} = [vertex, fill=red!24]
+\tikzstyle{edge} = [draw,thick,->]
+\tikzstyle{weight} = [font=\small]
+\tikzstyle{selected edge} = [draw,->,line width=3pt,blue!70]
+\tikzstyle{rev edge} = [draw,->,line width=3pt,red!60]
+
+\begin{document}
+\noindent
+    \centering
+    \begin{tikzpicture}[scale=1.0,transform shape,auto,swap]
+        \node[vertex] (D) at (0, 0) {D};
+        \node[vertex] (C) at (3, 0) {C};
+        \node[vertex] (B) at (3, 3) {B};
+        \node[vertex] (A) at (0, 3) {A};
+        \node[vertex] (s) at (-2.1213, 1.5) {s};
+        \node[vertex] (t) at (5.1213, 1.5) {t};
+        \path[edge] (D) -- node[weight] {0/2} (C);
+        \path[edge] (C) -- node[weight] {0/3} (B);
+        \path[edge] (A) -- node[weight,above] {5/5} (B);
+        \path[edge] (D) -- node[weight] {3/3} (A);
+        \path[edge] (s) -- node[weight,below left] {3/4} (D);
+        \path[edge] (s) -- node[weight,above left] {5/7} (A);
+        \path[edge] (C) -- node[weight] {3/5} (t);
+        \path[edge] (B) -- node[weight,above right] {5/8} (t);
+        \path[edge] (A) -- node[weight,above right] {3/3} (C);
+    \end{tikzpicture}
+\end{document}

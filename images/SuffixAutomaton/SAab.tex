@@ -1,0 +1,17 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\begin{document}
+\begin{tikzpicture}[->,sibling distance=10em,
+    every node/.style = {shape=circle, rounded corners,
+    draw, align=center,minimum size=0.8cm, fill=black!20},
+    cgreen/.style={fill=green!30},
+    cblue/.style={fill=blue!30}]]
+    \node[cblue] (1) at (0, 0) {$t_0$};
+    \node (2) at (2, 0) {};
+    \node[cgreen] (3) at (4, 0) {};
+    \path[every node/.style={font=\sffamily\small}]
+        (1) edge node[above] {$a$} (2)
+        (2) edge node[above] {$b$} (3)
+        (1) edge[bend right] node[below] {$b$} (3);
+\end{tikzpicture}
+\end{document}

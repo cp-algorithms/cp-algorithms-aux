@@ -1,0 +1,48 @@
+\documentclass[border=10pt]{standalone}
+\usepackage[normalem]{ulem}
+\usepackage[table]{xcolor}
+
+\newcommand{\cg}{\cellcolor{green}}
+\newcommand{\cgg}{\cellcolor{green!20}}
+\newcommand{\cb}{\cellcolor{blue}}
+\newcommand{\cbb}{\cellcolor{blue!20}}
+\newcommand{\clr}{\cellcolor{red}}
+\newcommand{\crr}{\cellcolor{red!20}}
+\newcommand{\clo}{\cellcolor{orange}}
+\newcommand{\cloo}{\cellcolor{orange!20}}
+\newcommand{\cly}{\cellcolor{yellow}}
+\newcommand{\clyy}{\cellcolor{yellow!20}}
+\newcommand{\clp}{\cellcolor{purple}}
+\newcommand{\clpe}{\cellcolor{cyan}}
+
+\begin{document}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16\\
+    \hline
+    \multicolumn{14}{c}{}\\[0.5ex]
+    \hline
+    \cg \bf{2} & 3 & \cgg \sout{4} & 5 & \cgg \sout{6} & 7 & \cgg \sout{8} & 9 & \cgg \sout{10} & 11 & \cgg \sout{12} & 13 & \cgg \sout{14} & 15 & \cgg \sout{16} \\
+    \hline
+    \multicolumn{14}{c}{}\\
+    \hline
+    \cg \bf{2} & \cb \bf{3} & \cgg \sout{4} & 5 & \cbb \sout{6} & 7 & \cgg \sout{8} & \cbb \sout{9} & \cgg \sout{10} & 11 & \cbb \sout{12} & 13 & \cgg \sout{14} & \cbb \sout{15} & \cgg \sout{16} \\
+    \hline
+    \multicolumn{14}{c}{}\\
+    \hline
+    \cg \bf{2} & \cb \bf{3} & \cgg \sout{4} & \clr \bf{5} & \cbb \sout{6} & 7 & \cgg \sout{8} & \cbb \sout{9} & \crr \sout{10} & 11 & \cbb \sout{12} & 13 & \cgg \sout{14} & \crr \sout{15} & \cgg \sout{16} \\
+    \hline
+    \multicolumn{14}{c}{}\\
+    \hline
+    \cg \bf{2} & \cb \bf{3} & \cgg \sout{4} & \clr \bf{5} & \cbb \sout{6} & \cly \bf{7} & \cgg \sout{8} & \cbb \sout{9} & \crr \sout{10} & 11 & \cbb \sout{12} & 13 & \clyy \sout{14} & \crr \sout{15} & \cgg \sout{16} \\
+    \hline
+    \multicolumn{14}{c}{}\\
+    \hline
+    \cg \bf{2} & \cb \bf{3} & \cgg \sout{4} & \clr \bf{5} & \cbb \sout{6} & \cly \bf{7} & \cgg \sout{8} & \cbb \sout{9} & \crr \sout{10} & \clp \bf{11} & \cbb \sout{12} & 13 & \clyy \sout{14} & \crr \sout{15} & \cgg \sout{16} \\
+    \hline
+    \multicolumn{14}{c}{}\\
+    \hline
+    \cg \bf{2} & \cb \bf{3} & \cgg \sout{4} & \clr \bf{5} & \cbb \sout{6} & \cly \bf{7} & \cgg \sout{8} & \cbb \sout{9} & \crr \sout{10} & \clp \bf{11} & \cbb \sout{12} & \clpe \bf{13} & \clyy \sout{14} & \crr \sout{15} & \cgg \sout{16} \\
+    \hline
+\end{tabular}
+\end{document}

@@ -1,0 +1,51 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+
+\tikzstyle{cell}=[rectangle,draw,fill=black!37,minimum size=0.8cm]
+\tikzstyle{rect}=[rectangle,draw,fill=green!20,minimum size=0.8cm,text=black]
+\tikzstyle{vertex}=[circle,draw,fill=black!20,minimum size=0.7cm,inner sep=0pt]
+\tikzstyle{edge} = [draw,thick,->]
+\tikzstyle{dash} = [draw,dashed]
+\tikzstyle{weight} = [font=\small,sloped]
+
+\begin{document}
+\noindent
+    \centering
+    \begin{tikzpicture}[scale=1.0,transform shape,auto,swap]
+        \node[cell] (c0) at (0, -1.6) {0};
+        \node[cell] (c1) at (1, -1.6) {1};
+        \node[cell] (c2) at (2, -1.6) {2};
+        \node[cell] (c3) at (3, -1.6) {3};
+        \node[cell] (c4) at (4, -1.6) {4};
+        \node[cell] (c5) at (5, -1.6) {5};
+        \node[cell] (c6) at (6, -1.6) {6};
+        \node[cell] (c7) at (7, -1.6) {7};
+        \node[rect] (0) at (0, 0) {0};
+        \node[rect] (2) at (2, 0) {2};
+        \node[rect] (4) at (4, 0) {4};
+        \node[rect] (6) at (6, 0) {6};
+        \node[rect, minimum width=1.8cm] (1) at (0.5,1.2) {};
+        \node (1text) at (1, 1.2) {1};
+        \node[rect, minimum width=1.8cm] (5) at (4.5,1.2) {};
+        \node (1text) at (5, 1.2) {5};
+        \node[rect, minimum width=3.8cm] (3) at (1.5,2.4) {};
+        \node (3text) at (3, 2.4) {3};
+        \node[rect, minimum width=7.8cm] (7) at (3.5,3.6) {};
+        \node (7text) at (7, 3.6) {7};
+        \path[edge] (0) -- (c0);
+        \path[edge] (1) ++(0.5,-0.4) -- (0);
+        \path[edge] (1) ++(0.5,-0.4) -- (c1);
+        \path[edge] (2) -- (c2);
+        \path[edge] (3) ++(1.5,-0.4) -- (1);
+        \path[edge] (3) ++(1.5,-0.4) -- (2);
+        \path[edge] (3) ++(1.5,-0.4) -- (c3);
+        \path[edge] (4) -- (c4);
+        \path[edge] (5) ++(0.5,-0.4) -- (4);
+        \path[edge] (5) ++(0.5,-0.4) -- (c5);
+        \path[edge] (6) -- (c6);
+        \path[edge] (7) ++(3.5,-0.4) -- (3);
+        \path[edge] (7) ++(3.5,-0.4) -- (5);
+        \path[edge] (7) ++(3.5,-0.4) -- (6);
+        \path[edge] (7) ++(3.5,-0.4) -- (c7);
+    \end{tikzpicture}
+\end{document}

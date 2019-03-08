@@ -5,7 +5,7 @@ using namespace std;
 namespace algebra {
 	const int inf = 1e9;
 	const int mod = 1e9 + 7;
-	const int magic = 300; // threshold for sizes to run the naive algo
+	const int magic = 500; // threshold for sizes to run the naive algo
 	
 	namespace fft {
 		const int maxn = 1 << 18;
@@ -303,9 +303,6 @@ namespace algebra {
 		T& coef(size_t idx) { // mutable reference at coefficient
 			return a[idx];
 		}
-		void append(base x) { // apends new leading coefficient
-			a.push_back(x);
-		}
 		bool operator == (const poly &t) const {return a == t.a;}
 		bool operator != (const poly &t) const {return a != t.a;}
 		
@@ -367,7 +364,93 @@ namespace algebra {
 			poly t = div_xk(i) / j;
 			return bpow(j, k) * (t.log(n) * T(k)).exp(n).mul_xk(i * k).mod_xk(n);
 		}
-		
+		poly mulx(T x) { // component-wise multiplication with x^k
+			T cur = 1;
+			poly res(*this);
+			for(int i = 0; i <= deg(); i++) {
+				res.coef(i) *= cur;
+				cur *= x;
+			}
+			return res;
+		}
+		poly mulx_sq(T x) { // component-wise multiplication with x^{k^2}
+			T cur = x;
+			T total = 1;
+			T xx = x * x;
+			poly res(*this);
+			for(int i = 0; i <= deg(); i++) {
+				res.coef(i) *= total;
+				total *= cur;
+				cur *= xx;
+			}
+			return res;
+		}
+		vector<T> chirpz_even(T z, int n) { // P(1), P(z^2), P(z^4), ..., P(z^2(n-1))
+			int m = deg();
+			if(is_zero()) {
+				return vector<T>(n, 0);
+			}
+			vector<T> vv(m + n);
+			T zi = z.inv();
+			T zz = zi * zi;
+			T cur = zi;
+			T total = 1;
+			for(int i = 0; i <= max(n - 1, m); i++) {
+				if(i <= m) {vv[m - i] = total;}
+				if(i < n) {vv[m + i] = total;}
+				total *= cur;
+				cur *= zz;
+			}
+			poly w = (mulx_sq(z) * vv).substr(m, m + n).mulx_sq(z);
+			vector<T> res(n);
+			for(int i = 0; i < n; i++) {
+				res[i] = w[i];
+			}
+			return res;
+		}
+		vector<T> chirpz(T z, int n) { // P(1), P(z), P(z^2), ..., P(z^(n-1))
+			auto even = chirpz_even(z, (n + 1) / 2);
+			auto odd = mulx(z).chirpz_even(z, n / 2);
+			vector<T> ans(n);
+			for(int i = 0; i < n / 2; i++) {
+				ans[2 * i] = even[i];
+				ans[2 * i + 1] = odd[i];
+			}
+			if(n % 2 == 1) {
+				ans[n - 1] = even.back();
+			}
+			return ans;
+		}
+		template<typename iter>
+		vector<T> eval(vector<poly> &tree, int v, iter l, iter r) { // auxiliary evaluation function
+			if(r - l == 1) {
+				return {a[0]};
+			} else {
+				auto m = l + (r - l) / 2;
+				auto A = (*this % tree[2 * v]).eval(tree, 2 * v, l, m);
+				auto B = (*this % tree[2 * v + 1]).eval(tree, 2 * v + 1, m, r);
+				A.insert(end(A), begin(B), end(B));
+				return A;
+			}
+		}
+		vector<T> eval(vector<T> x) { // evaluate polynomial in (x1, ..., xn)
+			int n = x.size();
+			vector<poly> tree(4 * n);
+			build(tree, 1, begin(x), end(x));
+			return eval(tree, 1, 0, n);
+		}
+		template<typename iter>
+		poly inter(vector<poly> &tree, int v, iter l, iter r, iter ly, iter ry) { // auxiliary interpolation function
+			if(r - l == 1) {
+				return {*ly / a[0]};
+			} else {
+				auto m = l + (r - l) / 2;
+				auto my = ly + (ry - ly) / 2;
+				auto A = (*this % tree[2 * v]).inter(tree, 2 * v, l, m, ly, my);
+				auto B = (*this % tree[2 * v + 1]).inter(tree, 2 * v + 1, m, r, my, ry);
+				return A * tree[2 * v + 1] + B * tree[2 * v];
+			}
+		}
 	};
 	template<typename T>
 	poly<T> operator * (const T& a, const poly<T>& b) {
@@ -377,7 +460,7 @@ namespace algebra {
 	typedef poly<base> polyn;
 	
 	template<typename T>
-	poly<T> xk(int k) {
+	poly<T> xk(int k) { // return x^k
 		return poly<T>{1}.mul_xk(k);
 	}
 	polyn xk(int k) {
@@ -385,7 +468,7 @@ namespace algebra {
 	}
 
 	template<typename T>
-	T resultant(poly<T> a, poly<T> b) {
+	T resultant(poly<T> a, poly<T> b) { // computes resultant of a and b
 		if(b.is_zero()) {
 			return 0;
 		} else if(b.deg() == 0) {
@@ -399,6 +482,30 @@ namespace algebra {
 			return ans * mul;
 		}
 	}
+	template<typename iter>
+	poly<typename iter::value_type> kmul(iter L, iter R) { // computes (x-a1)(x-a2)...(x-an) without building tree
+		if(R - L == 1) {
+			return vector<typename iter::value_type>{-*L, 1};
+		} else {
+			iter M = L + (R - L) / 2;
+			return kmul(L, M) * kmul(M, R);
+		}
+	}
+	template<typename T, typename iter>
+	poly<T> build(vector<poly<T>> &res, int v, iter L, iter R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
+		if(R - L == 1) {
+			return res[v] = vector<T>{-*L, 1};
+		} else {
+			iter M = L + (R - L) / 2;
+			return res[v] = build(res, 2 * v, L, M) * build(res, 2 * v + 1, M, R);
+		}
+	}
+	template<typename T>
+	poly<T> inter(vector<T> x, vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
+		int n = x.size();
+		vector<poly<T>> tree(4 * n);
+		return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(x), end(x), begin(y), end(y));
+	}
 };
 
 using namespace algebra;
@@ -406,22 +513,20 @@ using namespace algebra;
 signed main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int k, n;
-	cin >> k >> n;
-	vector<base> a(k), c(k);
-	for(int i = 0; i < k; i++) {
-		cin >> a[i];
+	int n = 100000;
+	polyn a;
+	vector<base> x;
+	for(int i = 0; i <= n; i++) {
+		a.a.push_back(1 + rand() % 100);
+		x.push_back(1 + rand() % (2 * n));
 	}
-	for(int i = 0; i < k; i++) {
-		cin >> c[i];
-	}
-	reverse(begin(c), end(c));
-	polyn chara = xk(k) - polyn{c};
-	polyn b = bpow(xk(1), n - 1, chara);
-	base ans = 0;
-	for(int i = 0; i < k; i++) {
-		ans += b[i] * a[i];
-	}
-	cout << ans << endl;
+	sort(begin(x), end(x));
+	x.erase(unique(begin(x), end(x)), end(x));
+	auto b = a.eval(x);
+	cout << clock() / double(CLOCKS_PER_SEC) << endl;
+	auto c = inter(x, b);
+	polyn md = kmul(begin(x), end(x));
+	cout << clock() / double(CLOCKS_PER_SEC) << endl;
+	assert(c == a % md);
 	return 0;
 }

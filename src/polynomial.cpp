@@ -404,24 +404,24 @@ namespace algebra {
 using namespace algebra;
 
 signed main() {
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-    int k, n;
-    cin >> k >> n;
-    vector<base> a(k), c(k);
-    for(int i = 0; i < k; i++) {
-        cin >> a[i];
-    }
-    for(int i = 0; i < k; i++) {
-        cin >> c[i];
-    }
-    reverse(begin(c), end(c));
-    polyn chara = xk(k) - polyn{c};
-    polyn b = bpow(xk(1), n - 1, chara);
-    base ans = 0;
-    for(int i = 0; i < k; i++) {
-        ans += b[i] * a[i];
-    }
-    cout << ans << endl;
-    return 0;
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	int k, n;
+	cin >> k >> n;
+	vector<base> a(k), c(k);
+	for(int i = 0; i < k; i++) {
+		cin >> a[i];
+	}
+	for(int i = 0; i < k; i++) {
+		cin >> c[i];
+	}
+	reverse(begin(c), end(c));
+	polyn chara = xk(k) - polyn{c};
+	polyn b = bpow(xk(1), n - 1, chara);
+	base ans = 0;
+	for(int i = 0; i < k; i++) {
+		ans += b[i] * a[i];
+	}
+	cout << ans << endl;
+	return 0;
 }

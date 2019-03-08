@@ -4,7 +4,6 @@ using namespace std;
 
 namespace algebra {
 	const int inf = 1e9;
-	const int mod = 1e9 + 7;
 	const int magic = 500; // threshold for sizes to run the naive algo
 	
 	namespace fft {
@@ -125,7 +124,7 @@ namespace algebra {
 	struct modular {
 		int64_t r;
 		modular() : r(0) {}
-		modular(int64_t rr) : r(rr) {if(abs(r) >= mod) r %= mod; if(r < 0) r += mod;}
+		modular(int64_t rr) : r(rr) {if(abs(r) >= m) r %= m; if(r < 0) r += m;}
 		modular inv() const {return bpow(*this, m - 2);}
 		modular operator * (const modular &t) const {return (r * t.r) % m;}
 		modular operator / (const modular &t) const {return *this * t.inv();}
@@ -141,7 +140,6 @@ namespace algebra {
 		
 		operator int64_t() const {return r;}
 	};
-	typedef modular<mod> base;
 	template<int T>
 	istream& operator >> (istream &in, modular<T> &x) {
 		return in >> x.r;
@@ -456,15 +454,10 @@ namespace algebra {
 	poly<T> operator * (const T& a, const poly<T>& b) {
 		return b * a;
 	}
-
-	typedef poly<base> polyn;
 	
 	template<typename T>
 	poly<T> xk(int k) { // return x^k
 		return poly<T>{1}.mul_xk(k);
-	}
-	polyn xk(int k) {
-		return polyn{1}.mul_xk(k);
 	}
 
 	template<typename T>
@@ -477,8 +470,8 @@ namespace algebra {
 			int pw = a.deg();
 			a %= b;
 			pw -= a.deg();
-			base mul = bpow(b.lead(), pw) * base((b.deg() & a.deg() & 1) ? -1 : 1);
-			base ans = resultant(b, a);
+			T mul = bpow(b.lead(), pw) * T((b.deg() & a.deg() & 1) ? -1 : 1);
+			T ans = resultant(b, a);
 			return ans * mul;
 		}
 	}
@@ -507,6 +500,12 @@ namespace algebra {
 		return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(x), end(x), begin(y), end(y));
 	}
 };
+
+using namespace algebra;
+
+const int mod = 1e9 + 7;
+typedef modular<mod> base;
+typedef poly<base> polyn;
 
 using namespace algebra;
 

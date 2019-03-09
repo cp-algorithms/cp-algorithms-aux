@@ -1,7 +1,6 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-
 namespace algebra {
 	const int inf = 1e9;
 	const int magic = 500; // threshold for sizes to run the naive algo
@@ -422,7 +421,7 @@ namespace algebra {
 		template<typename iter>
 		vector<T> eval(vector<poly> &tree, int v, iter l, iter r) { // auxiliary evaluation function
 			if(r - l == 1) {
-				return {a[0]};
+				return {eval(*l)};
 			} else {
 				auto m = l + (r - l) / 2;
 				auto A = (*this % tree[2 * v]).eval(tree, 2 * v, l, m);
@@ -438,7 +437,7 @@ namespace algebra {
 			}
 			vector<poly> tree(4 * n);
 			build(tree, 1, begin(x), end(x));
-			return eval(tree, 1, 0, n);
+			return eval(tree, 1, begin(x), end(x));
 		}
 		template<typename iter>
 		poly inter(vector<poly> &tree, int v, iter l, iter r, iter ly, iter ry) { // auxiliary interpolation function

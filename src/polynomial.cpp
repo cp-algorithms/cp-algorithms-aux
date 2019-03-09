@@ -433,6 +433,9 @@ namespace algebra {
 		}
 		vector<T> eval(vector<T> x) { // evaluate polynomial in (x1, ..., xn)
 			int n = x.size();
+			if(is_zero()) {
+				return vector<T>(n, T(0));
+			}
 			vector<poly> tree(4 * n);
 			build(tree, 1, begin(x), end(x));
 			return eval(tree, 1, 0, n);

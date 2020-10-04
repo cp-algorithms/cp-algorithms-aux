@@ -1,0 +1,416 @@
+\documentclass{beamer}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{calc}
+\usepackage{wrapfig}
+
+\tikzstyle{cell}=[rectangle,draw,fill=black!37,minimum size=0.8cm]
+\tikzstyle{vertex}=[circle,draw,fill=black,minimum size=0.3cm,inner sep=0pt]
+\tikzstyle{node}=[circle,minimum size=1cm,draw,inner sep=0pt]
+\tikzstyle{marked}=[vertex,fill=green!20]
+\tikzstyle{lca}=[vertex,fill=red!20]
+\tikzstyle{edge} = [draw,thick,-,line width=1.3mm]
+\tikzstyle{arrow} = [draw,thick,->,line width=1.3mm]
+\tikzstyle{dash} = [draw,dashed]
+\tikzstyle{weight} = [font=\small,sloped]
+\setlength\parindent{0pt}
+
+\title{Parameterized Algorithms and Kernels for Rainbow Matching}
+\subtitle{MFCS 2017}
+\author{Sushmita Gupta \and Sanjukta Roy \and \\ Saket Saurabh \and Meirav Zehavi}
+\date{Presented by Jakob Kogler}
+
+\begin{document}
+\begin{frame}
+    \titlepage{}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Rainbow Matching}
+    \begin{block}{RAINBOW MATCHING}
+        \textbf{Input:} A graph $G$ with edge coloring $\chi: E(G) \rightarrow [q]$, and a positive integer $k$.
+
+        \textbf{Question:} Does there exist a colorful matching of size $k$?
+    \end{block}
+    \pause{}
+    \centering
+    \begin{tikzpicture}[scale=0.8,transform shape,auto,swap]
+        \foreach \i in {0,1,...,5}{
+            \node[vertex] (v\i) at ({2*sin(\i*60)}, {2*cos(\i*60)});
+        }
+        \only<2->{\draw[edge,color=red] (v0) -- (v1);}
+        \only<2>{\draw[edge,color=red] (v1) -- (v2);}
+        \only<2>{\draw[edge,color=blue] (v2) -- (v3);}
+        \only<2>{\draw[edge,color=red] (v3) -- (v4);}
+        \only<2>{\draw[edge,color=blue] (v4) -- (v5);}
+        \only<2>{\draw[edge,color=green] (v5) -- (v0);}
+        \only<2>{\draw[edge,color=blue] (v0) -- (v3);}
+        \only<2>{\draw[edge,color=red] (v1) -- (v4);}
+        \only<2->{\draw[edge,color=green] (v2) -- (v4);}
+    \end{tikzpicture}
+
+    \pause
+    \pause
+    % \vspace{cm}
+    \begin{itemize}
+        \item NP-complete
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Reduction to 3-SET PACKING}
+        $(U, \mathcal{F}, k) \quad\quad(V(G) \cup [q], \{\{u, v, \chi(uv)\} ~|~ uv \in E(G)\}, k)$
+    \centering
+    \begin{minipage}{0.33\textwidth}
+        \centering
+        \begin{tikzpicture}[scale=0.8,transform shape,auto,swap]
+            \foreach \i in {0,1,...,5}{
+                \node[vertex] (v\i) at ({2*sin(\i*60)}, {2*cos(\i*60)});
+                \node (v{\i+6}) at ({2.4*sin(\i*60)}, {2.4*cos(\i*60)}) {$v_{\i}$};
+            }
+            \only<1->{\draw[edge,color=red] (v0) -- (v1);}
+            \only<1->{\draw[edge,color=red] (v1) -- (v2);}
+            \only<1->{\draw[edge,color=blue] (v2) -- (v3);}
+            \only<1->{\draw[edge,color=red] (v3) -- (v4);}
+            \only<1->{\draw[edge,color=blue] (v4) -- (v5);}
+            \only<1->{\draw[edge,color=green] (v5) -- (v0);}
+            \only<1->{\draw[edge,color=blue] (v0) -- (v3);}
+            \only<1->{\draw[edge,color=red] (v1) -- (v4);}
+            \only<1->{\draw[edge,color=green] (v2) -- (v4);}
+        \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}{0.2\textwidth}
+        \begin{overlayarea}{\textwidth}{1cm}
+        \end{overlayarea}
+        \only<2->{$$\Longrightarrow$$}
+        \begin{overlayarea}{\textwidth}{1cm}
+        \end{overlayarea}
+    \end{minipage}%
+    \begin{minipage}{0.20\textwidth}
+        \begin{overlayarea}{\textwidth}{6cm}
+        \only<2->{\begin{eqnarray*}
+            \{v_0, v_1, \mathbin{\color{red}\blacksquare}\}\\
+            \{v_1, v_2, \mathbin{\color{red}\blacksquare}\}\\
+            \{v_2, v_3, \mathbin{\color{blue}\blacksquare}\}\\
+            \{v_3, v_4, \mathbin{\color{red}\blacksquare}\}\\
+            \{v_4, v_5, \mathbin{\color{blue}\blacksquare}\}\\
+            \{v_5, v_0, \mathbin{\color{green}\blacksquare}\}\\
+            \{v_1, v_4, \mathbin{\color{red}\blacksquare}\}\\
+            \{v_2, v_4, \mathbin{\color{green}\blacksquare}\}\\
+        \end{eqnarray*}}
+        \end{overlayarea}
+    \end{minipage}
+
+    \pause
+    \pause
+    \begin{itemize}
+        \item Deterministic algorithm: $O^{\star}(8.097^k)$
+        \item Randomized algorithm: $O^{\star}(3.3434^k)$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Rainbow Matching on Paths}
+
+    \begin{block}{RAINBOW MATCHING ON PATHS}
+        \textbf{Input:} A path $P$ with edge coloring $\chi: E(G) \rightarrow [q]$, and a positive integer $k$.
+
+        \textbf{Question:} Does there exist a colorful matching of size $k$?
+    \end{block}
+    \pause
+    
+    \vspace{5mm}
+    \centering
+    \begin{tikzpicture}[scale=0.8,transform shape,auto,swap]
+        \node[vertex] (v0) at (0, 0);
+        \node[vertex] (v1) at (1, 0);
+        \node[vertex] (v2) at (2, 0);
+        \node[vertex] (v3) at (3, 0);
+        \node[vertex] (v4) at (4, 0);
+        \node[vertex] (v5) at (5, 0);
+        \node[vertex] (v6) at (6, 0);
+        \node[vertex] (v7) at (7, 0);
+        \node[vertex] (v8) at (8, 0);
+        \draw[edge,color=red] (v0) -- (v1);
+        \only<2>{\draw[edge,color=red] (v1) -- (v2);}
+        \only<2,3>{\draw[edge,color=blue] (v2) -- (v3);}
+        \only<2,4->{\draw[edge,color=green] (v3) -- (v4);}
+        \only<2>{\draw[edge,color=red] (v4) -- (v5);}
+        \only<2,3>{\draw[edge,color=green] (v5) -- (v6);}
+        \only<2,4->{\draw[edge,color=orange] (v6) -- (v7);}
+        \only<2>{\draw[edge,color=green] (v7) -- (v8);}
+    \end{tikzpicture}
+    \pause{}
+    \pause{}
+    \pause{}
+    
+    \vspace{1cm}
+    \begin{itemize}
+        \item Still NP-complete
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Disjoint Set Rainbow Matching}
+
+    \begin{block}{DISJOINT SET RAINBOW MATCHING}
+        \textbf{Input:} A path $P$ with edge coloring $\chi: E(G) \rightarrow [q]$, a collection $\mathcal{S}$ of (vertex disjoint) paths (vertex disjoint from $P$), and a positive integer $k$.
+
+        \textbf{Question:} Does there exist a colorful matching of size $k$ that uses exactly one edge from each path in $\mathcal{S}$ and $k - |\mathcal{S}|$ edges from $P$?
+    \end{block}
+    \pause{}
+
+    \begin{overlayarea}{\textwidth}{5cm}
+    \vspace{0mm}
+    \centering
+    \only<2-3>{%
+    \begin{tikzpicture}[scale=0.8,transform shape,auto,swap]
+        \node[vertex] (v0) at (0, 0);
+        \node[vertex] (v1) at (1, 0);
+        \node[vertex] (v2) at (2, 0);
+        \node[vertex] (v3) at (3, 0);
+        \node[vertex] (v4) at (4, 0);
+        \node[vertex] (v5) at (5, 0);
+        \node[vertex] (v6) at (6, 0);
+        \node[vertex] (v7) at (7, 0);
+        \node[vertex] (v8) at (8, 0);
+        \only<2>{\draw[edge,color=red] (v0) -- (v1);}
+        \only<2>{\draw[edge,color=red] (v1) -- (v2);}
+        \only<2>{\draw[edge,color=blue] (v2) -- (v3);}
+        \draw[edge,color=green] (v3) -- (v4);
+        \only<2>{\draw[edge,color=red] (v4) -- (v5);}
+        \only<2>{\draw[edge,color=green] (v5) -- (v6);}
+        \draw[edge,color=orange] (v6) -- (v7);
+        \only<2>{\draw[edge,color=green] (v7) -- (v8);}
+        \draw [decorate,decoration={brace,amplitude=6pt},xshift=-4pt,yshift=0pt]
+            (9,0.45) -- (9,-0.45) node [black,midway,xshift=1.1cm] 
+            {\footnotesize $P$};
+
+
+        \node[vertex] (a0) at (2, -1);
+        \node[vertex] (a1) at (2, -2);
+        \node[vertex] (a2) at (2, -3);
+        \node[vertex] (b0) at (4, -1);
+        \node[vertex] (b1) at (4, -2);
+        \node[vertex] (b2) at (4, -3);
+        \node[vertex] (c0) at (6, -1);
+        \node[vertex] (c1) at (6, -2);
+        \node[vertex] (c2) at (6, -3);
+        \node[vertex] (c3) at (6, -4);
+        \draw[edge,color=red] (a0) -- (a1);
+        \only<2>{\draw[edge,color=red] (a1) -- (a2);}
+        \only<2>{\draw[edge,color=red] (b0) -- (b1);}
+        \draw[edge,color=blue] (b1) -- (b2);
+        \only<2>{\draw[edge,color=violet] (c0) -- (c1);}
+        \only<2>{\draw[edge,color=blue] (c1) -- (c2);}
+        \draw[edge,color=yellow] (c2) -- (c3);
+        \draw [decorate,decoration={brace,amplitude=6pt},xshift=-4pt,yshift=0pt]
+            (9,-0.55) -- (9,-4.45) node [black,midway,xshift=1.1cm] 
+            {\footnotesize $\mathcal{S}$};
+    \end{tikzpicture}
+    }
+    \only<4->{%
+        \vspace{1cm}
+        RAINBOW MATCHING ON PATHS is a special case: $\mathcal{S} = \emptyset{}$
+    }
+    \end{overlayarea}
+    \pause{}
+    \pause{}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Reduction rules for instance $(P, \mathcal{S}, k)$}
+    \pause{}
+    \begin{block}{Reduction Rule 1:}
+        If $k - |\mathcal{S}| \le 1$, test in polynomial time if $(P, \mathcal{S}, k)$ is a yes/no-instance.
+
+        \only<1->{
+        \begin{itemize}
+            \pause{}
+            \item $k - |\mathcal{S}| < 0$: no-instance
+            \pause{}
+            \item $k - |\mathcal{S}| = 0$: one edge from each path in $S$\\
+                \pause{}
+                $\Rightarrow$ maximum matching in $\mathcal{B}(S)$
+                \pause{}
+            \item $k - |\mathcal{S}| = 1$: one edge from $P$, one edge from each path in $S$\\
+                \pause{}
+                $\Rightarrow$ maximum matching in $\mathcal{B}(S \cup \{P\})$
+        \end{itemize}}
+    \end{block}
+
+    \pause{}
+    \begin{block}{Reduction Rule 2:}
+        Let $P = [v_1, v_2, \dots, v_n]$.
+        If for all $i \in [n-1]$ the set $\mathcal{S} \cup \{[v1, v2, \dots, v_{i-1}], [v_i, v_{i+1}]\}$ has a bipartite matching of size at most $|\mathcal{S}| + 1$, then $(P, \mathcal{S}, k)$ is a no-instance.
+    \end{block}
+\end{frame}
+
+% \begin{frame}
+%     \frametitle{Branching Lemma}
+%     \begin{block}{Lemma:}
+%         If $(P, \mathcal{S}, k)$ is a yes-instance, and neither of the reduction rules is applicable, then there exists an index $i \in [n-1]$ such that there exists a colorful matching of size $k$ that uses exactly one edge on the subpath $P_i := [v1, \dots, v_i]$.
+
+%         This $i$ can be found in polynomial time.
+%     \end{block}
+%     \pause
+
+%     % \begin{block}{Proof:}
+%     \vspace{5mm}
+%         Pick the smallest index $i$ with the property ($\star$):
+%         maximal matching in $\mathcal{B}(S \cup \{P_{i-1}, [v_i, v_{i+1}]\})$ is $|\mathcal{S}| + 2$.
+
+%         % Claim: there is a colorful matching that only one edge from $P_i$.
+
+% %         \pause
+% %         \begin{itemize}
+% %             \item Every colorful matching contains at most one edge from $P_i$, because we chose $i$ to be minimal.
+% %             \item Assume that a colorful matching contains no edge from $P_i$. Then the first edge from property $(\star)$ is vertex-disjoint with the edges of the matching $\Rightarrow$ exchange with some other edge.
+% %         \end{itemize}
+        
+%     % \end{block}
+% \end{frame}
+
+\begin{frame}
+    \frametitle{Branching}
+    \centering
+    \begin{tikzpicture}[scale=0.8,transform shape,auto,swap]
+        \node[vertex] (v0) at (0, 0);
+        \node (v0text) at (0, 0.6) {$(P, \mathcal{S}, k$)};
+            % \node (v{\i+6}) at (0.5, 0) {$(P, \mathcal{S}, k$};
+        \pause
+        \node (reductions) at (4, 1.1) {Apply reduction rules};
+        \pause
+        \node (reductions) at (4, 0.6) {Find minimal $i$ contradicting RR2};
+        \pause
+        \node (reductions) at (4, 0.1) {$\Rightarrow P_i := [v_1, \dots v_i]$ contains 1 edge};
+        \pause
+        \node[vertex] (v1) at (-3, -3);
+        \draw[arrow] (v0) -- (v1);
+        \node (v1text2) at (-4, -1.5) {Choose $v_i v_{i+1}$};
+        \pause
+        \node (v1text) at (-3, -3.6) {$(P \setminus P_{i+1}, \mathcal{S} \cup \{P_{i-1}, [v_i, v_{i+1}]\}, k)$};
+        \pause
+        \node[vertex] (v2) at (3, -3);
+        \node (v2text2) at (4, -1.5) {Don't choose $v_i v_{i+1}$};
+        \draw[arrow] (v0) -- (v2);
+        \pause
+        \node (v2text) at (3, -3.6) {$(P \setminus P_i, \mathcal{S} \cup \{P_i\}, k)$};
+    \end{tikzpicture}
+
+    \pause
+    \vspace{5mm}
+    \begin{overlayarea}{\textwidth}{3cm}
+    \only<9->{Number of matched edges in $P$ decreases either by $2$ or by $1$
+        \pause
+    $$\Longrightarrow \Theta\left(\left(\frac{1 + \sqrt{5}}{2}\right)^k\right) \text{ nodes}$$}
+    \end{overlayarea}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Rainbow Matching on general graphs}
+    
+    Reduction to 3-SET-PREPACKING:
+
+    \begin{itemize}
+        \pause
+        \item $(U, U_1, \mathcal{F}, k, p_0, p_1, p_2)$ with $p_0 + p_1 + p_2 = k$
+        \pause
+        \item Randomized algorithm: $O^{\star}(2^{3p_0 + 2p_1 + p_2})$
+        \pause
+        \item $(V(G) \cup [q], V(G), \{\{u, v, \chi(uv)\} ~|~ uv \in E(G)\}, k, 0, 0, k)$
+        \pause
+        \item Randomized algorithm: $O^{\star}(2^k)$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Kernelization for general Graphs}
+    \begin{itemize}
+        \pause
+        \item Reduction to 3-SET PACKING
+        \pause
+        \item Known $O(k^2)$ kernel for 3-SET PACKING, but not applyable
+    \end{itemize}
+    
+    \pause
+    \begin{block}{Sunflower Lemma}
+        \begin{wrapfigure}{r}{0.25\textwidth}
+            \centering
+            \includegraphics[width=0.25\textwidth]{sunflower}
+        \end{wrapfigure}
+        Let $\mathcal{A}$ be a family of sets (without duplicates) over a universe $\mathcal{U}$, such that each set in $\mathcal{A}$ has cardinality exactly $d$.
+        If $|\mathcal{A}| > d!(k - 1)^d$, then $\mathcal{A}$ contains a sunflower with $k$ petals and such a sunflower can be computed in polynomial time.
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Reduction Rule}
+    
+    \begin{block}{Reduction Rule:}
+        Let $(U, \mathcal{F}, k)$ be a 3-SET PACKING instance.
+        If $\mathcal{F}$ contains a sunflower $S = \{S_1, \dots, S_{2 + 3(k - 1)}\}$ with core $Y$, then return $(U^{\prime}, \mathcal{F^{\prime}}, k)$ with $F^{\prime} = \mathcal{F} \setminus S_1$ and $U^{\prime} = \bigcup_{X \in \mathcal{F}^{\prime}} X$.
+    \end{block}
+    \pause
+
+    \begin{block}{Proof:}
+        \begin{itemize}
+            \item $(U^{\prime}, \mathcal{F}^{\prime}, k)$ yes-instance $\Rightarrow$ $(U, \mathcal{F}, k)$ yes instance: $\checkmark$
+            \pause
+            \item $(U, \mathcal{F}, k)$ yes-instance $\Rightarrow$ $(U^{\prime}, \mathcal{F}^{\prime}, k)$ yes instance: \pause
+                \begin{itemize}
+                    \item Solution $\mathcal{T}$ of $(U, \mathcal{F}, k)$ doesn't contain $S_1$: $\checkmark$
+                        \pause
+                    \item Solution $\mathcal{T}$ of $(U, \mathcal{F}, k)$ contains $S_1$:
+                        \pause
+                        \begin{itemize}
+                            \item $\mathcal{T} \setminus \{S_1\}$ contains $3 (k - 1)$ different elements. \pause
+                            \item No set in $\mathcal{T}$ insects with core $Y$.
+                            \pause{}
+                            \item Therefore at most $1 + 3(k - 1)$ sets of $S$ intersect with $\mathcal{T}$.
+                            \pause{}
+                        \item There exists a set $S^{\star}$ in $S$ that is pairwise disjoint with every set in $\mathcal{T} \setminus \{S_1\}$.
+                            \pause{}
+                        \item Thus $(\mathcal{T} \setminus \{S_1\}) \cup S^{\star}$ is also a solution. $\checkmark$
+                        \end{itemize}
+                \end{itemize}
+        \end{itemize}
+
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Kernel}
+    
+    \begin{block}{Kernelization algorithm:}
+        While $|\mathcal{F}| > 6 (3k-2)^3$, find a sunflower of size $2 + 3(k - 1)$ using Sunflower Lemma and apply the reduction rule.
+
+        And we end up with an equivalent instance of 3-SET PACKING of size at most $6 (2k - 2)^3$.
+    \end{block}
+    \pause
+
+    \vspace{5mm}
+    Reduced instance corresponds to a RAINBOW MATCHING instance.
+
+    Therefore we have a $O(k^3)$ kernel for RAINBOW MATCHING.
+\end{frame}
+
+\begin{frame}
+    \frametitle{Kernelization on bounded graphs}
+
+    Degree of vertices in $G$ is bounded by $d$.
+
+            \pause
+    \begin{itemize}
+        \item Color classes $E_i ~ \forall i \in [q]$
+            \pause
+        \item Reduction rules to bound the size of $E_i$
+            \pause
+        \item Afterwards either a greedy algorithm finds a solution, or the number of colors is bounded.
+            \pause
+        \item $O(d^2 k^2)$ kernel
+    \end{itemize}
+    
+\end{frame}
+\end{document}

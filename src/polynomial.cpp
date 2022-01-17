@@ -1,3 +1,10 @@
+/* Verified on https://judge.yosupo.jp:
+- Convolution (mod 1e9 + 7) and (mod 998244353)
+- 1/P(x), exp P(x), log P(x), P^k(x)
+- evaluation, interpolation 
+*/
+
+
 #include <bits/stdc++.h>
 
 using namespace std;

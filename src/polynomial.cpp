@@ -356,10 +356,10 @@ namespace algebra {
             return ans.mod_xk(n);
             
         }
-        poly pow_slow(size_t k, size_t n) { // if k is small
+        poly pow_slow(int64_t k, size_t n) { // if k is small
             return k ? k % 2 ? (*this * pow_slow(k - 1, n)).mod_xk(n) : (*this * *this).mod_xk(n).pow_slow(k / 2, n) : T(1);
         }
-        poly pow(size_t k, size_t n) { // calculate p^k(n) mod x^n
+        poly pow(int64_t k, size_t n) { // calculate p^k(n) mod x^n
             if(is_zero()) {
                 return *this;
             }
@@ -369,7 +369,7 @@ namespace algebra {
             int i = leading_xk();
             T j = a[i];
             poly t = div_xk(i) / j;
-            return bpow(j, k) * (t.log(n) * T(k)).exp(n).mul_xk(i * k).mod_xk(n);
+            return bpow(j, k) * (t.log(n) * T(k)).exp(n).mul_xk(min(i * k, (int64_t)n)).mod_xk(n);
         }
         poly mulx(T x) { // component-wise multiplication with x^k
             T cur = 1;

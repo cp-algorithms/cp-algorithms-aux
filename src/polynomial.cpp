@@ -1,14 +1,27 @@
 /* Verified on https://judge.yosupo.jp:
-- Convolution (mod 1e9 + 7) and (mod 998244353)
-- 1/P(x), exp P(x), log P(x), P^k(x)
-- evaluation, interpolation 
+- N = 500'000:
+-- Convolution, 607ms (https://judge.yosupo.jp/submission/75115)
+-- Convolution (mod 1e9+7), 606ms (https://judge.yosupo.jp/submission/75116)
+-- Inv of power series, 976ms (https://judge.yosupo.jp/submission/75117)
+-- Exp of power series, 3027ms (https://judge.yosupo.jp/submission/75118)
+-- Log of power series, 1626ms (https://judge.yosupo.jp/submission/75119)
+-- Pow of power series, 4138ms (https://judge.yosupo.jp/submission/75120)
+-- Sqrt of power series, 2166ms (https://judge.yosupo.jp/submission/75121)
+-- P(x) -> P(x+a), 756ms (https://judge.yosupo.jp/submission/75122)
+-- Division of polynomials, 1140ms (https://judge.yosupo.jp/submission/75124)
+- N = 100'000:
+-- Multipoint evaluation, 2470ms (https://judge.yosupo.jp/submission/75126)
+-- Polynomial interpolation, 2922ms (https://judge.yosupo.jp/submission/75127)
 */
 
 #include <bits/stdc++.h>
 
 using namespace std;
+
 namespace algebra {
+    const int maxn = 1 << 21;
     const int magic = 250; // threshold for sizes to run the naive algo
+    mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
 
     template<typename T>
     T bpow(T x, size_t n) {
@@ -17,6 +30,42 @@ namespace algebra {
 
     template<int m>
     struct modular {
+        
+        // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
+        // solves x^2 = y (mod m) assuming m is prime in O(log m).
+        // returns nullopt if no sol.
+        optional<modular> sqrt() const {
+            static modular y;
+            y = *this;
+            if(r == 0) {
+                return 0;
+            } else if(bpow(y, (m - 1) / 2) != modular(1)) {
+                return nullopt;
+            } else {
+                while(true) {
+                    modular z = rng();
+                    if(z * z == *this) {
+                        return z;
+                    }
+                    struct lin {
+                        modular a, b;
+                        lin(modular a, modular b): a(a), b(b) {}
+                        lin(modular a): a(a), b(0) {}
+                        lin operator * (const lin& t) {
+                            return {
+                                a * t.a + b * t.b * y,
+                                a * t.b + b * t.a
+                            };
+                        }
+                    } x(z, 1); // z + x
+                    x = bpow(x, (m - 1) / 2);
+                    if(x.b != modular(0)) {
+                        return x.b.inv();
+                    }
+                }
+            }
+        }
+        
         int64_t r;
         modular() : r(0) {}
         modular(int64_t rr) : r(rr) {if(abs(r) >= m) r %= m; if(r < 0) r += m;}
@@ -42,10 +91,20 @@ namespace algebra {
     istream& operator >> (istream &in, modular<T> &x) {
         return in >> x.r;
     }
+    
+    template<typename T>
+    T fact(int n) {
+        static T F[maxn];
+        return F[n] ? F[n] : F[n] = n ? fact<T>(n - 1) * T(n) : T(1);
+    }
+    
+    template<typename T>
+    T rfact(int n) {
+        static T RF[maxn];
+        return RF[n] ? RF[n] : RF[n] = T(1) / fact<T>(n);
+    }
 
     namespace fft {
-        const int maxn = 1 << 18;
-
         typedef double ftype;
         typedef complex<ftype> point;
 
@@ -63,8 +122,7 @@ namespace algebra {
             }
         }
         
-        template<typename T>
-        void fft(T *in, point *out, int n, int k = 1) {
+        void fft(auto *in, point *out, int n, int k = 1) {
             if(n == 1) {
                 *out = *in;
             } else {
@@ -79,8 +137,7 @@ namespace algebra {
             }
         }
         
-        template<typename T>
-        void mul_slow(vector<T> &a, const vector<T> &b) {
+        void mul_slow(vector<auto> &a, const vector<auto> &b) {
             if(a.empty() || b.empty()) {
                 a.clear();
             } else {
@@ -215,9 +272,8 @@ namespace algebra {
             res.resize(max(n, res.size()));
             return vector<T>(res.rbegin(), res.rbegin() + n);
         }
+        
         poly reverse() const {
-            assert(!is_zero());
-            assert(a.back() != T(0));
             return reverse(deg() + 1);
         }
         
@@ -279,23 +335,6 @@ namespace algebra {
             return res;
         }
         
-        static poly xk(size_t n) { // P(x) = x^n
-            return poly(T(1)).mul_xk(n);
-        }
-        
-        static poly expx(size_t n) { // P(x) = e^x (mod x^n)
-            vector<T> a(n);
-            a[n - 1] = 1;
-            for(int i = 2; i < n; i++) {
-                a[n - 1] *= i;
-            }
-            a[n - 1] = T(1) / a[n - 1];
-            for(int i = n - 2; i >= 0; i--) {
-                a[i] = a[i + 1] * T(i + 1);
-            }
-            return a;
-        }
-        
         void print(int n) const {
             for(int i = 0; i < n; i++) {
                 cout << (*this)[i] << ' ';
@@ -347,6 +386,7 @@ namespace algebra {
             }
             return res;
         }
+        
         poly integr() { // calculate integral with C = 0
             vector<T> res(deg() + 2);
             for(int i = 0; i <= deg(); i++) {
@@ -354,6 +394,7 @@ namespace algebra {
             }
             return res;
         }
+        
         size_t trailing_xk() const { // Let p(x) = x^k * t(x), return k
             if(is_zero()) {
                 return -1;
@@ -383,7 +424,6 @@ namespace algebra {
                 a *= 2;
             }
             return ans.mod_xk(n);
-            
         }
         
         poly pow_slow(int64_t k, size_t n) { // if k is small
@@ -398,9 +438,37 @@ namespace algebra {
                 return pow_slow(k, n);
             }
             int i = trailing_xk();
+            if(i > 0) {
+                return i * k >= n ? poly(0) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
+            }
             T j = a[i];
-            poly t = div_xk(i) / j;
-            return bpow(j, k) * (t.log(n) * T(k)).exp(n).mul_xk(min(i * k, (int64_t)n)).mod_xk(n);
+            poly t = *this / j;
+            return bpow(j, k) * (t.log(n) * T(k)).exp(n).mod_xk(n);
+        }
+        
+        // returns nullopt if undefined
+        optional<poly> sqrt(size_t n) const {
+            if(is_zero()) {
+                return *this;
+            }
+            int i = trailing_xk();
+            if(i % 2) {
+                return nullopt;
+            } else if(i > 0) {
+                auto ans = div_xk(i).sqrt(n - i / 2);
+                return ans ? ans->mul_xk(i / 2) : ans;
+            }
+            auto st = (*this)[0].sqrt();
+            if(st) {
+                poly ans = *st;
+                size_t a = 1;
+                while(a < n) {
+                    a *= 2;
+                    ans -= (ans - mod_xk(a) * ans.inv(a)).mod_xk(a) / 2;
+                }
+                return ans.mod_xk(n);
+            }
+            return nullopt;
         }
         
         poly mulx(T a) { // component-wise multiplication with a^k
@@ -464,8 +532,7 @@ namespace algebra {
             return ans;
         }
         
-        template<typename iter>
-        vector<T> eval(vector<poly> &tree, int v, iter l, iter r) { // auxiliary evaluation function
+        vector<T> eval(vector<poly> &tree, int v, auto l, auto r) { // auxiliary evaluation function
             if(r - l == 1) {
                 return {eval(*l)};
             } else {
@@ -487,8 +554,7 @@ namespace algebra {
             return eval(tree, 1, begin(x), end(x));
         }
         
-        template<typename iter>
-        poly inter(vector<poly> &tree, int v, iter l, iter r, iter ly, iter ry) { // auxiliary interpolation function
+        poly inter(vector<poly> &tree, int v, auto l, auto r, auto ly, auto ry) { // auxiliary interpolation function
             if(r - l == 1) {
                 return {*ly / a[0]};
             } else {
@@ -499,58 +565,88 @@ namespace algebra {
                 return A * tree[2 * v + 1] + B * tree[2 * v];
             }
         }
+        
+        static auto resultant(poly a, poly b) { // computes resultant of a and b
+            if(b.is_zero()) {
+                return 0;
+            } else if(b.deg() == 0) {
+                return bpow(b.lead(), a.deg());
+            } else {
+                int pw = a.deg();
+                a %= b;
+                pw -= a.deg();
+                auto mul = bpow(b.lead(), pw) * T((b.deg() & a.deg() & 1) ? -1 : 1);
+                auto ans = resultant(b, a);
+                return ans * mul;
+            }
+        }
+        
+        static poly kmul(auto L, auto R) { // computes (x-a1)(x-a2)...(x-an) without building tree
+            if(R - L == 1) {
+                return vector<T>{-*L, 1};
+            } else {
+                auto M = L + (R - L) / 2;
+                return kmul(L, M) * kmul(M, R);
+            }
+        }
+        
+        static poly build(vector<poly> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
+            if(R - L == 1) {
+                return res[v] = vector<T>{-*L, 1};
+            } else {
+                auto M = L + (R - L) / 2;
+                return res[v] = build(res, 2 * v, L, M) * build(res, 2 * v + 1, M, R);
+            }
+        }
+        
+        static auto inter(vector<T> x, vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
+            int n = x.size();
+            vector<poly> tree(4 * n);
+            return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(x), end(x), begin(y), end(y));
+        }
+        
+        
+        static poly xk(size_t n) { // P(x) = x^n
+            return poly(T(1)).mul_xk(n);
+        }
+        
+        static poly ones(size_t n) { // P(x) = 1 + x + ... + x^{n-1} 
+            return vector<T>(n, 1);
+        }
+        
+        static poly expx(size_t n) { // P(x) = e^x (mod x^n)
+            return ones(n).to_ogf();
+        }
+        
+        // [x^k] (a corr b) = sum_{i+j=k} ai*b{m-j} 
+        //                  = sum_{i-j=k-m} ai*bj
+        static poly corr(poly a, poly b) { // cross-correlation
+            return a * b.reverse();
+        }
+        
+        poly to_egf() const { // ak *= k!
+            auto res = *this;
+            for(int i = 0; i <= deg(); i++) {
+                res.coef(i) *= fact<T>(i);
+            }
+            return res;
+        }
+        
+        poly to_ogf() const { // ak /= k!
+            auto res = *this;
+            for(int i = 0; i <= deg(); i++) {
+                res.coef(i) *= rfact<T>(i);
+            }
+            return res;
+        }
+        
+        poly shift(T a) const { // P(x + a)
+            return (to_egf().reverse() * expx(deg() + 1).mulx(a)).mod_xk(deg() + 1) .reverse().to_ogf();
+        }
     };
-    template<typename T>
-    poly<T> operator * (const T& a, const poly<T>& b) {
+    
+    static auto operator * (const auto& a, const poly<auto>& b) {
         return b * a;
-    }
-
-    template<typename T>
-    poly<T> xk(int k) { // return x^k
-        return poly<T>{1}.mul_xk(k);
-    }
-
-    template<typename T>
-    T resultant(poly<T> a, poly<T> b) { // computes resultant of a and b
-        if(b.is_zero()) {
-            return 0;
-        } else if(b.deg() == 0) {
-            return bpow(b.lead(), a.deg());
-        } else {
-            int pw = a.deg();
-            a %= b;
-            pw -= a.deg();
-            T mul = bpow(b.lead(), pw) * T((b.deg() & a.deg() & 1) ? -1 : 1);
-            T ans = resultant(b, a);
-            return ans * mul;
-        }
-    }
-    
-    template<typename iter>
-    poly<typename iter::value_type> kmul(iter L, iter R) { // computes (x-a1)(x-a2)...(x-an) without building tree
-        if(R - L == 1) {
-            return vector<typename iter::value_type>{-*L, 1};
-        } else {
-            iter M = L + (R - L) / 2;
-            return kmul(L, M) * kmul(M, R);
-        }
-    }
-    
-    template<typename T, typename iter>
-    poly<T> build(vector<poly<T>> &res, int v, iter L, iter R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
-        if(R - L == 1) {
-            return res[v] = vector<T>{-*L, 1};
-        } else {
-            iter M = L + (R - L) / 2;
-            return res[v] = build(res, 2 * v, L, M) * build(res, 2 * v + 1, M, R);
-        }
-    }
-    
-    template<typename T>
-    poly<T> inter(vector<T> x, vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
-        int n = x.size();
-        vector<poly<T>> tree(4 * n);
-        return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(x), end(x), begin(y), end(y));
     }
 };
 

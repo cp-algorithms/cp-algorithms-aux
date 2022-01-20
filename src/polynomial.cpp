@@ -12,6 +12,19 @@
 - N = 100'000:
 -- Multipoint evaluation, 2470ms (https://judge.yosupo.jp/submission/75126)
 -- Polynomial interpolation, 2922ms (https://judge.yosupo.jp/submission/75127)
+/////////
+
+The main goal of this library is to implement common polynomial functionality in a
+reasonable from competitive programming POV complexity, while also doing it in as
+straight-forward way as possible.
+
+Therefore, primary purpose of the library is educational and most of constant-time
+optimizations that may significantly harm the code readability were not used.
+
+The library is reasonably fast and generally can be used in most problems where
+polynomial operations constitute intended solution. However, it is recommended to
+seek out other implementations when the time limit is tight or you really want to
+squeeze polynomial-op solution when it is probably not the intended one.
 */
 
 #include <bits/stdc++.h>

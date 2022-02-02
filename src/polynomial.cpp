@@ -637,7 +637,7 @@ namespace algebra {
             return a * b.reverse();
         }
         
-        poly to_egf() const { // ak *= k!
+        poly to_ogf() const { // ak *= k!
             auto res = *this;
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= fact<T>(i);
@@ -645,7 +645,7 @@ namespace algebra {
             return res;
         }
         
-        poly to_ogf() const { // ak /= k!
+        poly to_egf() const { // ak /= k!
             auto res = *this;
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= rfact<T>(i);
@@ -654,7 +654,7 @@ namespace algebra {
         }
         
         poly shift(T a) const { // P(x + a)
-            return (to_egf().reverse() * expx(deg() + 1).mulx(a)).mod_xk(deg() + 1) .reverse().to_ogf();
+            return (to_ogf().reverse() * expx(deg() + 1).mulx(a)).mod_xk(deg() + 1) .reverse().to_egf();
         }
     };
     

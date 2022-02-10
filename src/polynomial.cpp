@@ -38,7 +38,13 @@ namespace algebra {
 
     template<typename T>
     T bpow(T x, size_t n) {
-        return n ? n % 2 ? x * bpow(x, n - 1) : bpow(x * x, n / 2) : T(1);
+        if(n == 0) {
+            return T(1);
+        } else {
+            auto t = bpow(x, n / 2);
+            t *= t;
+            return n % 2 ? x * t : t;
+        }
     }
 
     template<int m>
@@ -439,20 +445,45 @@ namespace algebra {
             return ans.mod_xk(n);
         }
         
-        poly pow_slow(int64_t k, size_t n) { // if k is small
-            return k ? k % 2 ? (*this * pow_slow(k - 1, n)).mod_xk(n) : (*this * *this).mod_xk(n).pow_slow(k / 2, n) : T(1);
+        poly pow_bin(int64_t k, size_t n) { // O(n log n log k)
+            if(k == 0) {
+                return poly(1).mod_xk(n);
+            } else {
+                auto t = pow(k / 2, n);
+                t *= t;
+                return (k % 2 ? *this * t : t).mod_xk(n);
+            }
         }
         
-        poly pow(int64_t k, size_t n) { // calculate p^k(n) mod x^n
+        // O(d * n) with the derivative trick from
+        // https://codeforces.com/blog/entry/73947?#comment-581173
+        poly pow_dn(int64_t k, size_t n) {
+            vector<T> Q(n);
+            Q[0] = bpow(a[0], k);
+            for(int i = 1; i < (int)n; i++) {
+                for(int j = 0; j <= min(deg(), i + 1); j++) {
+                    Q[i] += a[j] * Q[i - j] * (T(k + 1) * T(j) - T(i));
+                }
+                Q[i + 1] /= i * a[0];
+            }
+            return Q;
+        }
+        
+        // calculate p^k(n) mod x^n in O(n log n)
+        // might be quite slow due to high constant
+        poly pow(int64_t k, size_t n) {
             if(is_zero()) {
                 return *this;
             }
-            if(k < magic) {
-                return pow_slow(k, n);
-            }
             int i = trailing_xk();
             if(i > 0) {
-                return i * k >= n ? poly(0) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
+                return i * k >= (int64_t)n ? poly(0) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
+            }
+            if(min(deg(), (int)n) <= magic) {
+                return pow_dn(k, n);
+            }
+            if(k <= magic) {
+                return pow_bin(k, n);
             }
             T j = a[i];
             poly t = *this / j;
@@ -628,7 +659,7 @@ namespace algebra {
         }
         
         static poly expx(size_t n) { // P(x) = e^x (mod x^n)
-            return ones(n).to_ogf();
+            return ones(n).borel();
         }
         
         // [x^k] (a corr b) = sum_{i+j=k} ai*b{m-j} 
@@ -637,7 +668,7 @@ namespace algebra {
             return a * b.reverse();
         }
         
-        poly to_ogf() const { // ak *= k!
+        poly invborel() const { // ak *= k!
             auto res = *this;
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= fact<T>(i);
@@ -645,7 +676,7 @@ namespace algebra {
             return res;
         }
         
-        poly to_egf() const { // ak /= k!
+        poly borel() const { // ak /= k!
             auto res = *this;
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= rfact<T>(i);
@@ -654,7 +685,7 @@ namespace algebra {
         }
         
         poly shift(T a) const { // P(x + a)
-            return (to_ogf().reverse() * expx(deg() + 1).mulx(a)).mod_xk(deg() + 1) .reverse().to_egf();
+            return (expx(deg() + 1).mulx(a).reverse() * invborel()).div_xk(deg()).borel();
         }
     };
     
@@ -669,22 +700,21 @@ const int mod = 998244353;
 typedef modular<mod> base;
 typedef poly<base> polyn;
 
+void solve() {
+    int n, m;
+    cin >> n >> m;
+    vector<base> a(n);
+    copy_n(istream_iterator<base>(cin), n, begin(a));
+    polyn(a).pow(m, n).print(n);
+}
+
 signed main() {
+    //freopen("input.txt", "r", stdin);
     ios::sync_with_stdio(0);
     cin.tie(0);
-    int n = 100000;
-    polyn a;
-    vector<base> x;
-    for(int i = 0; i <= n; i++) {
-        a.a.push_back(1 + rand() % 100);
-        x.push_back(1 + rand() % (2 * n));
+    int t;
+    t = 1;// cin >> t;
+    while(t--) {
+        solve();
     }
-    sort(begin(x), end(x));
-    x.erase(unique(begin(x), end(x)), end(x));
-    auto b = a.eval(x);
-    cout << clock() / double(CLOCKS_PER_SEC) << endl;
-    auto c = inter(x, b);
-    polyn md = kmul(begin(x), end(x));
-    cout << clock() / double(CLOCKS_PER_SEC) << endl;
-    assert(c == a % md);
 }

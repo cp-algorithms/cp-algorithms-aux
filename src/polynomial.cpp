@@ -343,6 +343,25 @@ namespace algebra {
             assert(0);
         }
         
+        // calculate inv to *this modulo t
+        // quadratic complexity
+        optional<poly> inv_mod(poly const& t) const {
+            auto R1 = *this, R2 = t;
+            auto Q1 = poly(T(1)), Q2 = poly(T(0));
+            int k = 0;
+            while(!R2.is_zero()) {
+                k ^= 1;
+                auto [a, nR] = R1.divmod(R2);
+                tie(R1, R2) = make_tuple(R2, nR);
+                tie(Q1, Q2) = make_tuple(Q2, Q1 + a * Q2);
+            }
+            if(R1.deg() > 0) {
+                return nullopt;
+            } else {
+                return (k ? -Q1 : Q1) / R1[0];
+            }
+        }
+        
         poly operator / (const poly &t) const {return divmod(t).first;}
         poly operator % (const poly &t) const {return divmod(t).second;}
         poly operator /= (const poly &t) {return *this = divmod(t).first;}

@@ -160,10 +160,12 @@ namespace algebra {
             if(a.empty() || b.empty()) {
                 a.clear();
             } else {
-                a.resize(a.size() + b.size() - 1);
-                for(int k = a.size() - 1; k >= 0; k--) {
+                int n = a.size();
+                int m = b.size();
+                a.resize(n + m - 1);
+                for(int k = n + m - 2; k >= 0; k--) {
                     a[k] *= b[0];
-                    for(int j = 1; j < min(k + 1, (int)b.size()); j++) {
+                    for(int j = max(k - n + 1, 1); j < min(k + 1, m); j++) {
                         a[k] += a[k - j] * b[j];
                     }
                 }

@@ -327,6 +327,22 @@ namespace algebra {
             return {D, *this - D * b};
         }
         
+        // Returns the characteristic polynomial
+        // of the minimum linear recurrence for the sequence
+        poly min_rec(int d = deg()) const {
+            auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);
+            auto Q1 = poly(T(1)), Q2 = poly(T(0));
+            while(!R2.is_zero()) {
+                auto [a, nR] = R1.divmod(R2); // R1 = a*R2 + nR, deg nR < deg R2
+                tie(R1, R2) = make_tuple(R2, nR);
+                tie(Q1, Q2) = make_tuple(Q2, Q1 + a * Q2);
+                if(R2.deg() < Q2.deg()) {
+                    return Q2 / Q2.lead();
+                }
+            }
+            assert(0);
+        }
+        
         poly operator / (const poly &t) const {return divmod(t).first;}
         poly operator % (const poly &t) const {return divmod(t).second;}
         poly operator /= (const poly &t) {return *this = divmod(t).first;}

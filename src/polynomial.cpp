@@ -575,10 +575,10 @@ namespace algebra {
             vector<T> Q(n);
             Q[0] = bpow(a[0], k);
             for(int i = 1; i < (int)n; i++) {
-                for(int j = 0; j <= min(deg(), i + 1); j++) {
-                    Q[i] += a[j] * Q[i - j] * (T(k + 1) * T(j) - T(i));
+                for(int j = 0; j <= min(deg(), i); j++) {
+                    Q[i] += a[j] * Q[i - j] * (T(k) * T(j) - T(i - j));
                 }
-                Q[i + 1] /= i * a[0];
+                Q[i] /= i * a[0];
             }
             return Q;
         }

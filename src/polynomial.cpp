@@ -352,7 +352,8 @@ namespace algebra {
             }
         };
         
-        // finds a transform that reduces deg A by at least x2
+        // finds a transform that changes A/B to A'/B' such that
+        // deg B' is at least 2 times less than deg A
         static transform half_gcd(poly A, poly B) {
             assert(A.deg() >= B.deg());
             int m = (A.deg() + 1) / 2;
@@ -375,8 +376,14 @@ namespace algebra {
         static transform full_gcd(poly A, poly B) {
             vector<transform> trs;
             while(!B.is_zero()) {
-                trs.push_back(2 * B.deg() > A.deg() ? half_gcd(A, B) : transform(A / B));
-                tie(A, B) = trs.back().adj().apply(A, B);
+                if(2 * B.deg() > A.deg()) {
+                    trs.push_back(half_gcd(A, B));
+                    tie(A, B) = trs.back().adj().apply(A, B);
+                } else {
+                    auto [a, R] = A.divmod(B);
+                    trs.emplace_back(a);
+                    tie(A, B) = make_pair(B, R);
+                }
             }
             trs.emplace_back(T(1), T(0), T(0), T(1));
             while(trs.size() >= 2) {
@@ -821,9 +828,16 @@ typedef poly<base> polyn;
 void solve() {
     int n, m;
     cin >> n >> m;
-    vector<base> a(n);
+    vector<base> a(n), b(m);
     copy_n(istream_iterator<base>(cin), n, begin(a));
-    polyn(a).pow(m, n).print(n);
+    copy_n(istream_iterator<base>(cin), m, begin(b));
+    auto res = polyn(a).inv_mod(polyn(b));
+    if(res) {
+        cout << res->deg() + 1 << endl;
+        res->print();
+    } else {
+        cout << -1 << endl;
+    }    
 }
 
 signed main() {

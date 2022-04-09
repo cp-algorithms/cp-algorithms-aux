@@ -13,7 +13,7 @@
 -- Multipoint evaluation, 2470ms (https://judge.yosupo.jp/submission/75126)
 -- Polynomial interpolation, 2922ms (https://judge.yosupo.jp/submission/75127)
 - N = 50'000:
--- Inv of Polynomials, 2400ms (https://judge.yosupo.jp/submission/85478)
+-- Inv of Polynomials, 1752ms (https://judge.yosupo.jp/submission/85478)
 - N = 10'000:
 -- Find Linear Recurrence, 346ms (https://judge.yosupo.jp/submission/85025)
 /////////
@@ -373,13 +373,17 @@ namespace algebra {
         
         // return a transform that reduces A / B to gcd(A, B) / 0
         static transform full_gcd(poly A, poly B) {
-            transform res = {T(1), T(0), T(0), T(1)};
+            vector<transform> trs;
             while(!B.is_zero()) {
-                auto Tr = 2 * B.deg() > A.deg() ? half_gcd(A, B) : transform(A / B);
-                tie(A, B) = Tr.adj().apply(A, B);
-                res = res * Tr;
+                trs.push_back(2 * B.deg() > A.deg() ? half_gcd(A, B) : transform(A / B));
+                tie(A, B) = trs.back().adj().apply(A, B);
             }
-            return res;
+            trs.emplace_back(T(1), T(0), T(0), T(1));
+            while(trs.size() >= 2) {
+                trs[trs.size() - 2] = trs[trs.size() - 2] * trs[trs.size() - 1];
+                trs.pop_back();
+            }
+            return trs.back();
         }
         
         static poly gcd(poly A, poly B) {
@@ -392,6 +396,21 @@ namespace algebra {
         
         // Returns the characteristic polynomial
         // of the minimum linear recurrence for the sequence
+        poly min_rec_slow(int d = deg()) const {
+            auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);
+            auto Q1 = poly(T(1)), Q2 = poly(T(0));
+            while(!R2.is_zero()) {
+                auto [a, nR] = R1.divmod(R2); // R1 = a*R2 + nR, deg nR < deg R2
+                tie(R1, R2) = make_tuple(R2, nR);
+                tie(Q1, Q2) = make_tuple(Q2, Q1 + a * Q2);
+                if(R2.deg() < Q2.deg()) {
+                    return Q2 / Q2.lead();
+                }
+            }
+            assert(0);
+        }
+        
+        
         poly min_rec(int d = deg()) const {
             auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);
             auto Q1 = poly(T(1)), Q2 = poly(T(0));
@@ -575,7 +594,7 @@ namespace algebra {
             vector<T> Q(n);
             Q[0] = bpow(a[0], k);
             for(int i = 1; i < (int)n; i++) {
-                for(int j = 0; j <= min(deg(), i); j++) {
+                for(int j = 1; j <= min(deg(), i); j++) {
                     Q[i] += a[j] * Q[i - j] * (T(k) * T(j) - T(i - j));
                 }
                 Q[i] /= i * a[0];

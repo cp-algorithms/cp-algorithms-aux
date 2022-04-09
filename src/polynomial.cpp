@@ -367,8 +367,8 @@ namespace algebra {
             return Tr * transform(ai) * Ts;
         }
         
-        // return [a0, a1, ..., ak] = A/B
-        static transform fraction(poly A, poly B) {
+        // return a transform that reduces A / B to gcd(A, B) / 0
+        static transform full_gcd(poly A, poly B) {
             transform res = {T(1), T(0), T(0), T(1)};
             while(!B.is_zero()) {
                 auto Tr = 2 * B.deg() > A.deg() ? half_gcd(A, B) : transform(A / B);
@@ -380,7 +380,7 @@ namespace algebra {
         
         static poly gcd(poly A, poly B) {
             if(A.deg() < B.deg()) {
-                return gcd(B, A);
+                return full_gcd(B, A);
             }
             auto Tr = fraction(A, B);
             return Tr.d * A - Tr.b * B;
@@ -427,7 +427,7 @@ namespace algebra {
                 return inv_mod_slow(t);
             }
             auto A = t, B = *this % t;
-            auto Tr = fraction(A, B);
+            auto Tr = full_gcd(A, B);
             auto g = Tr.d * A - Tr.b * B;
             if(g.deg() != 0) {
                 return nullopt;

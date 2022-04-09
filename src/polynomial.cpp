@@ -425,7 +425,7 @@ namespace algebra {
             }
         }
         
-        optional<poly> inv_mod(poly const &t) {
+        optional<poly> inv_mod(poly const &t) const {
             assert(!t.is_zero());
             if(false && min(deg(), t.deg()) < magic) {
                 return inv_mod_slow(t);

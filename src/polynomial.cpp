@@ -12,6 +12,10 @@
 - N = 100'000:
 -- Multipoint evaluation, 2470ms (https://judge.yosupo.jp/submission/75126)
 -- Polynomial interpolation, 2922ms (https://judge.yosupo.jp/submission/75127)
+- N = 50'000:
+-- Inv of Polynomials, 2400ms (https://judge.yosupo.jp/submission/85478)
+- N = 10'000:
+-- Find Linear Recurrence, 346ms (https://judge.yosupo.jp/submission/85025)
 /////////
 
 The main goal of this library is to implement common polynomial functionality in a

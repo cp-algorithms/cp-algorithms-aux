@@ -327,6 +327,65 @@ namespace algebra {
             return {D, *this - D * b};
         }
         
+        // (ax+b) / (cx+d)
+        struct transform {
+            poly a, b, c, d;
+            transform(poly a, poly b = T(1), poly c = T(1), poly d = T(0)): a(a), b(b), c(c), d(d){}
+            
+            transform operator *(transform const& t) {
+                return {
+                    a*t.a + b*t.c, a*t.b + b*t.d,
+                    c*t.a + d*t.c, c*t.b + d*t.d
+                };
+            }
+            
+            transform adj() {
+                return transform(d, -b, -c, a);
+            }
+            
+            auto apply(poly A, poly B) {
+                return make_pair(a * A + b * B, c * A + d * B);
+            }
+        };
+        
+        // finds a transform that reduces deg A by at least x2
+        static transform half_gcd(poly A, poly B) {
+            assert(A.deg() >= B.deg());
+            int m = (A.deg() + 1) / 2;
+            if(B.deg() < m) {
+                return {T(1), T(0), T(0), T(1)};
+            }
+            auto Tr = half_gcd(A.div_xk(m), B.div_xk(m));
+            tie(A, B) = Tr.adj().apply(A, B);
+            if(B.deg() < m) {
+                return Tr;
+            }
+            auto [ai, R] = A.divmod(B);
+            tie(A, B) = make_pair(B, R);
+            int k = 2 * m - B.deg();
+            auto Ts = half_gcd(A.div_xk(k), B.div_xk(k));
+            return Tr * transform(ai) * Ts;
+        }
+        
+        // return [a0, a1, ..., ak] = A/B
+        static transform fraction(poly A, poly B) {
+            transform res = {T(1), T(0), T(0), T(1)};
+            while(!B.is_zero()) {
+                auto Tr = 2 * B.deg() > A.deg() ? half_gcd(A, B) : transform(A / B);
+                tie(A, B) = Tr.adj().apply(A, B);
+                res = res * Tr;
+            }
+            return res;
+        }
+        
+        static poly gcd(poly A, poly B) {
+            if(A.deg() < B.deg()) {
+                return gcd(B, A);
+            }
+            auto Tr = fraction(A, B);
+            return Tr.d * A - Tr.b * B;
+        }
+        
         // Returns the characteristic polynomial
         // of the minimum linear recurrence for the sequence
         poly min_rec(int d = deg()) const {
@@ -345,7 +404,7 @@ namespace algebra {
         
         // calculate inv to *this modulo t
         // quadratic complexity
-        optional<poly> inv_mod(poly const& t) const {
+        optional<poly> inv_mod_slow(poly const& t) const {
             auto R1 = *this, R2 = t;
             auto Q1 = poly(T(1)), Q2 = poly(T(0));
             int k = 0;
@@ -361,6 +420,20 @@ namespace algebra {
                 return (k ? -Q1 : Q1) / R1[0];
             }
         }
+        
+        optional<poly> inv_mod(poly const &t) {
+            assert(!t.is_zero());
+            if(false && min(deg(), t.deg()) < magic) {
+                return inv_mod_slow(t);
+            }
+            auto A = t, B = *this % t;
+            auto Tr = fraction(A, B);
+            auto g = Tr.d * A - Tr.b * B;
+            if(g.deg() != 0) {
+                return nullopt;
+            }
+            return -Tr.b / g[0];
+        };
         
         poly operator / (const poly &t) const {return divmod(t).first;}
         poly operator % (const poly &t) const {return divmod(t).second;}

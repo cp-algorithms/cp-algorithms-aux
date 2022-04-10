@@ -867,6 +867,7 @@ namespace algebra {
             return (expx(deg() + 1).mulx(a).reverse() * invborel()).div_xk(deg()).borel();
         }
         
+        // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
         pair<poly, poly> bisect() const {
             vector<T> res[2];
             res[0].reserve(deg() / 2 + 1);
@@ -877,6 +878,7 @@ namespace algebra {
             return {res[0], res[1]};
         }
         
+        // Find [x^k] P / Q
         static T kth_rec(poly P, poly Q, int64_t k) {
             while(k > Q.deg()) {
                 auto [T0, T1] = (P * Q.mulx(-1)).bisect();

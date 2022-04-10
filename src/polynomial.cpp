@@ -12,6 +12,7 @@
 - N = 100'000:
 -- Multipoint evaluation, 2470ms (https://judge.yosupo.jp/submission/75126)
 -- Polynomial interpolation, 2922ms (https://judge.yosupo.jp/submission/75127)
+-- Kth term of Linear Recurrence, 5469ms (https://judge.yosupo.jp/submission/85582)
 - N = 50'000:
 -- Inv of Polynomials, 1752ms (https://judge.yosupo.jp/submission/85478)
 - N = 10'000:
@@ -36,7 +37,7 @@ squeeze polynomial-op solution when it is probably not the intended one.
 using namespace std;
 
 namespace algebra {
-    const int maxn = 1 << 21;
+    const int maxn = 1 << 20;
     const int magic = 250; // threshold for sizes to run the naive algo
     mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
 
@@ -190,13 +191,21 @@ namespace algebra {
             }
             a.resize(n);
             b.resize(n);
-            static point A[maxn], B[maxn];
-            static point C[maxn], D[maxn];
+            static point *A = new point[maxn], *B = new point[maxn];
+            static point *C = new point[maxn], *D = new point[maxn];
             for(size_t i = 0; i < n; i++) {
                 A[i] = point(a[i].rem() % split, a[i].rem() / split);
                 B[i] = point(b[i].rem() % split, b[i].rem() / split);
             }
-            fft(A, C, n); fft(B, D, n);
+            fft(A, C, n); 
+            if(a == b) {
+                // a bit faster squares
+                for(size_t i = 0; i < n; i++) {
+                    D[i] = C[i];
+                }
+            } else {
+                fft(B, D, n);
+            }
             for(size_t i = 0; i < n; i++) {
                 A[i] = C[i] * (D[i] + conj(D[(n - i) % n]));
                 B[i] = C[i] * (D[i] - conj(D[(n - i) % n]));
@@ -318,6 +327,19 @@ namespace algebra {
             return {res, A};
         }
         
+        pair<poly, poly> divmod_hint(poly const& b, poly const& binv) const { // when inverse is known
+            assert(!b.is_zero());
+            if(deg() < b.deg()) {
+                return {poly{0}, *this};
+            }
+            int d = deg() - b.deg();
+            if(min(d, b.deg()) < magic) {
+                return divmod_slow(b);
+            }
+            poly D = (reverse().mod_xk(d + 1) * binv.mod_xk(d + 1)).mod_xk(d + 1).reverse(d + 1);
+            return {D, *this - D * b};
+        }
+        
         pair<poly, poly> divmod(const poly &b) const { // returns quotiend and remainder of a mod b
             assert(!b.is_zero());
             if(deg() < b.deg()) {
@@ -352,35 +374,48 @@ namespace algebra {
             }
         };
         
+        template<typename Q>
+        static void concat(vector<Q> &a, vector<Q> const& b) {
+            for(auto it: b) {
+                a.push_back(it);
+            }
+        }
+        
         // finds a transform that changes A/B to A'/B' such that
         // deg B' is at least 2 times less than deg A
-        static transform half_gcd(poly A, poly B) {
+        static pair<vector<poly>, transform> half_gcd(poly A, poly B) {
             assert(A.deg() >= B.deg());
             int m = (A.deg() + 1) / 2;
             if(B.deg() < m) {
-                return {T(1), T(0), T(0), T(1)};
+                return {{}, {T(1), T(0), T(0), T(1)}};
             }
-            auto Tr = half_gcd(A.div_xk(m), B.div_xk(m));
+            auto [ar, Tr] = half_gcd(A.div_xk(m), B.div_xk(m));
             tie(A, B) = Tr.adj().apply(A, B);
             if(B.deg() < m) {
-                return Tr;
+                return {ar, Tr};
             }
             auto [ai, R] = A.divmod(B);
             tie(A, B) = make_pair(B, R);
             int k = 2 * m - B.deg();
-            auto Ts = half_gcd(A.div_xk(k), B.div_xk(k));
-            return Tr * transform(ai) * Ts;
+            auto [as, Ts] = half_gcd(A.div_xk(k), B.div_xk(k));
+            concat(ar, {ai});
+            concat(ar, as);
+            return {ar, Tr * transform(ai) * Ts};
         }
         
         // return a transform that reduces A / B to gcd(A, B) / 0
-        static transform full_gcd(poly A, poly B) {
+        static pair<vector<poly>, transform> full_gcd(poly A, poly B) {
+            vector<poly> ak;
             vector<transform> trs;
             while(!B.is_zero()) {
                 if(2 * B.deg() > A.deg()) {
-                    trs.push_back(half_gcd(A, B));
+                    auto [a, Tr] = half_gcd(A, B);
+                    concat(ak, a);
+                    trs.push_back(Tr);
                     tie(A, B) = trs.back().adj().apply(A, B);
                 } else {
                     auto [a, R] = A.divmod(B);
+                    ak.push_back(a);
                     trs.emplace_back(a);
                     tie(A, B) = make_pair(B, R);
                 }
@@ -390,7 +425,7 @@ namespace algebra {
                 trs[trs.size() - 2] = trs[trs.size() - 2] * trs[trs.size() - 1];
                 trs.pop_back();
             }
-            return trs.back();
+            return {ak, trs.back()};
         }
         
         static poly gcd(poly A, poly B) {
@@ -442,7 +477,7 @@ namespace algebra {
                 return inv_mod_slow(t);
             }
             auto A = t, B = *this % t;
-            auto Tr = full_gcd(A, B);
+            auto [a, Tr] = full_gcd(A, B);
             auto g = Tr.d * A - Tr.b * B;
             if(g.deg() != 0) {
                 return nullopt;
@@ -580,6 +615,25 @@ namespace algebra {
             }
         }
         
+        // Do not compute inverse from scratch
+        poly powmod_hint(int64_t k, poly const& md, poly const& mdinv) {
+            if(k == 0) {
+                return poly(1);
+            } else {
+                auto t = powmod_hint(k / 2, md, mdinv);
+                t = (t * t).divmod_hint(md, mdinv).second;
+                if(k % 2) {
+                    t = (t * *this).divmod_hint(md, mdinv).second;
+                }
+                return t;
+            }
+        }
+        
+        poly powmod(int64_t k, poly const& md) {
+            auto mdinv = md.reverse().inv(md.deg() + 1);
+            return powmod_hint(k, md, mdinv);
+        }
+        
         // O(d * n) with the derivative trick from
         // https://codeforces.com/blog/entry/73947?#comment-581173
         poly pow_dn(int64_t k, size_t n) {
@@ -640,7 +694,7 @@ namespace algebra {
             return nullopt;
         }
         
-        poly mulx(T a) { // component-wise multiplication with a^k
+        poly mulx(T a) const { // component-wise multiplication with a^k
             T cur = 1;
             poly res(*this);
             for(int i = 0; i <= deg(); i++) {
@@ -650,7 +704,7 @@ namespace algebra {
             return res;
         }
         
-        poly mulx_sq(T a) { // component-wise multiplication with a^{k^2}
+        poly mulx_sq(T a) const { // component-wise multiplication with a^{k^2}
             T cur = a;
             T total = 1;
             T aa = a * a;
@@ -663,7 +717,7 @@ namespace algebra {
             return res;
         }
         
-        vector<T> chirpz_even(T z, int n) { // P(1), P(z^2), P(z^4), ..., P(z^2(n-1))
+        vector<T> chirpz_even(T z, int n) const { // P(1), P(z^2), P(z^4), ..., P(z^2(n-1))
             int m = deg();
             if(is_zero()) {
                 return vector<T>(n, 0);
@@ -687,7 +741,7 @@ namespace algebra {
             return res;
         }
         
-        vector<T> chirpz(T z, int n) { // P(1), P(z), P(z^2), ..., P(z^(n-1))
+        vector<T> chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
             auto even = chirpz_even(z, (n + 1) / 2);
             auto odd = mulx(z).chirpz_even(z, n / 2);
             vector<T> ans(n);
@@ -811,6 +865,31 @@ namespace algebra {
         
         poly shift(T a) const { // P(x + a)
             return (expx(deg() + 1).mulx(a).reverse() * invborel()).div_xk(deg()).borel();
+        }
+        
+        pair<poly, poly> bisect() const {
+            vector<T> res[2];
+            res[0].reserve(deg() / 2 + 1);
+            res[1].reserve(deg() / 2 + 1);
+            for(int i = 0; i <= deg(); i++) {
+                res[i % 2].push_back(a[i]);
+            }
+            return {res[0], res[1]};
+        }
+        
+        static T kth_rec(poly P, poly Q, int64_t k) {
+            while(k > Q.deg()) {
+                auto [T0, T1] = (P * Q.mulx(-1)).bisect();
+                auto [TT, R] = (Q * Q.mulx(-1)).bisect();
+                if(k % 2) {
+                    P = T1;
+                } else {
+                    P = T0;
+                }
+                Q = TT;
+                k /= 2;
+            }
+            return (P * Q.inv(Q.deg() + 1))[k];
         }
     };
     

@@ -12,7 +12,7 @@
 - N = 100'000:
 -- Multipoint evaluation, 2161ms (https://judge.yosupo.jp/submission/85709)
 -- Polynomial interpolation, 2551ms (https://judge.yosupo.jp/submission/85711)
--- Kth term of Linear Recurrence, 4494ms (https://judge.yosupo.jp/submission/85712)
+-- Kth term of Linear Recurrence, 2913ms (https://judge.yosupo.jp/submission/85727)
 - N = 50'000:
 -- Inv of Polynomials, 1691ms (https://judge.yosupo.jp/submission/85713)
 - N = 10'000:
@@ -913,14 +913,23 @@ namespace algebra {
         // Find [x^k] P / Q
         static T kth_rec(poly P, poly Q, int64_t k) {
             while(k > Q.deg()) {
-                auto [T0, T1] = (P * Q.mulx(-1)).bisect();
-                auto [TT, R] = (Q * Q.mulx(-1)).bisect();
+                int n = Q.a.size();
+                auto [Q0, Q1] = Q.mulx(-1).bisect();
+                auto [P0, P1] = P.bisect();
+                
+                int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
+                
+                auto Q0f = fft::dft(Q0.a, N);
+                auto Q1f = fft::dft(Q1.a, N);
+                auto P0f = fft::dft(P0.a, N);
+                auto P1f = fft::dft(P1.a, N);
+                
                 if(k % 2) {
-                    P = T1;
+                    P = poly(Q0f * P1f) + poly(Q1f * P0f);
                 } else {
-                    P = T0;
+                    P = poly(Q0f * P0f) + poly(Q1f * P1f).mul_xk(1);
                 }
-                Q = TT;
+                Q = poly(Q0f * Q0f) - poly(Q1f * Q1f).mul_xk(1);
                 k /= 2;
             }
             return (P * Q.inv(Q.deg() + 1))[k];

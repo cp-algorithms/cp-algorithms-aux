@@ -1,20 +1,20 @@
 /* Verified on https://judge.yosupo.jp:
 - N = 500'000:
--- Convolution, 607ms (https://judge.yosupo.jp/submission/75115)
--- Convolution (mod 1e9+7), 606ms (https://judge.yosupo.jp/submission/75116)
--- Inv of power series, 976ms (https://judge.yosupo.jp/submission/75117)
--- Exp of power series, 3027ms (https://judge.yosupo.jp/submission/75118)
--- Log of power series, 1626ms (https://judge.yosupo.jp/submission/75119)
--- Pow of power series, 4138ms (https://judge.yosupo.jp/submission/75120)
--- Sqrt of power series, 2166ms (https://judge.yosupo.jp/submission/75121)
--- P(x) -> P(x+a), 756ms (https://judge.yosupo.jp/submission/75122)
--- Division of polynomials, 1140ms (https://judge.yosupo.jp/submission/75124)
+-- Convolution, 440ms (https://judge.yosupo.jp/submission/85695)
+-- Convolution (mod 1e9+7), 430ms (https://judge.yosupo.jp/submission/85696)
+-- Inv of power series, 713ms (https://judge.yosupo.jp/submission/85694)
+-- Exp of power series, 2157ms (https://judge.yosupo.jp/submission/85698)
+-- Log of power series, 1181ms (https://judge.yosupo.jp/submission/85699)
+-- Pow of power series, 3275ms (https://judge.yosupo.jp/submission/85703)
+-- Sqrt of power series, 1919ms (https://judge.yosupo.jp/submission/85705)
+-- P(x) -> P(x+a), 523ms (https://judge.yosupo.jp/submission/85706)
+-- Division of polynomials, 996ms (https://judge.yosupo.jp/submission/85707)
 - N = 100'000:
--- Multipoint evaluation, 2470ms (https://judge.yosupo.jp/submission/75126)
--- Polynomial interpolation, 2922ms (https://judge.yosupo.jp/submission/75127)
--- Kth term of Linear Recurrence, 5469ms (https://judge.yosupo.jp/submission/85582)
+-- Multipoint evaluation, 2161ms (https://judge.yosupo.jp/submission/85709)
+-- Polynomial interpolation, 2551ms (https://judge.yosupo.jp/submission/85711)
+-- Kth term of Linear Recurrence, 4494ms (https://judge.yosupo.jp/submission/85712)
 - N = 50'000:
--- Inv of Polynomials, 1752ms (https://judge.yosupo.jp/submission/85478)
+-- Inv of Polynomials, 1691ms (https://judge.yosupo.jp/submission/85713)
 - N = 10'000:
 -- Find Linear Recurrence, 346ms (https://judge.yosupo.jp/submission/85025)
 /////////
@@ -47,7 +47,7 @@ namespace algebra {
             return T(1);
         } else {
             auto t = bpow(x, n / 2);
-            t *= t;
+            t = t * t;
             return n % 2 ? x * t : t;
         }
     }
@@ -202,12 +202,17 @@ namespace algebra {
                         a[i].rem() / split
                     );
                 }
-                fft(A, n);
+                if(n) {
+                    fft(A, n);
+                }
             }
         
             auto operator * (dft const& B) {
                 assert(A.size() == B.A.size());
                 size_t n = A.size();
+                if(!n) {
+                    return vector<modular<m>>();
+                }
                 vector<point> C(n), D(n);
                 for(size_t i = 0; i < n; i++) {
                     C[i] = A[i] * (B[i] + conj(B[(n - i) % n]));

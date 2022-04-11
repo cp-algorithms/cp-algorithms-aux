@@ -91,8 +91,8 @@ namespace algebra {
         }
         
         int64_t r;
-        modular() : r(0) {}
-        modular(int64_t rr) : r(rr) {if(abs(r) >= m) r %= m; if(r < 0) r += m;}
+        constexpr modular(): r(0) {}
+        constexpr modular(int64_t rr): r(rr) {if(r >= m || r <= -m) r %= m; if(r < 0) r += m;}
         modular inv() const {return bpow(*this, m - 2);}
         modular operator - () const {return r ? m - r : 0;}
         modular operator * (const modular &t) const {return r * t.r % m;}
@@ -132,31 +132,44 @@ namespace algebra {
         typedef double ftype;
         typedef complex<ftype> point;
 
-        point w[maxn];
+        point w[maxn]; // w[2^n + k] = exp(pi * k / (2^n))
+        int bitr[maxn];// b[2^n + k] = bitreverse(k)
         const ftype pi = acos(-1);
         bool initiated = 0;
         void init() {
             if(!initiated) {
                 for(int i = 1; i < maxn; i *= 2) {
+                    int ti = i / 2;
                     for(int j = 0; j < i; j++) {
                         w[i + j] = polar(ftype(1), pi * j / i);
+                        if(ti) {
+                            bitr[i + j] = 2 * bitr[ti + j % ti] + (j >= ti);
+                        }
                     }
                 }
                 initiated = 1;
             }
         }
         
-        void fft(auto *in, point *out, int n, int k = 1) {
+        void fft(auto &a, int n) {
+            init();
             if(n == 1) {
-                *out = *in;
-            } else {
-                n /= 2;
-                fft(in, out, n, 2 * k);
-                fft(in + k, out + n, n, 2 * k);
-                for(int i = 0; i < n; i++) {
-                    auto t = out[i + n] * w[i + n];
-                    out[i + n] = out[i] - t;
-                    out[i] += t;
+                return;
+            }
+            int hn = n / 2;
+            for(int i = 0; i < n; i++) {
+                int ti = 2 * bitr[hn + i % hn] + (i > hn);
+                if(i < ti) {
+                    swap(a[i], a[ti]);
+                }
+            }
+            for(int i = 1; i < n; i *= 2) {
+                for(int j = 0; j < n; j += 2 * i) {
+                    for(int k = j; k < j + i; k++) {
+                        point t = a[k + i] * w[i + k - j];
+                        a[k + i] = a[k] - t;
+                        a[k] += t;
+                    }
                 }
             }
         }
@@ -177,49 +190,67 @@ namespace algebra {
             }
         }
         
-        template<typename T>
-        void mul(vector<T> &a, vector<T> b) {
+        template<int m>
+        struct dft {
+            static constexpr modular<m> split = 1 << 15;
+            vector<point> A;
+            
+            dft(vector<modular<m>> const& a, size_t n): A(n) {
+                for(size_t i = 0; i < min(n, a.size()); i++) {
+                    A[i] = point(
+                        a[i].rem() % split,
+                        a[i].rem() / split
+                    );
+                }
+                fft(A, n);
+            }
+        
+            auto operator * (dft const& B) {
+                assert(A.size() == B.A.size());
+                size_t n = A.size();
+                vector<point> C(n), D(n);
+                for(size_t i = 0; i < n; i++) {
+                    C[i] = A[i] * (B[i] + conj(B[(n - i) % n]));
+                    D[i] = A[i] * (B[i] - conj(B[(n - i) % n]));
+                }
+                fft(C, n);
+                fft(D, n);
+                reverse(begin(C) + 1, end(C));
+                reverse(begin(D) + 1, end(D));
+                int t = 2 * n;
+                vector<modular<m>> res(n);
+                for(size_t i = 0; i < n; i++) {
+                    modular<m> A0 = llround(real(C[i]) / t);
+                    modular<m> A1 = llround(imag(C[i]) / t + imag(D[i]) / t);
+                    modular<m> A2 = llround(real(D[i]) / t);
+                    res[i] = A0 + A1 * split - A2 * split * split;
+                }
+                return res;
+            }
+            
+            point& operator [](int i) {return A[i];}
+            point operator [](int i) const {return A[i];}
+        };
+        
+        size_t com_size(size_t as, size_t bs) {
+            if(!as || !bs) {
+                return 0;
+            }
+            size_t n = as + bs - 1;
+            while(__builtin_popcount(n) != 1) {
+                n++;
+            }
+            return n;
+        }
+        
+        template<int m>
+        void mul(vector<modular<m>> &a, vector<modular<m>> b) {
             if(min(a.size(), b.size()) < magic) {
                 mul_slow(a, b);
                 return;
             }
-            init();
-            static const T split = 1 << 15;
-            size_t n = a.size() + b.size() - 1;
-            while(__builtin_popcount(n) != 1) {
-                n++;
-            }
-            a.resize(n);
-            b.resize(n);
-            static point *A = new point[maxn], *B = new point[maxn];
-            static point *C = new point[maxn], *D = new point[maxn];
-            for(size_t i = 0; i < n; i++) {
-                A[i] = point(a[i].rem() % split, a[i].rem() / split);
-                B[i] = point(b[i].rem() % split, b[i].rem() / split);
-            }
-            fft(A, C, n); 
-            if(a == b) {
-                // a bit faster squares
-                for(size_t i = 0; i < n; i++) {
-                    D[i] = C[i];
-                }
-            } else {
-                fft(B, D, n);
-            }
-            for(size_t i = 0; i < n; i++) {
-                A[i] = C[i] * (D[i] + conj(D[(n - i) % n]));
-                B[i] = C[i] * (D[i] - conj(D[(n - i) % n]));
-            }
-            fft(A, C, n); fft(B, D, n);
-            reverse(C + 1, C + n);
-            reverse(D + 1, D + n);
-            int t = 2 * n;
-            for(size_t i = 0; i < n; i++) {
-                T A0 = llround(real(C[i]) / t);
-                T A1 = llround(imag(C[i]) / t + imag(D[i]) / t);
-                T A2 = llround(real(D[i]) / t);
-                a[i] = A0 + A1 * split - A2 * split * split;
-            }
+            auto n = com_size(a.size(), b.size());
+            a = dft<m>(a, n) * dft<m>(b, n);
         }
     }
 
@@ -284,18 +315,6 @@ namespace algebra {
                 begin(a) + min(l, a.size()),
                 begin(a) + min(r, a.size())
             );
-        }
-        
-        poly inv(size_t n) const { // get inverse series mod x^n
-            assert((*this)[0] != T(0));
-            poly ans = T(1) / a[0];
-            size_t a = 1;
-            while(a < n) {
-                poly C = (ans * mod_xk(2 * a)).substr(a, 2 * a);
-                ans -= (ans * C).mod_xk(a).mul_xk(a);
-                a *= 2;
-            }
-            return ans.mod_xk(n);
         }
         
         poly operator *= (const poly &t) {fft::mul(a, t.a); normalize(); return *this;}
@@ -438,7 +457,7 @@ namespace algebra {
         
         // Returns the characteristic polynomial
         // of the minimum linear recurrence for the sequence
-        poly min_rec(int d = deg()) const {
+        poly min_rec(int d) const {
             auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);
             auto Q1 = poly(T(1)), Q2 = poly(T(0));
             while(!R2.is_zero()) {
@@ -867,6 +886,14 @@ namespace algebra {
             return (expx(deg() + 1).mulx(a).reverse() * invborel()).div_xk(deg()).borel();
         }
         
+        poly x2() { // P(x) -> P(x^2)
+            vector<T> res(2 * a.size());
+            for(size_t i = 0; i < a.size(); i++) {
+                res[2 * i] = a[i];
+            }
+            return res;
+        }
+        
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
         pair<poly, poly> bisect() const {
             vector<T> res[2];
@@ -892,6 +919,28 @@ namespace algebra {
                 k /= 2;
             }
             return (P * Q.inv(Q.deg() + 1))[k];
+        }
+        
+        poly inv(int n) const { // get inverse series mod x^n
+            auto Q = mod_xk(n);
+            if(n == 1) {
+                return Q[0].inv();
+            }
+            // Q(-x) = P0(x^2) + xP1(x^2)
+            auto [P0, P1] = Q.mulx(-1).bisect();
+            
+            int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
+            
+            auto P0f = fft::dft(P0.a, N);
+            auto P1f = fft::dft(P1.a, N);
+            
+            auto TTf = fft::dft(( // Q(x)*Q(-x) = Q0(x^2)^2 - x^2 Q1(x^2)^2
+                poly(P0f * P0f) - poly(P1f * P1f).mul_xk(1)
+            ).inv((n + 1) / 2).a, N);
+            
+            return (
+                poly(P0f * TTf).x2() + poly(P1f * TTf).x2().mul_xk(1)
+            ).mod_xk(n);
         }
     };
     

@@ -29,7 +29,7 @@ optimizations that may significantly harm the code readability were not used.
 The library is reasonably fast and generally can be used in most problems where
 polynomial operations constitute intended solution. However, it is recommended to
 seek out other implementations when the time limit is tight or you really want to
-squeeze polynomial-op solution when it is probably not the intended one.
+squeeze a solution when it is probably not the intended one.
 */
 
 #include <bits/stdc++.h>

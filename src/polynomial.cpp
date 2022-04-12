@@ -54,7 +54,6 @@ namespace algebra {
 
     template<int m>
     struct modular {
-        
         // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
         // solves x^2 = y (mod m) assuming m is prime in O(log m).
         // returns nullopt if no sol.
@@ -90,12 +89,12 @@ namespace algebra {
             }
         }
         
-        int64_t r;
+        int r;
         constexpr modular(): r(0) {}
-        constexpr modular(int64_t rr): r(rr) {if(r >= m || r <= -m) r %= m; if(r < 0) r += m;}
+        constexpr modular(int64_t rr): r(rr % m) {if(r < 0) r += m;}
         modular inv() const {return bpow(*this, m - 2);}
         modular operator - () const {return r ? m - r : 0;}
-        modular operator * (const modular &t) const {return r * t.r % m;}
+        modular operator * (const modular &t) const {return (int64_t)r * t.r % m;}
         modular operator / (const modular &t) const {return *this * t.inv();}
         modular operator += (const modular &t) {r += t.r; if(r >= m) r -= m; return *this;}
         modular operator -= (const modular &t) {r -= t.r; if(r < 0) r += m; return *this;}
@@ -129,8 +128,29 @@ namespace algebra {
     }
 
     namespace fft {
-        typedef double ftype;
-        typedef complex<ftype> point;
+        using ftype = double;
+        struct point {
+            ftype x, y;
+            
+            ftype real() {return x;}
+            ftype imag() {return y;}
+            
+            point(): x(0), y(0){}
+            point(ftype x, ftype y = 0): x(x), y(y){}
+            
+            static point polar(ftype rho, ftype ang) {
+                return point{rho * cos(ang), rho * sin(ang)};
+            }
+            
+            point conj() const {
+                return {x, -y};
+            }
+            
+            point operator +=(const point &t) {x += t.x, y += t.y; return *this;}
+            point operator +(const point &t) const {return point(*this) += t;}
+            point operator -(const point &t) const {return {x - t.x, y - t.y};}
+            point operator *(const point &t) const {return {x * t.x - y * t.y, x * t.y + y * t.x};}
+        };
 
         point w[maxn]; // w[2^n + k] = exp(pi * k / (2^n))
         int bitr[maxn];// b[2^n + k] = bitreverse(k)
@@ -141,7 +161,7 @@ namespace algebra {
                 for(int i = 1; i < maxn; i *= 2) {
                     int ti = i / 2;
                     for(int j = 0; j < i; j++) {
-                        w[i + j] = polar(ftype(1), pi * j / i);
+                        w[i + j] = point::polar(ftype(1), pi * j / i);
                         if(ti) {
                             bitr[i + j] = 2 * bitr[ti + j % ti] + (j >= ti);
                         }
@@ -215,8 +235,8 @@ namespace algebra {
                 }
                 vector<point> C(n), D(n);
                 for(size_t i = 0; i < n; i++) {
-                    C[i] = A[i] * (B[i] + conj(B[(n - i) % n]));
-                    D[i] = A[i] * (B[i] - conj(B[(n - i) % n]));
+                    C[i] = A[i] * (B[i] + B[(n - i) % n].conj());
+                    D[i] = A[i] * (B[i] - B[(n - i) % n].conj());
                 }
                 fft(C, n);
                 fft(D, n);
@@ -225,9 +245,9 @@ namespace algebra {
                 int t = 2 * n;
                 vector<modular<m>> res(n);
                 for(size_t i = 0; i < n; i++) {
-                    modular<m> A0 = llround(real(C[i]) / t);
-                    modular<m> A1 = llround(imag(C[i]) / t + imag(D[i]) / t);
-                    modular<m> A2 = llround(real(D[i]) / t);
+                    modular<m> A0 = llround(C[i].real() / t);
+                    modular<m> A1 = llround(C[i].imag() / t + D[i].imag() / t);
+                    modular<m> A2 = llround(D[i].real() / t);
                     res[i] = A0 + A1 * split - A2 * split * split;
                 }
                 return res;
@@ -975,13 +995,7 @@ void solve() {
     vector<base> a(n), b(m);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     copy_n(istream_iterator<base>(cin), m, begin(b));
-    auto res = polyn(a).inv_mod(polyn(b));
-    if(res) {
-        cout << res->deg() + 1 << endl;
-        res->print();
-    } else {
-        cout << -1 << endl;
-    }    
+    (polyn(a) * polyn(b)).print(n + m - 1);
 }
 
 signed main() {

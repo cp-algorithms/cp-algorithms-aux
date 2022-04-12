@@ -482,7 +482,7 @@ namespace algebra {
         
         // Returns the characteristic polynomial
         // of the minimum linear recurrence for the sequence
-        poly min_rec(int d) const {
+        poly min_rec_slow(int d) const {
             auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);
             auto Q1 = poly(T(1)), Q2 = poly(T(0));
             while(!R2.is_zero()) {
@@ -494,6 +494,48 @@ namespace algebra {
                 }
             }
             assert(0);
+        }
+        
+        static transform convergent(auto L, auto R) { // computes product on [L, R)
+            if(R - L == 1) {
+                return transform(*L);
+            } else {
+                int s = 0;
+                for(int i = 0; i < R - L; i++) {
+                    s += L[i].a.size();
+                }
+                int c = 0;
+                for(int i = 0; i < R - L; i++) {
+                    c += L[i].a.size();
+                    if(2 * c > s) {
+                        return convergent(L, L + i) * convergent(L + i, R);
+                    }
+                }
+                assert(0);
+            }
+        }
+        
+        poly min_rec(int d) const {
+            if(d < magic) {
+                return min_rec_slow(d);
+            }
+            auto R2 = mod_xk(d + 1).reverse(d + 1), R1 = xk(d + 1);
+            if(R2.is_zero()) {
+                return poly(1);
+            }
+            auto [a, Tr] = full_gcd(R1, R2);
+            int dr = (d + 1) - a[0].deg();
+            int dp = 0;
+            for(size_t i = 0; i + 1 < a.size(); i++) {
+                dr -= a[i + 1].deg();
+                dp += a[i].deg();
+                if(dr < dp) {
+                    auto ans = convergent(begin(a), begin(a) + i + 1);
+                    return ans.a / ans.a.lead();
+                }
+            }
+            auto ans = convergent(begin(a), end(a));
+            return ans.a / ans.a.lead();
         }
         
         // calculate inv to *this modulo t
@@ -845,15 +887,6 @@ namespace algebra {
                 auto mul = bpow(b.lead(), pw) * T((b.deg() & a.deg() & 1) ? -1 : 1);
                 auto ans = resultant(b, a);
                 return ans * mul;
-            }
-        }
-        
-        static poly kmul(auto L, auto R) { // computes (x-a1)(x-a2)...(x-an) without building tree
-            if(R - L == 1) {
-                return vector<T>{-*L, 1};
-            } else {
-                auto M = L + (R - L) / 2;
-                return kmul(L, M) * kmul(M, R);
             }
         }
         

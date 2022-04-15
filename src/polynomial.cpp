@@ -39,7 +39,7 @@ using namespace std;
 namespace algebra {
     const int maxn = 1 << 20;
     const int magic = 250; // threshold for sizes to run the naive algo
-    mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
+    mt19937 rng(0);//chrono::steady_clock::now().time_since_epoch().count()); 
 
     template<typename T>
     T bpow(T x, size_t n) {
@@ -106,13 +106,18 @@ namespace algebra {
         bool operator == (const modular &t) const {return r == t.r;}
         bool operator != (const modular &t) const {return r != t.r;}
         
-        operator int() const {return r;}
+        explicit operator int() const {return r;}
         int64_t rem() const {return 2 * r > m ? r - m : r;}
     };
     
     template<int T>
     istream& operator >> (istream &in, modular<T> &x) {
         return in >> x.r;
+    }
+    
+    template<int T>
+    ostream& operator << (ostream &out, modular<T> const& x) {
+        return out << x.r;
     }
     
     template<typename T>
@@ -203,7 +208,7 @@ namespace algebra {
                 a.resize(n + m - 1);
                 for(int k = n + m - 2; k >= 0; k--) {
                     a[k] *= b[0];
-                    for(int j = max(k - n + 1, 1); j < min(k + 1, m); j++) {
+                    for(int j = max<int>(k - n + 1, 1); j < min(k + 1, m); j++) {
                         a[k] += a[k - j] * b[j];
                     }
                 }
@@ -212,7 +217,7 @@ namespace algebra {
         
         template<int m>
         struct dft {
-            static constexpr modular<m> split = 1 << 15;
+            static constexpr int split = 1 << 15;
             vector<point> A;
             
             dft(vector<modular<m>> const& a, size_t n): A(n) {
@@ -723,13 +728,14 @@ namespace algebra {
         // O(d * n) with the derivative trick from
         // https://codeforces.com/blog/entry/73947?#comment-581173
         poly pow_dn(int64_t k, size_t n) {
+            assert((*this)[0] != T(0));
             vector<T> Q(n);
             Q[0] = bpow(a[0], k);
             for(int i = 1; i < (int)n; i++) {
                 for(int j = 1; j <= min(deg(), i); j++) {
                     Q[i] += a[j] * Q[i - j] * (T(k) * T(j) - T(i - j));
                 }
-                Q[i] /= i * a[0];
+                Q[i] /= T(i) * a[0];
             }
             return Q;
         }

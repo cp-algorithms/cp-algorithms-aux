@@ -39,7 +39,7 @@ using namespace std;
 namespace algebra {
     const int maxn = 1 << 20;
     const int magic = 250; // threshold for sizes to run the naive algo
-    mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
+    mt19937 rng(0);//chrono::steady_clock::now().time_since_epoch().count()); 
 
     template<typename T>
     T bpow(T x, size_t n) {
@@ -123,13 +123,29 @@ namespace algebra {
     template<typename T>
     T fact(int n) {
         static T F[maxn];
-        return F[n] ? F[n] : F[n] = n ? fact<T>(n - 1) * T(n) : T(1);
+        static bool init = false;
+        if(!init) {
+            F[0] = T(1);
+            for(int i = 1; i < maxn; i++) {
+                F[i] = F[i - 1] * T(i);
+            }
+            init = true;
+        }
+        return F[n];
     }
     
     template<typename T>
     T rfact(int n) {
-        static T RF[maxn];
-        return RF[n] ? RF[n] : RF[n] = T(1) / fact<T>(n);
+        static T F[maxn];
+        static bool init = false;
+        if(!init) {
+            F[maxn - 1] = T(1) / fact<T>(maxn - 1);
+            for(int i = maxn - 2; i >= 0; i--) {
+                F[i] = F[i + 1] * T(i + 1);
+            }
+            init = true;
+        }
+        return F[n];
     }
 
     namespace fft {
@@ -208,7 +224,7 @@ namespace algebra {
                 a.resize(n + m - 1);
                 for(int k = n + m - 2; k >= 0; k--) {
                     a[k] *= b[0];
-                    for(int j = max(k - n + 1, 1); j < min(k + 1, m); j++) {
+                    for(int j = max<int>(k - n + 1, 1); j < min(k + 1, m); j++) {
                         a[k] += a[k - j] * b[j];
                     }
                 }
@@ -649,10 +665,13 @@ namespace algebra {
         bool operator == (const poly &t) const {return a == t.a;}
         bool operator != (const poly &t) const {return a != t.a;}
         
-        poly deriv() { // calculate derivative
-            vector<T> res(deg());
-            for(int i = 1; i <= deg(); i++) {
-                res[i - 1] = T(i) * a[i];
+        poly deriv(int k = 1) { // calculate derivative
+            if(deg() + 1 < k) {
+                return poly(T(0));
+            }
+            vector<T> res(deg() + 1 - k);
+            for(int i = k; i <= deg(); i++) {
+                res[i - k] = fact<T>(i) * rfact<T>(i - k) * a[i];
             }
             return res;
         }
@@ -728,6 +747,9 @@ namespace algebra {
         // O(d * n) with the derivative trick from
         // https://codeforces.com/blog/entry/73947?#comment-581173
         poly pow_dn(int64_t k, size_t n) {
+            if(n == 0) {
+                return poly(T(0));
+            }
             assert((*this)[0] != T(0));
             vector<T> Q(n);
             Q[0] = bpow(a[0], k);
@@ -744,11 +766,11 @@ namespace algebra {
         // might be quite slow due to high constant
         poly pow(int64_t k, size_t n) {
             if(is_zero()) {
-                return *this;
+                return k ? *this : poly(1);
             }
             int i = trailing_xk();
             if(i > 0) {
-                return i * k >= (int64_t)n ? poly(0) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
+                return i * k >= (int64_t)n ? poly(T(0)) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
             }
             if(min(deg(), (int)n) <= magic) {
                 return pow_dn(k, n);
@@ -1015,6 +1037,55 @@ namespace algebra {
                 poly(P0f * TTf).x2() + poly(P1f * TTf).x2().mul_xk(1)
             ).mod_xk(n);
         }
+        
+        // compute A(B(x)) mod x^n in O(sqrt(pqn log^3 n))
+        static poly compose(poly A, poly B, int n) {
+            if(B[0] != T(0)) {
+                return compose(A.shift(B[0]), B - B[0], n);
+            }
+            
+            int q = std::sqrt(n);
+            auto [B0, B1] = make_pair(B.mod_xk(q), B.div_xk(q));
+            
+            B0 = B0.div_xk(1);
+            vector<poly> pw(A.deg() + 1);
+            auto getpow = [&](int k) {
+                return pw[k].is_zero() ? pw[k] = B0.pow(k, n - k) : pw[k];
+            };
+            
+            function<poly(poly const&, int, int)> compose_dac = [&getpow, &compose_dac](poly const& f, int m, int N) {
+                if(f.deg() <= 0) {
+                    return f;
+                }
+                int k = m / 2;
+                auto [f0, f1] = make_pair(f.mod_xk(k), f.div_xk(k));
+                auto [A, B] = make_pair(compose_dac(f0, k, N), compose_dac(f1, m - k, N - k));
+                return (A + (B.mod_xk(N - k) * getpow(k).mod_xk(N - k)).mul_xk(k)).mod_xk(N);
+            };
+            
+            int r = n / q;
+            auto Ar = A.deriv(r);
+            auto AB0 = compose_dac(Ar, Ar.deg() + 1, n);
+            
+            auto Bd = B0.mul_xk(1).deriv();
+            
+            poly ans = T(0);
+            
+            vector<poly> B1p(r + 1);
+            B1p[0] = poly(T(1));
+            for(int i = 1; i <= r; i++) {
+                B1p[i] = (B1p[i - 1] * B1.mod_xk(n - i * q)).mod_xk(n - i * q);
+            }
+            while(r >= 0) {
+                ans += (AB0.mod_xk(n - r * q) * rfact<T>(r) * B1p[r]).mul_xk(r * q).mod_xk(n);
+                r--;
+                if(r >= 0) {
+                    AB0 = ((AB0 * Bd).integr() + A[r] * fact<T>(r)).mod_xk(n);
+                }
+            }
+            
+            return ans;
+        }
     };
     
     static auto operator * (const auto& a, const poly<auto>& b) {
@@ -1029,12 +1100,12 @@ typedef modular<mod> base;
 typedef poly<base> polyn;
 
 void solve() {
-    int n, m;
-    cin >> n >> m;
-    vector<base> a(n), b(m);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
-    copy_n(istream_iterator<base>(cin), m, begin(b));
-    (polyn(a) * polyn(b)).print(n + m - 1);
+    int n;
+    cin >> n;
+    vector<base> f(n), g(n);
+    copy_n(istream_iterator<base>(cin), n, begin(f));
+    copy_n(istream_iterator<base>(cin), n, begin(g));
+    polyn::compose(f, g, n).print(n);
 }
 
 signed main() {

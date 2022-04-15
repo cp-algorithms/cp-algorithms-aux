@@ -1070,7 +1070,7 @@ namespace algebra {
         // are much less than n
         static poly compose_large(poly A, poly B, int n) {
             if(B[0] != T(0)) {
-                return compose(A.shift(B[0]), B - B[0], n);
+                return compose_large(A.shift(B[0]), B - B[0], n);
             }
             
             int q = std::sqrt(n);

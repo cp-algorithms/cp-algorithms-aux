@@ -1043,8 +1043,32 @@ namespace algebra {
             ).mod_xk(n);
         }
         
-        // compute A(B(x)) mod x^n in O(sqrt(pqn log^3 n))
+        // compute A(B(x)) mod x^n in O(n^2)
         static poly compose(poly A, poly B, int n) {
+            int q = std::sqrt(n);
+            vector<poly> Bk(q);
+            auto Bq = B.pow(q, n);
+            Bk[0] = poly(T(1));
+            for(int i = 1; i < q; i++) {
+                Bk[i] = (Bk[i - 1] * B).mod_xk(n);
+            }
+            poly Bqk(1);
+            poly ans;
+            for(int i = 0; i <= n / q; i++) {
+                poly cur;
+                for(int j = 0; j < q; j++) {
+                    cur += Bk[j] * A[i * q + j];
+                }
+                ans += (Bqk * cur).mod_xk(n);
+                Bqk = (Bqk * Bq).mod_xk(n);
+            }
+            return ans;
+        }
+        
+        // compute A(B(x)) mod x^n in O(sqrt(pqn log^3 n))
+        // preferrable when p = deg A and q = deg B
+        // are much less than n
+        static poly compose_large(poly A, poly B, int n) {
             if(B[0] != T(0)) {
                 return compose(A.shift(B[0]), B - B[0], n);
             }

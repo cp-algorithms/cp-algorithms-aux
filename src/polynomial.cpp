@@ -39,7 +39,7 @@ using namespace std;
 namespace algebra {
     const int maxn = 1 << 20;
     const int magic = 250; // threshold for sizes to run the naive algo
-    mt19937 rng(0);//chrono::steady_clock::now().time_since_epoch().count()); 
+    mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
 
     template<typename T>
     T bpow(T x, size_t n) {
@@ -224,7 +224,7 @@ namespace algebra {
                 a.resize(n + m - 1);
                 for(int k = n + m - 2; k >= 0; k--) {
                     a[k] *= b[0];
-                    for(int j = max<int>(k - n + 1, 1); j < min(k + 1, m); j++) {
+                    for(int j = max(k - n + 1, 1); j < min(k + 1, m); j++) {
                         a[k] += a[k - j] * b[j];
                     }
                 }

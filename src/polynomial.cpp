@@ -296,7 +296,12 @@ namespace algebra {
                 return;
             }
             auto n = com_size(a.size(), b.size());
-            a = dft<m>(a, n) * dft<m>(b, n);
+            auto A = dft<m>(a, n);
+            if(a == b) {
+                a = A * A;
+            } else {
+                a = A * dft<m>(b, n);
+            }
         }
     }
 

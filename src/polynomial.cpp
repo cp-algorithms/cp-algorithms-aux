@@ -775,7 +775,7 @@ namespace algebra {
             }
             int i = trailing_xk();
             if(i > 0) {
-                return i * k >= (int64_t)n ? poly(T(0)) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
+                return k >= int64_t(n + i - 1) / i ? poly(T(0)) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
             }
             if(min(deg(), (int)n) <= magic) {
                 return pow_dn(k, n);

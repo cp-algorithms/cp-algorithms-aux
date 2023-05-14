@@ -34,15 +34,16 @@ squeeze a solution when it is probably not the intended one.
 
 #include <bits/stdc++.h>
 
+#define int int64_t
 using namespace std;
 
 namespace algebra {
-    const int maxn = 1 << 20;
+    const int maxn = 1 << 24;
     const int magic = 250; // threshold for sizes to run the naive algo
     mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
 
     template<typename T>
-    T bpow(T x, size_t n) {
+    T bpow(T x, int64_t n) {
         if(n == 0) {
             return T(1);
         } else {
@@ -92,7 +93,9 @@ namespace algebra {
         int r;
         constexpr modular(): r(0) {}
         constexpr modular(int64_t rr): r(rr % m) {if(r < 0) r += m;}
-        modular inv() const {return bpow(*this, m - 2);}
+        modular inv() const {
+            assert(r == 1);
+            return bpow(*this, m - 2);}
         modular operator - () const {return r ? m - r : 0;}
         modular operator * (const modular &t) const {return (int64_t)r * t.r % m;}
         modular operator / (const modular &t) const {return *this * t.inv();}
@@ -224,7 +227,7 @@ namespace algebra {
                 a.resize(n + m - 1);
                 for(int k = n + m - 2; k >= 0; k--) {
                     a[k] *= b[0];
-                    for(int j = max(k - n + 1, 1); j < min(k + 1, m); j++) {
+                    for(int j = max<int64_t>(k - n + 1, 1); j < min(k + 1, m); j++) {
                         a[k] += a[k - j] * b[j];
                     }
                 }
@@ -743,8 +746,47 @@ namespace algebra {
                 return t;
             }
         }
+
+        poly circular_closure(size_t m) const {
+            if(deg() == -1) {
+                return *this;
+            }
+            auto t = *this;
+            for(size_t i = t.deg(); i >= m; i--) {
+                t.a[i - m] += t.a[i];
+            }
+            t.a.resize(min(t.a.size(), m));
+            return t;
+        }
+
+        static poly mul_circular(poly const& a, poly const& b, size_t m) {
+            return (a.circular_closure(m) * b.circular_closure(m)).circular_closure(m);
+        }
+
+        poly powmod_circular(int64_t k, size_t m) {
+            if(k == 0) {
+                return poly(1);
+            } else {
+                auto t = powmod_circular(k / 2, m);
+                t = mul_circular(t, t, m);
+                if(k % 2) {
+                    t = mul_circular(t, *this, m);
+                }
+                return t;
+            }
+        }
         
         poly powmod(int64_t k, poly const& md) {
+            int d = md.deg();
+            if(d == -1) {
+                return k ? *this : poly(T(1));
+            }
+            if(md == xk(d)) {
+                return pow(k, d);
+            }
+            if(md == xk(d) - poly(T(1))) {
+                return powmod_circular(k, d);
+            }
             auto mdinv = md.reverse().inv(md.deg() + 1);
             return powmod_hint(k, md, mdinv);
         }

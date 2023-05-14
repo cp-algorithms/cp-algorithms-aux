@@ -34,7 +34,6 @@ squeeze a solution when it is probably not the intended one.
 
 #include <bits/stdc++.h>
 
-#define int int64_t
 using namespace std;
 
 namespace algebra {
@@ -93,9 +92,7 @@ namespace algebra {
         int r;
         constexpr modular(): r(0) {}
         constexpr modular(int64_t rr): r(rr % m) {if(r < 0) r += m;}
-        modular inv() const {
-            assert(r == 1);
-            return bpow(*this, m - 2);}
+        modular inv() const {return bpow(*this, m - 2);}
         modular operator - () const {return r ? m - r : 0;}
         modular operator * (const modular &t) const {return (int64_t)r * t.r % m;}
         modular operator / (const modular &t) const {return *this * t.inv();}
@@ -227,7 +224,7 @@ namespace algebra {
                 a.resize(n + m - 1);
                 for(int k = n + m - 2; k >= 0; k--) {
                     a[k] *= b[0];
-                    for(int j = max<int64_t>(k - n + 1, 1); j < min(k + 1, m); j++) {
+                    for(int j = max(k - n + 1, 1); j < min(k + 1, m); j++) {
                         a[k] += a[k - j] * b[j];
                     }
                 }

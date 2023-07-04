@@ -989,6 +989,18 @@ namespace algebra {
         static poly expx(size_t n) { // P(x) = e^x (mod x^n)
             return ones(n).borel();
         }
+
+        static poly log1px(size_t n) { // P(x) = log(1+x) (mod x^n)
+            vector<T> coeffs(n, 0);
+            for(size_t i = 1; i < n; i++) {
+                coeffs[i] = (i & 1 ? T(i).inv() : -T(i).inv());
+            }
+            return coeffs;
+        }
+
+        static poly log1mx(size_t n) { // P(x) = log(1-x) (mod x^n)
+            return -ones(n).integr();
+        }
         
         // [x^k] (a corr b) = sum_{i+j=k} ai*b{m-j} 
         //                  = sum_{i-j=k-m} ai*bj

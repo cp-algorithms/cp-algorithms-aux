@@ -621,7 +621,7 @@ namespace algebra {
         poly conj() const { // A(x) -> A(-x)
             auto res = *this;
             for(int i = 1; i <= deg(); i += 2) {
-                res[i] = -res[i];
+                res.a[i] = -res[i];
             }
             return res;
         }

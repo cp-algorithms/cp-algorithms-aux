@@ -37,7 +37,7 @@ squeeze a solution when it is probably not the intended one.
 using namespace std;
 
 namespace algebra {
-    const int maxn = 1 << 24;
+    const int maxn = 1 << 20;
     const int magic = 250; // threshold for sizes to run the naive algo
     mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
 

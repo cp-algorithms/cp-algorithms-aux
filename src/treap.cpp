@@ -2,11 +2,6 @@
   Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860
   Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858
   */
-
-#include <bits/stdc++.h>
-
-using namespace std;
-
 namespace data_structures {
     namespace treap {
         mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
@@ -142,42 +137,4 @@ namespace data_structures {
             }
         };
     }
-}
-
-using namespace data_structures::treap;
-
-using node = treap_node<reverse_meta>;
-using treap = node::treap;
-
-void solve() {
-    istream_iterator<int> input(cin);
-    int n = *input++;
-    int q = *input++;
-    vector<treap> nodes(n);
-    generate_n(begin(nodes), n, [&](){
-        return new node(reverse_meta(*input++));
-    });
-    treap me = node::build(nodes);
-
-    while(q--) {
-        int t = *input++;
-        int l = *input++;
-        int r = *input++;
-        if(t == 0) {
-            node::exec_on_segment(me, l, r, [](treap &t) {
-                safe_meta(t, reverse = true);
-            });
-        } else {
-            node::exec_on_segment(me, l, r, [](treap const& t) {
-                cout << safe_meta(t, sum) << "\n";
-            });
-        }
-    }
-}
-
-signed main() {
-    //freopen("input.txt", "r", stdin);
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-    solve();
 }

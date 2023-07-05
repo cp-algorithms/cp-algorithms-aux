@@ -725,7 +725,7 @@ namespace algebra {
                 return poly(1).mod_xk(n);
             } else {
                 auto t = pow(k / 2, n);
-                t *= t;
+                t = (t * t).mod_xk(n);
                 return (k % 2 ? *this * t : t).mod_xk(n);
             }
         }

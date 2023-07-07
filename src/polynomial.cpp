@@ -861,58 +861,31 @@ namespace algebra {
             }
             return res;
         }
-        
-        poly mulx_sq(T a) const { // component-wise multiplication with a^{k^2}
-            T cur = a;
-            T total = 1;
-            T aa = a * a;
+
+        poly mulx_sq(T a) const { // component-wise multiplication with a^{k choose 2}
+            T cur = 1, total = 1;
             poly res(*this);
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= total;
+                cur *= a;
                 total *= cur;
-                cur *= aa;
             }
             return res;
         }
         
-        vector<T> chirpz_even(T z, int n) const { // P(1), P(z^2), P(z^4), ..., P(z^2(n-1))
-            int m = deg();
-            if(is_zero()) {
-                return vector<T>(n, 0);
+        poly chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
+            if(z == T(0)) {
+                vector<T> ans(n, (*this)[0]);
+                if(n > 0) {
+                    ans[0] = accumulate(begin(a), end(a), T(0));
+                }
+                return ans;
             }
-            vector<T> vv(m + n);
-            T zi = T(1) / z;
-            T zz = zi * zi;
-            T cur = zi;
-            T total = 1;
-            for(int i = 0; i <= max(n - 1, m); i++) {
-                if(i <= m) {vv[m - i] = total;}
-                if(i < n) {vv[m + i] = total;}
-                total *= cur;
-                cur *= zz;
-            }
-            poly w = (mulx_sq(z) * vv).substr(m, m + n).mulx_sq(z);
-            vector<T> res(n);
-            for(int i = 0; i < n; i++) {
-                res[i] = w[i];
-            }
-            return res;
+            auto A = mulx_sq(z.inv());
+            auto B = ones(n+deg()).mulx_sq(z);
+            return corr(B, A).substr(deg(), deg() + n).mulx_sq(z.inv());
         }
-        
-        vector<T> chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
-            auto even = chirpz_even(z, (n + 1) / 2);
-            auto odd = mulx(z).chirpz_even(z, n / 2);
-            vector<T> ans(n);
-            for(int i = 0; i < n / 2; i++) {
-                ans[2 * i] = even[i];
-                ans[2 * i + 1] = odd[i];
-            }
-            if(n % 2 == 1) {
-                ans[n - 1] = even.back();
-            }
-            return ans;
-        }
-        
+
         vector<T> eval(vector<poly> &tree, int v, auto l, auto r) { // auxiliary evaluation function
             if(r - l == 1) {
                 return {eval(*l)};

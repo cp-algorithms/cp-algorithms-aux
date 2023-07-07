@@ -872,7 +872,9 @@ namespace algebra {
             }
             return res;
         }
-        
+
+        // be mindful of maxn, as the function
+        // requires multiplying polynomials of size deg() and n+deg()!
         poly chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
             if(z == T(0)) {
                 vector<T> ans(n, (*this)[0]);

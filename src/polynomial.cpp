@@ -883,7 +883,7 @@ namespace algebra {
             }
             auto A = mulx_sq(z.inv());
             auto B = ones(n+deg()).mulx_sq(z);
-            return corr(B, A).substr(deg(), deg() + n).mulx_sq(z.inv());
+            return semicorr(B, A).mod_xk(n).mulx_sq(z.inv());
         }
 
         vector<T> eval(vector<poly> &tree, int v, auto l, auto r) { // auxiliary evaluation function
@@ -975,10 +975,14 @@ namespace algebra {
             return -ones(n).integr();
         }
         
-        // [x^k] (a corr b) = sum_{i+j=k} ai*b{m-j} 
-        //                  = sum_{i-j=k-m} ai*bj
+        // [x^k] (a corr b) = sum_{i} a{(k-m)+i}*bi
         static poly corr(poly a, poly b) { // cross-correlation
             return a * b.reverse();
+        }
+
+        // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
+        static poly semicorr(poly a, poly b) {
+            return corr(a, b).div_xk(b.deg());
         }
         
         poly invborel() const { // ak *= k!
@@ -998,7 +1002,7 @@ namespace algebra {
         }
         
         poly shift(T a) const { // P(x + a)
-            return (expx(deg() + 1).mulx(a).reverse() * invborel()).div_xk(deg()).borel();
+            return semicorr(invborel(), expx(deg() + 1).mulx(a)).borel();
         }
         
         poly x2() { // P(x) -> P(x^2)

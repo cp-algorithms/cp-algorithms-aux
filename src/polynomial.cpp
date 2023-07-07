@@ -888,6 +888,36 @@ namespace algebra {
             return semicorr(B, A).mod_xk(n).mulx_sq(z.inv());
         }
 
+        static poly build(vector<poly> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
+            if(R - L == 1) {
+                return res[v] = vector<T>{-*L, 1};
+            } else {
+                auto M = L + (R - L) / 2;
+                return res[v] = build(res, 2 * v, L, M) * build(res, 2 * v + 1, M, R);
+            }
+        }
+
+        poly to_newton(vector<poly> &tree, int v, auto l, auto r) {
+            if(r - l == 1) {
+                return *this;
+            } else {
+                auto m = l + (r - l) / 2;
+                auto A = (*this % tree[2 * v]).to_newton(tree, 2 * v, l, m);
+                auto B = (*this / tree[2 * v]).to_newton(tree, 2 * v + 1, m, r);
+                return A + B.mul_xk(m - l);
+            }
+        }
+
+        poly to_newton(vector<T> p) {
+            if(is_zero()) {
+                return *this;
+            }
+            int n = p.size();
+            vector<poly> tree(4 * n);
+            build(tree, 1, begin(p), end(p));
+            return to_newton(tree, 1, begin(p), end(p));
+        }
+
         vector<T> eval(vector<poly> &tree, int v, auto l, auto r) { // auxiliary evaluation function
             if(r - l == 1) {
                 return {eval(*l)};
@@ -922,6 +952,12 @@ namespace algebra {
             }
         }
         
+        static auto inter(vector<T> x, vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
+            int n = x.size();
+            vector<poly> tree(4 * n);
+            return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(x), end(x), begin(y), end(y));
+        }
+
         static auto resultant(poly a, poly b) { // computes resultant of a and b
             if(b.is_zero()) {
                 return 0;
@@ -936,23 +972,7 @@ namespace algebra {
                 return ans * mul;
             }
         }
-        
-        static poly build(vector<poly> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
-            if(R - L == 1) {
-                return res[v] = vector<T>{-*L, 1};
-            } else {
-                auto M = L + (R - L) / 2;
-                return res[v] = build(res, 2 * v, L, M) * build(res, 2 * v + 1, M, R);
-            }
-        }
-        
-        static auto inter(vector<T> x, vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
-            int n = x.size();
-            vector<poly> tree(4 * n);
-            return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(x), end(x), begin(y), end(y));
-        }
-        
-        
+                
         static poly xk(size_t n) { // P(x) = x^n
             return poly(T(1)).mul_xk(n);
         }

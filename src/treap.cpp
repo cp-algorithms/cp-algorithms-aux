@@ -1,12 +1,13 @@
 /* Submissions on Library Judge:
   Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860
   Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858
+  Dynamic Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948
   */
 namespace data_structures {
     namespace treap {
         mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
-
-        #define safe(t, op) (t ? t->op : 0)
+bool assert_size = false;
+        #define safe(t, op) (t ? t->op : typename remove_reference<decltype(t->op)>::type())
         template<typename meta>
         struct treap_node {
 
@@ -17,6 +18,11 @@ namespace data_structures {
             size_t size = 1;
             treap children[2] = {nullptr, nullptr};
             enum subtree {L, R};
+
+            base check_sum() {
+                push();
+                return _meta.val + safe(children[L], check_sum()) + safe(children[R], check_sum());
+            }
 
             treap pull() {
                 _meta.pull(children[L], children[R]);
@@ -71,6 +77,18 @@ namespace data_structures {
                 A = merge(L, merge(M, R));
             }
 
+            static void insert(treap &A, size_t pos, treap t) {
+                auto [L, R] = split(A, pos);
+                A = merge(L, merge(t, R));
+            }
+
+            static void erase(treap &A, size_t pos) {
+                auto [L, MR] = split(A, pos);
+                auto [M, R] = split(MR, 1);
+                delete M;
+                A = merge(L, R);
+            }
+
             static void exec_on_each(treap &A, auto func) {
                 if(A) {
                     exec_on_each(A->children[L], func);
@@ -107,6 +125,7 @@ namespace data_structures {
                     }
                     st.push_back(cur);
                 }
+                assert_size = true;
                 return st.empty() ? nullptr : st[0]->pull_all();
             }
         };
@@ -114,27 +133,6 @@ namespace data_structures {
         struct null_meta {
             void pull(auto const, auto const) {}
             void push(auto&, auto&) {}
-        };
-
-        #define safe_meta(i, op) safe(i, _meta.op)
-        struct reverse_meta: null_meta {
-            int val;
-            bool reverse = false;
-            int64_t sum = val;
-
-            reverse_meta(int val): val(val) {}
-
-            void pull(auto const L, auto const R) {
-                sum = val + safe_meta(L, sum) + safe_meta(R, sum);
-            }
-            void push(auto &L, auto &R) {
-                if(reverse) {
-                    reverse = false;
-                    swap(L, R);
-                    safe_meta(L, reverse ^= 1);
-                    safe_meta(R, reverse ^= 1);
-                }
-            }
         };
     }
 }

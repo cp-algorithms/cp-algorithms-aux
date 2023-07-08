@@ -876,6 +876,9 @@ namespace algebra {
         // be mindful of maxn, as the function
         // requires multiplying polynomials of size deg() and n+deg()!
         poly chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
+            if(is_zero()) {
+                return vector<T>(n, 0);
+            }
             if(z == T(0)) {
                 vector<T> ans(n, (*this)[0]);
                 if(n > 0) {
@@ -886,6 +889,62 @@ namespace algebra {
             auto A = mulx_sq(z.inv());
             auto B = ones(n+deg()).mulx_sq(z);
             return semicorr(B, A).mod_xk(n).mulx_sq(z.inv());
+        }
+
+        // res[i] = prod_{1 <= j <= i} (1 - z^j)
+        static auto _1mzk_prod(T z, int n) {
+            vector<T> res(n, 1);
+            T zk = 1; // z^k
+            for(int i = 1; i < n; i++) {
+                zk *= z;
+                res[i] = res[i - 1] * (T(1) - zk);
+            }
+            return res;
+        }
+        
+        // prod_{0 <= j < n} (1 - z^j x)
+        static auto _1mzkx_prod(T z, int n) {
+            if(n == 1) {
+                return poly(vector<T>{1, -1});
+            } else {
+                auto t = _1mzkx_prod(z, n / 2);
+                t *= t.mulx(bpow(z, n / 2));
+                if(n % 2) {
+                    t *= poly(vector<T>{1, -bpow(z, n - 1)});
+                }
+                return t;
+            }
+        }
+
+        poly chirpz_inverse(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
+            if(is_zero()) {
+                return {};
+            }
+            if(z == T(0)) {
+                if(n == 1) {
+                    return *this;
+                } else {
+                    return vector{(*this)[1], (*this)[0] - (*this)[1]};
+                }
+            }
+            vector<T> y(n);
+            for(int i = 0; i < n; i++) {
+                y[i] = (*this)[i];
+            }
+            auto prods_pos = _1mzk_prod(z, n);
+            auto prods_neg = _1mzk_prod(z.inv(), n);
+
+            T zn = bpow(z, n-1);
+            T znk = 1;
+            for(int i = 0; i < n; i++) {
+                y[i] /= znk * prods_neg[i] * prods_pos[(n - 1) - i];
+                znk *= zn;
+            }
+
+            poly p_over_q = poly(y).chirpz(z, n);
+            poly q = _1mzkx_prod(z, n);
+
+            return (p_over_q * q).mod_xk(n).reverse(n);
         }
 
         static poly build(vector<poly> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)

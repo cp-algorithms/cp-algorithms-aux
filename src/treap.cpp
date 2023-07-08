@@ -6,7 +6,6 @@
 namespace data_structures {
     namespace treap {
         mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
-bool assert_size = false;
         #define safe(t, op) (t ? t->op : typename remove_reference<decltype(t->op)>::type())
         template<typename meta>
         struct treap_node {
@@ -125,7 +124,6 @@ bool assert_size = false;
                     }
                     st.push_back(cur);
                 }
-                assert_size = true;
                 return st.empty() ? nullptr : st[0]->pull_all();
             }
         };

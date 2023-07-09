@@ -906,13 +906,17 @@ namespace algebra {
             return semicorr(B, A).mod_xk(n).mulx_sq(z.inv());
         }
 
-        // res[i] = prod_{1 <= j <= i} (1 - z^j)
-        static auto _1mzk_prod(T z, int n) {
-            vector<T> res(n, 1);
-            T zk = 1; // z^k
+        // res[i] = prod_{1 <= j <= i} 1/(1 - z^j)
+        static auto _1mzk_prod_inv(T z, int n) {
+            vector<T> res(n, 1), zk(n);
+            zk[0] = 1;
             for(int i = 1; i < n; i++) {
-                zk *= z;
-                res[i] = res[i - 1] * (T(1) - zk);
+                zk[i] = zk[i - 1] * z;
+                res[i] = res[i - 1] * (T(1) - zk[i]);
+            }
+            res.back() = res.back().inv();
+            for(int i = n - 2; i >= 0; i--) {
+                res[i] = (T(1) - zk[i+1]) * res[i+1];
             }
             return res;
         }
@@ -946,13 +950,13 @@ namespace algebra {
             for(int i = 0; i < n; i++) {
                 y[i] = (*this)[i];
             }
-            auto prods_pos = _1mzk_prod(z, n);
-            auto prods_neg = _1mzk_prod(z.inv(), n);
+            auto prods_pos = _1mzk_prod_inv(z, n);
+            auto prods_neg = _1mzk_prod_inv(z.inv(), n);
 
-            T zn = bpow(z, n-1);
+            T zn = bpow(z, n-1).inv();
             T znk = 1;
             for(int i = 0; i < n; i++) {
-                y[i] /= znk * prods_neg[i] * prods_pos[(n - 1) - i];
+                y[i] *= znk * prods_neg[i] * prods_pos[(n - 1) - i];
                 znk *= zn;
             }
 

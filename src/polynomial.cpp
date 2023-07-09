@@ -148,6 +148,19 @@ namespace algebra {
         return F[n];
     }
 
+    template<typename T>
+    T inv_small(int n) {
+        static T F[maxn];
+        static bool init = false;
+        if(!init) {
+            for(int i = 1; i < maxn; i++) {
+                F[i] = rfact<T>(i) * fact<T>(i - 1);
+            }
+            init = true;
+        }
+        return F[n];
+    }
+
     namespace fft {
         using ftype = double;
         struct point {
@@ -384,8 +397,9 @@ namespace algebra {
         pair<poly, poly> divmod_slow(const poly &b) const { // when divisor or quotient is small
             vector<T> A(a);
             vector<T> res;
+            T b_lead_inv = b.a.back().inv();
             while(A.size() >= b.a.size()) {
-                res.push_back(A.back() / b.a.back());
+                res.push_back(A.back() * b_lead_inv);
                 if(res.back() != T(0)) {
                     for(size_t i = 0; i < b.a.size(); i++) {
                         A[A.size() - i - 1] -= res.back() * b.a[b.a.size() - i - 1];
@@ -684,7 +698,7 @@ namespace algebra {
         poly integr() { // calculate integral with C = 0
             vector<T> res(deg() + 2);
             for(int i = 0; i <= deg(); i++) {
-                res[i + 1] = a[i] / T(i + 1);
+                res[i + 1] = a[i] * inv_small<T>(i + 1);
             }
             return res;
         }

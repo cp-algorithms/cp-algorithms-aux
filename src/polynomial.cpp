@@ -623,8 +623,9 @@ namespace algebra {
             return *this;
         }
         poly operator /= (const T &x) {
+            T xi = x.inv();
             for(auto &it: a) {
-                it /= x;
+                it *= xi;
             }
             normalize();
             return *this;

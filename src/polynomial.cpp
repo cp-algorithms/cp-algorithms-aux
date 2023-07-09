@@ -149,7 +149,7 @@ namespace algebra {
     }
 
     template<typename T>
-    T inv_small(int n) {
+    T small_inv(int n) {
         static T F[maxn];
         static bool init = false;
         if(!init) {

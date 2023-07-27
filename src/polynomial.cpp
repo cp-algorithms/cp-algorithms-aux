@@ -623,12 +623,7 @@ namespace algebra {
             return *this;
         }
         poly operator /= (const T &x) {
-            T xi = x.inv();
-            for(auto &it: a) {
-                it *= xi;
-            }
-            normalize();
-            return *this;
+            return *this *= x.inv();
         }
         poly operator * (const T &x) const {return poly(*this) *= x;}
         poly operator / (const T &x) const {return poly(*this) /= x;}
@@ -699,7 +694,7 @@ namespace algebra {
         poly integr() { // calculate integral with C = 0
             vector<T> res(deg() + 2);
             for(int i = 0; i <= deg(); i++) {
-                res[i + 1] = a[i] * inv_small<T>(i + 1);
+                res[i + 1] = a[i] * small_inv<T>(i + 1);
             }
             return res;
         }
@@ -812,11 +807,12 @@ namespace algebra {
             assert((*this)[0] != T(0));
             vector<T> Q(n);
             Q[0] = bpow(a[0], k);
+            auto a0inv = a[0].inv();
             for(int i = 1; i < (int)n; i++) {
                 for(int j = 1; j <= min(deg(), i); j++) {
                     Q[i] += a[j] * Q[i - j] * (T(k) * T(j) - T(i - j));
                 }
-                Q[i] /= T(i) * a[0];
+                Q[i] *= small_inv<T>(i) * a0inv;
             }
             return Q;
         }

@@ -42,9 +42,15 @@ namespace algebra {
     mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
 
     template<typename T>
-    T bpow(T x, int64_t n) {
-        if(n == 0) {
-            return T(1);
+    T bpow(T const& x, int64_t n) {
+        if(n == 1) {
+            return x;
+        } else if(n == 0) {
+            if constexpr (is_invocable<T, int>::value) {
+                return T(1);
+            } else {
+                return x.eye();
+            }
         } else {
             auto t = bpow(x, n / 2);
             t = t * t;

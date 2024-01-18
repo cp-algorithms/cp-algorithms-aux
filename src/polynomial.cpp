@@ -41,15 +41,17 @@ namespace algebra {
     const int magic = 250; // threshold for sizes to run the naive algo
     mt19937 rng(chrono::steady_clock::now().time_since_epoch().count()); 
 
-    template<typename T>
-    T bpow(T x, int64_t n) {
-        if(n == 0) {
-            return T(1);
-        } else {
-            auto t = bpow(x, n / 2);
-            t = t * t;
-            return n % 2 ? x * t : t;
+    auto bpow(auto x, int64_t n, auto ans) {
+        for(; n; n /= 2, x = x * x) {
+            if(n % 2) {
+                ans = ans * x;
+            }
         }
+        return ans;
+    }
+    template<typename T>
+    T bpow(T const& x, int64_t n) {
+        return bpow(x, n, T(1));
     }
 
     template<int m>

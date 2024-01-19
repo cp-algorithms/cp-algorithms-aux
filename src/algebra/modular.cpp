@@ -50,8 +50,7 @@ namespace algebra { // modular
         modular operator *= (const modular &t) {return *this = *this * t;}
         modular operator /= (const modular &t) {return *this = *this / t;}
         
-        bool operator == (const modular &t) const {return r == t.r;}
-        bool operator != (const modular &t) const {return r != t.r;}
+        bool operator <=> (const modular &t) const = default;
         
         explicit operator int() const {return r;}
         int64_t rem() const {return 2 * r > m ? r - m : r;}

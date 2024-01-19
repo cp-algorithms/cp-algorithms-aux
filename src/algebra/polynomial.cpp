@@ -31,11 +31,6 @@ polynomial operations constitute intended solution. However, it is recommended t
 seek out other implementations when the time limit is tight or you really want to
 squeeze a solution when it is probably not the intended one.
 */
-
-#include <bits/stdc++.h>
-
-using namespace std;
-
 namespace algebra {
     const int maxn = 1 << 20;
     const int magic = 250; // threshold for sizes to run the naive algo
@@ -1246,29 +1241,3 @@ namespace algebra {
         return b * a;
     }
 };
-
-using namespace algebra;
-
-const int mod = 998244353;
-typedef modular<mod> base;
-typedef poly<base> polyn;
-
-void solve() {
-    int n;
-    cin >> n;
-    vector<base> f(n), g(n);
-    copy_n(istream_iterator<base>(cin), n, begin(f));
-    copy_n(istream_iterator<base>(cin), n, begin(g));
-    polyn::compose(f, g, n).print(n);
-}
-
-signed main() {
-    //freopen("input.txt", "r", stdin);
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-    int t;
-    t = 1;// cin >> t;
-    while(t--) {
-        solve();
-    }
-}

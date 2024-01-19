@@ -63,6 +63,6 @@ namespace algebra { // modular
     
     template<int m>
     ostream& operator << (ostream &out, modular<m> const& x) {
-        return out << (int)x % m;
+        return out << x.r % m;
     }
 }

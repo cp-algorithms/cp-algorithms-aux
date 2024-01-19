@@ -1016,14 +1016,13 @@ namespace algebra {
             return eval(tree, 1, begin(x), end(x));
         }
         
-        poly inter(vector<poly> &tree, int v, auto l, auto r, auto ly, auto ry) { // auxiliary interpolation function
-            if(r - l == 1) {
+        poly inter(vector<poly> &tree, int v, auto ly, auto ry) { // auxiliary interpolation function
+            if(ry - ly == 1) {
                 return {*ly / a[0]};
             } else {
-                auto m = l + (r - l) / 2;
                 auto my = ly + (ry - ly) / 2;
-                auto A = (*this % tree[2 * v]).inter(tree, 2 * v, l, m, ly, my);
-                auto B = (*this % tree[2 * v + 1]).inter(tree, 2 * v + 1, m, r, my, ry);
+                auto A = (*this % tree[2 * v]).inter(tree, 2 * v, ly, my);
+                auto B = (*this % tree[2 * v + 1]).inter(tree, 2 * v + 1, my, ry);
                 return A * tree[2 * v + 1] + B * tree[2 * v];
             }
         }
@@ -1031,7 +1030,7 @@ namespace algebra {
         static auto inter(vector<T> x, vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
             int n = x.size();
             vector<poly> tree(4 * n);
-            return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(x), end(x), begin(y), end(y));
+            return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(y), end(y));
         }
 
         static auto resultant(poly a, poly b) { // computes resultant of a and b

@@ -57,13 +57,13 @@ namespace algebra { // modular
         int64_t rem() const {return 2 * r > m ? r - m : r;}
     };
     
-    template<int T>
-    istream& operator >> (istream &in, modular<T> &x) {
+    template<int m>
+    istream& operator >> (istream &in, modular<m> &x) {
         return in >> x.r;
     }
     
-    template<int T>
-    ostream& operator << (ostream &out, modular<T> const& x) {
+    template<int m>
+    ostream& operator << (ostream &out, modular<m> const& x) {
         return out << (int)x;
     }
 }

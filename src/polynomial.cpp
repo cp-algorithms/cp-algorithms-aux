@@ -91,15 +91,15 @@ namespace algebra {
             }
         }
         
-        int r;
+        uint64_t r;
         constexpr modular(): r(0) {}
-        constexpr modular(int64_t rr): r(rr % m) {if(r < 0) r += m;}
+        constexpr modular(int rr): r(min<uint64_t>(rr, rr + m)) {}
         modular inv() const {return bpow(*this, m - 2);}
-        modular operator - () const {return r ? m - r : 0;}
-        modular operator * (const modular &t) const {return (int64_t)r * t.r % m;}
+        modular operator - () const {return min(-r, m - r);}
+        modular operator * (const modular &t) const {return r * t.r % m;}
         modular operator / (const modular &t) const {return *this * t.inv();}
-        modular operator += (const modular &t) {r += t.r; if(r >= m) r -= m; return *this;}
-        modular operator -= (const modular &t) {r -= t.r; if(r < 0) r += m; return *this;}
+        modular operator += (const modular &t) {r += t.r; r = min<uint64_t>(r, r - m); return *this;}
+        modular operator -= (const modular &t) {r -= t.r; r = min<uint64_t>(r, r + m); return *this;}
         modular operator + (const modular &t) const {return modular(*this) += t;}
         modular operator - (const modular &t) const {return modular(*this) -= t;}
         modular operator *= (const modular &t) {return *this = *this * t;}
@@ -119,7 +119,7 @@ namespace algebra {
     
     template<int T>
     ostream& operator << (ostream &out, modular<T> const& x) {
-        return out << x.r;
+        return out << (int)x;
     }
     
     template<typename T>

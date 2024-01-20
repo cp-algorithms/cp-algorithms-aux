@@ -9,6 +9,8 @@ namespace algebra { // matrix
 
         auto& operator[] (size_t i) {return a[i];}
         auto const& operator[] (size_t i) const {return a[i];}
+        auto& row(size_t i) {return a[i];}
+        auto const& row(size_t i) const {return a[i];}
 
         matrix operator -() const {return matrix(-a);}
         matrix& operator *=(_ t) {for(auto &it: a) it *= t; return *this;}
@@ -94,7 +96,8 @@ namespace algebra { // matrix
         }
 
         template<bool reverse = false>
-        size_t gauss(size_t lim) {
+        auto gauss(size_t lim) {
+            vector<size_t> free, pivots;
             size_t rk = 0;
             for(size_t i = 0; i < lim; i++) {
                 for(size_t j = rk; j < n; j++) {
@@ -108,7 +111,8 @@ namespace algebra { // matrix
                         break;
                     }
                 }
-                if(a[rk][i] == 0) {
+                if(rk == n || a[rk][i] == 0) {
+                    free.push_back(i);
                     continue;
                 }
                 _ dinv = -a[rk][i].inv();
@@ -124,35 +128,24 @@ namespace algebra { // matrix
                         }
                     }
                 }
+                pivots.push_back(i);
                 rk += 1;
             }
             for(size_t i = 0; i < n; i++) {
                 normalize(i);
             }
-            return rk;
+            return array{pivots, free};
         }
         template<bool reverse = false>
-        size_t gauss() {
-            return gauss<reverse>(min(n, m));
+        auto gauss() {
+            return gauss<reverse>(m);
         }
 
         size_t rank() const {
             if(n < m) {
                 return T().rank();
             }
-            return matrix(*this).gauss();
-        }
-
-        optional<matrix> inv() const {
-            assert(n == m);
-            matrix b = *this | eye(n);
-            if(b.gauss<true>(n) < n) {
-                return nullopt;
-            }
-            for(size_t i = 0; i < n; i++) {
-                b[i] *= b[i][i].inv();
-            }
-            return b.submatrix(slice(0, n, 1), slice(n, n, 1));
+            return size(matrix(*this).gauss()[0]);
         }
 
         _ det() const {
@@ -166,18 +159,40 @@ namespace algebra { // matrix
             return res;
         }
 
-        auto solve(matrix t) const {
-            assert(n == t.n);
-            matrix b = (*this | t).T() | eye(m + t.m);
-            b.gauss(min(n, m + t.m));
-            auto check_row = [&](size_t i) {
-                return (valarray(b[i][slice(0, n, 1)]) == 0).min();
-            };
-            size_t rk = 0;
-            while(rk < m + t.m && check_row(m + t.m - rk - 1)) {
-                rk++;
+        optional<matrix> inv() const {
+            assert(n == m);
+            matrix b = *this | eye(n);
+            if(size(b.gauss<true>(n)[0]) < n) {
+                return nullopt;
             }
-            return b.submatrix(slice(m + t.m - rk, rk, 1), slice(n, m + t.m, 1));
+            for(size_t i = 0; i < n; i++) {
+                b[i] *= b[i][i].inv();
+            }
+            return b.submatrix(slice(0, n, 1), slice(n, n, 1));
+        }
+
+        // [solution, basis], transposed
+        optional<array<matrix, 2>> solve(matrix t) const {
+            assert(n == t.n);
+            matrix b = *this | t;
+            auto [pivots, free] = b.gauss<true>();
+            if(!empty(pivots) && pivots.back() >= m) {
+                return nullopt;
+            }
+            matrix sols(size(free), m);
+            for(size_t j = 0; j < size(pivots); j++) {
+                _ scale = b[j][pivots[j]].inv();
+                for(size_t i = 0; i < size(free); i++) {
+                    sols[i][pivots[j]] = b[j][free[i]] * scale;
+                }
+            }
+            for(size_t i = 0; free[i] < m; i++) {
+                sols[i][free[i]] = -1;
+            }
+            return array{
+                sols.submatrix(slice(size(free) - t.m, t.m, 1), slice(0, m, 1)),
+                sols.submatrix(slice(0, size(free) - t.m, 1), slice(0, m, 1))
+            };
         }
     };
 }

@@ -1,4 +1,3 @@
-
 namespace algebra { // matrix
     template<int mod>
     struct matrix {
@@ -95,9 +94,9 @@ namespace algebra { // matrix
         }
 
         template<bool reverse = false>
-        size_t gauss() {
+        size_t gauss(size_t lim) {
             size_t rk = 0;
-            for(size_t i = 0; i < min(n, m); i++) {
+            for(size_t i = 0; i < lim; i++) {
                 for(size_t j = rk; j < n; j++) {
                     a[j][i].r %= mod;
                     if(a[j][i] != 0) {
@@ -132,6 +131,10 @@ namespace algebra { // matrix
             }
             return rk;
         }
+        template<bool reverse = false>
+        size_t gauss() {
+            return gauss<reverse>(min(n, m));
+        }
 
         size_t rank() const {
             if(n < m) {
@@ -143,7 +146,7 @@ namespace algebra { // matrix
         optional<matrix> inv() const {
             assert(n == m);
             matrix b = *this | eye(n);
-            if(b.gauss<true>() < n) {
+            if(b.gauss<true>(n) < n) {
                 return nullopt;
             }
             for(size_t i = 0; i < n; i++) {
@@ -166,7 +169,7 @@ namespace algebra { // matrix
         auto solve(matrix t) const {
             assert(n == t.n);
             matrix b = (*this | t).T() | eye(m + t.m);
-            b.gauss();
+            b.gauss(min(n, m + t.m));
             auto check_row = [&](size_t i) {
                 return (valarray(b[i][slice(0, n, 1)]) == 0).min();
             };
@@ -174,9 +177,7 @@ namespace algebra { // matrix
             while(rk < m + t.m && check_row(m + t.m - rk - 1)) {
                 rk++;
             }
-            auto A = b.submatrix(slice(m + t.m - rk, rk, 1), slice(n, m, 1));
-            auto B = b.submatrix(slice(m + t.m - rk, rk, 1), slice(n + m, t.m, 1));
-            return pair{A, B};
+            return b.submatrix(slice(m + t.m - rk, rk, 1), slice(n, m + t.m, 1));
         }
     };
 }

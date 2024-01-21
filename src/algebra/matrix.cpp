@@ -115,7 +115,7 @@ namespace algebra { // matrix
             for(size_t i = 0; i < lim; i++) {
                 for(size_t j = rk; j < n && a[rk][i].normalize() == 0; j++) {
                     if(a[j][i].normalize() != 0) {
-                        row(rk) += row(j);
+                        a[rk] += a[j];
                     }
                 }
                 if(rk == n || normalize(a[rk])[i] == 0) {

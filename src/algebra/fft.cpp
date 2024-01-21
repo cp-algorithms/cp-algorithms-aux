@@ -117,9 +117,9 @@ namespace algebra { // fft
                 int t = 2 * n;
                 vector<modular<m>> res(n);
                 for(size_t i = 0; i < n; i++) {
-                    modular<m> A0 = llround(C[i].real() / t) % m;
-                    modular<m> A1 = llround(C[i].imag() / t + D[i].imag() / t) % m;
-                    modular<m> A2 = llround(D[i].real() / t) % m;
+                    modular<m> A0 = llround(C[i].real() / t);
+                    modular<m> A1 = llround(C[i].imag() / t + D[i].imag() / t);
+                    modular<m> A2 = llround(D[i].real() / t);
                     res[i] = A0 + A1 * split - A2 * split * split;
                 }
                 return res;

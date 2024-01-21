@@ -43,12 +43,12 @@ namespace algebra { // modular
         modular operator - () const {return min(-r, m - r);}
         modular operator * (const modular &t) const {return r * t.r % m;}
         modular operator / (const modular &t) const {return *this * t.inv();}
-        modular operator += (const modular &t) {r += t.r; r = min<uint64_t>(r, r - m); return *this;}
-        modular operator -= (const modular &t) {r -= t.r; r = min<uint64_t>(r, r + m); return *this;}
+        modular& operator += (const modular &t) {r += t.r; r = min<uint64_t>(r, r - m); return *this;}
+        modular& operator -= (const modular &t) {r -= t.r; r = min<uint64_t>(r, r + m); return *this;}
         modular operator + (const modular &t) const {return modular(*this) += t;}
         modular operator - (const modular &t) const {return modular(*this) -= t;}
-        modular operator *= (const modular &t) {return *this = *this * t;}
-        modular operator /= (const modular &t) {return *this = *this / t;}
+        modular& operator *= (const modular &t) {return *this = *this * t;}
+        modular& operator /= (const modular &t) {return *this = *this / t;}
         
         bool operator <=> (const modular &t) const = default;
         

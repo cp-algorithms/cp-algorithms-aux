@@ -38,7 +38,7 @@ namespace algebra { // modular
         
         uint64_t r;
         constexpr modular(): r(0) {}
-        constexpr modular(int rr): r(min<uint64_t>(rr, rr + m)) {}
+        constexpr modular(int64_t rr): r(rr % m) {r = min<uint64_t>(r, r + m);}
         modular inv() const {return bpow(*this, m - 2);}
         modular operator - () const {return min(-r, m - r);}
         modular operator * (const modular &t) const {return r * t.r % m;}

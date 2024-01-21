@@ -192,14 +192,14 @@ namespace algebra { // poly
             }
             return {ak, trs.back()};
         }
-        
+                
         static poly gcd(poly A, poly B) {
             if(A.deg() < B.deg()) {
-                return full_gcd(B, A);
+                return gcd(B, A);
             }
-            auto Tr = fraction(A, B);
+            auto [a, Tr] = full_gcd(A, B);
             return Tr.d * A - Tr.b * B;
-        }
+
         
         // Returns the characteristic polynomial
         // of the minimum linear recurrence for the sequence

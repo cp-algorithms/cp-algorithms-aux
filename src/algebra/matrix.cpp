@@ -100,7 +100,7 @@ namespace algebra { // matrix
             return *this;
         }
 
-        inline static void mul_add(auto &a, auto const& b, base scale, size_t i = 0) {
+        inline static void add_scaled(auto &a, auto const& b, base scale, size_t i = 0) {
             size_t m = size(a);
             for(; i < m; i++) {
                 a[i].add_unsafe(scale.r * b[i].r);
@@ -125,7 +125,7 @@ namespace algebra { // matrix
                     base dinv = -a[rk][i].inv();
                     for(size_t j = mode == reverse ? 0 : rk; j < n; j++) {
                         if(j != rk) {
-                            mul_add(a[j], a[rk], a[j][i].normalize() * dinv, i);
+                            add_scaled(a[j], a[rk], a[j][i].normalize() * dinv, i);
                         }
                     }
                     rk += 1;

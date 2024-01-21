@@ -54,6 +54,10 @@ namespace algebra { // modular
         
         explicit operator int() const {return r;}
         int64_t rem() const {return 2 * r > m ? r - m : r;}
+
+        static constexpr uint64_t mm = (uint64_t)m * m;
+        void add_unsafe(uint64_t t) {r += t; r = min<uint64_t>(r, r - mm);}
+        modular& normalize() {if(r >= m) r %= m; return *this;}
     };
     
     template<int m>

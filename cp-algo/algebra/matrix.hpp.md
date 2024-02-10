@@ -248,7 +248,7 @@ data:
   isVerificationFile: false
   path: cp-algo/algebra/matrix.hpp
   requiredBy: []
-  timestamp: '2024-02-10 19:03:20+01:00'
+  timestamp: '2024-02-10 19:08:03+01:00'
   verificationStatus: LIBRARY_NO_TESTS
   verifiedWith: []
 documentation_of: cp-algo/algebra/matrix.hpp

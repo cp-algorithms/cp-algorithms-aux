@@ -31,6 +31,6 @@ data:
     pages:
     - icon: ':heavy_check_mark:'
       path: verify/algebra/convolution107.test.cpp
-      title: verify/algebra/convolution107.test.cpp
+      title: Convolution mod $10^9+7$
 layout: toppage
 ---

@@ -14,7 +14,7 @@ data:
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
     path: verify/algebra/convolution107.test.cpp
-    title: verify/algebra/convolution107.test.cpp
+    title: Convolution mod $10^9+7$
   _isVerificationFailed: false
   _pathExtension: hpp
   _verificationStatusIcon: ':heavy_check_mark:'
@@ -233,7 +233,7 @@ data:
   path: cp-algo/algebra/fft.hpp
   requiredBy:
   - cp-algo/algebra/polynomial.hpp
-  timestamp: '2024-02-10 19:28:58+01:00'
+  timestamp: '2024-02-10 19:49:33+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/algebra/convolution107.test.cpp

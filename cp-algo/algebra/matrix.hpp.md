@@ -7,6 +7,9 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
+  - icon: ':heavy_check_mark:'
+    path: cp-algo/random/rng.hpp
+    title: cp-algo/random/rng.hpp
   _extendedRequiredBy: []
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
@@ -18,46 +21,47 @@ data:
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/algebra/matrix.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
-    \n\n\n#include <chrono>\n#include <random>\nnamespace algebra {\n    const int\
-    \ maxn = 1 << 20;\n    const int magic = 250; // threshold for sizes to run the\
-    \ naive algo\n    std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());\
-    \ \n\n    auto bpow(auto x, int64_t n, auto ans) {\n        for(; n; n /= 2, x\
-    \ = x * x) {\n            if(n % 2) {\n                ans = ans * x;\n      \
-    \      }\n        }\n        return ans;\n    }\n    template<typename T>\n  \
-    \  T bpow(T const& x, int64_t n) {\n        return bpow(x, n, T(1));\n    }\n\n\
-    \    template<typename T>\n    T fact(int n) {\n        static T F[maxn];\n  \
-    \      static bool init = false;\n        if(!init) {\n            F[0] = T(1);\n\
-    \            for(int i = 1; i < maxn; i++) {\n                F[i] = F[i - 1]\
-    \ * T(i);\n            }\n            init = true;\n        }\n        return\
-    \ F[n];\n    }\n    \n    template<typename T>\n    T rfact(int n) {\n       \
-    \ static T F[maxn];\n        static bool init = false;\n        if(!init) {\n\
-    \            F[maxn - 1] = T(1) / fact<T>(maxn - 1);\n            for(int i =\
-    \ maxn - 2; i >= 0; i--) {\n                F[i] = F[i + 1] * T(i + 1);\n    \
-    \        }\n            init = true;\n        }\n        return F[n];\n    }\n\
-    \n    template<typename T>\n    T small_inv(int n) {\n        static T F[maxn];\n\
-    \        static bool init = false;\n        if(!init) {\n            for(int i\
-    \ = 1; i < maxn; i++) {\n                F[i] = rfact<T>(i) * fact<T>(i - 1);\n\
-    \            }\n            init = true;\n        }\n        return F[n];\n  \
-    \  }\n}\n\n#line 1 \"cp-algo/algebra/modular.hpp\"\n\n\n#line 4 \"cp-algo/algebra/modular.hpp\"\
-    \n#include <algorithm>\n#include <iostream>\n#include <optional>\nnamespace algebra\
-    \ {\n    template<int m>\n    struct modular {\n        // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm\n\
+    \n\n\n#include <cstdint>\nnamespace cp_algo::algebra {\n    const int maxn = 1\
+    \ << 20;\n    const int magic = 250; // threshold for sizes to run the naive algo\n\
+    \n    auto bpow(auto x, int64_t n, auto ans) {\n        for(; n; n /= 2, x = x\
+    \ * x) {\n            if(n % 2) {\n                ans = ans * x;\n          \
+    \  }\n        }\n        return ans;\n    }\n    template<typename T>\n    T bpow(T\
+    \ const& x, int64_t n) {\n        return bpow(x, n, T(1));\n    }\n\n    template<typename\
+    \ T>\n    T fact(int n) {\n        static T F[maxn];\n        static bool init\
+    \ = false;\n        if(!init) {\n            F[0] = T(1);\n            for(int\
+    \ i = 1; i < maxn; i++) {\n                F[i] = F[i - 1] * T(i);\n         \
+    \   }\n            init = true;\n        }\n        return F[n];\n    }\n    \n\
+    \    template<typename T>\n    T rfact(int n) {\n        static T F[maxn];\n \
+    \       static bool init = false;\n        if(!init) {\n            F[maxn - 1]\
+    \ = T(1) / fact<T>(maxn - 1);\n            for(int i = maxn - 2; i >= 0; i--)\
+    \ {\n                F[i] = F[i + 1] * T(i + 1);\n            }\n            init\
+    \ = true;\n        }\n        return F[n];\n    }\n\n    template<typename T>\n\
+    \    T small_inv(int n) {\n        static T F[maxn];\n        static bool init\
+    \ = false;\n        if(!init) {\n            for(int i = 1; i < maxn; i++) {\n\
+    \                F[i] = rfact<T>(i) * fact<T>(i - 1);\n            }\n       \
+    \     init = true;\n        }\n        return F[n];\n    }\n}\n\n#line 1 \"cp-algo/algebra/modular.hpp\"\
+    \n\n\n#line 1 \"cp-algo/random/rng.hpp\"\n\n\n#include <chrono>\n#include <random>\n\
+    namespace cp_algo::random {\n    std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());\
+    \ \n}\n\n#line 5 \"cp-algo/algebra/modular.hpp\"\n#include <algorithm>\n#include\
+    \ <iostream>\n#include <optional>\nnamespace cp_algo::algebra {\n    template<int\
+    \ m>\n    struct modular {\n        // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm\n\
     \        // solves x^2 = y (mod m) assuming m is prime in O(log m).\n        //\
     \ returns std::nullopt if no sol.\n        std::optional<modular> sqrt() const\
     \ {\n            static modular y;\n            y = *this;\n            if(r ==\
     \ 0) {\n                return 0;\n            } else if(bpow(y, (m - 1) / 2)\
     \ != modular(1)) {\n                return std::nullopt;\n            } else {\n\
-    \                while(true) {\n                    modular z = rng();\n     \
-    \               if(z * z == *this) {\n                        return z;\n    \
-    \                }\n                    struct lin {\n                       \
-    \ modular a, b;\n                        lin(modular a, modular b): a(a), b(b)\
-    \ {}\n                        lin(modular a): a(a), b(0) {}\n                \
-    \        lin operator * (const lin& t) {\n                            return {\n\
-    \                                a * t.a + b * t.b * y,\n                    \
-    \            a * t.b + b * t.a\n                            };\n             \
-    \           }\n                    } x(z, 1); // z + x\n                    x\
-    \ = bpow(x, (m - 1) / 2);\n                    if(x.b != modular(0)) {\n     \
-    \                   return x.b.inv();\n                    }\n               \
-    \ }\n            }\n        }\n        \n        uint64_t r;\n        constexpr\
+    \                while(true) {\n                    modular z = random::rng();\n\
+    \                    if(z * z == *this) {\n                        return z;\n\
+    \                    }\n                    struct lin {\n                   \
+    \     modular a, b;\n                        lin(modular a, modular b): a(a),\
+    \ b(b) {}\n                        lin(modular a): a(a), b(0) {}\n           \
+    \             lin operator * (const lin& t) {\n                            return\
+    \ {\n                                a * t.a + b * t.b * y,\n                \
+    \                a * t.b + b * t.a\n                            };\n         \
+    \               }\n                    } x(z, 1); // z + x\n                 \
+    \   x = bpow(x, (m - 1) / 2);\n                    if(x.b != modular(0)) {\n \
+    \                       return x.b.inv();\n                    }\n           \
+    \     }\n            }\n        }\n        \n        uint64_t r;\n        constexpr\
     \ modular(): r(0) {}\n        constexpr modular(int64_t rr): r(rr % m) {r = std::min<uint64_t>(r,\
     \ r + m);}\n        modular inv() const {return bpow(*this, m - 2);}\n       \
     \ modular operator - () const {return std::min(-r, m - r);}\n        modular operator\
@@ -79,8 +83,8 @@ data:
     \    }\n    \n    template<int m>\n    std::ostream& operator << (std::ostream\
     \ &out, modular<m> const& x) {\n        return out << x.r % m;\n    }\n}\n\n#line\
     \ 5 \"cp-algo/algebra/matrix.hpp\"\n#include <valarray>\n#line 8 \"cp-algo/algebra/matrix.hpp\"\
-    \n#include <cassert>\n#include <vector>\n#include <array>\nnamespace algebra {\n\
-    \    template<int mod>\n    struct matrix {\n        using base = modular<mod>;\n\
+    \n#include <cassert>\n#include <vector>\n#include <array>\nnamespace cp_algo::algebra\
+    \ {\n    template<int mod>\n    struct matrix {\n        using base = modular<mod>;\n\
     \        size_t n, m;\n        std::valarray<std::valarray<base>> a;\n       \
     \ matrix(size_t n, size_t m): n(n), m(m), a(std::valarray<base>(m), n) {}\n  \
     \      matrix(std::valarray<std::valarray<base>> a): n(size(a)), m(n ? size(a[0])\
@@ -162,11 +166,11 @@ data:
     \ - t.m, t.m, 1), std::slice(0, m, 1)),\n                sols.submatrix(std::slice(0,\
     \ size(free) - t.m, 1), std::slice(0, m, 1))\n            };\n        }\n    };\n\
     }\n\n"
-  code: "#ifndef ALGEBRA_MATRIX_HPP\n#define ALGEBRA_MATRIX_HPP\n#include \"common.hpp\"\
-    \n#include \"modular.hpp\"\n#include <valarray>\n#include <iostream>\n#include\
-    \ <optional>\n#include <cassert>\n#include <vector>\n#include <array>\nnamespace\
-    \ algebra {\n    template<int mod>\n    struct matrix {\n        using base =\
-    \ modular<mod>;\n        size_t n, m;\n        std::valarray<std::valarray<base>>\
+  code: "#ifndef CP_ALGO_ALGEBRA_MATRIX_HPP\n#define CP_ALGO_ALGEBRA_MATRIX_HPP\n\
+    #include \"common.hpp\"\n#include \"modular.hpp\"\n#include <valarray>\n#include\
+    \ <iostream>\n#include <optional>\n#include <cassert>\n#include <vector>\n#include\
+    \ <array>\nnamespace cp_algo::algebra {\n    template<int mod>\n    struct matrix\
+    \ {\n        using base = modular<mod>;\n        size_t n, m;\n        std::valarray<std::valarray<base>>\
     \ a;\n        matrix(size_t n, size_t m): n(n), m(m), a(std::valarray<base>(m),\
     \ n) {}\n        matrix(std::valarray<std::valarray<base>> a): n(size(a)), m(n\
     \ ? size(a[0]) : 0), a(a) {}\n\n        auto& operator[] (size_t i) {return a[i];}\n\
@@ -246,14 +250,15 @@ data:
     \     return std::array{\n                sols.submatrix(std::slice(size(free)\
     \ - t.m, t.m, 1), std::slice(0, m, 1)),\n                sols.submatrix(std::slice(0,\
     \ size(free) - t.m, 1), std::slice(0, m, 1))\n            };\n        }\n    };\n\
-    }\n#endif // ALGEBRA_MATRIX_HPP\n"
+    }\n#endif // CP_ALGO_ALGEBRA_MATRIX_HPP\n"
   dependsOn:
   - cp-algo/algebra/common.hpp
   - cp-algo/algebra/modular.hpp
+  - cp-algo/random/rng.hpp
   isVerificationFile: false
   path: cp-algo/algebra/matrix.hpp
   requiredBy: []
-  timestamp: '2024-02-10 20:45:15+01:00'
+  timestamp: '2024-02-10 22:44:24+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/algebra/matrix_pow.test.cpp

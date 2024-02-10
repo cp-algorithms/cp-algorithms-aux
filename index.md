@@ -18,28 +18,38 @@ data:
     - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/polynomial.hpp
       title: cp-algo/algebra/polynomial.hpp
-  - name: cp-algo/data_structures/metas
+  - name: cp-algo/data_structures/segment_tree/metas
     pages:
     - icon: ':heavy_check_mark:'
-      path: cp-algo/data_structures/metas/affine.hpp
-      title: cp-algo/data_structures/metas/affine.hpp
-    - icon: ':warning:'
-      path: cp-algo/data_structures/metas/all.hpp
-      title: cp-algo/data_structures/metas/all.hpp
+      path: cp-algo/data_structures/segment_tree/metas/affine.hpp
+      title: cp-algo/data_structures/segment_tree/metas/affine.hpp
     - icon: ':heavy_check_mark:'
-      path: cp-algo/data_structures/metas/base.hpp
-      title: cp-algo/data_structures/metas/base.hpp
+      path: cp-algo/data_structures/segment_tree/metas/base.hpp
+      title: cp-algo/data_structures/segment_tree/metas/base.hpp
     - icon: ':heavy_check_mark:'
-      path: cp-algo/data_structures/metas/chmin_chmax_add.hpp
-      title: cp-algo/data_structures/metas/chmin_chmax_add.hpp
+      path: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
+      title: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
   - name: cp-algo/data_structures
     pages:
     - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/segment_tree.hpp
       title: cp-algo/data_structures/segment_tree.hpp
-    - icon: ':warning:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/treap.hpp
       title: cp-algo/data_structures/treap.hpp
+  - name: cp-algo/data_structures/treap/metas
+    pages:
+    - icon: ':heavy_check_mark:'
+      path: cp-algo/data_structures/treap/metas/base.hpp
+      title: cp-algo/data_structures/treap/metas/base.hpp
+    - icon: ':heavy_check_mark:'
+      path: cp-algo/data_structures/treap/metas/reverse.hpp
+      title: cp-algo/data_structures/treap/metas/reverse.hpp
+  - name: cp-algo/random
+    pages:
+    - icon: ':heavy_check_mark:'
+      path: cp-algo/random/rng.hpp
+      title: cp-algo/random/rng.hpp
   verificationCategories:
   - name: verify/algebra
     pages:
@@ -49,13 +59,18 @@ data:
     - icon: ':heavy_check_mark:'
       path: verify/algebra/matrix_pow.test.cpp
       title: Pow of Matrix
-  - name: verify/data_structures
+  - name: verify/data_structures/segment_tree
     pages:
     - icon: ':heavy_check_mark:'
-      path: verify/data_structures/range_affine_range_sum.test.cpp
+      path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
       title: Range Affine Range Sum
     - icon: ':heavy_check_mark:'
-      path: verify/data_structures/range_chmin_chmax_add_range_sum.test.cpp
+      path: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
       title: Range Chmin Chmax Add Range Sum
+  - name: verify/data_structures/treap
+    pages:
+    - icon: ':heavy_check_mark:'
+      path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
+      title: Range Reverse Range Sum
 layout: toppage
 ---

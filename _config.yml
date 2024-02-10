@@ -5,4 +5,4 @@ plugins:
 - jemoji
 - jekyll-redirect-from
 theme: jekyll-theme-minimal
-title: Algorithms for Competitive Programming Library
+title: CP-Algorithms Library

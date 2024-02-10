@@ -174,7 +174,7 @@ data:
   isVerificationFile: false
   path: src/algebra/matrix.cpp
   requiredBy: []
-  timestamp: '2024-02-10 16:40:11+01:00'
+  timestamp: '2024-02-10 16:42:18+01:00'
   verificationStatus: LIBRARY_NO_TESTS
   verifiedWith: []
 documentation_of: src/algebra/matrix.cpp

@@ -1,11 +1,6 @@
 ---
 data:
   libraryCategories:
-  - name: images/second_best_mst
-    pages:
-    - icon: ':warning:'
-      path: images/second_best_mst/random_graph.py
-      title: images/second_best_mst/random_graph.py
   - name: src/algebra
     pages:
     - icon: ':warning:'
@@ -32,10 +27,10 @@ data:
       path: src/data_structures/treap.cpp
       title: src/data_structures/treap.cpp
   verificationCategories:
-  - name: examples
+  - name: verify
     pages:
     - icon: ':heavy_check_mark:'
-      path: examples/example.test.cpp
-      title: examples/example.test.cpp
+      path: verify/example.test.cpp
+      title: verify/example.test.cpp
 layout: toppage
 ---

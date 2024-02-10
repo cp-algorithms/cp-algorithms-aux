@@ -1,10 +1,6 @@
 #ifndef DATA_STRUCTURES_SEGMENT_TREE_HPP
 #define DATA_STRUCTURES_SEGMENT_TREE_HPP
 #include <vector>
-/* Metas examples:
-    Range Affine Range Sum, 1138ms - https://judge.yosupo.jp/submission/148324
-    Range Chmin Chmax Add Range Sum, 787ms - https://judge.yosupo.jp/submission/148544
-*/
 namespace data_structures {
     namespace segment_tree {
         template<typename meta>
@@ -75,14 +71,6 @@ namespace data_structures {
                 exec_on_segment(a, b, func, default_true, default_false);
             }
         };
-
-        namespace metas {
-            struct null_meta {
-                using meta = null_meta;
-                void pull(meta const&, meta const&, int, int) {}
-                void push(meta*, meta*, int, int) {}
-            };
-        }
     }
 }
 #endif // DATA_STRUCTURES_SEGMENT_TREE_HPP

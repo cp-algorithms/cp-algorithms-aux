@@ -1,7 +1,5 @@
 // @brief Convolution mod $10^9+7$
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_1000000007"
-#pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("avx2,tune=native")
 #include "cp-algo/algebra/polynomial.hpp"
 #include <bits/stdc++.h>
 
@@ -25,8 +23,7 @@ signed main() {
     //freopen("input.txt", "r", stdin);
     ios::sync_with_stdio(0);
     cin.tie(0);
-    int t;
-    t = 1;// cin >> t;
+    int t = 1;
     while(t--) {
         solve();
     }

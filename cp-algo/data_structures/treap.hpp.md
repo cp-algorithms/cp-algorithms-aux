@@ -2,19 +2,19 @@
 data:
   _extendedDependsOn:
   - icon: ':heavy_check_mark:'
+    path: cp-algo/data_structures/treap/common.hpp
+    title: cp-algo/data_structures/treap/common.hpp
+  - icon: ':question:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
-  _extendedRequiredBy:
-  - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/treap/metas/base.hpp
-    title: cp-algo/data_structures/treap/metas/base.hpp
-  - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/treap/metas/reverse.hpp
-    title: cp-algo/data_structures/treap/metas/reverse.hpp
+  _extendedRequiredBy: []
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
-    path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
-    title: Range Reverse Range Sum
+    path: verify/data_structures/treap/cartesian_tree.test.cpp
+    title: Build Cartesian Tree
+  - icon: ':heavy_check_mark:'
+    path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
+    title: Dynamic Range Affine Range Sum
   - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
     title: Range Reverse Range Sum
@@ -29,13 +29,14 @@ data:
   bundledCode: "#line 1 \"cp-algo/data_structures/treap.hpp\"\n\n\n#line 1 \"cp-algo/random/rng.hpp\"\
     \n\n\n#include <chrono>\n#include <random>\nnamespace cp_algo::random {\n    std::mt19937_64\
     \ rng(std::chrono::steady_clock::now().time_since_epoch().count()); \n}\n\n#line\
-    \ 4 \"cp-algo/data_structures/treap.hpp\"\n#include <array>\n/* Submissions on\
-    \ Library Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
+    \ 1 \"cp-algo/data_structures/treap/common.hpp\"\n\n\n#define _safe(t, op) (t\
+    \ ? t->op : typename std::remove_reference_t<decltype(t->op)>())\n\n#line 5 \"\
+    cp-algo/data_structures/treap.hpp\"\n#include <array>\n/* Submissions on Library\
+    \ Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
     \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
     \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    */\n#define _safe(t, op) (t ? t->op : typename std::remove_reference_t<decltype(t->op)>())\n\
-    namespace cp_algo::data_structures::treap {\n    template<typename meta>\n   \
-    \ struct treap_node {\n\n        using node = treap_node;\n        using treap\
+    */\nnamespace cp_algo::data_structures::treap {\n    template<typename meta>\n\
+    \    struct treap_node {\n\n        using node = treap_node;\n        using treap\
     \ = node*;\n        meta _meta;\n        int prior = random::rng();\n        size_t\
     \ size = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
     \ {L, R};\n\n        treap pull() {\n            _meta.pull(children[L], children[R]);\n\
@@ -84,13 +85,12 @@ data:
     \ pull(auto const, auto const) {}\n        void push(auto&, auto&) {}\n    };\n\
     }\n\n"
   code: "#ifndef CP_ALGO_DATA_STRUCTURES_TREAP_HPP\n#define CP_ALGO_DATA_STRUCTURES_TREAP_HPP\n\
-    #include \"../random/rng.hpp\"\n#include <array>\n/* Submissions on Library Judge:\n\
-    \  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
+    #include \"../random/rng.hpp\"\n#include \"treap/common.hpp\"\n#include <array>\n\
+    /* Submissions on Library Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
     \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
     \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    */\n#define _safe(t, op) (t ? t->op : typename std::remove_reference_t<decltype(t->op)>())\n\
-    namespace cp_algo::data_structures::treap {\n    template<typename meta>\n   \
-    \ struct treap_node {\n\n        using node = treap_node;\n        using treap\
+    */\nnamespace cp_algo::data_structures::treap {\n    template<typename meta>\n\
+    \    struct treap_node {\n\n        using node = treap_node;\n        using treap\
     \ = node*;\n        meta _meta;\n        int prior = random::rng();\n        size_t\
     \ size = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
     \ {L, R};\n\n        treap pull() {\n            _meta.pull(children[L], children[R]);\n\
@@ -140,16 +140,16 @@ data:
     }\n#endif // CP_ALGO_DATA_STRUCTURES_TREAP_HPP"
   dependsOn:
   - cp-algo/random/rng.hpp
+  - cp-algo/data_structures/treap/common.hpp
   isVerificationFile: false
   path: cp-algo/data_structures/treap.hpp
-  requiredBy:
-  - cp-algo/data_structures/treap/metas/base.hpp
-  - cp-algo/data_structures/treap/metas/reverse.hpp
-  timestamp: '2024-02-10 22:49:03+01:00'
+  requiredBy: []
+  timestamp: '2024-02-10 23:55:00+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/treap/range_reverse_range_sum.test.cpp
-  - verify/data_structures/treap/range_reverse_range_sum.test.cpp
+  - verify/data_structures/treap/cartesian_tree.test.cpp
+  - verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
 documentation_of: cp-algo/data_structures/treap.hpp
 layout: document
 redirect_from:

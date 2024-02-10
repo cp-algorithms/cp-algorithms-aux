@@ -8,7 +8,7 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/matrix.hpp
     title: cp-algo/algebra/matrix.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   - icon: ':heavy_check_mark:'
@@ -17,28 +17,34 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/treap.hpp
     title: cp-algo/data_structures/treap.hpp
-  - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/treap/metas/base.hpp
-    title: cp-algo/data_structures/treap/metas/base.hpp
-  - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/treap/metas/reverse.hpp
-    title: cp-algo/data_structures/treap/metas/reverse.hpp
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/convolution107.test.cpp
-    title: Convolution mod $10^9+7$
-  - icon: ':heavy_check_mark:'
-    path: verify/algebra/matrix_pow.test.cpp
+    path: verify/algebra/matrix/matrix_pow.test.cpp
     title: Pow of Matrix
   - icon: ':heavy_check_mark:'
+    path: verify/algebra/polynomial/convolution107.test.cpp
+    title: Convolution mod $10^9+7$
+  - icon: ':heavy_check_mark:'
+    path: verify/algebra/polynomial/poly_sqrt.test.cpp
+    title: Sqrt of Formal Power Series
+  - icon: ':x:'
     path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
   - icon: ':heavy_check_mark:'
+    path: verify/data_structures/treap/cartesian_tree.test.cpp
+    title: Build Cartesian Tree
+  - icon: ':heavy_check_mark:'
+    path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
+    title: Dynamic Range Affine Range Sum
+  - icon: ':heavy_check_mark:'
+    path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
+    title: Dynamic Range Affine Range Sum
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
     title: Range Reverse Range Sum
-  _isVerificationFailed: false
+  _isVerificationFailed: true
   _pathExtension: hpp
-  _verificationStatusIcon: ':heavy_check_mark:'
+  _verificationStatusIcon: ':question:'
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/random/rng.hpp\"\n\n\n#include <chrono>\n#include\
@@ -52,20 +58,22 @@ data:
   isVerificationFile: false
   path: cp-algo/random/rng.hpp
   requiredBy:
-  - cp-algo/data_structures/treap/metas/base.hpp
-  - cp-algo/data_structures/treap/metas/reverse.hpp
   - cp-algo/data_structures/treap.hpp
   - cp-algo/algebra/matrix.hpp
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-10 22:49:03+01:00'
-  verificationStatus: LIBRARY_ALL_AC
+  timestamp: '2024-02-10 23:55:00+01:00'
+  verificationStatus: LIBRARY_SOME_WA
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
   - verify/data_structures/treap/range_reverse_range_sum.test.cpp
-  - verify/algebra/matrix_pow.test.cpp
-  - verify/algebra/convolution107.test.cpp
+  - verify/data_structures/treap/cartesian_tree.test.cpp
+  - verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
+  - verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
+  - verify/algebra/matrix/matrix_pow.test.cpp
+  - verify/algebra/polynomial/convolution107.test.cpp
+  - verify/algebra/polynomial/poly_sqrt.test.cpp
 documentation_of: cp-algo/random/rng.hpp
 layout: document
 redirect_from:

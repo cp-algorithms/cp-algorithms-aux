@@ -1,20 +1,20 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':heavy_check_mark:'
+  - icon: ':x:'
     path: cp-algo/data_structures/segment_tree.hpp
     title: cp-algo/data_structures/segment_tree.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':x:'
     path: cp-algo/data_structures/segment_tree/metas/base.hpp
     title: cp-algo/data_structures/segment_tree/metas/base.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':x:'
     path: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
     title: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
   _extendedRequiredBy: []
   _extendedVerifiedWith: []
-  _isVerificationFailed: false
+  _isVerificationFailed: true
   _pathExtension: cpp
-  _verificationStatusIcon: ':heavy_check_mark:'
+  _verificationStatusIcon: ':x:'
   attributes:
     '*NOT_SPECIAL_COMMENTS*': ''
     PROBLEM: https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum
@@ -27,27 +27,26 @@ data:
     \n\n#line 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include\
     \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segment_tree::metas\
     \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
-    \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
-    \ int) = 0;\n        virtual void push(meta*, meta*, int, int) = 0;\n    };\n\
-    }\n\n#line 7 \"cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\
-    \nnamespace cp_algo::data_structures::segment_tree::metas {\n    struct chmin_chmax_sum_meta:\
-    \ base_meta<chmin_chmax_sum_meta> {\n        static constexpr int64_t inf = 1e12;\n\
-    \n        using meta = chmin_chmax_sum_meta;\n        int64_t sum = 0, add = 0;\n\
-    \n        template<typename Comp>\n        struct data {\n            int64_t\
-    \ val;\n            int64_t count = 1;\n            int64_t second = std::max(inf,\
-    \ -inf, comp);\n            static const Comp comp;\n\n            data combine(data\
-    \ const& t) const {\n                return comp(val, t.val) ? data{val, count,\
-    \ std::min(second, t.val, comp)}\n                        : comp(t.val, val) ?\
-    \ data{t.val, t.count, std::min(t.second, val, comp)}\n                      \
-    \  : data{val, count + t.count, std::min(second, t.second, comp)};\n         \
-    \   }\n\n            void add(int64_t b) {\n                val += b;\n      \
-    \          second += b;\n            }\n\n            int64_t normalize(int64_t\
-    \ L, int64_t R) {\n                int64_t old_val = val;\n                val\
-    \ = std::clamp(val, L, R);\n                second = std::clamp(second, L, R);\n\
-    \                return count * (val - old_val);\n            }\n\n          \
-    \  bool stop(int64_t b) const {\n                return !comp(val, b);\n     \
-    \       }\n            bool proceed(int64_t b) const {\n                return\
-    \ comp(b, second);\n            }\n        };\n        data<std::less<int64_t>>\
+    \ meta = derived_meta;\n        void pull(meta const&, meta const&, int, int)\
+    \ {};\n        void push(meta*, meta*, int, int) {};\n    };\n}\n\n#line 7 \"\
+    cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\nnamespace cp_algo::data_structures::segment_tree::metas\
+    \ {\n    struct chmin_chmax_sum_meta: base_meta<chmin_chmax_sum_meta> {\n    \
+    \    static constexpr int64_t inf = 1e12;\n\n        using meta = chmin_chmax_sum_meta;\n\
+    \        int64_t sum = 0, add = 0;\n\n        template<typename Comp>\n      \
+    \  struct data {\n            int64_t val;\n            int64_t count = 1;\n \
+    \           int64_t second = std::max(inf, -inf, comp);\n            static const\
+    \ Comp comp;\n\n            data combine(data const& t) const {\n            \
+    \    return comp(val, t.val) ? data{val, count, std::min(second, t.val, comp)}\n\
+    \                        : comp(t.val, val) ? data{t.val, t.count, std::min(t.second,\
+    \ val, comp)}\n                        : data{val, count + t.count, std::min(second,\
+    \ t.second, comp)};\n            }\n\n            void add(int64_t b) {\n    \
+    \            val += b;\n                second += b;\n            }\n\n      \
+    \      int64_t normalize(int64_t L, int64_t R) {\n                int64_t old_val\
+    \ = val;\n                val = std::clamp(val, L, R);\n                second\
+    \ = std::clamp(second, L, R);\n                return count * (val - old_val);\n\
+    \            }\n\n            bool stop(int64_t b) const {\n                return\
+    \ !comp(val, b);\n            }\n            bool proceed(int64_t b) const {\n\
+    \                return comp(b, second);\n            }\n        };\n        data<std::less<int64_t>>\
     \ mn = {sum};\n        data<std::greater<int64_t>> mx = {sum};\n        int64_t\
     \ chmin = inf, chmax = -inf;\n\n        chmin_chmax_sum_meta() {}\n        chmin_chmax_sum_meta(int64_t\
     \ val): sum(val) {}\n\n        void pull(meta const& L, meta const& R, int, int)\
@@ -145,8 +144,8 @@ data:
   isVerificationFile: true
   path: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 22:49:03+01:00'
-  verificationStatus: TEST_ACCEPTED
+  timestamp: '2024-02-10 23:55:00+01:00'
+  verificationStatus: TEST_WRONG_ANSWER
   verifiedWith: []
 documentation_of: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
 layout: document

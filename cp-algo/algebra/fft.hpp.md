@@ -1,13 +1,16 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
+    path: cp-algo/algebra/affine.hpp
+    title: cp-algo/algebra/affine.hpp
+  - icon: ':question:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy:
@@ -16,8 +19,11 @@ data:
     title: cp-algo/algebra/polynomial.hpp
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/convolution107.test.cpp
+    path: verify/algebra/polynomial/convolution107.test.cpp
     title: Convolution mod $10^9+7$
+  - icon: ':heavy_check_mark:'
+    path: verify/algebra/polynomial/poly_sqrt.test.cpp
+    title: Sqrt of Formal Power Series
   _isVerificationFailed: false
   _pathExtension: hpp
   _verificationStatusIcon: ':heavy_check_mark:'
@@ -45,82 +51,86 @@ data:
     \     init = true;\n        }\n        return F[n];\n    }\n}\n\n#line 1 \"cp-algo/algebra/modular.hpp\"\
     \n\n\n#line 1 \"cp-algo/random/rng.hpp\"\n\n\n#include <chrono>\n#include <random>\n\
     namespace cp_algo::random {\n    std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());\
-    \ \n}\n\n#line 5 \"cp-algo/algebra/modular.hpp\"\n#include <algorithm>\n#include\
-    \ <iostream>\n#include <optional>\nnamespace cp_algo::algebra {\n    template<int\
+    \ \n}\n\n#line 1 \"cp-algo/algebra/affine.hpp\"\n\n\n#include <optional>\n#include\
+    \ <cassert>\nnamespace cp_algo::algebra {\n    template<typename base>\n    //\
+    \ a * x + b\n    struct lin {\n        base a = 1, b = 0;\n        std::optional<base>\
+    \ c;\n        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a,\
+    \ base b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c)\
+    \ {}\n\n        // polynomial product modulo x^2 - c\n        lin operator * (const\
+    \ lin& t) {\n            assert(c && t.c && *c == *t.c);\n            return lin(a\
+    \ * t.b + b * t.a, b * t.b + a * t.a * (*c), *c);\n        }\n\n        // a *\
+    \ (t.a * x + t.b) + b\n        lin compose(lin const& t) const {\n           \
+    \ return lin{a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const&\
+    \ t) {\n            *this = t.compose(*this);\n        }\n\n        base eval(base\
+    \ x) const {\n            return a * x + b;\n        }\n    };\n}\n\n#line 6 \"\
+    cp-algo/algebra/modular.hpp\"\n#include <algorithm>\n#include <iostream>\n#line\
+    \ 9 \"cp-algo/algebra/modular.hpp\"\nnamespace cp_algo::algebra {\n    template<int\
     \ m>\n    struct modular {\n        // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm\n\
-    \        // solves x^2 = y (mod m) assuming m is prime in O(log m).\n        //\
-    \ returns std::nullopt if no sol.\n        std::optional<modular> sqrt() const\
-    \ {\n            static modular y;\n            y = *this;\n            if(r ==\
-    \ 0) {\n                return 0;\n            } else if(bpow(y, (m - 1) / 2)\
-    \ != modular(1)) {\n                return std::nullopt;\n            } else {\n\
-    \                while(true) {\n                    modular z = random::rng();\n\
-    \                    if(z * z == *this) {\n                        return z;\n\
-    \                    }\n                    struct lin {\n                   \
-    \     modular a, b;\n                        lin(modular a, modular b): a(a),\
-    \ b(b) {}\n                        lin(modular a): a(a), b(0) {}\n           \
-    \             lin operator * (const lin& t) {\n                            return\
-    \ {\n                                a * t.a + b * t.b * y,\n                \
-    \                a * t.b + b * t.a\n                            };\n         \
-    \               }\n                    } x(z, 1); // z + x\n                 \
-    \   x = bpow(x, (m - 1) / 2);\n                    if(x.b != modular(0)) {\n \
-    \                       return x.b.inv();\n                    }\n           \
-    \     }\n            }\n        }\n        \n        uint64_t r;\n        constexpr\
-    \ modular(): r(0) {}\n        constexpr modular(int64_t rr): r(rr % m) {r = std::min<uint64_t>(r,\
-    \ r + m);}\n        modular inv() const {return bpow(*this, m - 2);}\n       \
-    \ modular operator - () const {return std::min(-r, m - r);}\n        modular operator\
-    \ * (const modular &t) const {return r * t.r;}\n        modular operator / (const\
-    \ modular &t) const {return *this * t.inv();}\n        modular& operator += (const\
-    \ modular &t) {r += t.r; r = std::min<uint64_t>(r, r - m); return *this;}\n  \
-    \      modular& operator -= (const modular &t) {r -= t.r; r = std::min<uint64_t>(r,\
-    \ r + m); return *this;}\n        modular operator + (const modular &t) const\
-    \ {return modular(*this) += t;}\n        modular operator - (const modular &t)\
-    \ const {return modular(*this) -= t;}\n        modular& operator *= (const modular\
-    \ &t) {return *this = *this * t;}\n        modular& operator /= (const modular\
-    \ &t) {return *this = *this / t;}\n        \n        auto operator <=> (const\
-    \ modular &t) const = default;\n        \n        explicit operator int() const\
-    \ {return r;}\n        int64_t rem() const {return 2 * r > m ? r - m : r;}\n\n\
-    \        static constexpr uint64_t mm = (uint64_t)m * m;\n        void add_unsafe(uint64_t\
-    \ t) {r += t; r = std::min<uint64_t>(r, r - mm);}\n        modular& normalize()\
-    \ {if(r >= m) r %= m; return *this;}\n    };\n    \n    template<int m>\n    std::istream&\
-    \ operator >> (std::istream &in, modular<m> &x) {\n        return in >> x.r;\n\
-    \    }\n    \n    template<int m>\n    std::ostream& operator << (std::ostream\
-    \ &out, modular<m> const& x) {\n        return out << x.r % m;\n    }\n}\n\n#line\
-    \ 6 \"cp-algo/algebra/fft.hpp\"\n#include <cassert>\n#include <vector>\nnamespace\
-    \ cp_algo::algebra::fft {\n    using ftype = double;\n    struct point {\n   \
-    \     ftype x, y;\n        \n        ftype real() {return x;}\n        ftype imag()\
-    \ {return y;}\n        \n        point(): x(0), y(0){}\n        point(ftype x,\
-    \ ftype y = 0): x(x), y(y){}\n        \n        static point polar(ftype rho,\
-    \ ftype ang) {\n            return point{rho * cos(ang), rho * sin(ang)};\n  \
-    \      }\n        \n        point conj() const {\n            return {x, -y};\n\
-    \        }\n        \n        point operator +=(const point &t) {x += t.x, y +=\
-    \ t.y; return *this;}\n        point operator +(const point &t) const {return\
-    \ point(*this) += t;}\n        point operator -(const point &t) const {return\
-    \ {x - t.x, y - t.y};}\n        point operator *(const point &t) const {return\
-    \ {x * t.x - y * t.y, x * t.y + y * t.x};}\n    };\n\n    point w[maxn]; // w[2^n\
-    \ + k] = exp(pi * k / (2^n))\n    int bitr[maxn];// b[2^n + k] = bitreverse(k)\n\
-    \    const ftype pi = acos(-1);\n    bool initiated = 0;\n    void init() {\n\
-    \        if(!initiated) {\n            for(int i = 1; i < maxn; i *= 2) {\n  \
-    \              int ti = i / 2;\n                for(int j = 0; j < i; j++) {\n\
-    \                    w[i + j] = point::polar(ftype(1), pi * j / i);\n        \
-    \            if(ti) {\n                        bitr[i + j] = 2 * bitr[ti + j %\
-    \ ti] + (j >= ti);\n                    }\n                }\n            }\n\
-    \            initiated = 1;\n        }\n    }\n    \n    void fft(auto &a, int\
-    \ n) {\n        init();\n        if(n == 1) {\n            return;\n        }\n\
-    \        int hn = n / 2;\n        for(int i = 0; i < n; i++) {\n            int\
-    \ ti = 2 * bitr[hn + i % hn] + (i > hn);\n            if(i < ti) {\n         \
-    \       std::swap(a[i], a[ti]);\n            }\n        }\n        for(int i =\
-    \ 1; i < n; i *= 2) {\n            for(int j = 0; j < n; j += 2 * i) {\n     \
-    \           for(int k = j; k < j + i; k++) {\n                    point t = a[k\
-    \ + i] * w[i + k - j];\n                    a[k + i] = a[k] - t;\n           \
-    \         a[k] += t;\n                }\n            }\n        }\n    }\n   \
-    \ \n    void mul_slow(std::vector<auto> &a, const std::vector<auto> &b) {\n  \
-    \      if(a.empty() || b.empty()) {\n            a.clear();\n        } else {\n\
-    \            int n = a.size();\n            int m = b.size();\n            a.resize(n\
-    \ + m - 1);\n            for(int k = n + m - 2; k >= 0; k--) {\n             \
-    \   a[k] *= b[0];\n                for(int j = std::max(k - n + 1, 1); j < std::min(k\
-    \ + 1, m); j++) {\n                    a[k] += a[k - j] * b[j];\n            \
-    \    }\n            }\n        }\n    }\n    \n    template<int m>\n    struct\
-    \ dft {\n        static constexpr int split = 1 << 15;\n        std::vector<point>\
+    \        std::optional<modular> sqrt() const {\n            if(r == 0) {\n   \
+    \             return 0;\n            } else if(bpow(*this, (m - 1) / 2) != modular(1))\
+    \ {\n                return std::nullopt;\n            } else {\n            \
+    \    while(true) {\n                    modular z = random::rng();\n         \
+    \           if(z * z == *this) {\n                        return z;\n        \
+    \            }\n                    lin<modular> x(1, z, *this); // x + z (mod\
+    \ x^2 - b)\n                    x = bpow(x, (m - 1) / 2, lin<modular>(0, 1, *this));\n\
+    \                    if(x.a != modular(0)) {\n                        return x.a.inv();\n\
+    \                    }\n                }\n            }\n        }\n        \n\
+    \        uint64_t r;\n        constexpr modular(): r(0) {}\n        constexpr\
+    \ modular(int64_t rr): r(rr % m) {r = std::min<uint64_t>(r, r + m);}\n       \
+    \ modular inv() const {return bpow(*this, m - 2);}\n        modular operator -\
+    \ () const {return std::min(-r, m - r);}\n        modular operator * (const modular\
+    \ &t) const {return r * t.r;}\n        modular operator / (const modular &t) const\
+    \ {return *this * t.inv();}\n        modular& operator += (const modular &t) {r\
+    \ += t.r; r = std::min<uint64_t>(r, r - m); return *this;}\n        modular& operator\
+    \ -= (const modular &t) {r -= t.r; r = std::min<uint64_t>(r, r + m); return *this;}\n\
+    \        modular operator + (const modular &t) const {return modular(*this) +=\
+    \ t;}\n        modular operator - (const modular &t) const {return modular(*this)\
+    \ -= t;}\n        modular& operator *= (const modular &t) {return *this = *this\
+    \ * t;}\n        modular& operator /= (const modular &t) {return *this = *this\
+    \ / t;}\n        \n        auto operator <=> (const modular &t) const = default;\n\
+    \        \n        explicit operator int() const {return r;}\n        int64_t\
+    \ rem() const {return 2 * r > m ? r - m : r;}\n\n        static constexpr uint64_t\
+    \ mm = (uint64_t)m * m;\n        void add_unsafe(uint64_t t) {r += t; r = std::min<uint64_t>(r,\
+    \ r - mm);}\n        modular& normalize() {if(r >= m) r %= m; return *this;}\n\
+    \    };\n    \n    template<int m>\n    std::istream& operator >> (std::istream\
+    \ &in, modular<m> &x) {\n        return in >> x.r;\n    }\n    \n    template<int\
+    \ m>\n    std::ostream& operator << (std::ostream &out, modular<m> const& x) {\n\
+    \        return out << x.r % m;\n    }\n}\n\n#line 7 \"cp-algo/algebra/fft.hpp\"\
+    \n#include <vector>\nnamespace cp_algo::algebra::fft {\n    using ftype = double;\n\
+    \    struct point {\n        ftype x, y;\n        \n        ftype real() {return\
+    \ x;}\n        ftype imag() {return y;}\n        \n        point(): x(0), y(0){}\n\
+    \        point(ftype x, ftype y = 0): x(x), y(y){}\n        \n        static point\
+    \ polar(ftype rho, ftype ang) {\n            return point{rho * cos(ang), rho\
+    \ * sin(ang)};\n        }\n        \n        point conj() const {\n          \
+    \  return {x, -y};\n        }\n        \n        point operator +=(const point\
+    \ &t) {x += t.x, y += t.y; return *this;}\n        point operator +(const point\
+    \ &t) const {return point(*this) += t;}\n        point operator -(const point\
+    \ &t) const {return {x - t.x, y - t.y};}\n        point operator *(const point\
+    \ &t) const {return {x * t.x - y * t.y, x * t.y + y * t.x};}\n    };\n\n    point\
+    \ w[maxn]; // w[2^n + k] = exp(pi * k / (2^n))\n    int bitr[maxn];// b[2^n +\
+    \ k] = bitreverse(k)\n    const ftype pi = acos(-1);\n    bool initiated = 0;\n\
+    \    void init() {\n        if(!initiated) {\n            for(int i = 1; i < maxn;\
+    \ i *= 2) {\n                int ti = i / 2;\n                for(int j = 0; j\
+    \ < i; j++) {\n                    w[i + j] = point::polar(ftype(1), pi * j /\
+    \ i);\n                    if(ti) {\n                        bitr[i + j] = 2 *\
+    \ bitr[ti + j % ti] + (j >= ti);\n                    }\n                }\n \
+    \           }\n            initiated = 1;\n        }\n    }\n    \n    void fft(auto\
+    \ &a, int n) {\n        init();\n        if(n == 1) {\n            return;\n \
+    \       }\n        int hn = n / 2;\n        for(int i = 0; i < n; i++) {\n   \
+    \         int ti = 2 * bitr[hn + i % hn] + (i > hn);\n            if(i < ti) {\n\
+    \                std::swap(a[i], a[ti]);\n            }\n        }\n        for(int\
+    \ i = 1; i < n; i *= 2) {\n            for(int j = 0; j < n; j += 2 * i) {\n \
+    \               for(int k = j; k < j + i; k++) {\n                    point t\
+    \ = a[k + i] * w[i + k - j];\n                    a[k + i] = a[k] - t;\n     \
+    \               a[k] += t;\n                }\n            }\n        }\n    }\n\
+    \    \n    void mul_slow(std::vector<auto> &a, const std::vector<auto> &b) {\n\
+    \        if(a.empty() || b.empty()) {\n            a.clear();\n        } else\
+    \ {\n            int n = a.size();\n            int m = b.size();\n          \
+    \  a.resize(n + m - 1);\n            for(int k = n + m - 2; k >= 0; k--) {\n \
+    \               a[k] *= b[0];\n                for(int j = std::max(k - n + 1,\
+    \ 1); j < std::min(k + 1, m); j++) {\n                    a[k] += a[k - j] * b[j];\n\
+    \                }\n            }\n        }\n    }\n    \n    template<int m>\n\
+    \    struct dft {\n        static constexpr int split = 1 << 15;\n        std::vector<point>\
     \ A;\n        \n        dft(std::vector<modular<m>> const& a, size_t n): A(n)\
     \ {\n            for(size_t i = 0; i < std::min(n, a.size()); i++) {\n       \
     \         A[i] = point(\n                    a[i].rem() % split,\n           \
@@ -218,14 +228,16 @@ data:
   - cp-algo/algebra/common.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/random/rng.hpp
+  - cp-algo/algebra/affine.hpp
   isVerificationFile: false
   path: cp-algo/algebra/fft.hpp
   requiredBy:
   - cp-algo/algebra/polynomial.hpp
-  timestamp: '2024-02-10 22:49:03+01:00'
+  timestamp: '2024-02-10 23:55:00+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
-  - verify/algebra/convolution107.test.cpp
+  - verify/algebra/polynomial/convolution107.test.cpp
+  - verify/algebra/polynomial/poly_sqrt.test.cpp
 documentation_of: cp-algo/algebra/fft.hpp
 layout: document
 redirect_from:

@@ -1,6 +1,7 @@
 {
-"verify/algebra/convolution107.test.cpp": "2024-02-10 20:45:15 +0100",
-"verify/algebra/matrix_pow.test.cpp": "2024-02-10 20:45:15 +0100",
-"verify/data_structures/range_affine_range_sum.test.cpp": "2024-02-10 20:45:15 +0100",
-"verify/data_structures/range_chmin_chmax_add_range_sum.test.cpp": "2024-02-10 20:45:15 +0100"
+"verify/algebra/convolution107.test.cpp": "2024-02-10 22:44:24 +0100",
+"verify/algebra/matrix_pow.test.cpp": "2024-02-10 22:44:24 +0100",
+"verify/data_structures/segment_tree/range_affine_range_sum.test.cpp": "2024-02-10 22:44:24 +0100",
+"verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp": "2024-02-10 22:44:24 +0100",
+"verify/data_structures/treap/range_reverse_range_sum.test.cpp": "2024-02-10 22:44:24 +0100"
 }

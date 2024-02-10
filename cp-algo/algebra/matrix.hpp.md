@@ -1,10 +1,10 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   _extendedRequiredBy: []
@@ -248,7 +248,7 @@ data:
   isVerificationFile: false
   path: cp-algo/algebra/matrix.hpp
   requiredBy: []
-  timestamp: '2024-02-10 19:08:03+01:00'
+  timestamp: '2024-02-10 19:28:58+01:00'
   verificationStatus: LIBRARY_NO_TESTS
   verifiedWith: []
 documentation_of: cp-algo/algebra/matrix.hpp

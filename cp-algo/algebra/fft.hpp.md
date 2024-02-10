@@ -1,23 +1,23 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   _extendedRequiredBy:
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/polynomial.hpp
     title: cp-algo/algebra/polynomial.hpp
   _extendedVerifiedWith:
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/algebra/convolution107.test.cpp
     title: verify/algebra/convolution107.test.cpp
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: hpp
-  _verificationStatusIcon: ':x:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/algebra/fft.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
@@ -233,8 +233,8 @@ data:
   path: cp-algo/algebra/fft.hpp
   requiredBy:
   - cp-algo/algebra/polynomial.hpp
-  timestamp: '2024-02-10 19:08:03+01:00'
-  verificationStatus: LIBRARY_ALL_WA
+  timestamp: '2024-02-10 19:28:58+01:00'
+  verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/algebra/convolution107.test.cpp
 documentation_of: cp-algo/algebra/fft.hpp

@@ -1,23 +1,23 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/fft.hpp
     title: cp-algo/algebra/fft.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/polynomial.hpp
     title: cp-algo/algebra/polynomial.hpp
   _extendedRequiredBy: []
   _extendedVerifiedWith: []
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: cpp
-  _verificationStatusIcon: ':x:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     '*NOT_SPECIAL_COMMENTS*': ''
     PROBLEM: https://judge.yosupo.jp/problem/convolution_mod_1000000007
@@ -600,8 +600,8 @@ data:
   isVerificationFile: true
   path: verify/algebra/convolution107.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 19:08:03+01:00'
-  verificationStatus: TEST_WRONG_ANSWER
+  timestamp: '2024-02-10 19:28:58+01:00'
+  verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/algebra/convolution107.test.cpp
 layout: document

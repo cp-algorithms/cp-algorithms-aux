@@ -5,7 +5,7 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/fft.hpp
     title: cp-algo/algebra/fft.hpp
-  - icon: ':warning:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/matrix.hpp
     title: cp-algo/algebra/matrix.hpp
   - icon: ':heavy_check_mark:'
@@ -18,6 +18,9 @@ data:
   - icon: ':heavy_check_mark:'
     path: verify/algebra/convolution107.test.cpp
     title: Convolution mod $10^9+7$
+  - icon: ':heavy_check_mark:'
+    path: verify/algebra/matrix_pow.test.cpp
+    title: Pow of Matrix
   _isVerificationFailed: false
   _pathExtension: hpp
   _verificationStatusIcon: ':heavy_check_mark:'
@@ -73,9 +76,10 @@ data:
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-10 19:49:33+01:00'
+  timestamp: '2024-02-10 19:59:38+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
+  - verify/algebra/matrix_pow.test.cpp
   - verify/algebra/convolution107.test.cpp
 documentation_of: cp-algo/algebra/common.hpp
 layout: document

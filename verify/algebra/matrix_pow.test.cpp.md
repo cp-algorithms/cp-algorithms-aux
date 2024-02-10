@@ -5,19 +5,26 @@ data:
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
   - icon: ':heavy_check_mark:'
+    path: cp-algo/algebra/matrix.hpp
+    title: cp-algo/algebra/matrix.hpp
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   _extendedRequiredBy: []
-  _extendedVerifiedWith:
-  - icon: ':heavy_check_mark:'
-    path: verify/algebra/matrix_pow.test.cpp
-    title: Pow of Matrix
+  _extendedVerifiedWith: []
   _isVerificationFailed: false
-  _pathExtension: hpp
+  _pathExtension: cpp
   _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
-    links: []
-  bundledCode: "#line 1 \"cp-algo/algebra/matrix.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
+    '*NOT_SPECIAL_COMMENTS*': ''
+    PROBLEM: https://judge.yosupo.jp/problem/pow_of_matrix
+    document_title: Pow of Matrix
+    links:
+    - https://judge.yosupo.jp/problem/pow_of_matrix
+  bundledCode: "#line 1 \"verify/algebra/matrix_pow.test.cpp\"\n// @brief Pow of Matrix\n\
+    #define PROBLEM \"https://judge.yosupo.jp/problem/pow_of_matrix\"\n#pragma GCC\
+    \ optimize(\"Ofast,unroll-loops\")\n#pragma GCC target(\"avx2,tune=native\")\n\
+    #line 1 \"cp-algo/algebra/matrix.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
     \n\n\n#include <chrono>\n#include <random>\nnamespace algebra {\n    const int\
     \ maxn = 1 << 20;\n    const int magic = 250; // threshold for sizes to run the\
     \ naive algo\n    std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());\
@@ -161,106 +168,36 @@ data:
     \     return std::array{\n                sols.submatrix(std::slice(size(free)\
     \ - t.m, t.m, 1), std::slice(0, m, 1)),\n                sols.submatrix(std::slice(0,\
     \ size(free) - t.m, 1), std::slice(0, m, 1))\n            };\n        }\n    };\n\
-    }\n\n"
-  code: "#ifndef ALGEBRA_MATRIX_HPP\n#define ALGEBRA_MATRIX_HPP\n#include \"common.hpp\"\
-    \n#include \"modular.hpp\"\n#include <valarray>\n#include <iostream>\n#include\
-    \ <optional>\n#include <cassert>\n#include <vector>\n#include <array>\nnamespace\
-    \ algebra {\n    template<int mod>\n    struct matrix {\n        using base =\
-    \ modular<mod>;\n        size_t n, m;\n        std::valarray<std::valarray<base>>\
-    \ a;\n        matrix(size_t n, size_t m): n(n), m(m), a(std::valarray<base>(m),\
-    \ n) {}\n        matrix(std::valarray<std::valarray<base>> a): n(size(a)), m(n\
-    \ ? size(a[0]) : 0), a(a) {}\n\n        auto& operator[] (size_t i) {return a[i];}\n\
-    \        auto const& operator[] (size_t i) const {return a[i];}\n        auto&\
-    \ row(size_t i) {return a[i];}\n        auto const& row(size_t i) const {return\
-    \ a[i];}\n\n        matrix operator -() const {return matrix(-a);}\n        matrix&\
-    \ operator *=(base t) {for(auto &it: a) it *= t; return *this;}\n        matrix\
-    \ operator *(base t) const {return matrix(*this) *= t;}\n\n        void read()\
-    \ {\n            for(size_t i = 0; i < n; i++) {\n                for(size_t j\
-    \ = 0; j < m; j++) {\n                    std::cin >> (*this)[i][j];\n       \
-    \         }\n            }\n        }\n\n        void print() const {\n      \
-    \      for(size_t i = 0; i < n; i++) {\n                for(size_t j = 0; j <\
-    \ m; j++) {\n                    std::cout << (*this)[i][j] << \" \\n\"[j + 1\
-    \ == m];\n                }\n            }\n        }\n\n        static matrix\
-    \ eye(size_t n) {\n            matrix res(n, n);\n            for(size_t i = 0;\
-    \ i < n; i++) {\n                res[i][i] = 1;\n            }\n            return\
-    \ res;\n        }\n\n        // concatenate matrices\n        matrix operator\
-    \ |(matrix const& b) const {\n            assert(n == b.n);\n            matrix\
-    \ res(n, m+b.m);\n            for(size_t i = 0; i < n; i++) {\n              \
-    \  res[i][std::slice(0,m,1)] = a[i];\n                res[i][std::slice(m,b.m,1)]\
-    \ = b[i];\n            }\n            return res;\n        }\n        matrix submatrix(auto\
-    \ slicex, auto slicey) const {\n            std::valarray res = a[slicex];\n \
-    \           for(auto &row: res) {\n                row = std::valarray(row[slicey]);\n\
-    \            }\n            return res;\n        }\n\n        matrix T() const\
-    \ {\n            matrix res(m, n);\n            for(size_t i = 0; i < n; i++)\
-    \ {\n                for(size_t j = 0; j < m; j++) {\n                    res[j][i]\
-    \ = (*this)[i][j];\n                }\n            }\n            return res;\n\
-    \        }\n\n        matrix operator *(matrix const& b) const {\n           \
-    \ assert(m == b.n);\n            matrix res(n, b.m);\n            for(size_t i\
-    \ = 0; i < n; i++) {\n                for(size_t j = 0; j < m; j++) {\n      \
-    \              for(size_t k = 0; k < b.m; k++) {\n                        res[i][k].add_unsafe(a[i][j].r\
-    \ * b[j][k].r);\n                    }\n                }\n            }\n   \
-    \         return res.normalize();\n        }\n\n        matrix pow(uint64_t k)\
-    \ const {\n            assert(n == m);\n            return bpow(*this, k, eye(n));\n\
-    \        }\n\n        static auto& normalize(auto &a) {\n            for(auto\
-    \ &it: a) {\n                it.normalize();\n            }\n            return\
-    \ a;\n        }\n        matrix& normalize() {\n            for(auto &it: a) {\n\
-    \                normalize(it);\n            }\n            return *this;\n  \
-    \      }\n\n        inline static void add_scaled(auto &a, auto const& b, base\
-    \ scale, size_t i = 0) {\n            size_t m = size(a);\n            for(; i\
-    \ < m; i++) {\n                a[i].add_unsafe(scale.r * b[i].r);\n          \
-    \  }\n        }\n\n        enum Mode {normal, reverse};\n        template<Mode\
-    \ mode = normal>\n        auto gauss(size_t lim) {\n            size_t rk = 0;\n\
-    \            std::vector<size_t> free, pivots;\n            for(size_t i = 0;\
-    \ i < lim; i++) {\n                for(size_t j = rk; j < n && a[rk][i].normalize()\
-    \ == 0; j++) {\n                    if(a[j][i].normalize() != 0) {\n         \
-    \               a[rk] += a[j];\n                    }\n                }\n   \
-    \             if(rk == n || normalize(a[rk])[i] == 0) {\n                    free.push_back(i);\n\
-    \                } else {\n                    pivots.push_back(i);\n        \
-    \            base dinv = -a[rk][i].inv();\n                    for(size_t j =\
-    \ mode == reverse ? 0 : rk; j < n; j++) {\n                        if(j != rk)\
-    \ {\n                            add_scaled(a[j], a[rk], a[j][i].normalize() *\
-    \ dinv, i);\n                        }\n                    }\n              \
-    \      rk += 1;\n                }\n            }\n            normalize();\n\
-    \            return std::array{pivots, free};\n        }\n        template<Mode\
-    \ mode = normal>\n        auto gauss() {\n            return gauss<mode>(m);\n\
-    \        }\n\n        size_t rank() const {\n            if(n < m) {\n       \
-    \         return T().rank();\n            }\n            return size(matrix(*this).gauss()[0]);\n\
-    \        }\n\n        base det() const {\n            assert(n == m);\n      \
-    \      matrix b = *this;\n            b.gauss();\n            base res = 1;\n\
-    \            for(size_t i = 0; i < n; i++) {\n                res *= b[i][i];\n\
-    \            }\n            return res;\n        }\n\n        std::optional<matrix>\
-    \ inv() const {\n            assert(n == m);\n            matrix b = *this | eye(n);\n\
-    \            if(size(b.gauss<reverse>(n)[0]) < n) {\n                return std::nullopt;\n\
-    \            }\n            for(size_t i = 0; i < n; i++) {\n                b[i]\
-    \ *= b[i][i].inv();\n            }\n            return b.submatrix(std::slice(0,\
-    \ n, 1), std::slice(n, n, 1));\n        }\n\n        // [solution, basis], transposed\n\
-    \        std::optional<std::array<matrix, 2>> solve(matrix t) const {\n      \
-    \      assert(n == t.n);\n            matrix b = *this | t;\n            auto\
-    \ [pivots, free] = b.gauss<reverse>();\n            if(!empty(pivots) && pivots.back()\
-    \ >= m) {\n                return std::nullopt;\n            }\n            matrix\
-    \ sols(size(free), m);\n            for(size_t j = 0; j < size(pivots); j++) {\n\
-    \                base scale = b[j][pivots[j]].inv();\n                for(size_t\
-    \ i = 0; i < size(free); i++) {\n                    sols[i][pivots[j]] = b[j][free[i]]\
-    \ * scale;\n                }\n            }\n            for(size_t i = 0; free[i]\
-    \ < m; i++) {\n                sols[i][free[i]] = -1;\n            }\n       \
-    \     return std::array{\n                sols.submatrix(std::slice(size(free)\
-    \ - t.m, t.m, 1), std::slice(0, m, 1)),\n                sols.submatrix(std::slice(0,\
-    \ size(free) - t.m, 1), std::slice(0, m, 1))\n            };\n        }\n    };\n\
-    }\n#endif // ALGEBRA_MATRIX_HPP\n"
+    }\n\n#line 6 \"verify/algebra/matrix_pow.test.cpp\"\n#include <bits/stdc++.h>\n\
+    \nusing namespace std;\nusing namespace algebra;\n\nconst int mod = 998244353;\n\
+    \nvoid solve() {\n    int n;\n    uint64_t k;\n    cin >> n >> k;\n    matrix<mod>\
+    \ a(n, n);\n    a.read();\n    a.pow(k).print();\n}\nsigned main() {\n    //freopen(\"\
+    input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n \
+    \   int t;\n    t = 1;// cin >> t;\n    while(t--) {\n        solve();\n    }\n\
+    }\n"
+  code: "// @brief Pow of Matrix\n#define PROBLEM \"https://judge.yosupo.jp/problem/pow_of_matrix\"\
+    \n#pragma GCC optimize(\"Ofast,unroll-loops\")\n#pragma GCC target(\"avx2,tune=native\"\
+    )\n#include \"cp-algo/algebra/matrix.hpp\"\n#include <bits/stdc++.h>\n\nusing\
+    \ namespace std;\nusing namespace algebra;\n\nconst int mod = 998244353;\n\nvoid\
+    \ solve() {\n    int n;\n    uint64_t k;\n    cin >> n >> k;\n    matrix<mod>\
+    \ a(n, n);\n    a.read();\n    a.pow(k).print();\n}\nsigned main() {\n    //freopen(\"\
+    input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n \
+    \   int t;\n    t = 1;// cin >> t;\n    while(t--) {\n        solve();\n    }\n\
+    }\n"
   dependsOn:
+  - cp-algo/algebra/matrix.hpp
   - cp-algo/algebra/common.hpp
   - cp-algo/algebra/modular.hpp
-  isVerificationFile: false
-  path: cp-algo/algebra/matrix.hpp
+  isVerificationFile: true
+  path: verify/algebra/matrix_pow.test.cpp
   requiredBy: []
   timestamp: '2024-02-10 19:59:38+01:00'
-  verificationStatus: LIBRARY_ALL_AC
-  verifiedWith:
-  - verify/algebra/matrix_pow.test.cpp
-documentation_of: cp-algo/algebra/matrix.hpp
+  verificationStatus: TEST_ACCEPTED
+  verifiedWith: []
+documentation_of: verify/algebra/matrix_pow.test.cpp
 layout: document
 redirect_from:
-- /library/cp-algo/algebra/matrix.hpp
-- /library/cp-algo/algebra/matrix.hpp.html
-title: cp-algo/algebra/matrix.hpp
+- /verify/verify/algebra/matrix_pow.test.cpp
+- /verify/verify/algebra/matrix_pow.test.cpp.html
+title: Pow of Matrix
 ---

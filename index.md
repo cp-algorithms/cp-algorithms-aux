@@ -9,7 +9,7 @@ data:
     - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/fft.hpp
       title: cp-algo/algebra/fft.hpp
-    - icon: ':warning:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/matrix.hpp
       title: cp-algo/algebra/matrix.hpp
     - icon: ':heavy_check_mark:'
@@ -32,5 +32,8 @@ data:
     - icon: ':heavy_check_mark:'
       path: verify/algebra/convolution107.test.cpp
       title: Convolution mod $10^9+7$
+    - icon: ':heavy_check_mark:'
+      path: verify/algebra/matrix_pow.test.cpp
+      title: Pow of Matrix
 layout: toppage
 ---

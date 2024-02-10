@@ -138,7 +138,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 22:44:24+01:00'
+  timestamp: '2024-02-10 22:49:03+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/treap/range_reverse_range_sum.test.cpp

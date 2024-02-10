@@ -38,7 +38,7 @@ data:
   requiredBy:
   - cp-algo/data_structures/segment_tree/metas/affine.hpp
   - cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
-  timestamp: '2024-02-10 22:44:24+01:00'
+  timestamp: '2024-02-10 22:49:03+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp

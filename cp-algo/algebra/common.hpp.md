@@ -2,22 +2,25 @@
 data:
   _extendedDependsOn: []
   _extendedRequiredBy:
-  - icon: ':warning:'
+  - icon: ':x:'
     path: cp-algo/algebra/fft.hpp
     title: cp-algo/algebra/fft.hpp
   - icon: ':warning:'
     path: cp-algo/algebra/matrix.hpp
     title: cp-algo/algebra/matrix.hpp
-  - icon: ':warning:'
+  - icon: ':x:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
-  - icon: ':warning:'
+  - icon: ':x:'
     path: cp-algo/algebra/polynomial.hpp
     title: cp-algo/algebra/polynomial.hpp
-  _extendedVerifiedWith: []
-  _isVerificationFailed: false
+  _extendedVerifiedWith:
+  - icon: ':x:'
+    path: verify/algebra/convolution107.test.cpp
+    title: verify/algebra/convolution107.test.cpp
+  _isVerificationFailed: true
   _pathExtension: hpp
-  _verificationStatusIcon: ':warning:'
+  _verificationStatusIcon: ':x:'
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/algebra/common.hpp\"\n\n\n#include <chrono>\n#include\
@@ -70,9 +73,10 @@ data:
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-10 18:16:41+01:00'
-  verificationStatus: LIBRARY_NO_TESTS
-  verifiedWith: []
+  timestamp: '2024-02-10 18:45:35+01:00'
+  verificationStatus: LIBRARY_ALL_WA
+  verifiedWith:
+  - verify/algebra/convolution107.test.cpp
 documentation_of: cp-algo/algebra/common.hpp
 layout: document
 redirect_from:

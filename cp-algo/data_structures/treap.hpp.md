@@ -4,18 +4,19 @@ data:
   _extendedRequiredBy: []
   _extendedVerifiedWith: []
   _isVerificationFailed: false
-  _pathExtension: cpp
+  _pathExtension: hpp
   _verificationStatusIcon: ':warning:'
   attributes:
     links:
     - https://judge.yosupo.jp/submission/147858
     - https://judge.yosupo.jp/submission/147860
     - https://judge.yosupo.jp/submission/148948
-  bundledCode: "#line 1 \"src/data_structures/treap.cpp\"\n/* Submissions on Library\
-    \ Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
-    \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
-    \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    \  */\nnamespace data_structures {\n    namespace treap {\n        mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());\n\
+  bundledCode: "#line 1 \"cp-algo/data_structures/treap.hpp\"\n\n\n#include <chrono>\n\
+    #include <random>\n/* Submissions on Library Judge:\n  Range Reverse Range Sum,\
+    \ 558ms - https://judge.yosupo.jp/submission/147860\n  Cartesian Tree, 229ms -\
+    \ https://judge.yosupo.jp/submission/147858\n  Dynamic Sequence Range Affine Range\
+    \ Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n*/\nnamespace data_structures\
+    \ {\n    namespace treap {\n        std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());\n\
     \        #define safe(t, op) (t ? t->op : typename remove_reference<decltype(t->op)>::type())\n\
     \        template<typename meta>\n        struct treap_node {\n\n            using\
     \ node = treap_node;\n            using treap = node*;\n            meta _meta;\n\
@@ -72,11 +73,13 @@ data:
     \           }\n                    st.push_back(cur);\n                }\n   \
     \             return st.empty() ? nullptr : st[0]->pull_all();\n            }\n\
     \        };\n\n        struct null_meta {\n            void pull(auto const, auto\
-    \ const) {}\n            void push(auto&, auto&) {}\n        };\n    }\n}\n"
-  code: "/* Submissions on Library Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
-    \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
-    \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    \  */\nnamespace data_structures {\n    namespace treap {\n        mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());\n\
+    \ const) {}\n            void push(auto&, auto&) {}\n        };\n    }\n}\n\n"
+  code: "#ifndef DATA_STRUCTURES_TREAP_HPP\n#define DATA_STRUCTURES_TREAP_HPP\n#include\
+    \ <chrono>\n#include <random>\n/* Submissions on Library Judge:\n  Range Reverse\
+    \ Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n  Cartesian Tree,\
+    \ 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic Sequence Range\
+    \ Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n*/\nnamespace\
+    \ data_structures {\n    namespace treap {\n        std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());\n\
     \        #define safe(t, op) (t ? t->op : typename remove_reference<decltype(t->op)>::type())\n\
     \        template<typename meta>\n        struct treap_node {\n\n            using\
     \ node = treap_node;\n            using treap = node*;\n            meta _meta;\n\
@@ -133,18 +136,19 @@ data:
     \           }\n                    st.push_back(cur);\n                }\n   \
     \             return st.empty() ? nullptr : st[0]->pull_all();\n            }\n\
     \        };\n\n        struct null_meta {\n            void pull(auto const, auto\
-    \ const) {}\n            void push(auto&, auto&) {}\n        };\n    }\n}\n"
+    \ const) {}\n            void push(auto&, auto&) {}\n        };\n    }\n}\n#endif\
+    \ // DATA_STRUCTURES_TREAP_HPP"
   dependsOn: []
   isVerificationFile: false
-  path: src/data_structures/treap.cpp
+  path: cp-algo/data_structures/treap.hpp
   requiredBy: []
-  timestamp: '2024-02-10 16:42:18+01:00'
+  timestamp: '2024-02-10 18:16:41+01:00'
   verificationStatus: LIBRARY_NO_TESTS
   verifiedWith: []
-documentation_of: src/data_structures/treap.cpp
+documentation_of: cp-algo/data_structures/treap.hpp
 layout: document
 redirect_from:
-- /library/src/data_structures/treap.cpp
-- /library/src/data_structures/treap.cpp.html
-title: src/data_structures/treap.cpp
+- /library/cp-algo/data_structures/treap.hpp
+- /library/cp-algo/data_structures/treap.hpp.html
+title: cp-algo/data_structures/treap.hpp
 ---

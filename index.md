@@ -1,31 +1,31 @@
 ---
 data:
   libraryCategories:
-  - name: src/algebra
+  - name: cp-algo/algebra
     pages:
     - icon: ':warning:'
-      path: src/algebra/common.cpp
-      title: src/algebra/common.cpp
+      path: cp-algo/algebra/common.hpp
+      title: cp-algo/algebra/common.hpp
     - icon: ':warning:'
-      path: src/algebra/fft.cpp
-      title: src/algebra/fft.cpp
+      path: cp-algo/algebra/fft.hpp
+      title: cp-algo/algebra/fft.hpp
     - icon: ':warning:'
-      path: src/algebra/matrix.cpp
-      title: src/algebra/matrix.cpp
+      path: cp-algo/algebra/matrix.hpp
+      title: cp-algo/algebra/matrix.hpp
     - icon: ':warning:'
-      path: src/algebra/modular.cpp
-      title: src/algebra/modular.cpp
+      path: cp-algo/algebra/modular.hpp
+      title: cp-algo/algebra/modular.hpp
     - icon: ':warning:'
-      path: src/algebra/polynomial.cpp
-      title: src/algebra/polynomial.cpp
-  - name: src/data_structures
+      path: cp-algo/algebra/polynomial.hpp
+      title: cp-algo/algebra/polynomial.hpp
+  - name: cp-algo/data_structures
     pages:
     - icon: ':warning:'
-      path: src/data_structures/segment_tree.cpp
-      title: src/data_structures/segment_tree.cpp
+      path: cp-algo/data_structures/segment_tree.hpp
+      title: cp-algo/data_structures/segment_tree.hpp
     - icon: ':warning:'
-      path: src/data_structures/treap.cpp
-      title: src/data_structures/treap.cpp
+      path: cp-algo/data_structures/treap.hpp
+      title: cp-algo/data_structures/treap.hpp
   verificationCategories:
   - name: verify
     pages:

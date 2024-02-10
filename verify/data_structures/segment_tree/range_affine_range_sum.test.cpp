@@ -28,7 +28,7 @@ void solve() {
             int l, r, b, c;
             cin >> l >> r >> b >> c;
             me.exec_on_segment(l, r, [&](auto& meta) {
-                meta.to_push = meta::lin(b, c) * meta.to_push;
+                meta.to_push.prepend(meta::lin(b, c));
             });
         } else {
             int l, r;

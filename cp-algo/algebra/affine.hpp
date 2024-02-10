@@ -16,16 +16,16 @@ namespace cp_algo::algebra {
         // polynomial product modulo x^2 - c
         lin operator * (const lin& t) {
             assert(c && t.c && *c == *t.c);
-            return lin(a * t.b + b * t.a, b * t.b + a * t.a * (*c), *c);
+            return {a * t.b + b * t.a, b * t.b + a * t.a * (*c), *c};
         }
 
         // a * (t.a * x + t.b) + b
-        lin compose(lin const& t) const {
-            return lin{a * t.a, a * t.b + b};
+        lin apply(lin const& t) const {
+            return {a * t.a, a * t.b + b};
         }
 
         void prepend(lin const& t) {
-            *this = t.compose(*this);
+            *this = t.apply(*this);
         }
 
         base eval(base x) const {

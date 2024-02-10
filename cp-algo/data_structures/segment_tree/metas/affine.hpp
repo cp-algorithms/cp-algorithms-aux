@@ -6,9 +6,10 @@ namespace cp_algo::data_structures::segment_tree::metas {
     template<typename base>
     struct affine_meta: base_meta<affine_meta<base>> {
         using meta = affine_meta;
+        using lin = algebra::lin<base>;
 
         base sum = 0;
-        algebra<base>::lin to_push = {};
+        lin to_push = {};
 
         affine_meta() {}
         affine_meta(base sum): sum(sum) {}
@@ -17,8 +18,8 @@ namespace cp_algo::data_structures::segment_tree::metas {
             if(to_push.a != 1 || to_push.b != 0) {
                 sum = to_push.a * sum + to_push.b * (r - l);
                 if(r - l > 1) {
-                    L->to_push = to_push.compose(L->to_push);
-                    R->to_push = to_push.compose(R->to_push);
+                    L->to_push.prepend(to_push);
+                    R->to_push.prepend(to_push);
                 }
                 to_push = {};
             }

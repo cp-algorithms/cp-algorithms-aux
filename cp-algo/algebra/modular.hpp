@@ -1,10 +1,11 @@
-#ifndef ALGEBRA_MODULAR_HPP
-#define ALGEBRA_MODULAR_HPP
+#ifndef CP_ALGO_ALGEBRA_MODULAR_HPP
+#define CP_ALGO_ALGEBRA_MODULAR_HPP
+#include "../random/rng.hpp"
 #include "common.hpp"
 #include <algorithm>
 #include <iostream>
 #include <optional>
-namespace algebra {
+namespace cp_algo::algebra {
     template<int m>
     struct modular {
         // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
@@ -19,7 +20,7 @@ namespace algebra {
                 return std::nullopt;
             } else {
                 while(true) {
-                    modular z = rng();
+                    modular z = random::rng();
                     if(z * z == *this) {
                         return z;
                     }
@@ -76,4 +77,4 @@ namespace algebra {
         return out << x.r % m;
     }
 }
-#endif // ALGEBRA_MODULAR_HPP
+#endif // CP_ALGO_ALGEBRA_MODULAR_HPP

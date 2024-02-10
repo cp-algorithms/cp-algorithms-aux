@@ -1,5 +1,5 @@
-#ifndef ALGEBRA_POLYNOMIAL_HPP
-#define ALGEBRA_POLYNOMIAL_HPP
+#ifndef CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
+#define CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
 #include "common.hpp"
 #include "modular.hpp"
 #include "fft.hpp"
@@ -9,7 +9,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
-namespace algebra {
+namespace cp_algo::algebra {
     template<typename T>
     struct poly {
         std::vector<T> a;
@@ -937,4 +937,4 @@ namespace algebra {
         return b * a;
     }
 };
-#endif // ALGEBRA_POLYNOMIAL_HPP
+#endif // CP_ALGO_ALGEBRA_POLYNOMIAL_HPP

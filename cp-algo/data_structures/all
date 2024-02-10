@@ -1,0 +1,5 @@
+#ifndef CP_ALGO_DATA_STRUCTURES_ALL_HPP
+#define CP_ALGO_DATA_STRUCTURES_ALL_HPP
+#include "segment_tree/all"
+#include "treap/all"
+#endif // CP_ALGO_DATA_STRUCTURES_ALL_HPP

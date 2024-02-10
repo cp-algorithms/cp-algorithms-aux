@@ -1,0 +1,5 @@
+#ifndef CP_ALGO_DATA_STRUCTURES_TREAP_ALL_HPP
+#define CP_ALGO_DATA_STRUCTURES_TREAP_ALL_HPP
+#include "metas/all"
+#include "../treap.hpp"
+#endif // CP_ALGO_DATA_STRUCTURES_TREAP_ALL_HPP

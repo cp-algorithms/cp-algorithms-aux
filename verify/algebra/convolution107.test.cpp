@@ -4,7 +4,7 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace algebra;
+using namespace cp_algo::algebra;
 
 const int mod = 1e9 + 7;
 typedef modular<mod> base;

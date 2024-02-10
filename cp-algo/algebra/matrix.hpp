@@ -1,5 +1,5 @@
-#ifndef ALGEBRA_MATRIX_HPP
-#define ALGEBRA_MATRIX_HPP
+#ifndef CP_ALGO_ALGEBRA_MATRIX_HPP
+#define CP_ALGO_ALGEBRA_MATRIX_HPP
 #include "common.hpp"
 #include "modular.hpp"
 #include <valarray>
@@ -8,7 +8,7 @@
 #include <cassert>
 #include <vector>
 #include <array>
-namespace algebra {
+namespace cp_algo::algebra {
     template<int mod>
     struct matrix {
         using base = modular<mod>;
@@ -203,4 +203,4 @@ namespace algebra {
         }
     };
 }
-#endif // ALGEBRA_MATRIX_HPP
+#endif // CP_ALGO_ALGEBRA_MATRIX_HPP

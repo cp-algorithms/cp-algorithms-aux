@@ -1,0 +1,6 @@
+#ifndef CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_ALL_HPP
+#define CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_ALL_HPP
+#include "base.hpp"
+#include "affine.hpp"
+#include "chmin_chmax_add.hpp"
+#endif // CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_ALL_HPP

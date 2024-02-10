@@ -1,0 +1,5 @@
+#ifndef CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_ALL_HPP
+#define CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_ALL_HPP
+#include "metas/all"
+#include "../segment_tree.hpp"
+#endif // CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_ALL_HPP

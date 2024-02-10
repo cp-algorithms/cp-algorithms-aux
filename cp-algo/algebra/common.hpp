@@ -1,11 +1,9 @@
-#ifndef ALGEBRA_COMMON_HPP
-#define ALGEBRA_COMMON_HPP
-#include <chrono>
-#include <random>
-namespace algebra {
+#ifndef CP_ALGO_ALGEBRA_COMMON_HPP
+#define CP_ALGO_ALGEBRA_COMMON_HPP
+#include <cstdint>
+namespace cp_algo::algebra {
     const int maxn = 1 << 20;
     const int magic = 250; // threshold for sizes to run the naive algo
-    std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count()); 
 
     auto bpow(auto x, int64_t n, auto ans) {
         for(; n; n /= 2, x = x * x) {
@@ -61,4 +59,4 @@ namespace algebra {
         return F[n];
     }
 }
-#endif // ALGEBRA_COMMON_HPP
+#endif // CP_ALGO_ALGEBRA_COMMON_HPP

@@ -1,14 +1,14 @@
 // @brief Range Affine Range Sum
 #define PROBLEM "https://judge.yosupo.jp/problem/range_affine_range_sum"
-#include "cp-algo/data_structures/metas/affine.hpp"
+#include "cp-algo/data_structures/segment_tree/metas/affine.hpp"
 #include "cp-algo/data_structures/segment_tree.hpp"
 #include "cp-algo/algebra/modular.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace data_structures::segment_tree;
+using namespace cp_algo::data_structures::segment_tree;
 
-using base = algebra::modular<998244353>;
+using base = cp_algo::algebra::modular<998244353>;
 using meta = metas::affine_meta<base>;
 
 void solve() {

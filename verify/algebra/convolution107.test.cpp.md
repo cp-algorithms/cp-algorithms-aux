@@ -26,8 +26,7 @@ data:
     - https://judge.yosupo.jp/problem/convolution_mod_1000000007
   bundledCode: "#line 1 \"verify/algebra/convolution107.test.cpp\"\n// @brief Convolution\
     \ mod $10^9+7$\n#define PROBLEM \"https://judge.yosupo.jp/problem/convolution_mod_1000000007\"\
-    \n#pragma GCC optimize(\"Ofast,unroll-loops\")\n#pragma GCC target(\"avx2,tune=native\"\
-    )\n#line 1 \"cp-algo/algebra/polynomial.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
+    \n#line 1 \"cp-algo/algebra/polynomial.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
     \n\n\n#include <chrono>\n#include <random>\nnamespace algebra {\n    const int\
     \ maxn = 1 << 20;\n    const int magic = 250; // threshold for sizes to run the\
     \ naive algo\n    std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());\
@@ -575,24 +574,23 @@ data:
     \ + A[r] * fact<T>(r)).mod_xk(n);\n                }\n            }\n        \
     \    \n            return ans;\n        }\n    };\n    \n    static auto operator\
     \ * (const auto& a, const poly<auto>& b) {\n        return b * a;\n    }\n};\n\
-    \n#line 6 \"verify/algebra/convolution107.test.cpp\"\n#include <bits/stdc++.h>\n\
+    \n#line 4 \"verify/algebra/convolution107.test.cpp\"\n#include <bits/stdc++.h>\n\
     \nusing namespace std;\nusing namespace algebra;\n\nconst int mod = 1e9 + 7;\n\
     typedef modular<mod> base;\ntypedef poly<base> polyn;\n\nvoid solve() {\n    int\
     \ n, m;\n    cin >> n >> m;\n    vector<base> a(n), b(m);\n    copy_n(istream_iterator<base>(cin),\
     \ n, begin(a));\n    copy_n(istream_iterator<base>(cin), m, begin(b));\n    (polyn(a)\
     \ * polyn(b)).print(n + m - 1);\n}\n\nsigned main() {\n    //freopen(\"input.txt\"\
-    , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t;\n\
-    \    t = 1;// cin >> t;\n    while(t--) {\n        solve();\n    }\n}\n"
+    , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n\
+    \    while(t--) {\n        solve();\n    }\n}\n"
   code: "// @brief Convolution mod $10^9+7$\n#define PROBLEM \"https://judge.yosupo.jp/problem/convolution_mod_1000000007\"\
-    \n#pragma GCC optimize(\"Ofast,unroll-loops\")\n#pragma GCC target(\"avx2,tune=native\"\
-    )\n#include \"cp-algo/algebra/polynomial.hpp\"\n#include <bits/stdc++.h>\n\nusing\
+    \n#include \"cp-algo/algebra/polynomial.hpp\"\n#include <bits/stdc++.h>\n\nusing\
     \ namespace std;\nusing namespace algebra;\n\nconst int mod = 1e9 + 7;\ntypedef\
     \ modular<mod> base;\ntypedef poly<base> polyn;\n\nvoid solve() {\n    int n,\
     \ m;\n    cin >> n >> m;\n    vector<base> a(n), b(m);\n    copy_n(istream_iterator<base>(cin),\
     \ n, begin(a));\n    copy_n(istream_iterator<base>(cin), m, begin(b));\n    (polyn(a)\
     \ * polyn(b)).print(n + m - 1);\n}\n\nsigned main() {\n    //freopen(\"input.txt\"\
-    , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t;\n\
-    \    t = 1;// cin >> t;\n    while(t--) {\n        solve();\n    }\n}\n"
+    , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n\
+    \    while(t--) {\n        solve();\n    }\n}\n"
   dependsOn:
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/common.hpp
@@ -601,7 +599,7 @@ data:
   isVerificationFile: true
   path: verify/algebra/convolution107.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 19:59:38+01:00'
+  timestamp: '2024-02-10 20:45:15+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/algebra/convolution107.test.cpp

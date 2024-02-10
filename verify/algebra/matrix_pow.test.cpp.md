@@ -22,12 +22,11 @@ data:
     links:
     - https://judge.yosupo.jp/problem/pow_of_matrix
   bundledCode: "#line 1 \"verify/algebra/matrix_pow.test.cpp\"\n// @brief Pow of Matrix\n\
-    #define PROBLEM \"https://judge.yosupo.jp/problem/pow_of_matrix\"\n#pragma GCC\
-    \ optimize(\"Ofast,unroll-loops\")\n#pragma GCC target(\"avx2,tune=native\")\n\
-    #line 1 \"cp-algo/algebra/matrix.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
-    \n\n\n#include <chrono>\n#include <random>\nnamespace algebra {\n    const int\
-    \ maxn = 1 << 20;\n    const int magic = 250; // threshold for sizes to run the\
-    \ naive algo\n    std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());\
+    #define PROBLEM \"https://judge.yosupo.jp/problem/pow_of_matrix\"\n#line 1 \"\
+    cp-algo/algebra/matrix.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\n\n\n\
+    #include <chrono>\n#include <random>\nnamespace algebra {\n    const int maxn\
+    \ = 1 << 20;\n    const int magic = 250; // threshold for sizes to run the naive\
+    \ algo\n    std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());\
     \ \n\n    auto bpow(auto x, int64_t n, auto ans) {\n        for(; n; n /= 2, x\
     \ = x * x) {\n            if(n % 2) {\n                ans = ans * x;\n      \
     \      }\n        }\n        return ans;\n    }\n    template<typename T>\n  \
@@ -168,22 +167,19 @@ data:
     \     return std::array{\n                sols.submatrix(std::slice(size(free)\
     \ - t.m, t.m, 1), std::slice(0, m, 1)),\n                sols.submatrix(std::slice(0,\
     \ size(free) - t.m, 1), std::slice(0, m, 1))\n            };\n        }\n    };\n\
-    }\n\n#line 6 \"verify/algebra/matrix_pow.test.cpp\"\n#include <bits/stdc++.h>\n\
+    }\n\n#line 4 \"verify/algebra/matrix_pow.test.cpp\"\n#include <bits/stdc++.h>\n\
     \nusing namespace std;\nusing namespace algebra;\n\nconst int mod = 998244353;\n\
     \nvoid solve() {\n    int n;\n    uint64_t k;\n    cin >> n >> k;\n    matrix<mod>\
-    \ a(n, n);\n    a.read();\n    a.pow(k).print();\n}\nsigned main() {\n    //freopen(\"\
+    \ a(n, n);\n    a.read();\n    a.pow(k).print();\n}\n\nsigned main() {\n    //freopen(\"\
     input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n \
-    \   int t;\n    t = 1;// cin >> t;\n    while(t--) {\n        solve();\n    }\n\
-    }\n"
+    \   int t = 1;\n    while(t--) {\n        solve();\n    }\n}\n"
   code: "// @brief Pow of Matrix\n#define PROBLEM \"https://judge.yosupo.jp/problem/pow_of_matrix\"\
-    \n#pragma GCC optimize(\"Ofast,unroll-loops\")\n#pragma GCC target(\"avx2,tune=native\"\
-    )\n#include \"cp-algo/algebra/matrix.hpp\"\n#include <bits/stdc++.h>\n\nusing\
-    \ namespace std;\nusing namespace algebra;\n\nconst int mod = 998244353;\n\nvoid\
-    \ solve() {\n    int n;\n    uint64_t k;\n    cin >> n >> k;\n    matrix<mod>\
-    \ a(n, n);\n    a.read();\n    a.pow(k).print();\n}\nsigned main() {\n    //freopen(\"\
+    \n#include \"cp-algo/algebra/matrix.hpp\"\n#include <bits/stdc++.h>\n\nusing namespace\
+    \ std;\nusing namespace algebra;\n\nconst int mod = 998244353;\n\nvoid solve()\
+    \ {\n    int n;\n    uint64_t k;\n    cin >> n >> k;\n    matrix<mod> a(n, n);\n\
+    \    a.read();\n    a.pow(k).print();\n}\n\nsigned main() {\n    //freopen(\"\
     input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n \
-    \   int t;\n    t = 1;// cin >> t;\n    while(t--) {\n        solve();\n    }\n\
-    }\n"
+    \   int t = 1;\n    while(t--) {\n        solve();\n    }\n}"
   dependsOn:
   - cp-algo/algebra/matrix.hpp
   - cp-algo/algebra/common.hpp
@@ -191,7 +187,7 @@ data:
   isVerificationFile: true
   path: verify/algebra/matrix_pow.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 19:59:38+01:00'
+  timestamp: '2024-02-10 20:45:15+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/algebra/matrix_pow.test.cpp

@@ -18,9 +18,23 @@ data:
     - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/polynomial.hpp
       title: cp-algo/algebra/polynomial.hpp
+  - name: cp-algo/data_structures/metas
+    pages:
+    - icon: ':heavy_check_mark:'
+      path: cp-algo/data_structures/metas/affine.hpp
+      title: cp-algo/data_structures/metas/affine.hpp
+    - icon: ':warning:'
+      path: cp-algo/data_structures/metas/all.hpp
+      title: cp-algo/data_structures/metas/all.hpp
+    - icon: ':heavy_check_mark:'
+      path: cp-algo/data_structures/metas/base.hpp
+      title: cp-algo/data_structures/metas/base.hpp
+    - icon: ':heavy_check_mark:'
+      path: cp-algo/data_structures/metas/chmin_chmax_add.hpp
+      title: cp-algo/data_structures/metas/chmin_chmax_add.hpp
   - name: cp-algo/data_structures
     pages:
-    - icon: ':warning:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/segment_tree.hpp
       title: cp-algo/data_structures/segment_tree.hpp
     - icon: ':warning:'
@@ -35,5 +49,13 @@ data:
     - icon: ':heavy_check_mark:'
       path: verify/algebra/matrix_pow.test.cpp
       title: Pow of Matrix
+  - name: verify/data_structures
+    pages:
+    - icon: ':heavy_check_mark:'
+      path: verify/data_structures/range_affine_range_sum.test.cpp
+      title: Range Affine Range Sum
+    - icon: ':heavy_check_mark:'
+      path: verify/data_structures/range_chmin_chmax_add_range_sum.test.cpp
+      title: Range Chmin Chmax Add Range Sum
 layout: toppage
 ---

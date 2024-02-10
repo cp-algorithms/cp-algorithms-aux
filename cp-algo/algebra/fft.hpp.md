@@ -233,7 +233,7 @@ data:
   path: cp-algo/algebra/fft.hpp
   requiredBy:
   - cp-algo/algebra/polynomial.hpp
-  timestamp: '2024-02-10 19:59:38+01:00'
+  timestamp: '2024-02-10 20:45:15+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/algebra/convolution107.test.cpp

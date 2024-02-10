@@ -21,6 +21,9 @@ data:
   - icon: ':heavy_check_mark:'
     path: verify/algebra/matrix_pow.test.cpp
     title: Pow of Matrix
+  - icon: ':heavy_check_mark:'
+    path: verify/data_structures/range_affine_range_sum.test.cpp
+    title: Range Affine Range Sum
   _isVerificationFailed: false
   _pathExtension: hpp
   _verificationStatusIcon: ':heavy_check_mark:'
@@ -76,9 +79,10 @@ data:
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-10 19:59:38+01:00'
+  timestamp: '2024-02-10 20:45:15+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
+  - verify/data_structures/range_affine_range_sum.test.cpp
   - verify/algebra/matrix_pow.test.cpp
   - verify/algebra/convolution107.test.cpp
 documentation_of: cp-algo/algebra/common.hpp

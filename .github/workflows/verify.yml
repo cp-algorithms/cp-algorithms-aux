@@ -31,6 +31,6 @@ jobs:
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        YUKICODER_TOKEN: ${{ secrets.YUKICODER_TOKEN }}
+        CXXFLAGS: -I ./ -Wall -Wextra -O2 -std=c++20
         GH_PAT: ${{ secrets.GH_PAT }}
       run: oj-verify all

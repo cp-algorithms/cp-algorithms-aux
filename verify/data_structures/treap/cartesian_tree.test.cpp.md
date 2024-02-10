@@ -13,7 +13,7 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/treap/metas/base.hpp
     title: cp-algo/data_structures/treap/metas/base.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy: []
@@ -126,7 +126,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/treap/cartesian_tree.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 23:55:00+01:00'
+  timestamp: '2024-02-11 00:07:44+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/treap/cartesian_tree.test.cpp

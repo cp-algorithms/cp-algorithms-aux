@@ -8,13 +8,13 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/matrix.hpp
     title: cp-algo/algebra/matrix.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/polynomial.hpp
     title: cp-algo/algebra/polynomial.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/segment_tree/metas/affine.hpp
     title: cp-algo/data_structures/segment_tree/metas/affine.hpp
   - icon: ':heavy_check_mark:'
@@ -30,10 +30,10 @@ data:
   - icon: ':heavy_check_mark:'
     path: verify/algebra/polynomial/poly_sqrt.test.cpp
     title: Sqrt of Formal Power Series
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
   - icon: ':heavy_check_mark:'
@@ -45,9 +45,9 @@ data:
   - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
     title: Range Reverse Range Sum
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: hpp
-  _verificationStatusIcon: ':question:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/algebra/affine.hpp\"\n\n\n#include <optional>\n\
@@ -56,12 +56,12 @@ data:
     \ c;\n        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a,\
     \ base b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c)\
     \ {}\n\n        // polynomial product modulo x^2 - c\n        lin operator * (const\
-    \ lin& t) {\n            assert(c && t.c && *c == *t.c);\n            return lin(a\
-    \ * t.b + b * t.a, b * t.b + a * t.a * (*c), *c);\n        }\n\n        // a *\
-    \ (t.a * x + t.b) + b\n        lin compose(lin const& t) const {\n           \
-    \ return lin{a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const&\
-    \ t) {\n            *this = t.compose(*this);\n        }\n\n        base eval(base\
-    \ x) const {\n            return a * x + b;\n        }\n    };\n}\n\n"
+    \ lin& t) {\n            assert(c && t.c && *c == *t.c);\n            return {a\
+    \ * t.b + b * t.a, b * t.b + a * t.a * (*c), *c};\n        }\n\n        // a *\
+    \ (t.a * x + t.b) + b\n        lin apply(lin const& t) const {\n            return\
+    \ {a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t) {\n\
+    \            *this = t.apply(*this);\n        }\n\n        base eval(base x) const\
+    \ {\n            return a * x + b;\n        }\n    };\n}\n\n"
   code: "#ifndef CP_ALGO_ALGEBRA_AFFINE_HPP\n#define CP_ALGO_ALGEBRA_AFFINE_HPP\n\
     #include <optional>\n#include <cassert>\nnamespace cp_algo::algebra {\n    template<typename\
     \ base>\n    // a * x + b\n    struct lin {\n        base a = 1, b = 0;\n    \
@@ -69,11 +69,11 @@ data:
     \ {}\n        lin(base a, base b): a(a), b(b) {}\n        lin(base a, base b,\
     \ base _c): a(a), b(b), c(_c) {}\n\n        // polynomial product modulo x^2 -\
     \ c\n        lin operator * (const lin& t) {\n            assert(c && t.c && *c\
-    \ == *t.c);\n            return lin(a * t.b + b * t.a, b * t.b + a * t.a * (*c),\
-    \ *c);\n        }\n\n        // a * (t.a * x + t.b) + b\n        lin compose(lin\
-    \ const& t) const {\n            return lin{a * t.a, a * t.b + b};\n        }\n\
-    \n        void prepend(lin const& t) {\n            *this = t.compose(*this);\n\
-    \        }\n\n        base eval(base x) const {\n            return a * x + b;\n\
+    \ == *t.c);\n            return {a * t.b + b * t.a, b * t.b + a * t.a * (*c),\
+    \ *c};\n        }\n\n        // a * (t.a * x + t.b) + b\n        lin apply(lin\
+    \ const& t) const {\n            return {a * t.a, a * t.b + b};\n        }\n\n\
+    \        void prepend(lin const& t) {\n            *this = t.apply(*this);\n \
+    \       }\n\n        base eval(base x) const {\n            return a * x + b;\n\
     \        }\n    };\n}\n#endif // CP_ALGO_ALGEBRA_AFFINE_HPP"
   dependsOn: []
   isVerificationFile: false
@@ -85,8 +85,8 @@ data:
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-10 23:55:00+01:00'
-  verificationStatus: LIBRARY_SOME_WA
+  timestamp: '2024-02-11 00:07:44+01:00'
+  verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp

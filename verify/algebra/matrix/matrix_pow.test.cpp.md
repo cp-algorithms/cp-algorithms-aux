@@ -1,19 +1,19 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/matrix.hpp
     title: cp-algo/algebra/matrix.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy: []
@@ -57,62 +57,62 @@ data:
     \ c;\n        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a,\
     \ base b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c)\
     \ {}\n\n        // polynomial product modulo x^2 - c\n        lin operator * (const\
-    \ lin& t) {\n            assert(c && t.c && *c == *t.c);\n            return lin(a\
-    \ * t.b + b * t.a, b * t.b + a * t.a * (*c), *c);\n        }\n\n        // a *\
-    \ (t.a * x + t.b) + b\n        lin compose(lin const& t) const {\n           \
-    \ return lin{a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const&\
-    \ t) {\n            *this = t.compose(*this);\n        }\n\n        base eval(base\
-    \ x) const {\n            return a * x + b;\n        }\n    };\n}\n\n#line 6 \"\
-    cp-algo/algebra/modular.hpp\"\n#include <algorithm>\n#include <iostream>\n#line\
-    \ 9 \"cp-algo/algebra/modular.hpp\"\nnamespace cp_algo::algebra {\n    template<int\
-    \ m>\n    struct modular {\n        // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm\n\
-    \        std::optional<modular> sqrt() const {\n            if(r == 0) {\n   \
-    \             return 0;\n            } else if(bpow(*this, (m - 1) / 2) != modular(1))\
-    \ {\n                return std::nullopt;\n            } else {\n            \
-    \    while(true) {\n                    modular z = random::rng();\n         \
-    \           if(z * z == *this) {\n                        return z;\n        \
-    \            }\n                    lin<modular> x(1, z, *this); // x + z (mod\
-    \ x^2 - b)\n                    x = bpow(x, (m - 1) / 2, lin<modular>(0, 1, *this));\n\
-    \                    if(x.a != modular(0)) {\n                        return x.a.inv();\n\
-    \                    }\n                }\n            }\n        }\n        \n\
-    \        uint64_t r;\n        constexpr modular(): r(0) {}\n        constexpr\
-    \ modular(int64_t rr): r(rr % m) {r = std::min<uint64_t>(r, r + m);}\n       \
-    \ modular inv() const {return bpow(*this, m - 2);}\n        modular operator -\
-    \ () const {return std::min(-r, m - r);}\n        modular operator * (const modular\
-    \ &t) const {return r * t.r;}\n        modular operator / (const modular &t) const\
-    \ {return *this * t.inv();}\n        modular& operator += (const modular &t) {r\
-    \ += t.r; r = std::min<uint64_t>(r, r - m); return *this;}\n        modular& operator\
-    \ -= (const modular &t) {r -= t.r; r = std::min<uint64_t>(r, r + m); return *this;}\n\
-    \        modular operator + (const modular &t) const {return modular(*this) +=\
-    \ t;}\n        modular operator - (const modular &t) const {return modular(*this)\
-    \ -= t;}\n        modular& operator *= (const modular &t) {return *this = *this\
-    \ * t;}\n        modular& operator /= (const modular &t) {return *this = *this\
-    \ / t;}\n        \n        auto operator <=> (const modular &t) const = default;\n\
-    \        \n        explicit operator int() const {return r;}\n        int64_t\
-    \ rem() const {return 2 * r > m ? r - m : r;}\n\n        static constexpr uint64_t\
-    \ mm = (uint64_t)m * m;\n        void add_unsafe(uint64_t t) {r += t; r = std::min<uint64_t>(r,\
-    \ r - mm);}\n        modular& normalize() {if(r >= m) r %= m; return *this;}\n\
-    \    };\n    \n    template<int m>\n    std::istream& operator >> (std::istream\
-    \ &in, modular<m> &x) {\n        return in >> x.r;\n    }\n    \n    template<int\
-    \ m>\n    std::ostream& operator << (std::ostream &out, modular<m> const& x) {\n\
-    \        return out << x.r % m;\n    }\n}\n\n#line 5 \"cp-algo/algebra/matrix.hpp\"\
-    \n#include <valarray>\n#line 9 \"cp-algo/algebra/matrix.hpp\"\n#include <vector>\n\
-    #include <array>\nnamespace cp_algo::algebra {\n    template<int mod>\n    struct\
-    \ matrix {\n        using base = modular<mod>;\n        size_t n, m;\n       \
-    \ std::valarray<std::valarray<base>> a;\n        matrix(size_t n, size_t m): n(n),\
-    \ m(m), a(std::valarray<base>(m), n) {}\n        matrix(std::valarray<std::valarray<base>>\
-    \ a): n(size(a)), m(n ? size(a[0]) : 0), a(a) {}\n\n        auto& operator[] (size_t\
-    \ i) {return a[i];}\n        auto const& operator[] (size_t i) const {return a[i];}\n\
-    \        auto& row(size_t i) {return a[i];}\n        auto const& row(size_t i)\
-    \ const {return a[i];}\n\n        matrix operator -() const {return matrix(-a);}\n\
-    \        matrix& operator *=(base t) {for(auto &it: a) it *= t; return *this;}\n\
-    \        matrix operator *(base t) const {return matrix(*this) *= t;}\n\n    \
-    \    void read() {\n            for(size_t i = 0; i < n; i++) {\n            \
-    \    for(size_t j = 0; j < m; j++) {\n                    std::cin >> (*this)[i][j];\n\
-    \                }\n            }\n        }\n\n        void print() const {\n\
-    \            for(size_t i = 0; i < n; i++) {\n                for(size_t j = 0;\
-    \ j < m; j++) {\n                    std::cout << (*this)[i][j] << \" \\n\"[j\
-    \ + 1 == m];\n                }\n            }\n        }\n\n        static matrix\
+    \ lin& t) {\n            assert(c && t.c && *c == *t.c);\n            return {a\
+    \ * t.b + b * t.a, b * t.b + a * t.a * (*c), *c};\n        }\n\n        // a *\
+    \ (t.a * x + t.b) + b\n        lin apply(lin const& t) const {\n            return\
+    \ {a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t) {\n\
+    \            *this = t.apply(*this);\n        }\n\n        base eval(base x) const\
+    \ {\n            return a * x + b;\n        }\n    };\n}\n\n#line 6 \"cp-algo/algebra/modular.hpp\"\
+    \n#include <algorithm>\n#include <iostream>\n#line 9 \"cp-algo/algebra/modular.hpp\"\
+    \nnamespace cp_algo::algebra {\n    template<int m>\n    struct modular {\n  \
+    \      // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm\n        std::optional<modular>\
+    \ sqrt() const {\n            if(r == 0) {\n                return 0;\n      \
+    \      } else if(bpow(*this, (m - 1) / 2) != modular(1)) {\n                return\
+    \ std::nullopt;\n            } else {\n                while(true) {\n       \
+    \             modular z = random::rng();\n                    if(z * z == *this)\
+    \ {\n                        return z;\n                    }\n              \
+    \      lin<modular> x(1, z, *this); // x + z (mod x^2 - b)\n                 \
+    \   x = bpow(x, (m - 1) / 2, lin<modular>(0, 1, *this));\n                   \
+    \ if(x.a != modular(0)) {\n                        return x.a.inv();\n       \
+    \             }\n                }\n            }\n        }\n        \n     \
+    \   uint64_t r;\n        constexpr modular(): r(0) {}\n        constexpr modular(int64_t\
+    \ rr): r(rr % m) {r = std::min<uint64_t>(r, r + m);}\n        modular inv() const\
+    \ {return bpow(*this, m - 2);}\n        modular operator - () const {return std::min(-r,\
+    \ m - r);}\n        modular operator * (const modular &t) const {return r * t.r;}\n\
+    \        modular operator / (const modular &t) const {return *this * t.inv();}\n\
+    \        modular& operator += (const modular &t) {r += t.r; r = std::min<uint64_t>(r,\
+    \ r - m); return *this;}\n        modular& operator -= (const modular &t) {r -=\
+    \ t.r; r = std::min<uint64_t>(r, r + m); return *this;}\n        modular operator\
+    \ + (const modular &t) const {return modular(*this) += t;}\n        modular operator\
+    \ - (const modular &t) const {return modular(*this) -= t;}\n        modular& operator\
+    \ *= (const modular &t) {return *this = *this * t;}\n        modular& operator\
+    \ /= (const modular &t) {return *this = *this / t;}\n        \n        auto operator\
+    \ <=> (const modular &t) const = default;\n        \n        explicit operator\
+    \ int() const {return r;}\n        int64_t rem() const {return 2 * r > m ? r -\
+    \ m : r;}\n\n        static constexpr uint64_t mm = (uint64_t)m * m;\n       \
+    \ void add_unsafe(uint64_t t) {r += t; r = std::min<uint64_t>(r, r - mm);}\n \
+    \       modular& normalize() {if(r >= m) r %= m; return *this;}\n    };\n    \n\
+    \    template<int m>\n    std::istream& operator >> (std::istream &in, modular<m>\
+    \ &x) {\n        return in >> x.r;\n    }\n    \n    template<int m>\n    std::ostream&\
+    \ operator << (std::ostream &out, modular<m> const& x) {\n        return out <<\
+    \ x.r % m;\n    }\n}\n\n#line 5 \"cp-algo/algebra/matrix.hpp\"\n#include <valarray>\n\
+    #line 9 \"cp-algo/algebra/matrix.hpp\"\n#include <vector>\n#include <array>\n\
+    namespace cp_algo::algebra {\n    template<int mod>\n    struct matrix {\n   \
+    \     using base = modular<mod>;\n        size_t n, m;\n        std::valarray<std::valarray<base>>\
+    \ a;\n        matrix(size_t n, size_t m): n(n), m(m), a(std::valarray<base>(m),\
+    \ n) {}\n        matrix(std::valarray<std::valarray<base>> a): n(size(a)), m(n\
+    \ ? size(a[0]) : 0), a(a) {}\n\n        auto& operator[] (size_t i) {return a[i];}\n\
+    \        auto const& operator[] (size_t i) const {return a[i];}\n        auto&\
+    \ row(size_t i) {return a[i];}\n        auto const& row(size_t i) const {return\
+    \ a[i];}\n\n        matrix operator -() const {return matrix(-a);}\n        matrix&\
+    \ operator *=(base t) {for(auto &it: a) it *= t; return *this;}\n        matrix\
+    \ operator *(base t) const {return matrix(*this) *= t;}\n\n        void read()\
+    \ {\n            for(size_t i = 0; i < n; i++) {\n                for(size_t j\
+    \ = 0; j < m; j++) {\n                    std::cin >> (*this)[i][j];\n       \
+    \         }\n            }\n        }\n\n        void print() const {\n      \
+    \      for(size_t i = 0; i < n; i++) {\n                for(size_t j = 0; j <\
+    \ m; j++) {\n                    std::cout << (*this)[i][j] << \" \\n\"[j + 1\
+    \ == m];\n                }\n            }\n        }\n\n        static matrix\
     \ eye(size_t n) {\n            matrix res(n, n);\n            for(size_t i = 0;\
     \ i < n; i++) {\n                res[i][i] = 1;\n            }\n            return\
     \ res;\n        }\n\n        // concatenate matrices\n        matrix operator\
@@ -200,7 +200,7 @@ data:
   isVerificationFile: true
   path: verify/algebra/matrix/matrix_pow.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 23:55:00+01:00'
+  timestamp: '2024-02-11 00:07:44+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/algebra/matrix/matrix_pow.test.cpp

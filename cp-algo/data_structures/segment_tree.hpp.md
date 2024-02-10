@@ -3,15 +3,15 @@ data:
   _extendedDependsOn: []
   _extendedRequiredBy: []
   _extendedVerifiedWith:
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
     title: Range Chmin Chmax Add Range Sum
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: hpp
-  _verificationStatusIcon: ':x:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/data_structures/segment_tree.hpp\"\n\n\n#include\
@@ -80,8 +80,8 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/segment_tree.hpp
   requiredBy: []
-  timestamp: '2024-02-10 23:55:00+01:00'
-  verificationStatus: LIBRARY_ALL_WA
+  timestamp: '2024-02-11 00:07:44+01:00'
+  verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
   - verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp

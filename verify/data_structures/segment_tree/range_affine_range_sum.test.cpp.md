@@ -1,35 +1,35 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/segment_tree.hpp
     title: cp-algo/data_structures/segment_tree.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/segment_tree/metas/affine.hpp
     title: cp-algo/data_structures/segment_tree/metas/affine.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/segment_tree/metas/base.hpp
     title: cp-algo/data_structures/segment_tree/metas/base.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy: []
   _extendedVerifiedWith: []
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: cpp
-  _verificationStatusIcon: ':x:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     '*NOT_SPECIAL_COMMENTS*': ''
     PROBLEM: https://judge.yosupo.jp/problem/range_affine_range_sum
@@ -42,46 +42,45 @@ data:
     \ 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include <functional>\n\
     #include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segment_tree::metas\
     \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
-    \ meta = derived_meta;\n        void pull(meta const&, meta const&, int, int)\
-    \ {};\n        void push(meta*, meta*, int, int) {};\n    };\n}\n\n#line 1 \"\
-    cp-algo/algebra/affine.hpp\"\n\n\n#include <optional>\n#include <cassert>\nnamespace\
-    \ cp_algo::algebra {\n    template<typename base>\n    // a * x + b\n    struct\
-    \ lin {\n        base a = 1, b = 0;\n        std::optional<base> c;\n        lin()\
-    \ {}\n        lin(base b): a(0), b(b) {}\n        lin(base a, base b): a(a), b(b)\
-    \ {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c) {}\n\n        //\
-    \ polynomial product modulo x^2 - c\n        lin operator * (const lin& t) {\n\
-    \            assert(c && t.c && *c == *t.c);\n            return lin(a * t.b +\
-    \ b * t.a, b * t.b + a * t.a * (*c), *c);\n        }\n\n        // a * (t.a *\
-    \ x + t.b) + b\n        lin compose(lin const& t) const {\n            return\
-    \ lin{a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t)\
-    \ {\n            *this = t.compose(*this);\n        }\n\n        base eval(base\
-    \ x) const {\n            return a * x + b;\n        }\n    };\n}\n\n#line 5 \"\
-    cp-algo/data_structures/segment_tree/metas/affine.hpp\"\nnamespace cp_algo::data_structures::segment_tree::metas\
-    \ {\n    template<typename base>\n    struct affine_meta: base_meta<affine_meta<base>>\
-    \ {\n        using meta = affine_meta;\n\n        base sum = 0;\n        algebra<base>::lin\
-    \ to_push = {};\n\n        affine_meta() {}\n        affine_meta(base sum): sum(sum)\
-    \ {}\n\n        void push(meta *L, meta *R, int l, int r) override {\n       \
-    \     if(to_push.a != 1 || to_push.b != 0) {\n                sum = to_push.a\
-    \ * sum + to_push.b * (r - l);\n                if(r - l > 1) {\n            \
-    \        L->to_push = to_push.compose(L->to_push);\n                    R->to_push\
-    \ = to_push.compose(R->to_push);\n                }\n                to_push =\
-    \ {};\n            }\n        }\n\n        void pull(meta const& L, meta const&\
-    \ R, int, int) override {\n            sum = L.sum + R.sum;\n        }\n    };\n\
-    }\n\n#line 1 \"cp-algo/data_structures/segment_tree.hpp\"\n\n\n#include <vector>\n\
-    namespace cp_algo::data_structures::segment_tree {\n    template<typename meta>\n\
-    \    struct segment_tree {\n        const int N;\n        std::vector<meta> _meta;\n\
-    \n        segment_tree(int n): N(n), _meta(4 * N) {}\n\n        segment_tree(std::vector<meta>\
-    \ leafs): N(size(leafs)), _meta(4 * N) {\n            build(leafs);\n        }\n\
-    \n        void pull(int v, int l, int r) {\n            if(r - l > 1) {\n    \
-    \            _meta[v].pull(_meta[2 * v], _meta[2 * v + 1], l, r);\n          \
-    \  }\n        }\n\n        void push(int v, int l, int r) {\n            if(r\
-    \ - l > 1) {\n                _meta[v].push(&_meta[2 * v], &_meta[2 * v + 1],\
-    \ l, r);\n            } else {\n                _meta[v].push(nullptr, nullptr,\
-    \ l, r);\n            }\n        }\n\n        void build(auto &a, int v, size_t\
-    \ l, size_t r) {\n            if(r - l == 1) {\n                if(l < size(a))\
-    \ {\n                    _meta[v] = a[l];\n                }\n            } else\
-    \ {\n                size_t m = (l + r) / 2;\n                build(a, 2 * v,\
-    \ l, m);\n                build(a, 2 * v + 1, m, r);\n                pull(v,\
+    \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
+    \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
+    \n#line 1 \"cp-algo/algebra/affine.hpp\"\n\n\n#include <optional>\n#include <cassert>\n\
+    namespace cp_algo::algebra {\n    template<typename base>\n    // a * x + b\n\
+    \    struct lin {\n        base a = 1, b = 0;\n        std::optional<base> c;\n\
+    \        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a, base\
+    \ b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c) {}\n\
+    \n        // polynomial product modulo x^2 - c\n        lin operator * (const\
+    \ lin& t) {\n            assert(c && t.c && *c == *t.c);\n            return {a\
+    \ * t.b + b * t.a, b * t.b + a * t.a * (*c), *c};\n        }\n\n        // a *\
+    \ (t.a * x + t.b) + b\n        lin apply(lin const& t) const {\n            return\
+    \ {a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t) {\n\
+    \            *this = t.apply(*this);\n        }\n\n        base eval(base x) const\
+    \ {\n            return a * x + b;\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\
+    \nnamespace cp_algo::data_structures::segment_tree::metas {\n    template<typename\
+    \ base>\n    struct affine_meta: base_meta<affine_meta<base>> {\n        using\
+    \ meta = affine_meta;\n        using lin = algebra::lin<base>;\n\n        base\
+    \ sum = 0;\n        lin to_push = {};\n\n        affine_meta() {}\n        affine_meta(base\
+    \ sum): sum(sum) {}\n\n        void push(meta *L, meta *R, int l, int r) override\
+    \ {\n            if(to_push.a != 1 || to_push.b != 0) {\n                sum =\
+    \ to_push.a * sum + to_push.b * (r - l);\n                if(r - l > 1) {\n  \
+    \                  L->to_push.prepend(to_push);\n                    R->to_push.prepend(to_push);\n\
+    \                }\n                to_push = {};\n            }\n        }\n\n\
+    \        void pull(meta const& L, meta const& R, int, int) override {\n      \
+    \      sum = L.sum + R.sum;\n        }\n    };\n}\n\n#line 1 \"cp-algo/data_structures/segment_tree.hpp\"\
+    \n\n\n#include <vector>\nnamespace cp_algo::data_structures::segment_tree {\n\
+    \    template<typename meta>\n    struct segment_tree {\n        const int N;\n\
+    \        std::vector<meta> _meta;\n\n        segment_tree(int n): N(n), _meta(4\
+    \ * N) {}\n\n        segment_tree(std::vector<meta> leafs): N(size(leafs)), _meta(4\
+    \ * N) {\n            build(leafs);\n        }\n\n        void pull(int v, int\
+    \ l, int r) {\n            if(r - l > 1) {\n                _meta[v].pull(_meta[2\
+    \ * v], _meta[2 * v + 1], l, r);\n            }\n        }\n\n        void push(int\
+    \ v, int l, int r) {\n            if(r - l > 1) {\n                _meta[v].push(&_meta[2\
+    \ * v], &_meta[2 * v + 1], l, r);\n            } else {\n                _meta[v].push(nullptr,\
+    \ nullptr, l, r);\n            }\n        }\n\n        void build(auto &a, int\
+    \ v, size_t l, size_t r) {\n            if(r - l == 1) {\n                if(l\
+    \ < size(a)) {\n                    _meta[v] = a[l];\n                }\n    \
+    \        } else {\n                size_t m = (l + r) / 2;\n                build(a,\
+    \ 2 * v, l, m);\n                build(a, 2 * v + 1, m, r);\n                pull(v,\
     \ l, r);\n            }\n        }\n\n        void build(auto &a) {\n        \
     \    build(a, 1, 0, N);\n        }\n\n        void exec_on_segment(int a, int\
     \ b, auto func, auto proceed, auto stop, int v, int l, int r) {\n            push(v,\
@@ -159,7 +158,7 @@ data:
     \   a[i] = {ai};\n    }\n    segment_tree<meta> me(a);\n    while(q--) {\n   \
     \     int t;\n        cin >> t;\n        if(t == 0) {\n            int l, r, b,\
     \ c;\n            cin >> l >> r >> b >> c;\n            me.exec_on_segment(l,\
-    \ r, [&](auto& meta) {\n                meta.to_push = meta::lin(b, c) * meta.to_push;\n\
+    \ r, [&](auto& meta) {\n                meta.to_push.prepend(meta::lin(b, c));\n\
     \            });\n        } else {\n            int l, r;\n            cin >>\
     \ l >> r;\n            base ans = 0;\n            me.exec_on_segment(l, r, [&](auto\
     \ meta) {\n                ans += meta.sum;\n            });\n            cout\
@@ -176,7 +175,7 @@ data:
     \   a[i] = {ai};\n    }\n    segment_tree<meta> me(a);\n    while(q--) {\n   \
     \     int t;\n        cin >> t;\n        if(t == 0) {\n            int l, r, b,\
     \ c;\n            cin >> l >> r >> b >> c;\n            me.exec_on_segment(l,\
-    \ r, [&](auto& meta) {\n                meta.to_push = meta::lin(b, c) * meta.to_push;\n\
+    \ r, [&](auto& meta) {\n                meta.to_push.prepend(meta::lin(b, c));\n\
     \            });\n        } else {\n            int l, r;\n            cin >>\
     \ l >> r;\n            base ans = 0;\n            me.exec_on_segment(l, r, [&](auto\
     \ meta) {\n                ans += meta.sum;\n            });\n            cout\
@@ -195,8 +194,8 @@ data:
   isVerificationFile: true
   path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 23:55:00+01:00'
-  verificationStatus: TEST_WRONG_ANSWER
+  timestamp: '2024-02-11 00:07:44+01:00'
+  verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
 layout: document

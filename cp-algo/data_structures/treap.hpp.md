@@ -4,7 +4,7 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/treap/common.hpp
     title: cp-algo/data_structures/treap/common.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy: []
@@ -144,7 +144,7 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/treap.hpp
   requiredBy: []
-  timestamp: '2024-02-10 23:55:00+01:00'
+  timestamp: '2024-02-11 00:07:44+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/treap/range_reverse_range_sum.test.cpp

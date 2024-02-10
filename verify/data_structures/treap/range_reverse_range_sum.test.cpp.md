@@ -1,7 +1,7 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
   - icon: ':heavy_check_mark:'
@@ -19,7 +19,7 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/treap/metas/reverse.hpp
     title: cp-algo/data_structures/treap/metas/reverse.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy: []
@@ -48,22 +48,21 @@ data:
     \ c;\n        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a,\
     \ base b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c)\
     \ {}\n\n        // polynomial product modulo x^2 - c\n        lin operator * (const\
-    \ lin& t) {\n            assert(c && t.c && *c == *t.c);\n            return lin(a\
-    \ * t.b + b * t.a, b * t.b + a * t.a * (*c), *c);\n        }\n\n        // a *\
-    \ (t.a * x + t.b) + b\n        lin compose(lin const& t) const {\n           \
-    \ return lin{a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const&\
-    \ t) {\n            *this = t.compose(*this);\n        }\n\n        base eval(base\
-    \ x) const {\n            return a * x + b;\n        }\n    };\n}\n\n#line 6 \"\
-    cp-algo/data_structures/treap/metas/reverse.hpp\"\nnamespace cp_algo::data_structures::treap::metas\
-    \ {\n        template<typename base>\n        struct reverse_meta: base_meta {\n\
-    \            using lin = algebra::lin<base>;\n            base val;\n        \
-    \    size_t sz = 1;\n            bool reverse = false;\n            base sum =\
-    \ val;\n            \n            lin to_push = {};\n\n            reverse_meta(base\
-    \ val): val(val) {}\n\n            void pull(auto const L, auto const R) {\n \
-    \               sum = val + _safe_meta(L, sum) + _safe_meta(R, sum);\n       \
-    \         sz = 1 + _safe_meta(L, sz) + _safe_meta(R, sz);\n            }\n   \
-    \         void add_push(lin const& t) {\n                val = t.eval(val);\n\
-    \                sum = t.a * sum + t.b * sz;\n                to_push.prepend(t);\n\
+    \ lin& t) {\n            assert(c && t.c && *c == *t.c);\n            return {a\
+    \ * t.b + b * t.a, b * t.b + a * t.a * (*c), *c};\n        }\n\n        // a *\
+    \ (t.a * x + t.b) + b\n        lin apply(lin const& t) const {\n            return\
+    \ {a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t) {\n\
+    \            *this = t.apply(*this);\n        }\n\n        base eval(base x) const\
+    \ {\n            return a * x + b;\n        }\n    };\n}\n\n#line 6 \"cp-algo/data_structures/treap/metas/reverse.hpp\"\
+    \nnamespace cp_algo::data_structures::treap::metas {\n        template<typename\
+    \ base>\n        struct reverse_meta: base_meta {\n            using lin = algebra::lin<base>;\n\
+    \            base val;\n            size_t sz = 1;\n            bool reverse =\
+    \ false;\n            base sum = val;\n            \n            lin to_push =\
+    \ {};\n\n            reverse_meta(base val): val(val) {}\n\n            void pull(auto\
+    \ const L, auto const R) {\n                sum = val + _safe_meta(L, sum) + _safe_meta(R,\
+    \ sum);\n                sz = 1 + _safe_meta(L, sz) + _safe_meta(R, sz);\n   \
+    \         }\n            void add_push(lin const& t) {\n                val =\
+    \ t.eval(val);\n                sum = t.a * sum + t.b * sz;\n                to_push.prepend(t);\n\
     \            }\n            void push(auto &L, auto &R) {\n                if(reverse)\
     \ {\n                    reverse = false;\n                    std::swap(L, R);\n\
     \                    _safe_meta(L, reverse ^= 1);\n                    _safe_meta(R,\
@@ -167,7 +166,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-10 23:55:00+01:00'
+  timestamp: '2024-02-11 00:07:44+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/treap/range_reverse_range_sum.test.cpp

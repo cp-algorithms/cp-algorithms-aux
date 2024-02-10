@@ -19,18 +19,8 @@ jobs:
     - name: Install dependencies
       run: pip3 install -U online-judge-verify-helper
 
-    - name: Sync gh-pages with origin
-      run: |
-        git fetch origin gh-pages:gh-pages
-        git checkout gh-pages
-        git reset --hard origin/gh-pages
-      env:
-        GH_PAT: ${{ secrets.GH_PAT }}
-
-
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        CXXFLAGS: -I ./ -Wall -Wextra -O2 -std=c++20
         GH_PAT: ${{ secrets.GH_PAT }}
       run: oj-verify all

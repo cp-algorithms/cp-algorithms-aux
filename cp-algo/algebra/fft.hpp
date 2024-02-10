@@ -2,6 +2,8 @@
 #define ALGEBRA_FFT_HPP
 #include "common.hpp"
 #include "modular.hpp"
+#include <algorithm>
+#include "cassert"
 #include <vector>
 namespace algebra {
     namespace fft {
@@ -57,7 +59,7 @@ namespace algebra {
             for(int i = 0; i < n; i++) {
                 int ti = 2 * bitr[hn + i % hn] + (i > hn);
                 if(i < ti) {
-                    swap(a[i], a[ti]);
+                    std::swap(a[i], a[ti]);
                 }
             }
             for(int i = 1; i < n; i *= 2) {
@@ -93,7 +95,7 @@ namespace algebra {
             std::vector<point> A;
             
             dft(std::vector<modular<m>> const& a, size_t n): A(n) {
-                for(size_t i = 0; i < min(n, a.size()); i++) {
+                for(size_t i = 0; i < std::min(n, a.size()); i++) {
                     A[i] = point(
                         a[i].rem() % split,
                         a[i].rem() / split
@@ -147,7 +149,7 @@ namespace algebra {
         
         template<int m>
         void mul(std::vector<modular<m>> &a, std::vector<modular<m>> b) {
-            if(min(a.size(), b.size()) < magic) {
+            if(std::min(a.size(), b.size()) < magic) {
                 mul_slow(a, b);
                 return;
             }

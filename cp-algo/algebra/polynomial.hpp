@@ -3,8 +3,12 @@
 #include "common.hpp"
 #include "modular.hpp"
 #include "fft.hpp"
-#include <vector>
+#include <functional>
+#include <algorithm>
+#include <iostream>
 #include <optional>
+#include <utility>
+#include <vector>
 namespace algebra {
     template<typename T>
     struct poly {
@@ -29,7 +33,7 @@ namespace algebra {
         }
         
         poly operator += (const poly &t) {
-            a.resize(max(a.size(), t.a.size()));
+            a.resize(std::max(a.size(), t.a.size()));
             for(size_t i = 0; i < t.a.size(); i++) {
                 a[i] += t.a[i];
             }
@@ -38,7 +42,7 @@ namespace algebra {
         }
         
         poly operator -= (const poly &t) {
-            a.resize(max(a.size(), t.a.size()));
+            a.resize(std::max(a.size(), t.a.size()));
             for(size_t i = 0; i < t.a.size(); i++) {
                 a[i] -= t.a[i];
             }
@@ -49,7 +53,7 @@ namespace algebra {
         poly operator - (const poly &t) const {return poly(*this) -= t;}
         
         poly mod_xk(size_t k) const { // get first k coefficients
-            return std::vector<T>(begin(a), begin(a) + min(k, a.size()));
+            return std::vector<T>(begin(a), begin(a) + std::min(k, a.size()));
         }
         
         poly mul_xk(size_t k) const { // multiply by x^k
@@ -59,13 +63,13 @@ namespace algebra {
         }
         
         poly div_xk(size_t k) const { // drop first k coefficients
-            return std::vector<T>(begin(a) + min(k, a.size()), end(a));
+            return std::vector<T>(begin(a) + std::min(k, a.size()), end(a));
         }
         
         poly substr(size_t l, size_t r) const { // return mod_xk(r).div_xk(l)
             return std::vector<T>(
-                begin(a) + min(l, a.size()),
-                begin(a) + min(r, a.size())
+                begin(a) + std::min(l, a.size()),
+                begin(a) + std::min(r, a.size())
             );
         }
         
@@ -74,7 +78,7 @@ namespace algebra {
         
         poly reverse(size_t n) const { // computes x^n A(x^{-1})
             auto res = a;
-            res.resize(max(n, res.size()));
+            res.resize(std::max(n, res.size()));
             return std::vector<T>(res.rbegin(), res.rbegin() + n);
         }
         
@@ -82,7 +86,7 @@ namespace algebra {
             return reverse(deg() + 1);
         }
         
-        pair<poly, poly> divmod_slow(const poly &b) const { // when divisor or quotient is small
+        std::pair<poly, poly> divmod_slow(const poly &b) const { // when divisor or quotient is small
             std::vector<T> A(a);
             std::vector<T> res;
             T b_lead_inv = b.a.back().inv();
@@ -99,26 +103,26 @@ namespace algebra {
             return {res, A};
         }
         
-        pair<poly, poly> divmod_hint(poly const& b, poly const& binv) const { // when inverse is known
+        std::pair<poly, poly> divmod_hint(poly const& b, poly const& binv) const { // when inverse is known
             assert(!b.is_zero());
             if(deg() < b.deg()) {
                 return {poly{0}, *this};
             }
             int d = deg() - b.deg();
-            if(min(d, b.deg()) < magic) {
+            if(std::min(d, b.deg()) < magic) {
                 return divmod_slow(b);
             }
             poly D = (reverse().mod_xk(d + 1) * binv.mod_xk(d + 1)).mod_xk(d + 1).reverse(d + 1);
             return {D, *this - D * b};
         }
         
-        pair<poly, poly> divmod(const poly &b) const { // returns quotiend and remainder of a mod b
+        std::pair<poly, poly> divmod(const poly &b) const { // returns quotiend and remainder of a mod b
             assert(!b.is_zero());
             if(deg() < b.deg()) {
                 return {poly{0}, *this};
             }
             int d = deg() - b.deg();
-            if(min(d, b.deg()) < magic) {
+            if(std::min(d, b.deg()) < magic) {
                 return divmod_slow(b);
             }
             poly D = (reverse().mod_xk(d + 1) * b.reverse().inv(d + 1)).mod_xk(d + 1).reverse(d + 1);
@@ -155,7 +159,7 @@ namespace algebra {
         
         // finds a transform that changes A/B to A'/B' such that
         // deg B' is at least 2 times less than deg A
-        static pair<std::vector<poly>, transform> half_gcd(poly A, poly B) {
+        static std::pair<std::vector<poly>, transform> half_gcd(poly A, poly B) {
             assert(A.deg() >= B.deg());
             int m = (A.deg() + 1) / 2;
             if(B.deg() < m) {
@@ -176,7 +180,7 @@ namespace algebra {
         }
         
         // return a transform that reduces A / B to gcd(A, B) / 0
-        static pair<std::vector<poly>, transform> full_gcd(poly A, poly B) {
+        static std::pair<std::vector<poly>, transform> full_gcd(poly A, poly B) {
             std::vector<poly> ak;
             std::vector<transform> trs;
             while(!B.is_zero()) {
@@ -280,7 +284,7 @@ namespace algebra {
                 tie(Q1, Q2) = make_tuple(Q2, Q1 + a * Q2);
             }
             if(R1.deg() > 0) {
-                return nullopt;
+                return std::nullopt;
             } else {
                 return (k ? -Q1 : Q1) / R1[0];
             }
@@ -288,14 +292,14 @@ namespace algebra {
         
         std::optional<poly> inv_mod(poly const &t) const {
             assert(!t.is_zero());
-            if(false && min(deg(), t.deg()) < magic) {
+            if(false && std::min(deg(), t.deg()) < magic) {
                 return inv_mod_slow(t);
             }
             auto A = t, B = *this % t;
             auto [a, Tr] = full_gcd(A, B);
             auto g = Tr.d * A - Tr.b * B;
             if(g.deg() != 0) {
-                return nullopt;
+                return std::nullopt;
             }
             return -Tr.b / g[0];
         };
@@ -327,9 +331,9 @@ namespace algebra {
         
         void print(int n) const {
             for(int i = 0; i < n; i++) {
-                cout << (*this)[i] << ' ';
+                std::cout << (*this)[i] << ' ';
             }
-            cout << "\n";
+            std::cout << "\n";
         }
         
         void print() const {
@@ -451,7 +455,7 @@ namespace algebra {
             for(size_t i = t.deg(); i >= m; i--) {
                 t.a[i - m] += t.a[i];
             }
-            t.a.resize(min(t.a.size(), m));
+            t.a.resize(std::min(t.a.size(), m));
             return t;
         }
 
@@ -498,7 +502,7 @@ namespace algebra {
             Q[0] = bpow(a[0], k);
             auto a0inv = a[0].inv();
             for(int i = 1; i < (int)n; i++) {
-                for(int j = 1; j <= min(deg(), i); j++) {
+                for(int j = 1; j <= std::min(deg(), i); j++) {
                     Q[i] += a[j] * Q[i - j] * (T(k) * T(j) - T(i - j));
                 }
                 Q[i] *= small_inv<T>(i) * a0inv;
@@ -516,7 +520,7 @@ namespace algebra {
             if(i > 0) {
                 return k >= int64_t(n + i - 1) / i ? poly(T(0)) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
             }
-            if(min(deg(), (int)n) <= magic) {
+            if(std::min(deg(), (int)n) <= magic) {
                 return pow_dn(k, n);
             }
             if(k <= magic) {
@@ -527,14 +531,14 @@ namespace algebra {
             return bpow(j, k) * (t.log(n) * T(k)).exp(n).mod_xk(n);
         }
         
-        // returns nullopt if undefined
+        // returns std::nullopt if undefined
         std::optional<poly> sqrt(size_t n) const {
             if(is_zero()) {
                 return *this;
             }
             int i = trailing_xk();
             if(i % 2) {
-                return nullopt;
+                return std::nullopt;
             } else if(i > 0) {
                 auto ans = div_xk(i).sqrt(n - i / 2);
                 return ans ? ans->mul_xk(i / 2) : ans;
@@ -549,7 +553,7 @@ namespace algebra {
                 }
                 return ans.mod_xk(n);
             }
-            return nullopt;
+            return std::nullopt;
         }
         
         poly mulx(T a) const { // component-wise multiplication with a^k
@@ -798,7 +802,7 @@ namespace algebra {
         }
         
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
-        pair<poly, poly> bisect() const {
+        std::pair<poly, poly> bisect() const {
             std::vector<T> res[2];
             res[0].reserve(deg() / 2 + 1);
             res[1].reserve(deg() / 2 + 1);
@@ -894,7 +898,7 @@ namespace algebra {
                 return pw[k].is_zero() ? pw[k] = B0.pow(k, n - k) : pw[k];
             };
             
-            function<poly(poly const&, int, int)> compose_dac = [&getpow, &compose_dac](poly const& f, int m, int N) {
+            std::function<poly(poly const&, int, int)> compose_dac = [&getpow, &compose_dac](poly const& f, int m, int N) {
                 if(f.deg() <= 0) {
                     return f;
                 }

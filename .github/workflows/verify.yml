@@ -19,14 +19,14 @@ jobs:
     - name: Install dependencies
       run: pip3 install -U online-judge-verify-helper
 
-    - name: Update gh-pages branch
+    - name: Sync gh-pages with origin
       run: |
         git fetch origin gh-pages:gh-pages
         git checkout gh-pages
-        git merge origin/master -m "Merge master to update gh-pages"
-        git push origin gh-pages
+        git reset --hard origin/gh-pages
       env:
         GH_PAT: ${{ secrets.GH_PAT }}
+
 
     - name: Run tests
       env:

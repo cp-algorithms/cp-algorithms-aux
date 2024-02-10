@@ -3,4 +3,4 @@
 [![Actions Status](https://github.com/cp-algorithms/cp-algorithms-aux/workflows/verify/badge.svg)](https://github.com/cp-algorithms/cp-algorithms-aux/actions)
 [![GitHub Pages](https://img.shields.io/static/v1?label=GitHub+Pages&message=+&color=brightgreen&logo=github)](https://cp-algorithms.github.io/cp-algorithms-aux/)
 
-Auxiliary stuff for article sources
+Auxiliary stuff for article sources.

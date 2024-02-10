@@ -28,6 +28,9 @@ data:
     path: verify/algebra/polynomial/convolution107.test.cpp
     title: Convolution mod $10^9+7$
   - icon: ':heavy_check_mark:'
+    path: verify/algebra/polynomial/find_linrec.test.cpp
+    title: Find Linear Recurrence
+  - icon: ':heavy_check_mark:'
     path: verify/algebra/polynomial/poly_sqrt.test.cpp
     title: Sqrt of Formal Power Series
   - icon: ':heavy_check_mark:'
@@ -85,7 +88,7 @@ data:
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-11 00:07:44+01:00'
+  timestamp: '2024-02-11 00:23:03+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
@@ -95,6 +98,7 @@ data:
   - verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
   - verify/algebra/matrix/matrix_pow.test.cpp
   - verify/algebra/polynomial/convolution107.test.cpp
+  - verify/algebra/polynomial/find_linrec.test.cpp
   - verify/algebra/polynomial/poly_sqrt.test.cpp
 documentation_of: cp-algo/algebra/affine.hpp
 layout: document

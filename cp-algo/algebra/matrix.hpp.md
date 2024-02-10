@@ -266,7 +266,7 @@ data:
   isVerificationFile: false
   path: cp-algo/algebra/matrix.hpp
   requiredBy: []
-  timestamp: '2024-02-11 00:07:44+01:00'
+  timestamp: '2024-02-11 00:23:03+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/algebra/matrix/matrix_pow.test.cpp

@@ -70,6 +70,9 @@ data:
       path: verify/algebra/polynomial/convolution107.test.cpp
       title: Convolution mod $10^9+7$
     - icon: ':heavy_check_mark:'
+      path: verify/algebra/polynomial/find_linrec.test.cpp
+      title: Find Linear Recurrence
+    - icon: ':heavy_check_mark:'
       path: verify/algebra/polynomial/poly_sqrt.test.cpp
       title: Sqrt of Formal Power Series
   - name: verify/data_structures/segment_tree

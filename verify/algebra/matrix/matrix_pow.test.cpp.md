@@ -200,7 +200,7 @@ data:
   isVerificationFile: true
   path: verify/algebra/matrix/matrix_pow.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 00:07:44+01:00'
+  timestamp: '2024-02-11 00:23:03+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/algebra/matrix/matrix_pow.test.cpp

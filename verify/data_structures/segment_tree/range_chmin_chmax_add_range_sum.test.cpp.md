@@ -145,7 +145,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 00:07:44+01:00'
+  timestamp: '2024-02-11 00:23:03+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp

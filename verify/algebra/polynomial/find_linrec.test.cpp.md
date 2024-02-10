@@ -26,12 +26,12 @@ data:
   _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     '*NOT_SPECIAL_COMMENTS*': ''
-    PROBLEM: https://judge.yosupo.jp/problem/convolution_mod_1000000007
-    document_title: Convolution mod $10^9+7$
+    PROBLEM: https://judge.yosupo.jp/problem/find_linear_recurrence
+    document_title: Find Linear Recurrence
     links:
-    - https://judge.yosupo.jp/problem/convolution_mod_1000000007
-  bundledCode: "#line 1 \"verify/algebra/polynomial/convolution107.test.cpp\"\n//\
-    \ @brief Convolution mod $10^9+7$\n#define PROBLEM \"https://judge.yosupo.jp/problem/convolution_mod_1000000007\"\
+    - https://judge.yosupo.jp/problem/find_linear_recurrence
+  bundledCode: "#line 1 \"verify/algebra/polynomial/find_linrec.test.cpp\"\n// @brief\
+    \ Find Linear Recurrence\n#define PROBLEM \"https://judge.yosupo.jp/problem/find_linear_recurrence\"\
     \n#line 1 \"cp-algo/algebra/polynomial.hpp\"\n\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
     \n\n\n#include <cstdint>\nnamespace cp_algo::algebra {\n    const int maxn = 1\
     \ << 20;\n    const int magic = 250; // threshold for sizes to run the naive algo\n\
@@ -580,24 +580,25 @@ data:
     \ * Bd).integr() + A[r] * fact<T>(r)).mod_xk(n);\n                }\n        \
     \    }\n            \n            return ans;\n        }\n    };\n    \n    static\
     \ auto operator * (const auto& a, const poly<auto>& b) {\n        return b * a;\n\
-    \    }\n};\n\n#line 4 \"verify/algebra/polynomial/convolution107.test.cpp\"\n\
-    #include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::algebra;\n\
-    \nconst int mod = 1e9 + 7;\ntypedef modular<mod> base;\ntypedef poly<base> polyn;\n\
-    \nvoid solve() {\n    int n, m;\n    cin >> n >> m;\n    vector<base> a(n), b(m);\n\
-    \    copy_n(istream_iterator<base>(cin), n, begin(a));\n    copy_n(istream_iterator<base>(cin),\
-    \ m, begin(b));\n    (polyn(a) * polyn(b)).print(n + m - 1);\n}\n\nsigned main()\
+    \    }\n};\n\n#line 4 \"verify/algebra/polynomial/find_linrec.test.cpp\"\n#include\
+    \ <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::algebra;\n\
+    \nconst int mod = 998244353;\ntypedef modular<mod> base;\ntypedef poly<base> polyn;\n\
+    \nvoid solve() {\n    int n;\n    cin >> n;\n    vector<base> a(n);\n    copy_n(istream_iterator<base>(cin),\
+    \ n, begin(a));\n    auto Q = polyn(a).min_rec(n - 1);\n    int d = Q.deg();\n\
+    \    cout << d << endl;\n    (-Q.reverse().div_xk(1)).print(d);\n}\n\nsigned main()\
     \ {\n    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n\
     \    cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n\
     }\n"
-  code: "// @brief Convolution mod $10^9+7$\n#define PROBLEM \"https://judge.yosupo.jp/problem/convolution_mod_1000000007\"\
+  code: "// @brief Find Linear Recurrence\n#define PROBLEM \"https://judge.yosupo.jp/problem/find_linear_recurrence\"\
     \n#include \"cp-algo/algebra/polynomial.hpp\"\n#include <bits/stdc++.h>\n\nusing\
-    \ namespace std;\nusing namespace cp_algo::algebra;\n\nconst int mod = 1e9 + 7;\n\
+    \ namespace std;\nusing namespace cp_algo::algebra;\n\nconst int mod = 998244353;\n\
     typedef modular<mod> base;\ntypedef poly<base> polyn;\n\nvoid solve() {\n    int\
-    \ n, m;\n    cin >> n >> m;\n    vector<base> a(n), b(m);\n    copy_n(istream_iterator<base>(cin),\
-    \ n, begin(a));\n    copy_n(istream_iterator<base>(cin), m, begin(b));\n    (polyn(a)\
-    \ * polyn(b)).print(n + m - 1);\n}\n\nsigned main() {\n    //freopen(\"input.txt\"\
-    , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n\
-    \    while(t--) {\n        solve();\n    }\n}\n"
+    \ n;\n    cin >> n;\n    vector<base> a(n);\n    copy_n(istream_iterator<base>(cin),\
+    \ n, begin(a));\n    auto Q = polyn(a).min_rec(n - 1);\n    int d = Q.deg();\n\
+    \    cout << d << endl;\n    (-Q.reverse().div_xk(1)).print(d);\n}\n\nsigned main()\
+    \ {\n    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n\
+    \    cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n\
+    }\n"
   dependsOn:
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/common.hpp
@@ -606,15 +607,15 @@ data:
   - cp-algo/random/rng.hpp
   - cp-algo/algebra/affine.hpp
   isVerificationFile: true
-  path: verify/algebra/polynomial/convolution107.test.cpp
+  path: verify/algebra/polynomial/find_linrec.test.cpp
   requiredBy: []
   timestamp: '2024-02-11 00:23:03+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
-documentation_of: verify/algebra/polynomial/convolution107.test.cpp
+documentation_of: verify/algebra/polynomial/find_linrec.test.cpp
 layout: document
 redirect_from:
-- /verify/verify/algebra/polynomial/convolution107.test.cpp
-- /verify/verify/algebra/polynomial/convolution107.test.cpp.html
-title: Convolution mod $10^9+7$
+- /verify/verify/algebra/polynomial/find_linrec.test.cpp
+- /verify/verify/algebra/polynomial/find_linrec.test.cpp.html
+title: Find Linear Recurrence
 ---

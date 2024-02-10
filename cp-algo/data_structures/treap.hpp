@@ -1,13 +1,13 @@
 #ifndef CP_ALGO_DATA_STRUCTURES_TREAP_HPP
 #define CP_ALGO_DATA_STRUCTURES_TREAP_HPP
 #include "../random/rng.hpp"
+#include "treap/common.hpp"
 #include <array>
 /* Submissions on Library Judge:
   Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860
   Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858
   Dynamic Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948
 */
-#define _safe(t, op) (t ? t->op : typename std::remove_reference_t<decltype(t->op)>())
 namespace cp_algo::data_structures::treap {
     template<typename meta>
     struct treap_node {

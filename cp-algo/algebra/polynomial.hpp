@@ -1,7 +1,6 @@
 #ifndef CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
 #define CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
 #include "common.hpp"
-#include "modular.hpp"
 #include "fft.hpp"
 #include <functional>
 #include <algorithm>

@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_ALGEBRA_MODULAR_HPP
 #define CP_ALGO_ALGEBRA_MODULAR_HPP
 #include "../random/rng.hpp"
+#include "affine.hpp"
 #include "common.hpp"
 #include <algorithm>
 #include <iostream>
@@ -9,14 +10,10 @@ namespace cp_algo::algebra {
     template<int m>
     struct modular {
         // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
-        // solves x^2 = y (mod m) assuming m is prime in O(log m).
-        // returns std::nullopt if no sol.
         std::optional<modular> sqrt() const {
-            static modular y;
-            y = *this;
             if(r == 0) {
                 return 0;
-            } else if(bpow(y, (m - 1) / 2) != modular(1)) {
+            } else if(bpow(*this, (m - 1) / 2) != modular(1)) {
                 return std::nullopt;
             } else {
                 while(true) {
@@ -24,20 +21,10 @@ namespace cp_algo::algebra {
                     if(z * z == *this) {
                         return z;
                     }
-                    struct lin {
-                        modular a, b;
-                        lin(modular a, modular b): a(a), b(b) {}
-                        lin(modular a): a(a), b(0) {}
-                        lin operator * (const lin& t) {
-                            return {
-                                a * t.a + b * t.b * y,
-                                a * t.b + b * t.a
-                            };
-                        }
-                    } x(z, 1); // z + x
-                    x = bpow(x, (m - 1) / 2);
-                    if(x.b != modular(0)) {
-                        return x.b.inv();
+                    lin<modular> x(1, z, *this); // x + z (mod x^2 - b)
+                    x = bpow(x, (m - 1) / 2, lin<modular>(0, 1, *this));
+                    if(x.a != modular(0)) {
+                        return x.a.inv();
                     }
                 }
             }

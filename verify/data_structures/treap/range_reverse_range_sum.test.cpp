@@ -7,8 +7,8 @@
 using namespace std;
 using namespace cp_algo::data_structures::treap;
 
-using metas::reverse_meta;
-using node = treap_node<reverse_meta>;
+using meta = metas::reverse_meta<int64_t>;
+using node = treap_node<meta>;
 using treap = node::treap;
 
 void solve() {
@@ -17,7 +17,7 @@ void solve() {
     int q = *input++;
     vector<treap> nodes(n);
     generate_n(begin(nodes), n, [&](){
-        return new node(reverse_meta(*input++));
+        return new node(meta(*input++));
     });
     treap me = node::build(nodes);
     while(q--) {
@@ -35,6 +35,7 @@ void solve() {
         }
     }
 }
+
 signed main() {
     //freopen("input.txt", "r", stdin);
     ios::sync_with_stdio(0);

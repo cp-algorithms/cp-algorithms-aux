@@ -5,6 +5,9 @@
 #include <valarray>
 #include <iostream>
 #include <optional>
+#include <cassert>
+#include <vector>
+#include <array>
 namespace algebra {
     template<int mod>
     struct matrix {
@@ -117,7 +120,7 @@ namespace algebra {
         template<Mode mode = normal>
         auto gauss(size_t lim) {
             size_t rk = 0;
-            vector<size_t> free, pivots;
+            std::vector<size_t> free, pivots;
             for(size_t i = 0; i < lim; i++) {
                 for(size_t j = rk; j < n && a[rk][i].normalize() == 0; j++) {
                     if(a[j][i].normalize() != 0) {
@@ -138,7 +141,7 @@ namespace algebra {
                 }
             }
             normalize();
-            return array{pivots, free};
+            return std::array{pivots, free};
         }
         template<Mode mode = normal>
         auto gauss() {
@@ -167,7 +170,7 @@ namespace algebra {
             assert(n == m);
             matrix b = *this | eye(n);
             if(size(b.gauss<reverse>(n)[0]) < n) {
-                return nullopt;
+                return std::nullopt;
             }
             for(size_t i = 0; i < n; i++) {
                 b[i] *= b[i][i].inv();
@@ -176,12 +179,12 @@ namespace algebra {
         }
 
         // [solution, basis], transposed
-        std::optional<array<matrix, 2>> solve(matrix t) const {
+        std::optional<std::array<matrix, 2>> solve(matrix t) const {
             assert(n == t.n);
             matrix b = *this | t;
             auto [pivots, free] = b.gauss<reverse>();
             if(!empty(pivots) && pivots.back() >= m) {
-                return nullopt;
+                return std::nullopt;
             }
             matrix sols(size(free), m);
             for(size_t j = 0; j < size(pivots); j++) {
@@ -193,7 +196,7 @@ namespace algebra {
             for(size_t i = 0; free[i] < m; i++) {
                 sols[i][free[i]] = -1;
             }
-            return array{
+            return std::array{
                 sols.submatrix(std::slice(size(free) - t.m, t.m, 1), std::slice(0, m, 1)),
                 sols.submatrix(std::slice(0, size(free) - t.m, 1), std::slice(0, m, 1))
             };

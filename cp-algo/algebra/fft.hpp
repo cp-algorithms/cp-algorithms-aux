@@ -1,4 +1,9 @@
-namespace algebra { // fft
+#ifndef ALGEBRA_FFT_HPP
+#define ALGEBRA_FFT_HPP
+#include "common.hpp"
+#include "modular.hpp"
+#include <vector>
+namespace algebra {
     namespace fft {
         using ftype = double;
         struct point {
@@ -66,7 +71,7 @@ namespace algebra { // fft
             }
         }
         
-        void mul_slow(vector<auto> &a, const vector<auto> &b) {
+        void mul_slow(std::vector<auto> &a, const std::vector<auto> &b) {
             if(a.empty() || b.empty()) {
                 a.clear();
             } else {
@@ -75,7 +80,7 @@ namespace algebra { // fft
                 a.resize(n + m - 1);
                 for(int k = n + m - 2; k >= 0; k--) {
                     a[k] *= b[0];
-                    for(int j = max(k - n + 1, 1); j < min(k + 1, m); j++) {
+                    for(int j = std::max(k - n + 1, 1); j < std::min(k + 1, m); j++) {
                         a[k] += a[k - j] * b[j];
                     }
                 }
@@ -85,9 +90,9 @@ namespace algebra { // fft
         template<int m>
         struct dft {
             static constexpr int split = 1 << 15;
-            vector<point> A;
+            std::vector<point> A;
             
-            dft(vector<modular<m>> const& a, size_t n): A(n) {
+            dft(std::vector<modular<m>> const& a, size_t n): A(n) {
                 for(size_t i = 0; i < min(n, a.size()); i++) {
                     A[i] = point(
                         a[i].rem() % split,
@@ -103,9 +108,9 @@ namespace algebra { // fft
                 assert(A.size() == B.A.size());
                 size_t n = A.size();
                 if(!n) {
-                    return vector<modular<m>>();
+                    return std::vector<modular<m>>();
                 }
-                vector<point> C(n), D(n);
+                std::vector<point> C(n), D(n);
                 for(size_t i = 0; i < n; i++) {
                     C[i] = A[i] * (B[i] + B[(n - i) % n].conj());
                     D[i] = A[i] * (B[i] - B[(n - i) % n].conj());
@@ -115,7 +120,7 @@ namespace algebra { // fft
                 reverse(begin(C) + 1, end(C));
                 reverse(begin(D) + 1, end(D));
                 int t = 2 * n;
-                vector<modular<m>> res(n);
+                std::vector<modular<m>> res(n);
                 for(size_t i = 0; i < n; i++) {
                     modular<m> A0 = llround(C[i].real() / t);
                     modular<m> A1 = llround(C[i].imag() / t + D[i].imag() / t);
@@ -141,7 +146,7 @@ namespace algebra { // fft
         }
         
         template<int m>
-        void mul(vector<modular<m>> &a, vector<modular<m>> b) {
+        void mul(std::vector<modular<m>> &a, std::vector<modular<m>> b) {
             if(min(a.size(), b.size()) < magic) {
                 mul_slow(a, b);
                 return;
@@ -156,3 +161,4 @@ namespace algebra { // fft
         }
     }
 }
+#endif // ALGEBRA_FFT_HPP

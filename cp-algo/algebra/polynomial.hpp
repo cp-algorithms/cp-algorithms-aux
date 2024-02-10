@@ -1,7 +1,14 @@
-namespace algebra { // poly
+#ifndef ALGEBRA_POLYNOMIAL_HPP
+#define ALGEBRA_POLYNOMIAL_HPP
+#include "common.hpp"
+#include "modular.hpp"
+#include "fft.hpp"
+#include <vector>
+#include <optional>
+namespace algebra {
     template<typename T>
     struct poly {
-        vector<T> a;
+        std::vector<T> a;
         
         void normalize() { // get rid of leading zeroes
             while(!a.empty() && a.back() == T(0)) {
@@ -11,7 +18,7 @@ namespace algebra { // poly
         
         poly(){}
         poly(T a0) : a{a0}{normalize();}
-        poly(const vector<T> &t) : a(t){normalize();}
+        poly(const std::vector<T> &t) : a(t){normalize();}
         
         poly operator -() const {
             auto t = *this;
@@ -42,7 +49,7 @@ namespace algebra { // poly
         poly operator - (const poly &t) const {return poly(*this) -= t;}
         
         poly mod_xk(size_t k) const { // get first k coefficients
-            return vector<T>(begin(a), begin(a) + min(k, a.size()));
+            return std::vector<T>(begin(a), begin(a) + min(k, a.size()));
         }
         
         poly mul_xk(size_t k) const { // multiply by x^k
@@ -52,11 +59,11 @@ namespace algebra { // poly
         }
         
         poly div_xk(size_t k) const { // drop first k coefficients
-            return vector<T>(begin(a) + min(k, a.size()), end(a));
+            return std::vector<T>(begin(a) + min(k, a.size()), end(a));
         }
         
         poly substr(size_t l, size_t r) const { // return mod_xk(r).div_xk(l)
-            return vector<T>(
+            return std::vector<T>(
                 begin(a) + min(l, a.size()),
                 begin(a) + min(r, a.size())
             );
@@ -68,7 +75,7 @@ namespace algebra { // poly
         poly reverse(size_t n) const { // computes x^n A(x^{-1})
             auto res = a;
             res.resize(max(n, res.size()));
-            return vector<T>(res.rbegin(), res.rbegin() + n);
+            return std::vector<T>(res.rbegin(), res.rbegin() + n);
         }
         
         poly reverse() const {
@@ -76,8 +83,8 @@ namespace algebra { // poly
         }
         
         pair<poly, poly> divmod_slow(const poly &b) const { // when divisor or quotient is small
-            vector<T> A(a);
-            vector<T> res;
+            std::vector<T> A(a);
+            std::vector<T> res;
             T b_lead_inv = b.a.back().inv();
             while(A.size() >= b.a.size()) {
                 res.push_back(A.back() * b_lead_inv);
@@ -140,7 +147,7 @@ namespace algebra { // poly
         };
         
         template<typename Q>
-        static void concat(vector<Q> &a, vector<Q> const& b) {
+        static void concat(std::vector<Q> &a, std::vector<Q> const& b) {
             for(auto it: b) {
                 a.push_back(it);
             }
@@ -148,7 +155,7 @@ namespace algebra { // poly
         
         // finds a transform that changes A/B to A'/B' such that
         // deg B' is at least 2 times less than deg A
-        static pair<vector<poly>, transform> half_gcd(poly A, poly B) {
+        static pair<std::vector<poly>, transform> half_gcd(poly A, poly B) {
             assert(A.deg() >= B.deg());
             int m = (A.deg() + 1) / 2;
             if(B.deg() < m) {
@@ -169,9 +176,9 @@ namespace algebra { // poly
         }
         
         // return a transform that reduces A / B to gcd(A, B) / 0
-        static pair<vector<poly>, transform> full_gcd(poly A, poly B) {
-            vector<poly> ak;
-            vector<transform> trs;
+        static pair<std::vector<poly>, transform> full_gcd(poly A, poly B) {
+            std::vector<poly> ak;
+            std::vector<transform> trs;
             while(!B.is_zero()) {
                 if(2 * B.deg() > A.deg()) {
                     auto [a, Tr] = half_gcd(A, B);
@@ -199,6 +206,7 @@ namespace algebra { // poly
             }
             auto [a, Tr] = full_gcd(A, B);
             return Tr.d * A - Tr.b * B;
+        }
 
         
         // Returns the characteristic polynomial
@@ -261,7 +269,7 @@ namespace algebra { // poly
         
         // calculate inv to *this modulo t
         // quadratic complexity
-        optional<poly> inv_mod_slow(poly const& t) const {
+        std::optional<poly> inv_mod_slow(poly const& t) const {
             auto R1 = *this, R2 = t;
             auto Q1 = poly(T(1)), Q2 = poly(T(0));
             int k = 0;
@@ -278,7 +286,7 @@ namespace algebra { // poly
             }
         }
         
-        optional<poly> inv_mod(poly const &t) const {
+        std::optional<poly> inv_mod(poly const &t) const {
             assert(!t.is_zero());
             if(false && min(deg(), t.deg()) < magic) {
                 return inv_mod_slow(t);
@@ -365,7 +373,7 @@ namespace algebra { // poly
             if(deg() + 1 < k) {
                 return poly(T(0));
             }
-            vector<T> res(deg() + 1 - k);
+            std::vector<T> res(deg() + 1 - k);
             for(int i = k; i <= deg(); i++) {
                 res[i - k] = fact<T>(i) * rfact<T>(i - k) * a[i];
             }
@@ -373,7 +381,7 @@ namespace algebra { // poly
         }
         
         poly integr() { // calculate integral with C = 0
-            vector<T> res(deg() + 2);
+            std::vector<T> res(deg() + 2);
             for(int i = 0; i <= deg(); i++) {
                 res[i + 1] = a[i] * small_inv<T>(i + 1);
             }
@@ -486,7 +494,7 @@ namespace algebra { // poly
                 return poly(T(0));
             }
             assert((*this)[0] != T(0));
-            vector<T> Q(n);
+            std::vector<T> Q(n);
             Q[0] = bpow(a[0], k);
             auto a0inv = a[0].inv();
             for(int i = 1; i < (int)n; i++) {
@@ -520,7 +528,7 @@ namespace algebra { // poly
         }
         
         // returns nullopt if undefined
-        optional<poly> sqrt(size_t n) const {
+        std::optional<poly> sqrt(size_t n) const {
             if(is_zero()) {
                 return *this;
             }
@@ -569,10 +577,10 @@ namespace algebra { // poly
         // requires multiplying polynomials of size deg() and n+deg()!
         poly chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
             if(is_zero()) {
-                return vector<T>(n, 0);
+                return std::vector<T>(n, 0);
             }
             if(z == T(0)) {
-                vector<T> ans(n, (*this)[0]);
+                std::vector<T> ans(n, (*this)[0]);
                 if(n > 0) {
                     ans[0] = accumulate(begin(a), end(a), T(0));
                 }
@@ -585,7 +593,7 @@ namespace algebra { // poly
 
         // res[i] = prod_{1 <= j <= i} 1/(1 - z^j)
         static auto _1mzk_prod_inv(T z, int n) {
-            vector<T> res(n, 1), zk(n);
+            std::vector<T> res(n, 1), zk(n);
             zk[0] = 1;
             for(int i = 1; i < n; i++) {
                 zk[i] = zk[i - 1] * z;
@@ -601,12 +609,12 @@ namespace algebra { // poly
         // prod_{0 <= j < n} (1 - z^j x)
         static auto _1mzkx_prod(T z, int n) {
             if(n == 1) {
-                return poly(vector<T>{1, -1});
+                return poly(std::vector<T>{1, -1});
             } else {
                 auto t = _1mzkx_prod(z, n / 2);
                 t *= t.mulx(bpow(z, n / 2));
                 if(n % 2) {
-                    t *= poly(vector<T>{1, -bpow(z, n - 1)});
+                    t *= poly(std::vector<T>{1, -bpow(z, n - 1)});
                 }
                 return t;
             }
@@ -620,10 +628,10 @@ namespace algebra { // poly
                 if(n == 1) {
                     return *this;
                 } else {
-                    return vector{(*this)[1], (*this)[0] - (*this)[1]};
+                    return std::vector{(*this)[1], (*this)[0] - (*this)[1]};
                 }
             }
-            vector<T> y(n);
+            std::vector<T> y(n);
             for(int i = 0; i < n; i++) {
                 y[i] = (*this)[i];
             }
@@ -643,16 +651,16 @@ namespace algebra { // poly
             return (p_over_q * q).mod_xk(n).reverse(n);
         }
 
-        static poly build(vector<poly> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
+        static poly build(std::vector<poly> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
             if(R - L == 1) {
-                return res[v] = vector<T>{-*L, 1};
+                return res[v] = std::vector<T>{-*L, 1};
             } else {
                 auto M = L + (R - L) / 2;
                 return res[v] = build(res, 2 * v, L, M) * build(res, 2 * v + 1, M, R);
             }
         }
 
-        poly to_newton(vector<poly> &tree, int v, auto l, auto r) {
+        poly to_newton(std::vector<poly> &tree, int v, auto l, auto r) {
             if(r - l == 1) {
                 return *this;
             } else {
@@ -663,17 +671,17 @@ namespace algebra { // poly
             }
         }
 
-        poly to_newton(vector<T> p) {
+        poly to_newton(std::vector<T> p) {
             if(is_zero()) {
                 return *this;
             }
             int n = p.size();
-            vector<poly> tree(4 * n);
+            std::vector<poly> tree(4 * n);
             build(tree, 1, begin(p), end(p));
             return to_newton(tree, 1, begin(p), end(p));
         }
 
-        vector<T> eval(vector<poly> &tree, int v, auto l, auto r) { // auxiliary evaluation function
+        std::vector<T> eval(std::vector<poly> &tree, int v, auto l, auto r) { // auxiliary evaluation function
             if(r - l == 1) {
                 return {eval(*l)};
             } else {
@@ -685,17 +693,17 @@ namespace algebra { // poly
             }
         }
         
-        vector<T> eval(vector<T> x) { // evaluate polynomial in (x1, ..., xn)
+        std::vector<T> eval(std::vector<T> x) { // evaluate polynomial in (x1, ..., xn)
             int n = x.size();
             if(is_zero()) {
-                return vector<T>(n, T(0));
+                return std::vector<T>(n, T(0));
             }
-            vector<poly> tree(4 * n);
+            std::vector<poly> tree(4 * n);
             build(tree, 1, begin(x), end(x));
             return eval(tree, 1, begin(x), end(x));
         }
         
-        poly inter(vector<poly> &tree, int v, auto ly, auto ry) { // auxiliary interpolation function
+        poly inter(std::vector<poly> &tree, int v, auto ly, auto ry) { // auxiliary interpolation function
             if(ry - ly == 1) {
                 return {*ly / a[0]};
             } else {
@@ -706,9 +714,9 @@ namespace algebra { // poly
             }
         }
         
-        static auto inter(vector<T> x, vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
+        static auto inter(std::vector<T> x, std::vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
             int n = x.size();
-            vector<poly> tree(4 * n);
+            std::vector<poly> tree(4 * n);
             return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(y), end(y));
         }
 
@@ -732,7 +740,7 @@ namespace algebra { // poly
         }
         
         static poly ones(size_t n) { // P(x) = 1 + x + ... + x^{n-1} 
-            return vector<T>(n, 1);
+            return std::vector<T>(n, 1);
         }
         
         static poly expx(size_t n) { // P(x) = e^x (mod x^n)
@@ -740,7 +748,7 @@ namespace algebra { // poly
         }
 
         static poly log1px(size_t n) { // P(x) = log(1+x) (mod x^n)
-            vector<T> coeffs(n, 0);
+            std::vector<T> coeffs(n, 0);
             for(size_t i = 1; i < n; i++) {
                 coeffs[i] = (i & 1 ? T(i).inv() : -T(i).inv());
             }
@@ -782,7 +790,7 @@ namespace algebra { // poly
         }
         
         poly x2() { // P(x) -> P(x^2)
-            vector<T> res(2 * a.size());
+            std::vector<T> res(2 * a.size());
             for(size_t i = 0; i < a.size(); i++) {
                 res[2 * i] = a[i];
             }
@@ -791,7 +799,7 @@ namespace algebra { // poly
         
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
         pair<poly, poly> bisect() const {
-            vector<T> res[2];
+            std::vector<T> res[2];
             res[0].reserve(deg() / 2 + 1);
             res[1].reserve(deg() / 2 + 1);
             for(int i = 0; i <= deg(); i++) {
@@ -850,7 +858,7 @@ namespace algebra { // poly
         // compute A(B(x)) mod x^n in O(n^2)
         static poly compose(poly A, poly B, int n) {
             int q = std::sqrt(n);
-            vector<poly> Bk(q);
+            std::vector<poly> Bk(q);
             auto Bq = B.pow(q, n);
             Bk[0] = poly(T(1));
             for(int i = 1; i < q; i++) {
@@ -881,7 +889,7 @@ namespace algebra { // poly
             auto [B0, B1] = make_pair(B.mod_xk(q), B.div_xk(q));
             
             B0 = B0.div_xk(1);
-            vector<poly> pw(A.deg() + 1);
+            std::vector<poly> pw(A.deg() + 1);
             auto getpow = [&](int k) {
                 return pw[k].is_zero() ? pw[k] = B0.pow(k, n - k) : pw[k];
             };
@@ -904,7 +912,7 @@ namespace algebra { // poly
             
             poly ans = T(0);
             
-            vector<poly> B1p(r + 1);
+            std::vector<poly> B1p(r + 1);
             B1p[0] = poly(T(1));
             for(int i = 1; i <= r; i++) {
                 B1p[i] = (B1p[i - 1] * B1.mod_xk(n - i * q)).mod_xk(n - i * q);
@@ -925,3 +933,4 @@ namespace algebra { // poly
         return b * a;
     }
 };
+#endif // ALGEBRA_POLYNOMIAL_HPP

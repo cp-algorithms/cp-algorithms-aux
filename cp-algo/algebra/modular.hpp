@@ -1,10 +1,15 @@
-namespace algebra { // modular
+#ifndef ALGEBRA_MODULAR_HPP
+#define ALGEBRA_MODULAR_HPP
+#include "common.hpp"
+#include <iostream>
+#include <optional>
+namespace algebra {
     template<int m>
     struct modular {
         // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
         // solves x^2 = y (mod m) assuming m is prime in O(log m).
         // returns nullopt if no sol.
-        optional<modular> sqrt() const {
+        std::optional<modular> sqrt() const {
             static modular y;
             y = *this;
             if(r == 0) {
@@ -61,12 +66,13 @@ namespace algebra { // modular
     };
     
     template<int m>
-    istream& operator >> (istream &in, modular<m> &x) {
+    std::istream& operator >> (std::istream &in, modular<m> &x) {
         return in >> x.r;
     }
     
     template<int m>
-    ostream& operator << (ostream &out, modular<m> const& x) {
+    std::ostream& operator << (std::ostream &out, modular<m> const& x) {
         return out << x.r % m;
     }
 }
+#endif // ALGEBRA_MODULAR_HPP

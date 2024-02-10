@@ -1,12 +1,18 @@
-
-namespace algebra { // matrix
+#ifndef ALGEBRA_MATRIX_HPP
+#define ALGEBRA_MATRIX_HPP
+#include "common.hpp"
+#include "modular.hpp"
+#include <valarray>
+#include <iostream>
+#include <optional>
+namespace algebra {
     template<int mod>
     struct matrix {
         using base = modular<mod>;
         size_t n, m;
-        valarray<valarray<base>> a;
-        matrix(size_t n, size_t m): n(n), m(m), a(valarray<base>(m), n) {}
-        matrix(valarray<valarray<base>> a): n(size(a)), m(n ? size(a[0]) : 0), a(a) {}
+        std::valarray<std::valarray<base>> a;
+        matrix(size_t n, size_t m): n(n), m(m), a(std::valarray<base>(m), n) {}
+        matrix(std::valarray<std::valarray<base>> a): n(size(a)), m(n ? size(a[0]) : 0), a(a) {}
 
         auto& operator[] (size_t i) {return a[i];}
         auto const& operator[] (size_t i) const {return a[i];}
@@ -20,7 +26,7 @@ namespace algebra { // matrix
         void read() {
             for(size_t i = 0; i < n; i++) {
                 for(size_t j = 0; j < m; j++) {
-                    cin >> (*this)[i][j];
+                    std::cin >> (*this)[i][j];
                 }
             }
         }
@@ -28,7 +34,7 @@ namespace algebra { // matrix
         void print() const {
             for(size_t i = 0; i < n; i++) {
                 for(size_t j = 0; j < m; j++) {
-                    cout << (*this)[i][j] << " \n"[j + 1 == m];
+                    std::cout << (*this)[i][j] << " \n"[j + 1 == m];
                 }
             }
         }
@@ -46,15 +52,15 @@ namespace algebra { // matrix
             assert(n == b.n);
             matrix res(n, m+b.m);
             for(size_t i = 0; i < n; i++) {
-                res[i][slice(0,m,1)] = a[i];
-                res[i][slice(m,b.m,1)] = b[i];
+                res[i][std::slice(0,m,1)] = a[i];
+                res[i][std::slice(m,b.m,1)] = b[i];
             }
             return res;
         }
         matrix submatrix(auto slicex, auto slicey) const {
-            valarray res = a[slicex];
+            std::valarray res = a[slicex];
             for(auto &row: res) {
-                row = valarray(row[slicey]);
+                row = std::valarray(row[slicey]);
             }
             return res;
         }
@@ -157,7 +163,7 @@ namespace algebra { // matrix
             return res;
         }
 
-        optional<matrix> inv() const {
+        std::optional<matrix> inv() const {
             assert(n == m);
             matrix b = *this | eye(n);
             if(size(b.gauss<reverse>(n)[0]) < n) {
@@ -166,11 +172,11 @@ namespace algebra { // matrix
             for(size_t i = 0; i < n; i++) {
                 b[i] *= b[i][i].inv();
             }
-            return b.submatrix(slice(0, n, 1), slice(n, n, 1));
+            return b.submatrix(std::slice(0, n, 1), std::slice(n, n, 1));
         }
 
         // [solution, basis], transposed
-        optional<array<matrix, 2>> solve(matrix t) const {
+        std::optional<array<matrix, 2>> solve(matrix t) const {
             assert(n == t.n);
             matrix b = *this | t;
             auto [pivots, free] = b.gauss<reverse>();
@@ -188,9 +194,10 @@ namespace algebra { // matrix
                 sols[i][free[i]] = -1;
             }
             return array{
-                sols.submatrix(slice(size(free) - t.m, t.m, 1), slice(0, m, 1)),
-                sols.submatrix(slice(0, size(free) - t.m, 1), slice(0, m, 1))
+                sols.submatrix(std::slice(size(free) - t.m, t.m, 1), std::slice(0, m, 1)),
+                sols.submatrix(std::slice(0, size(free) - t.m, 1), std::slice(0, m, 1))
             };
         }
     };
 }
+#endif // ALGEBRA_MATRIX_HPP

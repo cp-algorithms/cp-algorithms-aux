@@ -1,11 +1,15 @@
+#ifndef DATA_STRUCTURES_TREAP_HPP
+#define DATA_STRUCTURES_TREAP_HPP
+#include <chrono>
+#include <random>
 /* Submissions on Library Judge:
   Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860
   Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858
   Dynamic Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948
-  */
+*/
 namespace data_structures {
     namespace treap {
-        mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+        std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
         #define safe(t, op) (t ? t->op : typename remove_reference<decltype(t->op)>::type())
         template<typename meta>
         struct treap_node {
@@ -134,3 +138,4 @@ namespace data_structures {
         };
     }
 }
+#endif // DATA_STRUCTURES_TREAP_HPP

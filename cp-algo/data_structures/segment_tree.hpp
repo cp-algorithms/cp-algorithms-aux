@@ -1,3 +1,6 @@
+#ifndef DATA_STRUCTURES_SEGMENT_TREE_HPP
+#define DATA_STRUCTURES_SEGMENT_TREE_HPP
+#include <vector>
 /* Metas examples:
     Range Affine Range Sum, 1138ms - https://judge.yosupo.jp/submission/148324
     Range Chmin Chmax Add Range Sum, 787ms - https://judge.yosupo.jp/submission/148544
@@ -7,11 +10,11 @@ namespace data_structures {
         template<typename meta>
         struct segment_tree {
             const int N;
-            vector<meta> _meta;
+            std::vector<meta> _meta;
 
             segment_tree(int n): N(n), _meta(4 * N) {}
 
-            segment_tree(vector<meta> leafs): N(size(leafs)), _meta(4 * N) {
+            segment_tree(std::vector<meta> leafs): N(size(leafs)), _meta(4 * N) {
                 build(leafs);
             }
 
@@ -82,3 +85,4 @@ namespace data_structures {
         }
     }
 }
+#endif // DATA_STRUCTURES_SEGMENT_TREE_HPP

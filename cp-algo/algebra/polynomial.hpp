@@ -145,7 +145,7 @@ namespace cp_algo::algebra {
             }
             
             auto apply(poly A, poly B) {
-                return make_pair(a * A + b * B, c * A + d * B);
+                return std::make_pair(a * A + b * B, c * A + d * B);
             }
         };
         
@@ -165,12 +165,12 @@ namespace cp_algo::algebra {
                 return {{}, {T(1), T(0), T(0), T(1)}};
             }
             auto [ar, Tr] = half_gcd(A.div_xk(m), B.div_xk(m));
-            tie(A, B) = Tr.adj().apply(A, B);
+            std::tie(A, B) = Tr.adj().apply(A, B);
             if(B.deg() < m) {
                 return {ar, Tr};
             }
             auto [ai, R] = A.divmod(B);
-            tie(A, B) = make_pair(B, R);
+            std::tie(A, B) = std::make_pair(B, R);
             int k = 2 * m - B.deg();
             auto [as, Ts] = half_gcd(A.div_xk(k), B.div_xk(k));
             concat(ar, {ai});
@@ -187,12 +187,12 @@ namespace cp_algo::algebra {
                     auto [a, Tr] = half_gcd(A, B);
                     concat(ak, a);
                     trs.push_back(Tr);
-                    tie(A, B) = trs.back().adj().apply(A, B);
+                    std::tie(A, B) = trs.back().adj().apply(A, B);
                 } else {
                     auto [a, R] = A.divmod(B);
                     ak.push_back(a);
                     trs.emplace_back(a);
-                    tie(A, B) = make_pair(B, R);
+                    std::tie(A, B) = std::make_pair(B, R);
                 }
             }
             trs.emplace_back(T(1), T(0), T(0), T(1));
@@ -219,8 +219,8 @@ namespace cp_algo::algebra {
             auto Q1 = poly(T(1)), Q2 = poly(T(0));
             while(!R2.is_zero()) {
                 auto [a, nR] = R1.divmod(R2); // R1 = a*R2 + nR, deg nR < deg R2
-                tie(R1, R2) = make_tuple(R2, nR);
-                tie(Q1, Q2) = make_tuple(Q2, Q1 + a * Q2);
+                std::tie(R1, R2) = std::make_tuple(R2, nR);
+                std::tie(Q1, Q2) = std::make_tuple(Q2, Q1 + a * Q2);
                 if(R2.deg() < Q2.deg()) {
                     return Q2 / Q2.lead();
                 }
@@ -279,8 +279,8 @@ namespace cp_algo::algebra {
             while(!R2.is_zero()) {
                 k ^= 1;
                 auto [a, nR] = R1.divmod(R2);
-                tie(R1, R2) = make_tuple(R2, nR);
-                tie(Q1, Q2) = make_tuple(Q2, Q1 + a * Q2);
+                std::tie(R1, R2) = std::make_tuple(R2, nR);
+                std::tie(Q1, Q2) = std::make_tuple(Q2, Q1 + a * Q2);
             }
             if(R1.deg() > 0) {
                 return std::nullopt;
@@ -889,7 +889,7 @@ namespace cp_algo::algebra {
             }
             
             int q = std::sqrt(n);
-            auto [B0, B1] = make_pair(B.mod_xk(q), B.div_xk(q));
+            auto [B0, B1] = std::make_pair(B.mod_xk(q), B.div_xk(q));
             
             B0 = B0.div_xk(1);
             std::vector<poly> pw(A.deg() + 1);
@@ -902,8 +902,8 @@ namespace cp_algo::algebra {
                     return f;
                 }
                 int k = m / 2;
-                auto [f0, f1] = make_pair(f.mod_xk(k), f.div_xk(k));
-                auto [A, B] = make_pair(compose_dac(f0, k, N), compose_dac(f1, m - k, N - k));
+                auto [f0, f1] = std::make_pair(f.mod_xk(k), f.div_xk(k));
+                auto [A, B] = std::make_pair(compose_dac(f0, k, N), compose_dac(f1, m - k, N - k));
                 return (A + (B.mod_xk(N - k) * getpow(k).mod_xk(N - k)).mul_xk(k)).mod_xk(N);
             };
             

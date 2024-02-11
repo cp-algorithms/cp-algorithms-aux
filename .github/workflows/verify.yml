@@ -37,11 +37,8 @@ jobs:
         with:
           output-path: verify_files.json
           # Specify patterns
-          include: |
-                cp-algo/
           exclude: |
                 images/
-                .github/
           # If you have config.toml
           config: .verify-helper/config.toml
       - name: parse-doxygen

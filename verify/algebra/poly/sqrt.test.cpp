@@ -1,4 +1,4 @@
-// @brief Sqrt of Formal Power Series
+// @brief Sqrt of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/sqrt_of_formal_power_series"
 #include "cp-algo/algebra/poly.hpp"
 #include "cp-algo/algebra/modular.hpp"

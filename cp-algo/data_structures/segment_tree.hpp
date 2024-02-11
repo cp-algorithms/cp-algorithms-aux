@@ -1,15 +1,15 @@
 #ifndef CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_HPP
 #define CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_HPP
 #include <vector>
-namespace cp_algo::data_structures::segment_tree {
+namespace cp_algo::data_structures {
     template<typename meta>
-    struct segment_tree {
+    struct segtree_t {
         const int N;
         std::vector<meta> _meta;
 
-        segment_tree(int n): N(n), _meta(4 * N) {}
+        segtree_t(int n): N(n), _meta(4 * N) {}
 
-        segment_tree(std::vector<meta> leafs): N(size(leafs)), _meta(4 * N) {
+        segtree_t(std::vector<meta> leafs): N(size(leafs)), _meta(4 * N) {
             build(leafs);
         }
 

@@ -8,10 +8,9 @@
   Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858
   Dynamic Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948
 */
-namespace cp_algo::data_structures::treap {
+namespace cp_algo::data_structures {
     template<typename meta>
     struct treap_node {
-
         using node = treap_node;
         using treap = node*;
         meta _meta;

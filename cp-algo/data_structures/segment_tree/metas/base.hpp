@@ -3,7 +3,7 @@
 #include <functional>
 #include <algorithm>
 #include <cstdint>
-namespace cp_algo::data_structures::segment_tree::metas {
+namespace cp_algo::data_structures::segtree::metas {
     template<typename derived_meta>
     struct base_meta {
         using meta = derived_meta;

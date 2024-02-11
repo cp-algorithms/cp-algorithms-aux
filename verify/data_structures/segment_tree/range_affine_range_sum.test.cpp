@@ -6,10 +6,10 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::data_structures::segment_tree;
+using namespace cp_algo::data_structures;
 
 using base = cp_algo::algebra::modular<998244353>;
-using meta = metas::affine_meta<base>;
+using meta = segtree::metas::affine_meta<base>;
 
 void solve() {
     int n, q;
@@ -20,7 +20,7 @@ void solve() {
         cin >> ai;
         a[i] = {ai};
     }
-    segment_tree<meta> me(a);
+    segtree_t<meta> me(a);
     while(q--) {
         int t;
         cin >> t;

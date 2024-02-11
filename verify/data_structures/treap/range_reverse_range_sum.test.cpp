@@ -5,31 +5,31 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::data_structures::treap;
+using namespace cp_algo::data_structures;
 
-using meta = metas::reverse_meta<int64_t>;
+using meta = treap::metas::reverse_meta<int64_t>;
 using node = treap_node<meta>;
-using treap = node::treap;
+using treap_t = node::treap;
 
 void solve() {
     istream_iterator<int> input(cin);
     int n = *input++;
     int q = *input++;
-    vector<treap> nodes(n);
+    vector<treap_t> nodes(n);
     generate_n(begin(nodes), n, [&](){
         return new node(meta(*input++));
     });
-    treap me = node::build(nodes);
+    auto me = node::build(nodes);
     while(q--) {
         int t = *input++;
         int l = *input++;
         int r = *input++;
         if(t == 0) {
-            node::exec_on_segment(me, l, r, [](treap &t) {
+            node::exec_on_segment(me, l, r, [](auto &t) {
                 _safe_meta(t, reverse = true);
             });
         } else {
-            node::exec_on_segment(me, l, r, [](treap const& t) {
+            node::exec_on_segment(me, l, r, [](auto const& t) {
                 cout << _safe_meta(t, sum) << "\n";
             });
         }

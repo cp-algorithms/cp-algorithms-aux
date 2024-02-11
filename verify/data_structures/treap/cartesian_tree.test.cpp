@@ -5,26 +5,26 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::data_structures::treap;
+using namespace cp_algo::data_structures;
 
-struct val_meta: metas::base_meta {
+struct val_meta: treap::metas::base_meta {
     int val;
     val_meta(int val): val(val){}
 };
 
 using node = treap_node<val_meta>;
-using treap = node::treap;
+using treap_t = node::treap;
 
 void solve() {
     istream_iterator<int> input(cin);
     int n = *input++;
-    vector<treap> nodes(n);
+    vector<treap_t> nodes(n);
     for(int i = 0; i < n; i++) {
         nodes[i] = new node(val_meta(i), *input++);
     }
-    treap me = node::build(nodes);
+    auto me = node::build(nodes);
     vector<int> p(n, -1);
-    node::exec_on_each(me, [&](treap t) {
+    node::exec_on_each(me, [&](auto t) {
         for(auto child: t->children) {
             if(child) {
                 p[_safe_meta(child, val)] = _safe_meta(t, val);

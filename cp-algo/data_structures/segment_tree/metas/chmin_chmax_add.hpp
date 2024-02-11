@@ -4,7 +4,7 @@
 #include <functional>
 #include <algorithm>
 #include <cstdint>
-namespace cp_algo::data_structures::segment_tree::metas {
+namespace cp_algo::data_structures::segtree::metas {
     struct chmin_chmax_sum_meta: base_meta<chmin_chmax_sum_meta> {
         static constexpr int64_t inf = 1e12;
 

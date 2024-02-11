@@ -5,8 +5,8 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::data_structures::segment_tree;
-using meta = metas::chmin_chmax_sum_meta;
+using namespace cp_algo::data_structures;
+using meta = segtree::metas::chmin_chmax_sum_meta;
 
 void solve() {
     int n, q;
@@ -17,7 +17,7 @@ void solve() {
         cin >> ai;
         a[i] = {ai};
     }
-    segment_tree<meta> me(a);
+    segtree_t<meta> me(a);
     while(q--) {
         int t, l, r;
         int64_t b;

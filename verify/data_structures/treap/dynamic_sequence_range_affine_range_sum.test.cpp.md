@@ -51,7 +51,7 @@ data:
     \n\n\n#include <chrono>\n#include <random>\nnamespace cp_algo::random {\n    std::mt19937_64\
     \ rng(std::chrono::steady_clock::now().time_since_epoch().count()); \n}\n\n#line\
     \ 1 \"cp-algo/algebra/affine.hpp\"\n\n\n#include <optional>\n#include <cassert>\n\
-    namespace cp_algo::algebra {\n    template<typename base>\n    // a * x + b\n\
+    namespace cp_algo::algebra {\n    // a * x + b\n    template<typename base>\n\
     \    struct lin {\n        base a = 1, b = 0;\n        std::optional<base> c;\n\
     \        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a, base\
     \ b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c) {}\n\
@@ -61,7 +61,17 @@ data:
     \ (t.a * x + t.b) + b\n        lin apply(lin const& t) const {\n            return\
     \ {a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t) {\n\
     \            *this = t.apply(*this);\n        }\n\n        base eval(base x) const\
-    \ {\n            return a * x + b;\n        }\n    };\n}\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
+    \ {\n            return a * x + b;\n        }\n    };\n\n    // (ax+b) / (cx+d)\n\
+    \    template<typename base>\n    struct linfrac {\n        // default constructor\
+    \ for a continued fraction block\n        base a, b = base(1), c = base(1), d\
+    \ = base(0);\n        linfrac(base a): a(a) {}\n        linfrac(base a, base b,\
+    \ base c, base d): a(a), b(b), c(c), d(d) {}\n        \n        // composition\
+    \ of two linfracs\n        linfrac operator *(linfrac const& t) {\n          \
+    \  auto [A, C] = apply(t.a, t.c);\n            auto [B, D] = apply(t.b, t.d);\n\
+    \            return {A, B, C, D};\n        }\n        \n        linfrac adj()\
+    \ {\n            return {d, -b, -c, a};\n        }\n        \n        // apply\
+    \ linfrac to A/B\n        auto apply(base A, base B) {\n            return std::pair{a\
+    \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 1 \"cp-algo/algebra/common.hpp\"\
     \n\n\n#include <cstdint>\nnamespace cp_algo::algebra {\n    const int maxn = 1\
     \ << 20;\n    const int magic = 250; // threshold for sizes to run the naive algo\n\
     \n    auto bpow(auto x, int64_t n, auto ans) {\n        for(; n; n /= 2, x = x\
@@ -250,7 +260,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 00:23:03+01:00'
+  timestamp: '2024-02-11 11:53:49+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp

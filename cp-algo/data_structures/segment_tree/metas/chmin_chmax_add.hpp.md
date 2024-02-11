@@ -111,7 +111,7 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
   requiredBy: []
-  timestamp: '2024-02-11 00:23:03+01:00'
+  timestamp: '2024-02-11 11:53:49+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp

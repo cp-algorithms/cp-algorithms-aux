@@ -24,7 +24,7 @@ data:
     \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
     \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
     \n#line 1 \"cp-algo/algebra/affine.hpp\"\n\n\n#include <optional>\n#include <cassert>\n\
-    namespace cp_algo::algebra {\n    template<typename base>\n    // a * x + b\n\
+    namespace cp_algo::algebra {\n    // a * x + b\n    template<typename base>\n\
     \    struct lin {\n        base a = 1, b = 0;\n        std::optional<base> c;\n\
     \        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a, base\
     \ b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c) {}\n\
@@ -34,7 +34,17 @@ data:
     \ (t.a * x + t.b) + b\n        lin apply(lin const& t) const {\n            return\
     \ {a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t) {\n\
     \            *this = t.apply(*this);\n        }\n\n        base eval(base x) const\
-    \ {\n            return a * x + b;\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\
+    \ {\n            return a * x + b;\n        }\n    };\n\n    // (ax+b) / (cx+d)\n\
+    \    template<typename base>\n    struct linfrac {\n        // default constructor\
+    \ for a continued fraction block\n        base a, b = base(1), c = base(1), d\
+    \ = base(0);\n        linfrac(base a): a(a) {}\n        linfrac(base a, base b,\
+    \ base c, base d): a(a), b(b), c(c), d(d) {}\n        \n        // composition\
+    \ of two linfracs\n        linfrac operator *(linfrac const& t) {\n          \
+    \  auto [A, C] = apply(t.a, t.c);\n            auto [B, D] = apply(t.b, t.d);\n\
+    \            return {A, B, C, D};\n        }\n        \n        linfrac adj()\
+    \ {\n            return {d, -b, -c, a};\n        }\n        \n        // apply\
+    \ linfrac to A/B\n        auto apply(base A, base B) {\n            return std::pair{a\
+    \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\
     \nnamespace cp_algo::data_structures::segment_tree::metas {\n    template<typename\
     \ base>\n    struct affine_meta: base_meta<affine_meta<base>> {\n        using\
     \ meta = affine_meta;\n        using lin = algebra::lin<base>;\n\n        base\
@@ -65,7 +75,7 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/segment_tree/metas/affine.hpp
   requiredBy: []
-  timestamp: '2024-02-11 00:23:03+01:00'
+  timestamp: '2024-02-11 11:53:49+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp

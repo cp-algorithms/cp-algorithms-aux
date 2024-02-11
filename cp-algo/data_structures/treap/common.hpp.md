@@ -57,7 +57,7 @@ data:
   - cp-algo/data_structures/treap/metas/base.hpp
   - cp-algo/data_structures/treap/metas/reverse.hpp
   - cp-algo/data_structures/treap.hpp
-  timestamp: '2024-02-11 00:23:03+01:00'
+  timestamp: '2024-02-11 11:53:49+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/treap/range_reverse_range_sum.test.cpp

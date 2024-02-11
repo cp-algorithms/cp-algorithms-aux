@@ -54,8 +54,8 @@ data:
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/algebra/affine.hpp\"\n\n\n#include <optional>\n\
-    #include <cassert>\nnamespace cp_algo::algebra {\n    template<typename base>\n\
-    \    // a * x + b\n    struct lin {\n        base a = 1, b = 0;\n        std::optional<base>\
+    #include <cassert>\nnamespace cp_algo::algebra {\n    // a * x + b\n    template<typename\
+    \ base>\n    struct lin {\n        base a = 1, b = 0;\n        std::optional<base>\
     \ c;\n        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a,\
     \ base b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c)\
     \ {}\n\n        // polynomial product modulo x^2 - c\n        lin operator * (const\
@@ -64,19 +64,39 @@ data:
     \ (t.a * x + t.b) + b\n        lin apply(lin const& t) const {\n            return\
     \ {a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t) {\n\
     \            *this = t.apply(*this);\n        }\n\n        base eval(base x) const\
-    \ {\n            return a * x + b;\n        }\n    };\n}\n\n"
+    \ {\n            return a * x + b;\n        }\n    };\n\n    // (ax+b) / (cx+d)\n\
+    \    template<typename base>\n    struct linfrac {\n        // default constructor\
+    \ for a continued fraction block\n        base a, b = base(1), c = base(1), d\
+    \ = base(0);\n        linfrac(base a): a(a) {}\n        linfrac(base a, base b,\
+    \ base c, base d): a(a), b(b), c(c), d(d) {}\n        \n        // composition\
+    \ of two linfracs\n        linfrac operator *(linfrac const& t) {\n          \
+    \  auto [A, C] = apply(t.a, t.c);\n            auto [B, D] = apply(t.b, t.d);\n\
+    \            return {A, B, C, D};\n        }\n        \n        linfrac adj()\
+    \ {\n            return {d, -b, -c, a};\n        }\n        \n        // apply\
+    \ linfrac to A/B\n        auto apply(base A, base B) {\n            return std::pair{a\
+    \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n"
   code: "#ifndef CP_ALGO_ALGEBRA_AFFINE_HPP\n#define CP_ALGO_ALGEBRA_AFFINE_HPP\n\
-    #include <optional>\n#include <cassert>\nnamespace cp_algo::algebra {\n    template<typename\
-    \ base>\n    // a * x + b\n    struct lin {\n        base a = 1, b = 0;\n    \
-    \    std::optional<base> c;\n        lin() {}\n        lin(base b): a(0), b(b)\
-    \ {}\n        lin(base a, base b): a(a), b(b) {}\n        lin(base a, base b,\
-    \ base _c): a(a), b(b), c(_c) {}\n\n        // polynomial product modulo x^2 -\
-    \ c\n        lin operator * (const lin& t) {\n            assert(c && t.c && *c\
-    \ == *t.c);\n            return {a * t.b + b * t.a, b * t.b + a * t.a * (*c),\
-    \ *c};\n        }\n\n        // a * (t.a * x + t.b) + b\n        lin apply(lin\
+    #include <optional>\n#include <cassert>\nnamespace cp_algo::algebra {\n    //\
+    \ a * x + b\n    template<typename base>\n    struct lin {\n        base a = 1,\
+    \ b = 0;\n        std::optional<base> c;\n        lin() {}\n        lin(base b):\
+    \ a(0), b(b) {}\n        lin(base a, base b): a(a), b(b) {}\n        lin(base\
+    \ a, base b, base _c): a(a), b(b), c(_c) {}\n\n        // polynomial product modulo\
+    \ x^2 - c\n        lin operator * (const lin& t) {\n            assert(c && t.c\
+    \ && *c == *t.c);\n            return {a * t.b + b * t.a, b * t.b + a * t.a *\
+    \ (*c), *c};\n        }\n\n        // a * (t.a * x + t.b) + b\n        lin apply(lin\
     \ const& t) const {\n            return {a * t.a, a * t.b + b};\n        }\n\n\
     \        void prepend(lin const& t) {\n            *this = t.apply(*this);\n \
     \       }\n\n        base eval(base x) const {\n            return a * x + b;\n\
+    \        }\n    };\n\n    // (ax+b) / (cx+d)\n    template<typename base>\n  \
+    \  struct linfrac {\n        // default constructor for a continued fraction block\n\
+    \        base a, b = base(1), c = base(1), d = base(0);\n        linfrac(base\
+    \ a): a(a) {}\n        linfrac(base a, base b, base c, base d): a(a), b(b), c(c),\
+    \ d(d) {}\n        \n        // composition of two linfracs\n        linfrac operator\
+    \ *(linfrac const& t) {\n            auto [A, C] = apply(t.a, t.c);\n        \
+    \    auto [B, D] = apply(t.b, t.d);\n            return {A, B, C, D};\n      \
+    \  }\n        \n        linfrac adj() {\n            return {d, -b, -c, a};\n\
+    \        }\n        \n        // apply linfrac to A/B\n        auto apply(base\
+    \ A, base B) {\n            return std::pair{a * A + b * B, c * A + d * B};\n\
     \        }\n    };\n}\n#endif // CP_ALGO_ALGEBRA_AFFINE_HPP"
   dependsOn: []
   isVerificationFile: false
@@ -88,7 +108,7 @@ data:
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-11 00:23:03+01:00'
+  timestamp: '2024-02-11 11:53:49+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp

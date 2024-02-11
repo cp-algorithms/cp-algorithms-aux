@@ -56,7 +56,7 @@ data:
     \n\n\n#include <chrono>\n#include <random>\nnamespace cp_algo::random {\n    std::mt19937_64\
     \ rng(std::chrono::steady_clock::now().time_since_epoch().count()); \n}\n\n#line\
     \ 1 \"cp-algo/algebra/affine.hpp\"\n\n\n#include <optional>\n#include <cassert>\n\
-    namespace cp_algo::algebra {\n    template<typename base>\n    // a * x + b\n\
+    namespace cp_algo::algebra {\n    // a * x + b\n    template<typename base>\n\
     \    struct lin {\n        base a = 1, b = 0;\n        std::optional<base> c;\n\
     \        lin() {}\n        lin(base b): a(0), b(b) {}\n        lin(base a, base\
     \ b): a(a), b(b) {}\n        lin(base a, base b, base _c): a(a), b(b), c(_c) {}\n\
@@ -66,7 +66,17 @@ data:
     \ (t.a * x + t.b) + b\n        lin apply(lin const& t) const {\n            return\
     \ {a * t.a, a * t.b + b};\n        }\n\n        void prepend(lin const& t) {\n\
     \            *this = t.apply(*this);\n        }\n\n        base eval(base x) const\
-    \ {\n            return a * x + b;\n        }\n    };\n}\n\n#line 6 \"cp-algo/algebra/modular.hpp\"\
+    \ {\n            return a * x + b;\n        }\n    };\n\n    // (ax+b) / (cx+d)\n\
+    \    template<typename base>\n    struct linfrac {\n        // default constructor\
+    \ for a continued fraction block\n        base a, b = base(1), c = base(1), d\
+    \ = base(0);\n        linfrac(base a): a(a) {}\n        linfrac(base a, base b,\
+    \ base c, base d): a(a), b(b), c(c), d(d) {}\n        \n        // composition\
+    \ of two linfracs\n        linfrac operator *(linfrac const& t) {\n          \
+    \  auto [A, C] = apply(t.a, t.c);\n            auto [B, D] = apply(t.b, t.d);\n\
+    \            return {A, B, C, D};\n        }\n        \n        linfrac adj()\
+    \ {\n            return {d, -b, -c, a};\n        }\n        \n        // apply\
+    \ linfrac to A/B\n        auto apply(base A, base B) {\n            return std::pair{a\
+    \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 6 \"cp-algo/algebra/modular.hpp\"\
     \n#include <algorithm>\n#include <iostream>\n#line 9 \"cp-algo/algebra/modular.hpp\"\
     \nnamespace cp_algo::algebra {\n    template<int m>\n    struct modular {\n  \
     \      // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm\n        std::optional<modular>\
@@ -219,129 +229,121 @@ data:
     \ b.deg()) < magic) {\n                return divmod_slow(b);\n            }\n\
     \            poly D = (reverse().mod_xk(d + 1) * b.reverse().inv(d + 1)).mod_xk(d\
     \ + 1).reverse(d + 1);\n            return {D, *this - D * b};\n        }\n  \
-    \      \n        // (ax+b) / (cx+d)\n        struct transform {\n            poly\
-    \ a, b, c, d;\n            transform(poly a, poly b = T(1), poly c = T(1), poly\
-    \ d = T(0)): a(a), b(b), c(c), d(d){}\n            \n            transform operator\
-    \ *(transform const& t) {\n                return {\n                    a*t.a\
-    \ + b*t.c, a*t.b + b*t.d,\n                    c*t.a + d*t.c, c*t.b + d*t.d\n\
-    \                };\n            }\n            \n            transform adj()\
-    \ {\n                return transform(d, -b, -c, a);\n            }\n        \
-    \    \n            auto apply(poly A, poly B) {\n                return std::make_pair(a\
-    \ * A + b * B, c * A + d * B);\n            }\n        };\n        \n        template<typename\
-    \ Q>\n        static void concat(std::vector<Q> &a, std::vector<Q> const& b) {\n\
-    \            for(auto it: b) {\n                a.push_back(it);\n           \
-    \ }\n        }\n        \n        // finds a transform that changes A/B to A'/B'\
-    \ such that\n        // deg B' is at least 2 times less than deg A\n        static\
-    \ std::pair<std::vector<poly>, transform> half_gcd(poly A, poly B) {\n       \
-    \     assert(A.deg() >= B.deg());\n            int m = (A.deg() + 1) / 2;\n  \
-    \          if(B.deg() < m) {\n                return {{}, {T(1), T(0), T(0), T(1)}};\n\
-    \            }\n            auto [ar, Tr] = half_gcd(A.div_xk(m), B.div_xk(m));\n\
-    \            std::tie(A, B) = Tr.adj().apply(A, B);\n            if(B.deg() <\
-    \ m) {\n                return {ar, Tr};\n            }\n            auto [ai,\
-    \ R] = A.divmod(B);\n            std::tie(A, B) = std::make_pair(B, R);\n    \
-    \        int k = 2 * m - B.deg();\n            auto [as, Ts] = half_gcd(A.div_xk(k),\
-    \ B.div_xk(k));\n            concat(ar, {ai});\n            concat(ar, as);\n\
-    \            return {ar, Tr * transform(ai) * Ts};\n        }\n        \n    \
-    \    // return a transform that reduces A / B to gcd(A, B) / 0\n        static\
-    \ std::pair<std::vector<poly>, transform> full_gcd(poly A, poly B) {\n       \
-    \     std::vector<poly> ak;\n            std::vector<transform> trs;\n       \
-    \     while(!B.is_zero()) {\n                if(2 * B.deg() > A.deg()) {\n   \
-    \                 auto [a, Tr] = half_gcd(A, B);\n                    concat(ak,\
-    \ a);\n                    trs.push_back(Tr);\n                    std::tie(A,\
-    \ B) = trs.back().adj().apply(A, B);\n                } else {\n             \
-    \       auto [a, R] = A.divmod(B);\n                    ak.push_back(a);\n   \
-    \                 trs.emplace_back(a);\n                    std::tie(A, B) = std::make_pair(B,\
-    \ R);\n                }\n            }\n            trs.emplace_back(T(1), T(0),\
-    \ T(0), T(1));\n            while(trs.size() >= 2) {\n                trs[trs.size()\
-    \ - 2] = trs[trs.size() - 2] * trs[trs.size() - 1];\n                trs.pop_back();\n\
-    \            }\n            return {ak, trs.back()};\n        }\n            \
-    \    \n        static poly gcd(poly A, poly B) {\n            if(A.deg() < B.deg())\
-    \ {\n                return gcd(B, A);\n            }\n            auto [a, Tr]\
-    \ = full_gcd(A, B);\n            return Tr.d * A - Tr.b * B;\n        }\n\n  \
-    \      \n        // Returns the characteristic polynomial\n        // of the minimum\
-    \ linear recurrence for the sequence\n        poly min_rec_slow(int d) const {\n\
-    \            auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);\n       \
-    \     auto Q1 = poly(T(1)), Q2 = poly(T(0));\n            while(!R2.is_zero())\
-    \ {\n                auto [a, nR] = R1.divmod(R2); // R1 = a*R2 + nR, deg nR <\
-    \ deg R2\n                std::tie(R1, R2) = std::make_tuple(R2, nR);\n      \
-    \          std::tie(Q1, Q2) = std::make_tuple(Q2, Q1 + a * Q2);\n            \
-    \    if(R2.deg() < Q2.deg()) {\n                    return Q2 / Q2.lead();\n \
-    \               }\n            }\n            assert(0);\n        }\n        \n\
-    \        static transform convergent(auto L, auto R) { // computes product on\
-    \ [L, R)\n            if(R - L == 1) {\n                return transform(*L);\n\
-    \            } else {\n                int s = 0;\n                for(int i =\
-    \ 0; i < R - L; i++) {\n                    s += L[i].a.size();\n            \
-    \    }\n                int c = 0;\n                for(int i = 0; i < R - L;\
-    \ i++) {\n                    c += L[i].a.size();\n                    if(2 *\
-    \ c > s) {\n                        return convergent(L, L + i) * convergent(L\
-    \ + i, R);\n                    }\n                }\n                assert(0);\n\
-    \            }\n        }\n        \n        poly min_rec(int d) const {\n   \
-    \         if(d < magic) {\n                return min_rec_slow(d);\n         \
-    \   }\n            auto R2 = mod_xk(d + 1).reverse(d + 1), R1 = xk(d + 1);\n \
-    \           if(R2.is_zero()) {\n                return poly(1);\n            }\n\
-    \            auto [a, Tr] = full_gcd(R1, R2);\n            int dr = (d + 1) -\
-    \ a[0].deg();\n            int dp = 0;\n            for(size_t i = 0; i + 1 <\
-    \ a.size(); i++) {\n                dr -= a[i + 1].deg();\n                dp\
-    \ += a[i].deg();\n                if(dr < dp) {\n                    auto ans\
-    \ = convergent(begin(a), begin(a) + i + 1);\n                    return ans.a\
-    \ / ans.a.lead();\n                }\n            }\n            auto ans = convergent(begin(a),\
-    \ end(a));\n            return ans.a / ans.a.lead();\n        }\n        \n  \
-    \      // calculate inv to *this modulo t\n        // quadratic complexity\n \
-    \       std::optional<poly> inv_mod_slow(poly const& t) const {\n            auto\
-    \ R1 = *this, R2 = t;\n            auto Q1 = poly(T(1)), Q2 = poly(T(0));\n  \
-    \          int k = 0;\n            while(!R2.is_zero()) {\n                k ^=\
-    \ 1;\n                auto [a, nR] = R1.divmod(R2);\n                std::tie(R1,\
-    \ R2) = std::make_tuple(R2, nR);\n                std::tie(Q1, Q2) = std::make_tuple(Q2,\
-    \ Q1 + a * Q2);\n            }\n            if(R1.deg() > 0) {\n             \
-    \   return std::nullopt;\n            } else {\n                return (k ? -Q1\
-    \ : Q1) / R1[0];\n            }\n        }\n        \n        std::optional<poly>\
-    \ inv_mod(poly const &t) const {\n            assert(!t.is_zero());\n        \
-    \    if(false && std::min(deg(), t.deg()) < magic) {\n                return inv_mod_slow(t);\n\
-    \            }\n            auto A = t, B = *this % t;\n            auto [a, Tr]\
-    \ = full_gcd(A, B);\n            auto g = Tr.d * A - Tr.b * B;\n            if(g.deg()\
-    \ != 0) {\n                return std::nullopt;\n            }\n            return\
-    \ -Tr.b / g[0];\n        };\n        \n        poly operator / (const poly &t)\
-    \ const {return divmod(t).first;}\n        poly operator % (const poly &t) const\
-    \ {return divmod(t).second;}\n        poly operator /= (const poly &t) {return\
-    \ *this = divmod(t).first;}\n        poly operator %= (const poly &t) {return\
-    \ *this = divmod(t).second;}\n        poly operator *= (const T &x) {\n      \
-    \      for(auto &it: a) {\n                it *= x;\n            }\n         \
-    \   normalize();\n            return *this;\n        }\n        poly operator\
-    \ /= (const T &x) {\n            return *this *= x.inv();\n        }\n       \
-    \ poly operator * (const T &x) const {return poly(*this) *= x;}\n        poly\
-    \ operator / (const T &x) const {return poly(*this) /= x;}\n        \n       \
-    \ poly conj() const { // A(x) -> A(-x)\n            auto res = *this;\n      \
-    \      for(int i = 1; i <= deg(); i += 2) {\n                res.a[i] = -res[i];\n\
-    \            }\n            return res;\n        }\n        \n        void print(int\
-    \ n) const {\n            for(int i = 0; i < n; i++) {\n                std::cout\
-    \ << (*this)[i] << ' ';\n            }\n            std::cout << \"\\n\";\n  \
-    \      }\n        \n        void print() const {\n            print(deg() + 1);\n\
-    \        }\n        \n        T eval(T x) const { // evaluates in single point\
-    \ x\n            T res(0);\n            for(int i = deg(); i >= 0; i--) {\n  \
-    \              res *= x;\n                res += a[i];\n            }\n      \
-    \      return res;\n        }\n        \n        T lead() const { // leading coefficient\n\
-    \            assert(!is_zero());\n            return a.back();\n        }\n  \
-    \      \n        int deg() const { // degree, -1 for P(x) = 0\n            return\
-    \ (int)a.size() - 1;\n        }\n        \n        bool is_zero() const {\n  \
-    \          return a.empty();\n        }\n        \n        T operator [](int idx)\
-    \ const {\n            return idx < 0 || idx > deg() ? T(0) : a[idx];\n      \
-    \  }\n        \n        T& coef(size_t idx) { // mutable reference at coefficient\n\
-    \            return a[idx];\n        }\n        \n        bool operator == (const\
-    \ poly &t) const {return a == t.a;}\n        bool operator != (const poly &t)\
-    \ const {return a != t.a;}\n        \n        poly deriv(int k = 1) { // calculate\
-    \ derivative\n            if(deg() + 1 < k) {\n                return poly(T(0));\n\
-    \            }\n            std::vector<T> res(deg() + 1 - k);\n            for(int\
-    \ i = k; i <= deg(); i++) {\n                res[i - k] = fact<T>(i) * rfact<T>(i\
-    \ - k) * a[i];\n            }\n            return res;\n        }\n        \n\
-    \        poly integr() { // calculate integral with C = 0\n            std::vector<T>\
-    \ res(deg() + 2);\n            for(int i = 0; i <= deg(); i++) {\n           \
-    \     res[i + 1] = a[i] * small_inv<T>(i + 1);\n            }\n            return\
-    \ res;\n        }\n        \n        size_t trailing_xk() const { // Let p(x)\
-    \ = x^k * t(x), return k\n            if(is_zero()) {\n                return\
-    \ -1;\n            }\n            int res = 0;\n            while(a[res] == T(0))\
-    \ {\n                res++;\n            }\n            return res;\n        }\n\
-    \        \n        poly log(size_t n) { // calculate log p(x) mod x^n\n      \
-    \      assert(a[0] == T(1));\n            return (deriv().mod_xk(n) * inv(n)).integr().mod_xk(n);\n\
+    \      \n        template<typename Q>\n        static void concat(std::vector<Q>\
+    \ &a, std::vector<Q> const& b) {\n            for(auto it: b) {\n            \
+    \    a.push_back(it);\n            }\n        }\n        \n        // finds a\
+    \ linfrac<poly> that changes A/B to A'/B' such that\n        // deg B' is at least\
+    \ 2 times less than deg A\n        static std::pair<std::vector<poly>, linfrac<poly>>\
+    \ half_gcd(poly A, poly B) {\n            assert(A.deg() >= B.deg());\n      \
+    \      int m = (A.deg() + 1) / 2;\n            if(B.deg() < m) {\n           \
+    \     return {{}, {T(1), T(0), T(0), T(1)}};\n            }\n            auto\
+    \ [ar, Tr] = half_gcd(A.div_xk(m), B.div_xk(m));\n            std::tie(A, B) =\
+    \ Tr.adj().apply(A, B);\n            if(B.deg() < m) {\n                return\
+    \ {ar, Tr};\n            }\n            auto [ai, R] = A.divmod(B);\n        \
+    \    std::tie(A, B) = std::make_pair(B, R);\n            int k = 2 * m - B.deg();\n\
+    \            auto [as, Ts] = half_gcd(A.div_xk(k), B.div_xk(k));\n           \
+    \ concat(ar, {ai});\n            concat(ar, as);\n            return {ar, Tr *\
+    \ linfrac<poly>(ai) * Ts};\n        }\n        \n        // return a linfrac<poly>\
+    \ that reduces A / B to gcd(A, B) / 0\n        static std::pair<std::vector<poly>,\
+    \ linfrac<poly>> full_gcd(poly A, poly B) {\n            std::vector<poly> ak;\n\
+    \            std::vector<linfrac<poly>> trs;\n            while(!B.is_zero())\
+    \ {\n                if(2 * B.deg() > A.deg()) {\n                    auto [a,\
+    \ Tr] = half_gcd(A, B);\n                    concat(ak, a);\n                \
+    \    trs.push_back(Tr);\n                    std::tie(A, B) = trs.back().adj().apply(A,\
+    \ B);\n                } else {\n                    auto [a, R] = A.divmod(B);\n\
+    \                    ak.push_back(a);\n                    trs.emplace_back(a);\n\
+    \                    std::tie(A, B) = std::make_pair(B, R);\n                }\n\
+    \            }\n            trs.emplace_back(T(1), T(0), T(0), T(1));\n      \
+    \      while(trs.size() >= 2) {\n                trs[trs.size() - 2] = trs[trs.size()\
+    \ - 2] * trs[trs.size() - 1];\n                trs.pop_back();\n            }\n\
+    \            return {ak, trs.back()};\n        }\n                \n        static\
+    \ poly gcd(poly A, poly B) {\n            if(A.deg() < B.deg()) {\n          \
+    \      return gcd(B, A);\n            }\n            auto [a, Tr] = full_gcd(A,\
+    \ B);\n            return Tr.d * A - Tr.b * B;\n        }\n\n        \n      \
+    \  // Returns the characteristic polynomial\n        // of the minimum linear\
+    \ recurrence for the sequence\n        poly min_rec_slow(int d) const {\n    \
+    \        auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);\n           \
+    \ auto Q1 = poly(T(1)), Q2 = poly(T(0));\n            while(!R2.is_zero()) {\n\
+    \                auto [a, nR] = R1.divmod(R2); // R1 = a*R2 + nR, deg nR < deg\
+    \ R2\n                std::tie(R1, R2) = std::make_tuple(R2, nR);\n          \
+    \      std::tie(Q1, Q2) = std::make_tuple(Q2, Q1 + a * Q2);\n                if(R2.deg()\
+    \ < Q2.deg()) {\n                    return Q2 / Q2.lead();\n                }\n\
+    \            }\n            assert(0);\n        }\n        \n        static linfrac<poly>\
+    \ convergent(auto L, auto R) { // computes product on [L, R)\n            if(R\
+    \ - L == 1) {\n                return linfrac<poly>(*L);\n            } else {\n\
+    \                int s = 0;\n                for(int i = 0; i < R - L; i++) {\n\
+    \                    s += L[i].a.size();\n                }\n                int\
+    \ c = 0;\n                for(int i = 0; i < R - L; i++) {\n                 \
+    \   c += L[i].a.size();\n                    if(2 * c > s) {\n               \
+    \         return convergent(L, L + i) * convergent(L + i, R);\n              \
+    \      }\n                }\n                assert(0);\n            }\n     \
+    \   }\n        \n        poly min_rec(int d) const {\n            if(d < magic)\
+    \ {\n                return min_rec_slow(d);\n            }\n            auto\
+    \ R2 = mod_xk(d + 1).reverse(d + 1), R1 = xk(d + 1);\n            if(R2.is_zero())\
+    \ {\n                return poly(1);\n            }\n            auto [a, Tr]\
+    \ = full_gcd(R1, R2);\n            int dr = (d + 1) - a[0].deg();\n          \
+    \  int dp = 0;\n            for(size_t i = 0; i + 1 < a.size(); i++) {\n     \
+    \           dr -= a[i + 1].deg();\n                dp += a[i].deg();\n       \
+    \         if(dr < dp) {\n                    auto ans = convergent(begin(a), begin(a)\
+    \ + i + 1);\n                    return ans.a / ans.a.lead();\n              \
+    \  }\n            }\n            auto ans = convergent(begin(a), end(a));\n  \
+    \          return ans.a / ans.a.lead();\n        }\n        \n        // calculate\
+    \ inv to *this modulo t\n        // quadratic complexity\n        std::optional<poly>\
+    \ inv_mod_slow(poly const& t) const {\n            auto R1 = *this, R2 = t;\n\
+    \            auto Q1 = poly(T(1)), Q2 = poly(T(0));\n            int k = 0;\n\
+    \            while(!R2.is_zero()) {\n                k ^= 1;\n               \
+    \ auto [a, nR] = R1.divmod(R2);\n                std::tie(R1, R2) = std::make_tuple(R2,\
+    \ nR);\n                std::tie(Q1, Q2) = std::make_tuple(Q2, Q1 + a * Q2);\n\
+    \            }\n            if(R1.deg() > 0) {\n                return std::nullopt;\n\
+    \            } else {\n                return (k ? -Q1 : Q1) / R1[0];\n      \
+    \      }\n        }\n        \n        std::optional<poly> inv_mod(poly const\
+    \ &t) const {\n            assert(!t.is_zero());\n            if(false && std::min(deg(),\
+    \ t.deg()) < magic) {\n                return inv_mod_slow(t);\n            }\n\
+    \            auto A = t, B = *this % t;\n            auto [a, Tr] = full_gcd(A,\
+    \ B);\n            auto g = Tr.d * A - Tr.b * B;\n            if(g.deg() != 0)\
+    \ {\n                return std::nullopt;\n            }\n            return -Tr.b\
+    \ / g[0];\n        };\n        \n        poly operator / (const poly &t) const\
+    \ {return divmod(t).first;}\n        poly operator % (const poly &t) const {return\
+    \ divmod(t).second;}\n        poly operator /= (const poly &t) {return *this =\
+    \ divmod(t).first;}\n        poly operator %= (const poly &t) {return *this =\
+    \ divmod(t).second;}\n        poly operator *= (const T &x) {\n            for(auto\
+    \ &it: a) {\n                it *= x;\n            }\n            normalize();\n\
+    \            return *this;\n        }\n        poly operator /= (const T &x) {\n\
+    \            return *this *= x.inv();\n        }\n        poly operator * (const\
+    \ T &x) const {return poly(*this) *= x;}\n        poly operator / (const T &x)\
+    \ const {return poly(*this) /= x;}\n        \n        poly conj() const { // A(x)\
+    \ -> A(-x)\n            auto res = *this;\n            for(int i = 1; i <= deg();\
+    \ i += 2) {\n                res.a[i] = -res[i];\n            }\n            return\
+    \ res;\n        }\n        \n        void print(int n) const {\n            for(int\
+    \ i = 0; i < n; i++) {\n                std::cout << (*this)[i] << ' ';\n    \
+    \        }\n            std::cout << \"\\n\";\n        }\n        \n        void\
+    \ print() const {\n            print(deg() + 1);\n        }\n        \n      \
+    \  T eval(T x) const { // evaluates in single point x\n            T res(0);\n\
+    \            for(int i = deg(); i >= 0; i--) {\n                res *= x;\n  \
+    \              res += a[i];\n            }\n            return res;\n        }\n\
+    \        \n        T lead() const { // leading coefficient\n            assert(!is_zero());\n\
+    \            return a.back();\n        }\n        \n        int deg() const {\
+    \ // degree, -1 for P(x) = 0\n            return (int)a.size() - 1;\n        }\n\
+    \        \n        bool is_zero() const {\n            return a.empty();\n   \
+    \     }\n        \n        T operator [](int idx) const {\n            return\
+    \ idx < 0 || idx > deg() ? T(0) : a[idx];\n        }\n        \n        T& coef(size_t\
+    \ idx) { // mutable reference at coefficient\n            return a[idx];\n   \
+    \     }\n        \n        bool operator == (const poly &t) const {return a ==\
+    \ t.a;}\n        bool operator != (const poly &t) const {return a != t.a;}\n \
+    \       \n        poly deriv(int k = 1) { // calculate derivative\n          \
+    \  if(deg() + 1 < k) {\n                return poly(T(0));\n            }\n  \
+    \          std::vector<T> res(deg() + 1 - k);\n            for(int i = k; i <=\
+    \ deg(); i++) {\n                res[i - k] = fact<T>(i) * rfact<T>(i - k) * a[i];\n\
+    \            }\n            return res;\n        }\n        \n        poly integr()\
+    \ { // calculate integral with C = 0\n            std::vector<T> res(deg() + 2);\n\
+    \            for(int i = 0; i <= deg(); i++) {\n                res[i + 1] = a[i]\
+    \ * small_inv<T>(i + 1);\n            }\n            return res;\n        }\n\
+    \        \n        size_t trailing_xk() const { // Let p(x) = x^k * t(x), return\
+    \ k\n            if(is_zero()) {\n                return -1;\n            }\n\
+    \            int res = 0;\n            while(a[res] == T(0)) {\n             \
+    \   res++;\n            }\n            return res;\n        }\n        \n    \
+    \    poly log(size_t n) { // calculate log p(x) mod x^n\n            assert(a[0]\
+    \ == T(1));\n            return (deriv().mod_xk(n) * inv(n)).integr().mod_xk(n);\n\
     \        }\n        \n        poly exp(size_t n) { // calculate exp p(x) mod x^n\n\
     \            if(is_zero()) {\n                return T(1);\n            }\n  \
     \          assert(a[0] == T(0));\n            poly ans = T(1);\n            size_t\
@@ -608,7 +610,7 @@ data:
   isVerificationFile: true
   path: verify/algebra/polynomial/convolution107.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 00:23:03+01:00'
+  timestamp: '2024-02-11 11:53:49+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/algebra/polynomial/convolution107.test.cpp

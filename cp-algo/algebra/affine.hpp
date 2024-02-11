@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_ALGEBRA_AFFINE_HPP
 #define CP_ALGO_ALGEBRA_AFFINE_HPP
 #include <optional>
+#include <utility>
 #include <cassert>
 namespace cp_algo::algebra {
     // a * x + b

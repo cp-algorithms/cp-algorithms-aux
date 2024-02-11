@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_ALGEBRA_POLY_HPP
 #define CP_ALGO_ALGEBRA_POLY_HPP
+#include "poly/impl/euclid.hpp"
 #include "poly/impl/base.hpp"
 #include "poly/impl/div.hpp"
 #include "common.hpp"
@@ -13,6 +14,7 @@
 namespace cp_algo::algebra {
     template<typename T>
     struct poly_t {
+        using base = T;
         std::vector<T> a;
         
         void normalize() {poly::impl::normalize(*this);}
@@ -34,64 +36,31 @@ namespace cp_algo::algebra {
         
         poly_t operator *= (const poly_t &t) {fft::mul(a, t.a); normalize(); return *this;}
         poly_t operator * (const poly_t &t) const {return poly_t(*this) *= t;}
+
+        poly_t& operator /= (const poly_t &t) {return *this = divmod(t)[0];}
+        poly_t& operator %= (const poly_t &t) {return *this = divmod(t)[1];}
+        poly_t operator / (poly_t const& t) const {return poly_t(*this) /= t;}
+        poly_t operator % (poly_t const& t) const {return poly_t(*this) %= t;}
+
+        poly_t& operator *= (T const& x) {return *this = poly::impl::scale(*this, x);}
+        poly_t& operator /= (T const& x) {return *this *= x.inv();}
+        poly_t operator * (T const& x) const {return poly_t(*this) *= x;}
+        poly_t operator / (T const& x) const {return poly_t(*this) /= x;}
         
         poly_t reverse(size_t n) const {return poly::impl::reverse(*this, n);}
         poly_t reverse() const {return reverse(size(a));}
         
         std::array<poly_t, 2> divmod(poly_t const& b) const {return poly::impl::divmod(*this, b);}
         
-        template<typename Q>
-        static void concat(std::vector<Q> &a, std::vector<Q> const& b) {
-            for(auto it: b) {
-                a.push_back(it);
-            }
-        }
-        
         // finds a linfrac<poly_t> that changes A/B to A'/B' such that
         // deg B' is at least 2 times less than deg A
         static std::pair<std::vector<poly_t>, linfrac<poly_t>> half_gcd(poly_t A, poly_t B) {
-            assert(A.deg() >= B.deg());
-            int m = (A.deg() + 1) / 2;
-            if(B.deg() < m) {
-                return {{}, {T(1), T(0), T(0), T(1)}};
-            }
-            auto [ar, Tr] = half_gcd(A.div_xk(m), B.div_xk(m));
-            std::tie(A, B) = Tr.adj().apply(A, B);
-            if(B.deg() < m) {
-                return {ar, Tr};
-            }
-            auto [ai, R] = A.divmod(B);
-            std::tie(A, B) = std::make_pair(B, R);
-            int k = 2 * m - B.deg();
-            auto [as, Ts] = half_gcd(A.div_xk(k), B.div_xk(k));
-            concat(ar, {ai});
-            concat(ar, as);
-            return {ar, Tr * linfrac<poly_t>(ai) * Ts};
+            return poly::impl::half_gcd(A, B);
         }
         
         // return a linfrac<poly_t> that reduces A / B to gcd(A, B) / 0
         static std::pair<std::vector<poly_t>, linfrac<poly_t>> full_gcd(poly_t A, poly_t B) {
-            std::vector<poly_t> ak;
-            std::vector<linfrac<poly_t>> trs;
-            while(!B.is_zero()) {
-                if(2 * B.deg() > A.deg()) {
-                    auto [a, Tr] = half_gcd(A, B);
-                    concat(ak, a);
-                    trs.push_back(Tr);
-                    std::tie(A, B) = trs.back().adj().apply(A, B);
-                } else {
-                    auto [a, R] = A.divmod(B);
-                    ak.push_back(a);
-                    trs.emplace_back(a);
-                    std::tie(A, B) = std::make_pair(B, R);
-                }
-            }
-            trs.emplace_back(T(1), T(0), T(0), T(1));
-            while(trs.size() >= 2) {
-                trs[trs.size() - 2] = trs[trs.size() - 2] * trs[trs.size() - 1];
-                trs.pop_back();
-            }
-            return {ak, trs.back()};
+            return poly::impl::full_gcd(A, B);
         }
                 
         static poly_t gcd(poly_t A, poly_t B) {
@@ -193,23 +162,6 @@ namespace cp_algo::algebra {
             }
             return -Tr.b / g[0];
         };
-        
-        poly_t operator / (const poly_t &t) const {return divmod(t).first;}
-        poly_t operator % (const poly_t &t) const {return divmod(t).second;}
-        poly_t operator /= (const poly_t &t) {return *this = divmod(t).first;}
-        poly_t operator %= (const poly_t &t) {return *this = divmod(t).second;}
-        poly_t operator *= (const T &x) {
-            for(auto &it: a) {
-                it *= x;
-            }
-            normalize();
-            return *this;
-        }
-        poly_t operator /= (const T &x) {
-            return *this *= x.inv();
-        }
-        poly_t operator * (const T &x) const {return poly_t(*this) *= x;}
-        poly_t operator / (const T &x) const {return poly_t(*this) /= x;}
         
         poly_t conj() const { // A(x) -> A(-x)
             auto res = *this;

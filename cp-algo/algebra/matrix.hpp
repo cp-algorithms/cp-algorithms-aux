@@ -106,7 +106,8 @@ namespace cp_algo::algebra {
             }
             return *this;
         }
-
+        // avx friendly fused multiply-add, use when possible
+        // #pragma GCC target("avx2") recommended
         inline static void add_scaled(auto &a, auto const& b, base scale, size_t i = 0) {
             size_t m = size(a);
             for(; i < m; i++) {

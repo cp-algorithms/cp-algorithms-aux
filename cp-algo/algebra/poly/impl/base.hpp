@@ -14,6 +14,13 @@ namespace cp_algo::algebra::poly::impl {
         std::ranges::transform(p.a, begin(p.a), std::negate<>{});
         return p;
     }
+    auto& scale(auto &p, auto x) {
+        for(auto &it: p.a) {
+            it *= x;
+        }
+        p.normalize();
+        return p;
+    }
     auto& add(auto &p, auto q) {
         p.a.resize(std::max(p.a.size(), q.a.size()));
         std::ranges::transform(p.a, q.a, begin(p.a), std::plus<>{});

@@ -1,16 +1,16 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   - icon: ':heavy_check_mark:'
@@ -22,7 +22,7 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/segtree/metas/base.hpp
     title: cp-algo/data_structures/segtree/metas/base.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy: []
@@ -36,7 +36,7 @@ data:
     document_title: Range Affine Range Sum
     links:
     - https://judge.yosupo.jp/problem/range_affine_range_sum
-  bundledCode: "#line 1 \"verify/data_structures/segment_tree/range_affine_range_sum.test.cpp\"\
+  bundledCode: "#line 1 \"verify/data_structures/segtree/range_affine_range_sum.test.cpp\"\
     \n// @brief Range Affine Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_affine_range_sum\"\
     \n#line 1 \"cp-algo/data_structures/segtree/metas/affine.hpp\"\n\n\n#line 1 \"\
     cp-algo/data_structures/segtree/metas/base.hpp\"\n\n\nnamespace cp_algo::data_structures::segtree::metas\
@@ -160,7 +160,7 @@ data:
     \    template<int m>\n    std::istream& operator >> (std::istream &in, modular<m>\
     \ &x) {\n        return in >> x.r;\n    }\n    \n    template<int m>\n    std::ostream&\
     \ operator << (std::ostream &out, modular<m> const& x) {\n        return out <<\
-    \ x.r % m;\n    }\n}\n\n#line 6 \"verify/data_structures/segment_tree/range_affine_range_sum.test.cpp\"\
+    \ x.r % m;\n    }\n}\n\n#line 6 \"verify/data_structures/segtree/range_affine_range_sum.test.cpp\"\
     \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
     \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = segtree::metas::affine_meta<base>;\n\
     \nvoid solve() {\n    int n, q;\n    cin >> n >> q;\n    vector<meta> a(n);\n\
@@ -201,15 +201,15 @@ data:
   - cp-algo/algebra/affine.hpp
   - cp-algo/algebra/common.hpp
   isVerificationFile: true
-  path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
+  path: verify/data_structures/segtree/range_affine_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 13:25:01+01:00'
+  timestamp: '2024-02-11 14:42:51+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
-documentation_of: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
+documentation_of: verify/data_structures/segtree/range_affine_range_sum.test.cpp
 layout: document
 redirect_from:
-- /verify/verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
-- /verify/verify/data_structures/segment_tree/range_affine_range_sum.test.cpp.html
+- /verify/verify/data_structures/segtree/range_affine_range_sum.test.cpp
+- /verify/verify/data_structures/segtree/range_affine_range_sum.test.cpp.html
 title: Range Affine Range Sum
 ---

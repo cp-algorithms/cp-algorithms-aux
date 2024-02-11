@@ -1,7 +1,7 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
   - icon: ':heavy_check_mark:'
@@ -10,7 +10,7 @@ data:
   _extendedRequiredBy: []
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
-    path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
+    path: verify/data_structures/segtree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
   _isVerificationFailed: false
   _pathExtension: hpp
@@ -74,10 +74,10 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/segtree/metas/affine.hpp
   requiredBy: []
-  timestamp: '2024-02-11 13:25:01+01:00'
+  timestamp: '2024-02-11 14:42:51+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
-  - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
+  - verify/data_structures/segtree/range_affine_range_sum.test.cpp
 documentation_of: cp-algo/data_structures/segtree/metas/affine.hpp
 layout: document
 redirect_from:

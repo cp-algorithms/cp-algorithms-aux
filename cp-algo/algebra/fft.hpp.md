@@ -1,31 +1,31 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy:
   - icon: ':heavy_check_mark:'
-    path: cp-algo/algebra/polynomial.hpp
-    title: cp-algo/algebra/polynomial.hpp
+    path: cp-algo/algebra/poly.hpp
+    title: cp-algo/algebra/poly.hpp
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/polynomial/convolution107.test.cpp
+    path: verify/algebra/poly/convolution107.test.cpp
     title: Convolution mod $10^9+7$
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/polynomial/find_linrec.test.cpp
+    path: verify/algebra/poly/find_linrec.test.cpp
     title: Find Linear Recurrence
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/polynomial/poly_sqrt.test.cpp
+    path: verify/algebra/poly/poly_sqrt.test.cpp
     title: Sqrt of Formal Power Series
   _isVerificationFailed: false
   _pathExtension: hpp
@@ -245,13 +245,13 @@ data:
   isVerificationFile: false
   path: cp-algo/algebra/fft.hpp
   requiredBy:
-  - cp-algo/algebra/polynomial.hpp
-  timestamp: '2024-02-11 13:25:01+01:00'
+  - cp-algo/algebra/poly.hpp
+  timestamp: '2024-02-11 14:42:51+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
-  - verify/algebra/polynomial/convolution107.test.cpp
-  - verify/algebra/polynomial/find_linrec.test.cpp
-  - verify/algebra/polynomial/poly_sqrt.test.cpp
+  - verify/algebra/poly/convolution107.test.cpp
+  - verify/algebra/poly/find_linrec.test.cpp
+  - verify/algebra/poly/poly_sqrt.test.cpp
 documentation_of: cp-algo/algebra/fft.hpp
 layout: document
 redirect_from:

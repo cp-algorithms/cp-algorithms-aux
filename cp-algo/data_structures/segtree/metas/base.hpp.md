@@ -10,10 +10,10 @@ data:
     title: cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
-    path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
+    path: verify/data_structures/segtree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
   - icon: ':heavy_check_mark:'
-    path: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
+    path: verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp
     title: Range Chmin Chmax Add Range Sum
   _isVerificationFailed: false
   _pathExtension: hpp
@@ -36,11 +36,11 @@ data:
   requiredBy:
   - cp-algo/data_structures/segtree/metas/affine.hpp
   - cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
-  timestamp: '2024-02-11 13:25:01+01:00'
+  timestamp: '2024-02-11 14:42:51+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
-  - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
-  - verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
+  - verify/data_structures/segtree/range_affine_range_sum.test.cpp
+  - verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp
 documentation_of: cp-algo/data_structures/segtree/metas/base.hpp
 layout: document
 redirect_from:

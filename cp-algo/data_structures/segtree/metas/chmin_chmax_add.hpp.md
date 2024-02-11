@@ -7,7 +7,7 @@ data:
   _extendedRequiredBy: []
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
-    path: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
+    path: verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp
     title: Range Chmin Chmax Add Range Sum
   _isVerificationFailed: false
   _pathExtension: hpp
@@ -37,9 +37,9 @@ data:
     \ = std::clamp(second, L, R);\n                return count * (val - old_val);\n\
     \            }\n\n            bool stop(int64_t b) const {\n                return\
     \ !comp(val, b);\n            }\n            bool proceed(int64_t b) const {\n\
-    \                return comp(b, second);\n            }\n        };\n        data<std::less<int64_t>>\
-    \ mn = {sum};\n        data<std::greater<int64_t>> mx = {sum};\n        int64_t\
-    \ chmin = inf, chmax = -inf;\n\n        chmin_chmax_sum_meta() {}\n        chmin_chmax_sum_meta(int64_t\
+    \                return comp(b, second);\n            }\n        };\n        data<std::less<>>\
+    \ mn = {sum};\n        data<std::greater<>> mx = {sum};\n        int64_t chmin\
+    \ = inf, chmax = -inf;\n\n        chmin_chmax_sum_meta() {}\n        chmin_chmax_sum_meta(int64_t\
     \ val): sum(val) {}\n\n        void pull(meta const& L, meta const& R, int, int)\
     \ override {\n            sum = L.sum + R.sum;\n            mn = L.mn.combine(R.mn);\n\
     \            mx = L.mx.combine(R.mx);\n        }\n\n        void push(meta &t)\
@@ -81,9 +81,9 @@ data:
     \                return count * (val - old_val);\n            }\n\n          \
     \  bool stop(int64_t b) const {\n                return !comp(val, b);\n     \
     \       }\n            bool proceed(int64_t b) const {\n                return\
-    \ comp(b, second);\n            }\n        };\n        data<std::less<int64_t>>\
-    \ mn = {sum};\n        data<std::greater<int64_t>> mx = {sum};\n        int64_t\
-    \ chmin = inf, chmax = -inf;\n\n        chmin_chmax_sum_meta() {}\n        chmin_chmax_sum_meta(int64_t\
+    \ comp(b, second);\n            }\n        };\n        data<std::less<>> mn =\
+    \ {sum};\n        data<std::greater<>> mx = {sum};\n        int64_t chmin = inf,\
+    \ chmax = -inf;\n\n        chmin_chmax_sum_meta() {}\n        chmin_chmax_sum_meta(int64_t\
     \ val): sum(val) {}\n\n        void pull(meta const& L, meta const& R, int, int)\
     \ override {\n            sum = L.sum + R.sum;\n            mn = L.mn.combine(R.mn);\n\
     \            mx = L.mx.combine(R.mx);\n        }\n\n        void push(meta &t)\
@@ -110,10 +110,10 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
   requiredBy: []
-  timestamp: '2024-02-11 13:25:01+01:00'
+  timestamp: '2024-02-11 14:42:51+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
-  - verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
+  - verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp
 documentation_of: cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
 layout: document
 redirect_from:

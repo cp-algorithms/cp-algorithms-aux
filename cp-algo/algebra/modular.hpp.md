@@ -1,13 +1,13 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':heavy_check_mark:'
+  - icon: ':question:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy:
@@ -18,33 +18,33 @@ data:
     path: cp-algo/algebra/matrix.hpp
     title: cp-algo/algebra/matrix.hpp
   - icon: ':heavy_check_mark:'
-    path: cp-algo/algebra/polynomial.hpp
-    title: cp-algo/algebra/polynomial.hpp
+    path: cp-algo/algebra/poly.hpp
+    title: cp-algo/algebra/poly.hpp
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
     path: verify/algebra/matrix/matrix_pow.test.cpp
     title: Pow of Matrix
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/polynomial/convolution107.test.cpp
+    path: verify/algebra/poly/convolution107.test.cpp
     title: Convolution mod $10^9+7$
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/polynomial/find_linrec.test.cpp
+    path: verify/algebra/poly/find_linrec.test.cpp
     title: Find Linear Recurrence
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/polynomial/poly_sqrt.test.cpp
+    path: verify/algebra/poly/poly_sqrt.test.cpp
     title: Sqrt of Formal Power Series
   - icon: ':heavy_check_mark:'
-    path: verify/algebra/polynomial/poly_sqrt.test.cpp
+    path: verify/algebra/poly/poly_sqrt.test.cpp
     title: Sqrt of Formal Power Series
   - icon: ':heavy_check_mark:'
-    path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
+    path: verify/data_structures/segtree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
-  - icon: ':heavy_check_mark:'
+  - icon: ':x:'
     path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
     title: Dynamic Range Affine Range Sum
-  _isVerificationFailed: false
+  _isVerificationFailed: true
   _pathExtension: hpp
-  _verificationStatusIcon: ':heavy_check_mark:'
+  _verificationStatusIcon: ':question:'
   attributes:
     links:
     - https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
@@ -166,19 +166,19 @@ data:
   isVerificationFile: false
   path: cp-algo/algebra/modular.hpp
   requiredBy:
+  - cp-algo/algebra/poly.hpp
   - cp-algo/algebra/matrix.hpp
-  - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-11 13:25:01+01:00'
-  verificationStatus: LIBRARY_ALL_AC
+  timestamp: '2024-02-11 14:42:51+01:00'
+  verificationStatus: LIBRARY_SOME_WA
   verifiedWith:
-  - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
+  - verify/data_structures/segtree/range_affine_range_sum.test.cpp
   - verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
   - verify/algebra/matrix/matrix_pow.test.cpp
-  - verify/algebra/polynomial/convolution107.test.cpp
-  - verify/algebra/polynomial/find_linrec.test.cpp
-  - verify/algebra/polynomial/poly_sqrt.test.cpp
-  - verify/algebra/polynomial/poly_sqrt.test.cpp
+  - verify/algebra/poly/convolution107.test.cpp
+  - verify/algebra/poly/find_linrec.test.cpp
+  - verify/algebra/poly/poly_sqrt.test.cpp
+  - verify/algebra/poly/poly_sqrt.test.cpp
 documentation_of: cp-algo/algebra/modular.hpp
 layout: document
 redirect_from:

@@ -21,7 +21,7 @@ data:
     document_title: Range Chmin Chmax Add Range Sum
     links:
     - https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum
-  bundledCode: "#line 1 \"verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp\"\
+  bundledCode: "#line 1 \"verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp\"\
     \n// @brief Range Chmin Chmax Add Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum\"\
     \n#line 1 \"cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp\"\n\n\n\
     #line 1 \"cp-algo/data_structures/segtree/metas/base.hpp\"\n\n\nnamespace cp_algo::data_structures::segtree::metas\
@@ -46,9 +46,9 @@ data:
     \ = std::clamp(second, L, R);\n                return count * (val - old_val);\n\
     \            }\n\n            bool stop(int64_t b) const {\n                return\
     \ !comp(val, b);\n            }\n            bool proceed(int64_t b) const {\n\
-    \                return comp(b, second);\n            }\n        };\n        data<std::less<int64_t>>\
-    \ mn = {sum};\n        data<std::greater<int64_t>> mx = {sum};\n        int64_t\
-    \ chmin = inf, chmax = -inf;\n\n        chmin_chmax_sum_meta() {}\n        chmin_chmax_sum_meta(int64_t\
+    \                return comp(b, second);\n            }\n        };\n        data<std::less<>>\
+    \ mn = {sum};\n        data<std::greater<>> mx = {sum};\n        int64_t chmin\
+    \ = inf, chmax = -inf;\n\n        chmin_chmax_sum_meta() {}\n        chmin_chmax_sum_meta(int64_t\
     \ val): sum(val) {}\n\n        void pull(meta const& L, meta const& R, int, int)\
     \ override {\n            sum = L.sum + R.sum;\n            mn = L.mn.combine(R.mn);\n\
     \            mx = L.mx.combine(R.mx);\n        }\n\n        void push(meta &t)\
@@ -99,7 +99,7 @@ data:
     \ auto proceed, auto stop) {\n            exec_on_segment(a, b, func, proceed,\
     \ stop, 1, 0, N);\n        }\n\n        void exec_on_segment(int a, int b, auto\
     \ func) {\n            exec_on_segment(a, b, func, default_true, default_false);\n\
-    \        }\n    };\n}\n\n#line 5 \"verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp\"\
+    \        }\n    };\n}\n\n#line 5 \"verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp\"\
     \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
     using meta = segtree::metas::chmin_chmax_sum_meta;\n\nvoid solve() {\n    int\
     \ n, q;\n    cin >> n >> q;\n    vector<meta> a(n);\n    for(int i = 0; i < n;\
@@ -142,15 +142,15 @@ data:
   - cp-algo/data_structures/segtree/metas/base.hpp
   - cp-algo/data_structures/segtree.hpp
   isVerificationFile: true
-  path: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
+  path: verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 13:25:01+01:00'
+  timestamp: '2024-02-11 14:42:51+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
-documentation_of: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
+documentation_of: verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp
 layout: document
 redirect_from:
-- /verify/verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
-- /verify/verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp.html
+- /verify/verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp
+- /verify/verify/data_structures/segtree/range_chmin_chmax_add_range_sum.test.cpp.html
 title: Range Chmin Chmax Add Range Sum
 ---

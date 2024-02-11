@@ -1,14 +1,14 @@
 // @brief Find Linear Recurrence
 #define PROBLEM "https://judge.yosupo.jp/problem/find_linear_recurrence"
-#include "cp-algo/algebra/polynomial.hpp"
+#include "cp-algo/algebra/poly.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::algebra;
 
 const int mod = 998244353;
-typedef modular<mod> base;
-typedef poly<base> polyn;
+using base = modular<mod>;
+using polyn = poly_t<base>;
 
 void solve() {
     int n;

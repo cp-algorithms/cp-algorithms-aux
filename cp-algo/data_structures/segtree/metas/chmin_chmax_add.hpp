@@ -43,8 +43,8 @@ namespace cp_algo::data_structures::segtree::metas {
                 return comp(b, second);
             }
         };
-        data<std::less<int64_t>> mn = {sum};
-        data<std::greater<int64_t>> mx = {sum};
+        data<std::less<>> mn = {sum};
+        data<std::greater<>> mx = {sum};
         int64_t chmin = inf, chmax = -inf;
 
         chmin_chmax_sum_meta() {}

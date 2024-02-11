@@ -6,35 +6,35 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::data_structures;
+using namespace cp_algo::data_structures::treap;
 
 using base = cp_algo::algebra::modular<998244353>;
-using meta = treap::metas::reverse_meta<base>;
-using node = treap_node<meta>;
-using treap_t = node::treap;
+using meta = metas::reverse_meta<base>;
+using node_t = node<meta>;
+using treap = node_t::treap;
 
 void solve() {
     istream_iterator<int> input(cin);
     int n = *input++;
     int q = *input++;
-    vector<treap_t> nodes(n);
+    vector<treap> nodes(n);
     generate_n(begin(nodes), n, [&](){
-        return new node(meta(*input++));
+        return node_t::make_treap(meta(*input++));
     });
-    auto me = node::build(nodes);
+    auto me = node_t::build(nodes);
 
     while(q--) {
         int t = *input++;
         if(t == 0) {
             int i = *input++;
             base x = *input++;
-            node::insert(me, i, new node(meta(x)));
+            node_t::insert(me, i, node_t::make_treap(meta(x)));
         } else if(t == 1) {
-            node::erase(me, *input++);
+            node_t::erase(me, *input++);
         } else if(t == 2) {
             int l = *input++;
             int r = *input++;
-            node::exec_on_segment(me, l, r, [](auto &t) {
+            node_t::exec_on_segment(me, l, r, [](auto &t) {
                 _safe_meta(t, reverse = 1);
             });
         } else if(t == 3) {
@@ -42,13 +42,13 @@ void solve() {
             int r = *input++;
             base b = *input++;
             base c = *input++;
-            node::exec_on_segment(me, l, r, [b, c](auto &t) {
+            node_t::exec_on_segment(me, l, r, [b, c](auto &t) {
                 _safe_meta(t, add_push(meta::lin(b, c)));
             });
         } else {
             int l = *input++;
             int r = *input++;
-            node::exec_on_segment(me, l, r, [](auto t) {
+            node_t::exec_on_segment(me, l, r, [](auto t) {
                 cout << _safe_meta(t, sum) << "\n";
             });
         }

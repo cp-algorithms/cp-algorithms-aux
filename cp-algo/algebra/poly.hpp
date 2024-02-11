@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
 #define CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
+#include "poly/impl/base.hpp"
 #include "common.hpp"
 #include "fft.hpp"
 #include <functional>
@@ -10,28 +11,18 @@
 #include <vector>
 namespace cp_algo::algebra {
     template<typename T>
-    struct poly {
+    struct poly_t {
         std::vector<T> a;
         
-        void normalize() { // get rid of leading zeroes
-            while(!a.empty() && a.back() == T(0)) {
-                a.pop_back();
-            }
-        }
+        void normalize() {poly::impl::normalize(*this);}
         
-        poly(){}
-        poly(T a0) : a{a0}{normalize();}
-        poly(const std::vector<T> &t) : a(t){normalize();}
+        poly_t(){}
+        poly_t(T a0) : a{a0}{normalize();}
+        poly_t(const std::vector<T> &t) : a(t){normalize();}
         
-        poly operator -() const {
-            auto t = *this;
-            for(auto &it: t.a) {
-                it = -it;
-            }
-            return t;
-        }
+        poly_t operator -() const {return poly::impl::neg(*this);}
         
-        poly operator += (const poly &t) {
+        poly_t operator += (const poly_t &t) {
             a.resize(std::max(a.size(), t.a.size()));
             for(size_t i = 0; i < t.a.size(); i++) {
                 a[i] += t.a[i];
@@ -40,7 +31,7 @@ namespace cp_algo::algebra {
             return *this;
         }
         
-        poly operator -= (const poly &t) {
+        poly_t operator -= (const poly_t &t) {
             a.resize(std::max(a.size(), t.a.size()));
             for(size_t i = 0; i < t.a.size(); i++) {
                 a[i] -= t.a[i];
@@ -48,44 +39,44 @@ namespace cp_algo::algebra {
             normalize();
             return *this;
         }
-        poly operator + (const poly &t) const {return poly(*this) += t;}
-        poly operator - (const poly &t) const {return poly(*this) -= t;}
+        poly_t operator + (const poly_t &t) const {return poly_t(*this) += t;}
+        poly_t operator - (const poly_t &t) const {return poly_t(*this) -= t;}
         
-        poly mod_xk(size_t k) const { // get first k coefficients
+        poly_t mod_xk(size_t k) const { // get first k coefficients
             return std::vector<T>(begin(a), begin(a) + std::min(k, a.size()));
         }
         
-        poly mul_xk(size_t k) const { // multiply by x^k
+        poly_t mul_xk(size_t k) const { // multiply by x^k
             auto res = a;
             res.insert(begin(res), k, 0);
             return res;
         }
         
-        poly div_xk(size_t k) const { // drop first k coefficients
+        poly_t div_xk(size_t k) const { // drop first k coefficients
             return std::vector<T>(begin(a) + std::min(k, a.size()), end(a));
         }
         
-        poly substr(size_t l, size_t r) const { // return mod_xk(r).div_xk(l)
+        poly_t substr(size_t l, size_t r) const { // return mod_xk(r).div_xk(l)
             return std::vector<T>(
                 begin(a) + std::min(l, a.size()),
                 begin(a) + std::min(r, a.size())
             );
         }
         
-        poly operator *= (const poly &t) {fft::mul(a, t.a); normalize(); return *this;}
-        poly operator * (const poly &t) const {return poly(*this) *= t;}
+        poly_t operator *= (const poly_t &t) {fft::mul(a, t.a); normalize(); return *this;}
+        poly_t operator * (const poly_t &t) const {return poly_t(*this) *= t;}
         
-        poly reverse(size_t n) const { // computes x^n A(x^{-1})
+        poly_t reverse(size_t n) const { // computes x^n A(x^{-1})
             auto res = a;
             res.resize(std::max(n, res.size()));
             return std::vector<T>(res.rbegin(), res.rbegin() + n);
         }
         
-        poly reverse() const {
+        poly_t reverse() const {
             return reverse(deg() + 1);
         }
         
-        std::pair<poly, poly> divmod_slow(const poly &b) const { // when divisor or quotient is small
+        std::pair<poly_t, poly_t> divmod_slow(const poly_t &b) const { // when divisor or quotient is small
             std::vector<T> A(a);
             std::vector<T> res;
             T b_lead_inv = b.a.back().inv();
@@ -102,29 +93,29 @@ namespace cp_algo::algebra {
             return {res, A};
         }
         
-        std::pair<poly, poly> divmod_hint(poly const& b, poly const& binv) const { // when inverse is known
+        std::pair<poly_t, poly_t> divmod_hint(poly_t const& b, poly_t const& binv) const { // when inverse is known
             assert(!b.is_zero());
             if(deg() < b.deg()) {
-                return {poly{0}, *this};
+                return {poly_t{0}, *this};
             }
             int d = deg() - b.deg();
             if(std::min(d, b.deg()) < magic) {
                 return divmod_slow(b);
             }
-            poly D = (reverse().mod_xk(d + 1) * binv.mod_xk(d + 1)).mod_xk(d + 1).reverse(d + 1);
+            poly_t D = (reverse().mod_xk(d + 1) * binv.mod_xk(d + 1)).mod_xk(d + 1).reverse(d + 1);
             return {D, *this - D * b};
         }
         
-        std::pair<poly, poly> divmod(const poly &b) const { // returns quotiend and remainder of a mod b
+        std::pair<poly_t, poly_t> divmod(const poly_t &b) const { // returns quotiend and remainder of a mod b
             assert(!b.is_zero());
             if(deg() < b.deg()) {
-                return {poly{0}, *this};
+                return {poly_t{0}, *this};
             }
             int d = deg() - b.deg();
             if(std::min(d, b.deg()) < magic) {
                 return divmod_slow(b);
             }
-            poly D = (reverse().mod_xk(d + 1) * b.reverse().inv(d + 1)).mod_xk(d + 1).reverse(d + 1);
+            poly_t D = (reverse().mod_xk(d + 1) * b.reverse().inv(d + 1)).mod_xk(d + 1).reverse(d + 1);
             return {D, *this - D * b};
         }
         
@@ -135,9 +126,9 @@ namespace cp_algo::algebra {
             }
         }
         
-        // finds a linfrac<poly> that changes A/B to A'/B' such that
+        // finds a linfrac<poly_t> that changes A/B to A'/B' such that
         // deg B' is at least 2 times less than deg A
-        static std::pair<std::vector<poly>, linfrac<poly>> half_gcd(poly A, poly B) {
+        static std::pair<std::vector<poly_t>, linfrac<poly_t>> half_gcd(poly_t A, poly_t B) {
             assert(A.deg() >= B.deg());
             int m = (A.deg() + 1) / 2;
             if(B.deg() < m) {
@@ -154,13 +145,13 @@ namespace cp_algo::algebra {
             auto [as, Ts] = half_gcd(A.div_xk(k), B.div_xk(k));
             concat(ar, {ai});
             concat(ar, as);
-            return {ar, Tr * linfrac<poly>(ai) * Ts};
+            return {ar, Tr * linfrac<poly_t>(ai) * Ts};
         }
         
-        // return a linfrac<poly> that reduces A / B to gcd(A, B) / 0
-        static std::pair<std::vector<poly>, linfrac<poly>> full_gcd(poly A, poly B) {
-            std::vector<poly> ak;
-            std::vector<linfrac<poly>> trs;
+        // return a linfrac<poly_t> that reduces A / B to gcd(A, B) / 0
+        static std::pair<std::vector<poly_t>, linfrac<poly_t>> full_gcd(poly_t A, poly_t B) {
+            std::vector<poly_t> ak;
+            std::vector<linfrac<poly_t>> trs;
             while(!B.is_zero()) {
                 if(2 * B.deg() > A.deg()) {
                     auto [a, Tr] = half_gcd(A, B);
@@ -182,7 +173,7 @@ namespace cp_algo::algebra {
             return {ak, trs.back()};
         }
                 
-        static poly gcd(poly A, poly B) {
+        static poly_t gcd(poly_t A, poly_t B) {
             if(A.deg() < B.deg()) {
                 return gcd(B, A);
             }
@@ -193,9 +184,9 @@ namespace cp_algo::algebra {
         
         // Returns the characteristic polynomial
         // of the minimum linear recurrence for the sequence
-        poly min_rec_slow(int d) const {
+        poly_t min_rec_slow(int d) const {
             auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);
-            auto Q1 = poly(T(1)), Q2 = poly(T(0));
+            auto Q1 = poly_t(T(1)), Q2 = poly_t(T(0));
             while(!R2.is_zero()) {
                 auto [a, nR] = R1.divmod(R2); // R1 = a*R2 + nR, deg nR < deg R2
                 std::tie(R1, R2) = std::make_tuple(R2, nR);
@@ -207,9 +198,9 @@ namespace cp_algo::algebra {
             assert(0);
         }
         
-        static linfrac<poly> convergent(auto L, auto R) { // computes product on [L, R)
+        static linfrac<poly_t> convergent(auto L, auto R) { // computes product on [L, R)
             if(R - L == 1) {
-                return linfrac<poly>(*L);
+                return linfrac<poly_t>(*L);
             } else {
                 int s = 0;
                 for(int i = 0; i < R - L; i++) {
@@ -226,13 +217,13 @@ namespace cp_algo::algebra {
             }
         }
         
-        poly min_rec(int d) const {
+        poly_t min_rec(int d) const {
             if(d < magic) {
                 return min_rec_slow(d);
             }
             auto R2 = mod_xk(d + 1).reverse(d + 1), R1 = xk(d + 1);
             if(R2.is_zero()) {
-                return poly(1);
+                return poly_t(1);
             }
             auto [a, Tr] = full_gcd(R1, R2);
             int dr = (d + 1) - a[0].deg();
@@ -251,9 +242,9 @@ namespace cp_algo::algebra {
         
         // calculate inv to *this modulo t
         // quadratic complexity
-        std::optional<poly> inv_mod_slow(poly const& t) const {
+        std::optional<poly_t> inv_mod_slow(poly_t const& t) const {
             auto R1 = *this, R2 = t;
-            auto Q1 = poly(T(1)), Q2 = poly(T(0));
+            auto Q1 = poly_t(T(1)), Q2 = poly_t(T(0));
             int k = 0;
             while(!R2.is_zero()) {
                 k ^= 1;
@@ -268,7 +259,7 @@ namespace cp_algo::algebra {
             }
         }
         
-        std::optional<poly> inv_mod(poly const &t) const {
+        std::optional<poly_t> inv_mod(poly_t const &t) const {
             assert(!t.is_zero());
             if(false && std::min(deg(), t.deg()) < magic) {
                 return inv_mod_slow(t);
@@ -282,24 +273,24 @@ namespace cp_algo::algebra {
             return -Tr.b / g[0];
         };
         
-        poly operator / (const poly &t) const {return divmod(t).first;}
-        poly operator % (const poly &t) const {return divmod(t).second;}
-        poly operator /= (const poly &t) {return *this = divmod(t).first;}
-        poly operator %= (const poly &t) {return *this = divmod(t).second;}
-        poly operator *= (const T &x) {
+        poly_t operator / (const poly_t &t) const {return divmod(t).first;}
+        poly_t operator % (const poly_t &t) const {return divmod(t).second;}
+        poly_t operator /= (const poly_t &t) {return *this = divmod(t).first;}
+        poly_t operator %= (const poly_t &t) {return *this = divmod(t).second;}
+        poly_t operator *= (const T &x) {
             for(auto &it: a) {
                 it *= x;
             }
             normalize();
             return *this;
         }
-        poly operator /= (const T &x) {
+        poly_t operator /= (const T &x) {
             return *this *= x.inv();
         }
-        poly operator * (const T &x) const {return poly(*this) *= x;}
-        poly operator / (const T &x) const {return poly(*this) /= x;}
+        poly_t operator * (const T &x) const {return poly_t(*this) *= x;}
+        poly_t operator / (const T &x) const {return poly_t(*this) /= x;}
         
-        poly conj() const { // A(x) -> A(-x)
+        poly_t conj() const { // A(x) -> A(-x)
             auto res = *this;
             for(int i = 1; i <= deg(); i += 2) {
                 res.a[i] = -res[i];
@@ -348,12 +339,12 @@ namespace cp_algo::algebra {
             return a[idx];
         }
         
-        bool operator == (const poly &t) const {return a == t.a;}
-        bool operator != (const poly &t) const {return a != t.a;}
+        bool operator == (const poly_t &t) const {return a == t.a;}
+        bool operator != (const poly_t &t) const {return a != t.a;}
         
-        poly deriv(int k = 1) { // calculate derivative
+        poly_t deriv(int k = 1) { // calculate derivative
             if(deg() + 1 < k) {
-                return poly(T(0));
+                return poly_t(T(0));
             }
             std::vector<T> res(deg() + 1 - k);
             for(int i = k; i <= deg(); i++) {
@@ -362,7 +353,7 @@ namespace cp_algo::algebra {
             return res;
         }
         
-        poly integr() { // calculate integral with C = 0
+        poly_t integr() { // calculate integral with C = 0
             std::vector<T> res(deg() + 2);
             for(int i = 0; i <= deg(); i++) {
                 res[i + 1] = a[i] * small_inv<T>(i + 1);
@@ -381,29 +372,29 @@ namespace cp_algo::algebra {
             return res;
         }
         
-        poly log(size_t n) { // calculate log p(x) mod x^n
+        poly_t log(size_t n) { // calculate log p(x) mod x^n
             assert(a[0] == T(1));
             return (deriv().mod_xk(n) * inv(n)).integr().mod_xk(n);
         }
         
-        poly exp(size_t n) { // calculate exp p(x) mod x^n
+        poly_t exp(size_t n) { // calculate exp p(x) mod x^n
             if(is_zero()) {
                 return T(1);
             }
             assert(a[0] == T(0));
-            poly ans = T(1);
+            poly_t ans = T(1);
             size_t a = 1;
             while(a < n) {
-                poly C = ans.log(2 * a).div_xk(a) - substr(a, 2 * a);
+                poly_t C = ans.log(2 * a).div_xk(a) - substr(a, 2 * a);
                 ans -= (ans * C).mod_xk(a).mul_xk(a);
                 a *= 2;
             }
             return ans.mod_xk(n);
         }
         
-        poly pow_bin(int64_t k, size_t n) { // O(n log n log k)
+        poly_t pow_bin(int64_t k, size_t n) { // O(n log n log k)
             if(k == 0) {
-                return poly(1).mod_xk(n);
+                return poly_t(1).mod_xk(n);
             } else {
                 auto t = pow(k / 2, n);
                 t = (t * t).mod_xk(n);
@@ -412,9 +403,9 @@ namespace cp_algo::algebra {
         }
         
         // Do not compute inverse from scratch
-        poly powmod_hint(int64_t k, poly const& md, poly const& mdinv) {
+        poly_t powmod_hint(int64_t k, poly_t const& md, poly_t const& mdinv) {
             if(k == 0) {
-                return poly(1);
+                return poly_t(1);
             } else {
                 auto t = powmod_hint(k / 2, md, mdinv);
                 t = (t * t).divmod_hint(md, mdinv).second;
@@ -425,7 +416,7 @@ namespace cp_algo::algebra {
             }
         }
 
-        poly circular_closure(size_t m) const {
+        poly_t circular_closure(size_t m) const {
             if(deg() == -1) {
                 return *this;
             }
@@ -437,13 +428,13 @@ namespace cp_algo::algebra {
             return t;
         }
 
-        static poly mul_circular(poly const& a, poly const& b, size_t m) {
+        static poly_t mul_circular(poly_t const& a, poly_t const& b, size_t m) {
             return (a.circular_closure(m) * b.circular_closure(m)).circular_closure(m);
         }
 
-        poly powmod_circular(int64_t k, size_t m) {
+        poly_t powmod_circular(int64_t k, size_t m) {
             if(k == 0) {
-                return poly(1);
+                return poly_t(1);
             } else {
                 auto t = powmod_circular(k / 2, m);
                 t = mul_circular(t, t, m);
@@ -454,15 +445,15 @@ namespace cp_algo::algebra {
             }
         }
         
-        poly powmod(int64_t k, poly const& md) {
+        poly_t powmod(int64_t k, poly_t const& md) {
             int d = md.deg();
             if(d == -1) {
-                return k ? *this : poly(T(1));
+                return k ? *this : poly_t(T(1));
             }
             if(md == xk(d)) {
                 return pow(k, d);
             }
-            if(md == xk(d) - poly(T(1))) {
+            if(md == xk(d) - poly_t(T(1))) {
                 return powmod_circular(k, d);
             }
             auto mdinv = md.reverse().inv(md.deg() + 1);
@@ -471,9 +462,9 @@ namespace cp_algo::algebra {
         
         // O(d * n) with the derivative trick from
         // https://codeforces.com/blog/entry/73947?#comment-581173
-        poly pow_dn(int64_t k, size_t n) {
+        poly_t pow_dn(int64_t k, size_t n) {
             if(n == 0) {
-                return poly(T(0));
+                return poly_t(T(0));
             }
             assert((*this)[0] != T(0));
             std::vector<T> Q(n);
@@ -490,13 +481,13 @@ namespace cp_algo::algebra {
         
         // calculate p^k(n) mod x^n in O(n log n)
         // might be quite slow due to high constant
-        poly pow(int64_t k, size_t n) {
+        poly_t pow(int64_t k, size_t n) {
             if(is_zero()) {
-                return k ? *this : poly(1);
+                return k ? *this : poly_t(1);
             }
             int i = trailing_xk();
             if(i > 0) {
-                return k >= int64_t(n + i - 1) / i ? poly(T(0)) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
+                return k >= int64_t(n + i - 1) / i ? poly_t(T(0)) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
             }
             if(std::min(deg(), (int)n) <= magic) {
                 return pow_dn(k, n);
@@ -505,12 +496,12 @@ namespace cp_algo::algebra {
                 return pow_bin(k, n);
             }
             T j = a[i];
-            poly t = *this / j;
+            poly_t t = *this / j;
             return bpow(j, k) * (t.log(n) * T(k)).exp(n).mod_xk(n);
         }
         
         // returns std::nullopt if undefined
-        std::optional<poly> sqrt(size_t n) const {
+        std::optional<poly_t> sqrt(size_t n) const {
             if(is_zero()) {
                 return *this;
             }
@@ -523,7 +514,7 @@ namespace cp_algo::algebra {
             }
             auto st = (*this)[0].sqrt();
             if(st) {
-                poly ans = *st;
+                poly_t ans = *st;
                 size_t a = 1;
                 while(a < n) {
                     a *= 2;
@@ -534,9 +525,9 @@ namespace cp_algo::algebra {
             return std::nullopt;
         }
         
-        poly mulx(T a) const { // component-wise multiplication with a^k
+        poly_t mulx(T a) const { // component-wise multiplication with a^k
             T cur = 1;
-            poly res(*this);
+            poly_t res(*this);
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= cur;
                 cur *= a;
@@ -544,9 +535,9 @@ namespace cp_algo::algebra {
             return res;
         }
 
-        poly mulx_sq(T a) const { // component-wise multiplication with a^{k choose 2}
+        poly_t mulx_sq(T a) const { // component-wise multiplication with a^{k choose 2}
             T cur = 1, total = 1;
-            poly res(*this);
+            poly_t res(*this);
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= total;
                 cur *= a;
@@ -557,7 +548,7 @@ namespace cp_algo::algebra {
 
         // be mindful of maxn, as the function
         // requires multiplying polynomials of size deg() and n+deg()!
-        poly chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
+        poly_t chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
             if(is_zero()) {
                 return std::vector<T>(n, 0);
             }
@@ -591,18 +582,18 @@ namespace cp_algo::algebra {
         // prod_{0 <= j < n} (1 - z^j x)
         static auto _1mzkx_prod(T z, int n) {
             if(n == 1) {
-                return poly(std::vector<T>{1, -1});
+                return poly_t(std::vector<T>{1, -1});
             } else {
                 auto t = _1mzkx_prod(z, n / 2);
                 t *= t.mulx(bpow(z, n / 2));
                 if(n % 2) {
-                    t *= poly(std::vector<T>{1, -bpow(z, n - 1)});
+                    t *= poly_t(std::vector<T>{1, -bpow(z, n - 1)});
                 }
                 return t;
             }
         }
 
-        poly chirpz_inverse(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
+        poly_t chirpz_inverse(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
             if(is_zero()) {
                 return {};
             }
@@ -627,13 +618,13 @@ namespace cp_algo::algebra {
                 znk *= zn;
             }
 
-            poly p_over_q = poly(y).chirpz(z, n);
-            poly q = _1mzkx_prod(z, n);
+            poly_t p_over_q = poly_t(y).chirpz(z, n);
+            poly_t q = _1mzkx_prod(z, n);
 
             return (p_over_q * q).mod_xk(n).reverse(n);
         }
 
-        static poly build(std::vector<poly> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
+        static poly_t build(std::vector<poly_t> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
             if(R - L == 1) {
                 return res[v] = std::vector<T>{-*L, 1};
             } else {
@@ -642,7 +633,7 @@ namespace cp_algo::algebra {
             }
         }
 
-        poly to_newton(std::vector<poly> &tree, int v, auto l, auto r) {
+        poly_t to_newton(std::vector<poly_t> &tree, int v, auto l, auto r) {
             if(r - l == 1) {
                 return *this;
             } else {
@@ -653,17 +644,17 @@ namespace cp_algo::algebra {
             }
         }
 
-        poly to_newton(std::vector<T> p) {
+        poly_t to_newton(std::vector<T> p) {
             if(is_zero()) {
                 return *this;
             }
             int n = p.size();
-            std::vector<poly> tree(4 * n);
+            std::vector<poly_t> tree(4 * n);
             build(tree, 1, begin(p), end(p));
             return to_newton(tree, 1, begin(p), end(p));
         }
 
-        std::vector<T> eval(std::vector<poly> &tree, int v, auto l, auto r) { // auxiliary evaluation function
+        std::vector<T> eval(std::vector<poly_t> &tree, int v, auto l, auto r) { // auxiliary evaluation function
             if(r - l == 1) {
                 return {eval(*l)};
             } else {
@@ -680,12 +671,12 @@ namespace cp_algo::algebra {
             if(is_zero()) {
                 return std::vector<T>(n, T(0));
             }
-            std::vector<poly> tree(4 * n);
+            std::vector<poly_t> tree(4 * n);
             build(tree, 1, begin(x), end(x));
             return eval(tree, 1, begin(x), end(x));
         }
         
-        poly inter(std::vector<poly> &tree, int v, auto ly, auto ry) { // auxiliary interpolation function
+        poly_t inter(std::vector<poly_t> &tree, int v, auto ly, auto ry) { // auxiliary interpolation function
             if(ry - ly == 1) {
                 return {*ly / a[0]};
             } else {
@@ -698,11 +689,11 @@ namespace cp_algo::algebra {
         
         static auto inter(std::vector<T> x, std::vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
             int n = x.size();
-            std::vector<poly> tree(4 * n);
+            std::vector<poly_t> tree(4 * n);
             return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(y), end(y));
         }
 
-        static auto resultant(poly a, poly b) { // computes resultant of a and b
+        static auto resultant(poly_t a, poly_t b) { // computes resultant of a and b
             if(b.is_zero()) {
                 return 0;
             } else if(b.deg() == 0) {
@@ -717,19 +708,19 @@ namespace cp_algo::algebra {
             }
         }
                 
-        static poly xk(size_t n) { // P(x) = x^n
-            return poly(T(1)).mul_xk(n);
+        static poly_t xk(size_t n) { // P(x) = x^n
+            return poly_t(T(1)).mul_xk(n);
         }
         
-        static poly ones(size_t n) { // P(x) = 1 + x + ... + x^{n-1} 
+        static poly_t ones(size_t n) { // P(x) = 1 + x + ... + x^{n-1} 
             return std::vector<T>(n, 1);
         }
         
-        static poly expx(size_t n) { // P(x) = e^x (mod x^n)
+        static poly_t expx(size_t n) { // P(x) = e^x (mod x^n)
             return ones(n).borel();
         }
 
-        static poly log1px(size_t n) { // P(x) = log(1+x) (mod x^n)
+        static poly_t log1px(size_t n) { // P(x) = log(1+x) (mod x^n)
             std::vector<T> coeffs(n, 0);
             for(size_t i = 1; i < n; i++) {
                 coeffs[i] = (i & 1 ? T(i).inv() : -T(i).inv());
@@ -737,21 +728,21 @@ namespace cp_algo::algebra {
             return coeffs;
         }
 
-        static poly log1mx(size_t n) { // P(x) = log(1-x) (mod x^n)
+        static poly_t log1mx(size_t n) { // P(x) = log(1-x) (mod x^n)
             return -ones(n).integr();
         }
         
         // [x^k] (a corr b) = sum_{i} a{(k-m)+i}*bi
-        static poly corr(poly a, poly b) { // cross-correlation
+        static poly_t corr(poly_t a, poly_t b) { // cross-correlation
             return a * b.reverse();
         }
 
         // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
-        static poly semicorr(poly a, poly b) {
+        static poly_t semicorr(poly_t a, poly_t b) {
             return corr(a, b).div_xk(b.deg());
         }
         
-        poly invborel() const { // ak *= k!
+        poly_t invborel() const { // ak *= k!
             auto res = *this;
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= fact<T>(i);
@@ -759,7 +750,7 @@ namespace cp_algo::algebra {
             return res;
         }
         
-        poly borel() const { // ak /= k!
+        poly_t borel() const { // ak /= k!
             auto res = *this;
             for(int i = 0; i <= deg(); i++) {
                 res.coef(i) *= rfact<T>(i);
@@ -767,11 +758,11 @@ namespace cp_algo::algebra {
             return res;
         }
         
-        poly shift(T a) const { // P(x + a)
+        poly_t shift(T a) const { // P(x + a)
             return semicorr(invborel(), expx(deg() + 1).mulx(a)).borel();
         }
         
-        poly x2() { // P(x) -> P(x^2)
+        poly_t x2() { // P(x) -> P(x^2)
             std::vector<T> res(2 * a.size());
             for(size_t i = 0; i < a.size(); i++) {
                 res[2 * i] = a[i];
@@ -780,7 +771,7 @@ namespace cp_algo::algebra {
         }
         
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
-        std::pair<poly, poly> bisect() const {
+        std::pair<poly_t, poly_t> bisect() const {
             std::vector<T> res[2];
             res[0].reserve(deg() / 2 + 1);
             res[1].reserve(deg() / 2 + 1);
@@ -791,7 +782,7 @@ namespace cp_algo::algebra {
         }
         
         // Find [x^k] P / Q
-        static T kth_rec(poly P, poly Q, int64_t k) {
+        static T kth_rec(poly_t P, poly_t Q, int64_t k) {
             while(k > Q.deg()) {
                 int n = Q.a.size();
                 auto [Q0, Q1] = Q.mulx(-1).bisect();
@@ -805,17 +796,17 @@ namespace cp_algo::algebra {
                 auto P1f = fft::dft(P1.a, N);
                 
                 if(k % 2) {
-                    P = poly(Q0f * P1f) + poly(Q1f * P0f);
+                    P = poly_t(Q0f * P1f) + poly_t(Q1f * P0f);
                 } else {
-                    P = poly(Q0f * P0f) + poly(Q1f * P1f).mul_xk(1);
+                    P = poly_t(Q0f * P0f) + poly_t(Q1f * P1f).mul_xk(1);
                 }
-                Q = poly(Q0f * Q0f) - poly(Q1f * Q1f).mul_xk(1);
+                Q = poly_t(Q0f * Q0f) - poly_t(Q1f * Q1f).mul_xk(1);
                 k /= 2;
             }
             return (P * Q.inv(Q.deg() + 1))[k];
         }
         
-        poly inv(int n) const { // get inverse series mod x^n
+        poly_t inv(int n) const { // get inverse series mod x^n
             auto Q = mod_xk(n);
             if(n == 1) {
                 return Q[0].inv();
@@ -829,27 +820,27 @@ namespace cp_algo::algebra {
             auto P1f = fft::dft(P1.a, N);
             
             auto TTf = fft::dft(( // Q(x)*Q(-x) = Q0(x^2)^2 - x^2 Q1(x^2)^2
-                poly(P0f * P0f) - poly(P1f * P1f).mul_xk(1)
+                poly_t(P0f * P0f) - poly_t(P1f * P1f).mul_xk(1)
             ).inv((n + 1) / 2).a, N);
             
             return (
-                poly(P0f * TTf).x2() + poly(P1f * TTf).x2().mul_xk(1)
+                poly_t(P0f * TTf).x2() + poly_t(P1f * TTf).x2().mul_xk(1)
             ).mod_xk(n);
         }
         
         // compute A(B(x)) mod x^n in O(n^2)
-        static poly compose(poly A, poly B, int n) {
+        static poly_t compose(poly_t A, poly_t B, int n) {
             int q = std::sqrt(n);
-            std::vector<poly> Bk(q);
+            std::vector<poly_t> Bk(q);
             auto Bq = B.pow(q, n);
-            Bk[0] = poly(T(1));
+            Bk[0] = poly_t(T(1));
             for(int i = 1; i < q; i++) {
                 Bk[i] = (Bk[i - 1] * B).mod_xk(n);
             }
-            poly Bqk(1);
-            poly ans;
+            poly_t Bqk(1);
+            poly_t ans;
             for(int i = 0; i <= n / q; i++) {
-                poly cur;
+                poly_t cur;
                 for(int j = 0; j < q; j++) {
                     cur += Bk[j] * A[i * q + j];
                 }
@@ -862,7 +853,7 @@ namespace cp_algo::algebra {
         // compute A(B(x)) mod x^n in O(sqrt(pqn log^3 n))
         // preferrable when p = deg A and q = deg B
         // are much less than n
-        static poly compose_large(poly A, poly B, int n) {
+        static poly_t compose_large(poly_t A, poly_t B, int n) {
             if(B[0] != T(0)) {
                 return compose_large(A.shift(B[0]), B - B[0], n);
             }
@@ -871,12 +862,12 @@ namespace cp_algo::algebra {
             auto [B0, B1] = std::make_pair(B.mod_xk(q), B.div_xk(q));
             
             B0 = B0.div_xk(1);
-            std::vector<poly> pw(A.deg() + 1);
+            std::vector<poly_t> pw(A.deg() + 1);
             auto getpow = [&](int k) {
                 return pw[k].is_zero() ? pw[k] = B0.pow(k, n - k) : pw[k];
             };
             
-            std::function<poly(poly const&, int, int)> compose_dac = [&getpow, &compose_dac](poly const& f, int m, int N) {
+            std::function<poly_t(poly_t const&, int, int)> compose_dac = [&getpow, &compose_dac](poly_t const& f, int m, int N) {
                 if(f.deg() <= 0) {
                     return f;
                 }
@@ -892,10 +883,10 @@ namespace cp_algo::algebra {
             
             auto Bd = B0.mul_xk(1).deriv();
             
-            poly ans = T(0);
+            poly_t ans = T(0);
             
-            std::vector<poly> B1p(r + 1);
-            B1p[0] = poly(T(1));
+            std::vector<poly_t> B1p(r + 1);
+            B1p[0] = poly_t(T(1));
             for(int i = 1; i <= r; i++) {
                 B1p[i] = (B1p[i - 1] * B1.mod_xk(n - i * q)).mod_xk(n - i * q);
             }
@@ -911,7 +902,7 @@ namespace cp_algo::algebra {
         }
     };
     
-    static auto operator * (const auto& a, const poly<auto>& b) {
+    static auto operator * (const auto& a, const poly_t<auto>& b) {
         return b * a;
     }
 };

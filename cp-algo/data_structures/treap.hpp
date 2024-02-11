@@ -3,31 +3,33 @@
 #include "../random/rng.hpp"
 #include "treap/common.hpp"
 #include <array>
-/* Submissions on Library Judge:
-  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860
-  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858
-  Dynamic Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948
-*/
-namespace cp_algo::data_structures {
+namespace cp_algo::data_structures::treap {
     template<typename meta>
-    struct treap_node {
-        using node = treap_node;
-        using treap = node*;
+    struct node: std::enable_shared_from_this<node<meta>> {
+        using treap = std::shared_ptr<node>;
         meta _meta;
         int prior = random::rng();
         size_t size = 1;
         treap children[2] = {nullptr, nullptr};
         enum subtree {L, R};
 
+        node() {}
+        node(meta _meta): _meta(_meta) {}
+        node(meta _meta, int prior): _meta(_meta), prior(prior) {}
+
+        static treap make_treap(auto...args) {
+            return std::make_shared<node>(args...);
+        }
+
         treap pull() {
             _meta.pull(children[L], children[R]);
             size = 1 + _safe(children[L], size) + _safe(children[R], size);
-            return this;
+            return this->shared_from_this();
         }
 
         treap push() {
             _meta.push(children[L], children[R]);
-            return this;
+            return this->shared_from_this();
         }
 
         // set i-th child and pull metadata
@@ -80,7 +82,6 @@ namespace cp_algo::data_structures {
         static void erase(treap &A, size_t pos) {
             auto [L, MR] = split(A, pos);
             auto [M, R] = split(MR, 1);
-            delete M;
             A = merge(L, R);
         }
 
@@ -102,7 +103,7 @@ namespace cp_algo::data_structures {
             push();
             _safe(children[L], push_all());
             _safe(children[R], push_all());
-            return this;
+            return this->shared_from_this();
         }
 
         static treap build(auto const& nodes) {

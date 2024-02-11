@@ -14,10 +14,10 @@ data:
   _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
-  bundledCode: "#line 1 \"cp-algo/data_structures/segment_tree.hpp\"\n\n\n#include\
-    \ <vector>\nnamespace cp_algo::data_structures {\n    template<typename meta>\n\
-    \    struct segtree_t {\n        const int N;\n        std::vector<meta> _meta;\n\
-    \n        segtree_t(int n): N(n), _meta(4 * N) {}\n\n        segtree_t(std::vector<meta>\
+  bundledCode: "#line 1 \"cp-algo/data_structures/segtree.hpp\"\n\n\n#include <vector>\n\
+    namespace cp_algo::data_structures {\n    template<typename meta>\n    struct\
+    \ segtree_t {\n        const int N;\n        std::vector<meta> _meta;\n\n    \
+    \    segtree_t(int n): N(n), _meta(4 * N) {}\n\n        segtree_t(std::vector<meta>\
     \ leafs): N(size(leafs)), _meta(4 * N) {\n            build(leafs);\n        }\n\
     \n        void pull(int v, int l, int r) {\n            if(r - l > 1) {\n    \
     \            _meta[v].pull(_meta[2 * v], _meta[2 * v + 1], l, r);\n          \
@@ -78,17 +78,17 @@ data:
     \        }\n    };\n}\n#endif // CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_HPP"
   dependsOn: []
   isVerificationFile: false
-  path: cp-algo/data_structures/segment_tree.hpp
+  path: cp-algo/data_structures/segtree.hpp
   requiredBy: []
-  timestamp: '2024-02-11 12:35:24+01:00'
+  timestamp: '2024-02-11 13:25:01+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
   - verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
-documentation_of: cp-algo/data_structures/segment_tree.hpp
+documentation_of: cp-algo/data_structures/segtree.hpp
 layout: document
 redirect_from:
-- /library/cp-algo/data_structures/segment_tree.hpp
-- /library/cp-algo/data_structures/segment_tree.hpp.html
-title: cp-algo/data_structures/segment_tree.hpp
+- /library/cp-algo/data_structures/segtree.hpp
+- /library/cp-algo/data_structures/segtree.hpp.html
+title: cp-algo/data_structures/segtree.hpp
 ---

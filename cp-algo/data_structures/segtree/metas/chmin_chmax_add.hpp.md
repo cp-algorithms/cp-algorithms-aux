@@ -2,8 +2,8 @@
 data:
   _extendedDependsOn:
   - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/segment_tree/metas/base.hpp
-    title: cp-algo/data_structures/segment_tree/metas/base.hpp
+    path: cp-algo/data_structures/segtree/metas/base.hpp
+    title: cp-algo/data_structures/segtree/metas/base.hpp
   _extendedRequiredBy: []
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
@@ -14,31 +14,30 @@ data:
   _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
-  bundledCode: "#line 1 \"cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\
-    \n\n\n#line 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include\
-    \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segtree::metas\
-    \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
-    \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
-    \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
-    \n#line 7 \"cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\n\
-    namespace cp_algo::data_structures::segtree::metas {\n    struct chmin_chmax_sum_meta:\
-    \ base_meta<chmin_chmax_sum_meta> {\n        static constexpr int64_t inf = 1e12;\n\
-    \n        using meta = chmin_chmax_sum_meta;\n        int64_t sum = 0, add = 0;\n\
-    \n        template<typename Comp>\n        struct data {\n            int64_t\
-    \ val;\n            int64_t count = 1;\n            int64_t second = std::max(inf,\
-    \ -inf, comp);\n            static const Comp comp;\n\n            data combine(data\
-    \ const& t) const {\n                return comp(val, t.val) ? data{val, count,\
-    \ std::min(second, t.val, comp)}\n                        : comp(t.val, val) ?\
-    \ data{t.val, t.count, std::min(t.second, val, comp)}\n                      \
-    \  : data{val, count + t.count, std::min(second, t.second, comp)};\n         \
-    \   }\n\n            void add(int64_t b) {\n                val += b;\n      \
-    \          second += b;\n            }\n\n            int64_t normalize(int64_t\
-    \ L, int64_t R) {\n                int64_t old_val = val;\n                val\
-    \ = std::clamp(val, L, R);\n                second = std::clamp(second, L, R);\n\
-    \                return count * (val - old_val);\n            }\n\n          \
-    \  bool stop(int64_t b) const {\n                return !comp(val, b);\n     \
-    \       }\n            bool proceed(int64_t b) const {\n                return\
-    \ comp(b, second);\n            }\n        };\n        data<std::less<int64_t>>\
+  bundledCode: "#line 1 \"cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp\"\
+    \n\n\n#line 1 \"cp-algo/data_structures/segtree/metas/base.hpp\"\n\n\nnamespace\
+    \ cp_algo::data_structures::segtree::metas {\n    template<typename derived_meta>\n\
+    \    struct base_meta {\n        using meta = derived_meta;\n        virtual void\
+    \ pull(meta const&, meta const&, int, int) {};\n        virtual void push(meta*,\
+    \ meta*, int, int) {};\n    };\n}\n\n#line 4 \"cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp\"\
+    \n#include <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segtree::metas\
+    \ {\n    struct chmin_chmax_sum_meta: base_meta<chmin_chmax_sum_meta> {\n    \
+    \    static constexpr int64_t inf = 1e12;\n\n        using meta = chmin_chmax_sum_meta;\n\
+    \        int64_t sum = 0, add = 0;\n\n        template<typename Comp>\n      \
+    \  struct data {\n            int64_t val;\n            int64_t count = 1;\n \
+    \           int64_t second = std::max(inf, -inf, comp);\n            static const\
+    \ Comp comp;\n\n            data combine(data const& t) const {\n            \
+    \    return comp(val, t.val) ? data{val, count, std::min(second, t.val, comp)}\n\
+    \                        : comp(t.val, val) ? data{t.val, t.count, std::min(t.second,\
+    \ val, comp)}\n                        : data{val, count + t.count, std::min(second,\
+    \ t.second, comp)};\n            }\n\n            void add(int64_t b) {\n    \
+    \            val += b;\n                second += b;\n            }\n\n      \
+    \      int64_t normalize(int64_t L, int64_t R) {\n                int64_t old_val\
+    \ = val;\n                val = std::clamp(val, L, R);\n                second\
+    \ = std::clamp(second, L, R);\n                return count * (val - old_val);\n\
+    \            }\n\n            bool stop(int64_t b) const {\n                return\
+    \ !comp(val, b);\n            }\n            bool proceed(int64_t b) const {\n\
+    \                return comp(b, second);\n            }\n        };\n        data<std::less<int64_t>>\
     \ mn = {sum};\n        data<std::greater<int64_t>> mx = {sum};\n        int64_t\
     \ chmin = inf, chmax = -inf;\n\n        chmin_chmax_sum_meta() {}\n        chmin_chmax_sum_meta(int64_t\
     \ val): sum(val) {}\n\n        void pull(meta const& L, meta const& R, int, int)\
@@ -107,18 +106,18 @@ data:
     \     }\n        static auto stop_chmax(int64_t b) {\n            return [b](meta\
     \ const& t) {return t.mn.stop(b);};\n        }\n    };\n}\n#endif // CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_CHMIN_CHMAX_ADD_HPP"
   dependsOn:
-  - cp-algo/data_structures/segment_tree/metas/base.hpp
+  - cp-algo/data_structures/segtree/metas/base.hpp
   isVerificationFile: false
-  path: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
+  path: cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
   requiredBy: []
-  timestamp: '2024-02-11 12:35:24+01:00'
+  timestamp: '2024-02-11 13:25:01+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
-documentation_of: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
+documentation_of: cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
 layout: document
 redirect_from:
-- /library/cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
-- /library/cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp.html
-title: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
+- /library/cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
+- /library/cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp.html
+title: cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
 ---

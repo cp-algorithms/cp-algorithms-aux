@@ -21,22 +21,22 @@ data:
     - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/polynomial.hpp
       title: cp-algo/algebra/polynomial.hpp
-  - name: cp-algo/data_structures/segment_tree/metas
+  - name: cp-algo/data_structures/segtree/metas
     pages:
     - icon: ':heavy_check_mark:'
-      path: cp-algo/data_structures/segment_tree/metas/affine.hpp
-      title: cp-algo/data_structures/segment_tree/metas/affine.hpp
+      path: cp-algo/data_structures/segtree/metas/affine.hpp
+      title: cp-algo/data_structures/segtree/metas/affine.hpp
     - icon: ':heavy_check_mark:'
-      path: cp-algo/data_structures/segment_tree/metas/base.hpp
-      title: cp-algo/data_structures/segment_tree/metas/base.hpp
+      path: cp-algo/data_structures/segtree/metas/base.hpp
+      title: cp-algo/data_structures/segtree/metas/base.hpp
     - icon: ':heavy_check_mark:'
-      path: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
-      title: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
+      path: cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
+      title: cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp
   - name: cp-algo/data_structures
     pages:
     - icon: ':heavy_check_mark:'
-      path: cp-algo/data_structures/segment_tree.hpp
-      title: cp-algo/data_structures/segment_tree.hpp
+      path: cp-algo/data_structures/segtree.hpp
+      title: cp-algo/data_structures/segtree.hpp
     - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/treap.hpp
       title: cp-algo/data_structures/treap.hpp

@@ -15,8 +15,8 @@ data:
     path: cp-algo/algebra/polynomial.hpp
     title: cp-algo/algebra/polynomial.hpp
   - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/segment_tree/metas/affine.hpp
-    title: cp-algo/data_structures/segment_tree/metas/affine.hpp
+    path: cp-algo/data_structures/segtree/metas/affine.hpp
+    title: cp-algo/data_structures/segtree/metas/affine.hpp
   - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/treap/metas/reverse.hpp
     title: cp-algo/data_structures/treap/metas/reverse.hpp
@@ -102,13 +102,13 @@ data:
   isVerificationFile: false
   path: cp-algo/algebra/affine.hpp
   requiredBy:
-  - cp-algo/data_structures/segment_tree/metas/affine.hpp
+  - cp-algo/data_structures/segtree/metas/affine.hpp
   - cp-algo/data_structures/treap/metas/reverse.hpp
   - cp-algo/algebra/matrix.hpp
   - cp-algo/algebra/polynomial.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-11 12:35:24+01:00'
+  timestamp: '2024-02-11 13:25:01+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp

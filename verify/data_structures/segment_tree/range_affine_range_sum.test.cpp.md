@@ -14,14 +14,14 @@ data:
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/segment_tree.hpp
-    title: cp-algo/data_structures/segment_tree.hpp
+    path: cp-algo/data_structures/segtree.hpp
+    title: cp-algo/data_structures/segtree.hpp
   - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/segment_tree/metas/affine.hpp
-    title: cp-algo/data_structures/segment_tree/metas/affine.hpp
+    path: cp-algo/data_structures/segtree/metas/affine.hpp
+    title: cp-algo/data_structures/segtree/metas/affine.hpp
   - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/segment_tree/metas/base.hpp
-    title: cp-algo/data_structures/segment_tree/metas/base.hpp
+    path: cp-algo/data_structures/segtree/metas/base.hpp
+    title: cp-algo/data_structures/segtree/metas/base.hpp
   - icon: ':heavy_check_mark:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
@@ -38,9 +38,8 @@ data:
     - https://judge.yosupo.jp/problem/range_affine_range_sum
   bundledCode: "#line 1 \"verify/data_structures/segment_tree/range_affine_range_sum.test.cpp\"\
     \n// @brief Range Affine Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_affine_range_sum\"\
-    \n#line 1 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\n\n\n#line\
-    \ 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include <functional>\n\
-    #include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segtree::metas\
+    \n#line 1 \"cp-algo/data_structures/segtree/metas/affine.hpp\"\n\n\n#line 1 \"\
+    cp-algo/data_structures/segtree/metas/base.hpp\"\n\n\nnamespace cp_algo::data_structures::segtree::metas\
     \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
     \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
     \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
@@ -65,7 +64,7 @@ data:
     \            return {A, B, C, D};\n        }\n        \n        linfrac adj()\
     \ {\n            return {d, -b, -c, a};\n        }\n        \n        // apply\
     \ linfrac to A/B\n        auto apply(base A, base B) {\n            return std::pair{a\
-    \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\
+    \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segtree/metas/affine.hpp\"\
     \nnamespace cp_algo::data_structures::segtree::metas {\n    template<typename\
     \ base>\n    struct affine_meta: base_meta<affine_meta<base>> {\n        using\
     \ meta = affine_meta;\n        using lin = algebra::lin<base>;\n\n        base\
@@ -76,7 +75,7 @@ data:
     \                  L->to_push.prepend(to_push);\n                    R->to_push.prepend(to_push);\n\
     \                }\n                to_push = {};\n            }\n        }\n\n\
     \        void pull(meta const& L, meta const& R, int, int) override {\n      \
-    \      sum = L.sum + R.sum;\n        }\n    };\n}\n\n#line 1 \"cp-algo/data_structures/segment_tree.hpp\"\
+    \      sum = L.sum + R.sum;\n        }\n    };\n}\n\n#line 1 \"cp-algo/data_structures/segtree.hpp\"\
     \n\n\n#include <vector>\nnamespace cp_algo::data_structures {\n    template<typename\
     \ meta>\n    struct segtree_t {\n        const int N;\n        std::vector<meta>\
     \ _meta;\n\n        segtree_t(int n): N(n), _meta(4 * N) {}\n\n        segtree_t(std::vector<meta>\
@@ -109,11 +108,11 @@ data:
     \        }\n    };\n}\n\n#line 1 \"cp-algo/algebra/modular.hpp\"\n\n\n#line 1\
     \ \"cp-algo/random/rng.hpp\"\n\n\n#include <chrono>\n#include <random>\nnamespace\
     \ cp_algo::random {\n    std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());\
-    \ \n}\n\n#line 1 \"cp-algo/algebra/common.hpp\"\n\n\n#line 4 \"cp-algo/algebra/common.hpp\"\
-    \nnamespace cp_algo::algebra {\n    const int maxn = 1 << 20;\n    const int magic\
-    \ = 250; // threshold for sizes to run the naive algo\n\n    auto bpow(auto x,\
-    \ int64_t n, auto ans) {\n        for(; n; n /= 2, x = x * x) {\n            if(n\
-    \ % 2) {\n                ans = ans * x;\n            }\n        }\n        return\
+    \ \n}\n\n#line 1 \"cp-algo/algebra/common.hpp\"\n\n\n#include <cstdint>\nnamespace\
+    \ cp_algo::algebra {\n    const int maxn = 1 << 20;\n    const int magic = 250;\
+    \ // threshold for sizes to run the naive algo\n\n    auto bpow(auto x, int64_t\
+    \ n, auto ans) {\n        for(; n; n /= 2, x = x * x) {\n            if(n % 2)\
+    \ {\n                ans = ans * x;\n            }\n        }\n        return\
     \ ans;\n    }\n    template<typename T>\n    T bpow(T const& x, int64_t n) {\n\
     \        return bpow(x, n, T(1));\n    }\n\n    template<typename T>\n    T fact(int\
     \ n) {\n        static T F[maxn];\n        static bool init = false;\n       \
@@ -128,39 +127,40 @@ data:
     \ n) {\n        static T F[maxn];\n        static bool init = false;\n       \
     \ if(!init) {\n            for(int i = 1; i < maxn; i++) {\n                F[i]\
     \ = rfact<T>(i) * fact<T>(i - 1);\n            }\n            init = true;\n \
-    \       }\n        return F[n];\n    }\n}\n\n#line 7 \"cp-algo/algebra/modular.hpp\"\
-    \n#include <iostream>\n#line 9 \"cp-algo/algebra/modular.hpp\"\nnamespace cp_algo::algebra\
-    \ {\n    template<int m>\n    struct modular {\n        // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm\n\
-    \        std::optional<modular> sqrt() const {\n            if(r == 0) {\n   \
-    \             return 0;\n            } else if(bpow(*this, (m - 1) / 2) != modular(1))\
-    \ {\n                return std::nullopt;\n            } else {\n            \
-    \    while(true) {\n                    modular z = random::rng();\n         \
-    \           if(z * z == *this) {\n                        return z;\n        \
-    \            }\n                    lin<modular> x(1, z, *this); // x + z (mod\
-    \ x^2 - b)\n                    x = bpow(x, (m - 1) / 2, lin<modular>(0, 1, *this));\n\
-    \                    if(x.a != modular(0)) {\n                        return x.a.inv();\n\
-    \                    }\n                }\n            }\n        }\n        \n\
-    \        uint64_t r;\n        constexpr modular(): r(0) {}\n        constexpr\
-    \ modular(int64_t rr): r(rr % m) {r = std::min<uint64_t>(r, r + m);}\n       \
-    \ modular inv() const {return bpow(*this, m - 2);}\n        modular operator -\
-    \ () const {return std::min(-r, m - r);}\n        modular operator * (const modular\
-    \ &t) const {return r * t.r;}\n        modular operator / (const modular &t) const\
-    \ {return *this * t.inv();}\n        modular& operator += (const modular &t) {r\
-    \ += t.r; r = std::min<uint64_t>(r, r - m); return *this;}\n        modular& operator\
-    \ -= (const modular &t) {r -= t.r; r = std::min<uint64_t>(r, r + m); return *this;}\n\
-    \        modular operator + (const modular &t) const {return modular(*this) +=\
-    \ t;}\n        modular operator - (const modular &t) const {return modular(*this)\
-    \ -= t;}\n        modular& operator *= (const modular &t) {return *this = *this\
-    \ * t;}\n        modular& operator /= (const modular &t) {return *this = *this\
-    \ / t;}\n        \n        auto operator <=> (const modular &t) const = default;\n\
-    \        \n        explicit operator int() const {return r;}\n        int64_t\
-    \ rem() const {return 2 * r > m ? r - m : r;}\n\n        static constexpr uint64_t\
-    \ mm = (uint64_t)m * m;\n        void add_unsafe(uint64_t t) {r += t; r = std::min<uint64_t>(r,\
-    \ r - mm);}\n        modular& normalize() {if(r >= m) r %= m; return *this;}\n\
-    \    };\n    \n    template<int m>\n    std::istream& operator >> (std::istream\
-    \ &in, modular<m> &x) {\n        return in >> x.r;\n    }\n    \n    template<int\
-    \ m>\n    std::ostream& operator << (std::ostream &out, modular<m> const& x) {\n\
-    \        return out << x.r % m;\n    }\n}\n\n#line 6 \"verify/data_structures/segment_tree/range_affine_range_sum.test.cpp\"\
+    \       }\n        return F[n];\n    }\n}\n\n#line 6 \"cp-algo/algebra/modular.hpp\"\
+    \n#include <algorithm>\n#include <iostream>\n#line 9 \"cp-algo/algebra/modular.hpp\"\
+    \nnamespace cp_algo::algebra {\n    template<int m>\n    struct modular {\n  \
+    \      // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm\n        std::optional<modular>\
+    \ sqrt() const {\n            if(r == 0) {\n                return 0;\n      \
+    \      } else if(bpow(*this, (m - 1) / 2) != modular(1)) {\n                return\
+    \ std::nullopt;\n            } else {\n                while(true) {\n       \
+    \             modular z = random::rng();\n                    if(z * z == *this)\
+    \ {\n                        return z;\n                    }\n              \
+    \      lin<modular> x(1, z, *this); // x + z (mod x^2 - b)\n                 \
+    \   x = bpow(x, (m - 1) / 2, lin<modular>(0, 1, *this));\n                   \
+    \ if(x.a != modular(0)) {\n                        return x.a.inv();\n       \
+    \             }\n                }\n            }\n        }\n        \n     \
+    \   uint64_t r;\n        constexpr modular(): r(0) {}\n        constexpr modular(int64_t\
+    \ rr): r(rr % m) {r = std::min<uint64_t>(r, r + m);}\n        modular inv() const\
+    \ {return bpow(*this, m - 2);}\n        modular operator - () const {return std::min(-r,\
+    \ m - r);}\n        modular operator * (const modular &t) const {return r * t.r;}\n\
+    \        modular operator / (const modular &t) const {return *this * t.inv();}\n\
+    \        modular& operator += (const modular &t) {r += t.r; r = std::min<uint64_t>(r,\
+    \ r - m); return *this;}\n        modular& operator -= (const modular &t) {r -=\
+    \ t.r; r = std::min<uint64_t>(r, r + m); return *this;}\n        modular operator\
+    \ + (const modular &t) const {return modular(*this) += t;}\n        modular operator\
+    \ - (const modular &t) const {return modular(*this) -= t;}\n        modular& operator\
+    \ *= (const modular &t) {return *this = *this * t;}\n        modular& operator\
+    \ /= (const modular &t) {return *this = *this / t;}\n        \n        auto operator\
+    \ <=> (const modular &t) const = default;\n        \n        explicit operator\
+    \ int() const {return r;}\n        int64_t rem() const {return 2 * r > m ? r -\
+    \ m : r;}\n\n        static constexpr uint64_t mm = (uint64_t)m * m;\n       \
+    \ void add_unsafe(uint64_t t) {r += t; r = std::min<uint64_t>(r, r - mm);}\n \
+    \       modular& normalize() {if(r >= m) r %= m; return *this;}\n    };\n    \n\
+    \    template<int m>\n    std::istream& operator >> (std::istream &in, modular<m>\
+    \ &x) {\n        return in >> x.r;\n    }\n    \n    template<int m>\n    std::ostream&\
+    \ operator << (std::ostream &out, modular<m> const& x) {\n        return out <<\
+    \ x.r % m;\n    }\n}\n\n#line 6 \"verify/data_structures/segment_tree/range_affine_range_sum.test.cpp\"\
     \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
     \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = segtree::metas::affine_meta<base>;\n\
     \nvoid solve() {\n    int n, q;\n    cin >> n >> q;\n    vector<meta> a(n);\n\
@@ -176,27 +176,26 @@ data:
     , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n\
     \    while(t--) {\n        solve();\n    }\n}\n"
   code: "// @brief Range Affine Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_affine_range_sum\"\
-    \n#include \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\n#include\
-    \ \"cp-algo/data_structures/segment_tree.hpp\"\n#include \"cp-algo/algebra/modular.hpp\"\
-    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
-    \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = segtree::metas::affine_meta<base>;\n\
-    \nvoid solve() {\n    int n, q;\n    cin >> n >> q;\n    vector<meta> a(n);\n\
-    \    for(int i = 0; i < n; i++) {\n        int ai;\n        cin >> ai;\n     \
-    \   a[i] = {ai};\n    }\n    segtree_t<meta> me(a);\n    while(q--) {\n      \
-    \  int t;\n        cin >> t;\n        if(t == 0) {\n            int l, r, b, c;\n\
-    \            cin >> l >> r >> b >> c;\n            me.exec_on_segment(l, r, [&](auto&\
-    \ meta) {\n                meta.to_push.prepend(meta::lin(b, c));\n          \
-    \  });\n        } else {\n            int l, r;\n            cin >> l >> r;\n\
-    \            base ans = 0;\n            me.exec_on_segment(l, r, [&](auto meta)\
-    \ {\n                ans += meta.sum;\n            });\n            cout << ans\
-    \ << \"\\n\";\n        }\n    }\n}\n\nsigned main() {\n    //freopen(\"input.txt\"\
-    , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n\
-    \    while(t--) {\n        solve();\n    }\n}\n"
+    \n#include \"cp-algo/data_structures/segtree/metas/affine.hpp\"\n#include \"cp-algo/data_structures/segtree.hpp\"\
+    \n#include \"cp-algo/algebra/modular.hpp\"\n#include <bits/stdc++.h>\n\nusing\
+    \ namespace std;\nusing namespace cp_algo::data_structures;\n\nusing base = cp_algo::algebra::modular<998244353>;\n\
+    using meta = segtree::metas::affine_meta<base>;\n\nvoid solve() {\n    int n,\
+    \ q;\n    cin >> n >> q;\n    vector<meta> a(n);\n    for(int i = 0; i < n; i++)\
+    \ {\n        int ai;\n        cin >> ai;\n        a[i] = {ai};\n    }\n    segtree_t<meta>\
+    \ me(a);\n    while(q--) {\n        int t;\n        cin >> t;\n        if(t ==\
+    \ 0) {\n            int l, r, b, c;\n            cin >> l >> r >> b >> c;\n  \
+    \          me.exec_on_segment(l, r, [&](auto& meta) {\n                meta.to_push.prepend(meta::lin(b,\
+    \ c));\n            });\n        } else {\n            int l, r;\n           \
+    \ cin >> l >> r;\n            base ans = 0;\n            me.exec_on_segment(l,\
+    \ r, [&](auto meta) {\n                ans += meta.sum;\n            });\n   \
+    \         cout << ans << \"\\n\";\n        }\n    }\n}\n\nsigned main() {\n  \
+    \  //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n   \
+    \ cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n}\n"
   dependsOn:
-  - cp-algo/data_structures/segment_tree/metas/affine.hpp
-  - cp-algo/data_structures/segment_tree/metas/base.hpp
+  - cp-algo/data_structures/segtree/metas/affine.hpp
+  - cp-algo/data_structures/segtree/metas/base.hpp
   - cp-algo/algebra/affine.hpp
-  - cp-algo/data_structures/segment_tree.hpp
+  - cp-algo/data_structures/segtree.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/random/rng.hpp
   - cp-algo/algebra/affine.hpp
@@ -204,7 +203,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 12:35:24+01:00'
+  timestamp: '2024-02-11 13:25:01+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp

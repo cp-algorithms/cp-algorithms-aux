@@ -5,8 +5,8 @@ data:
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
   - icon: ':heavy_check_mark:'
-    path: cp-algo/data_structures/segment_tree/metas/base.hpp
-    title: cp-algo/data_structures/segment_tree/metas/base.hpp
+    path: cp-algo/data_structures/segtree/metas/base.hpp
+    title: cp-algo/data_structures/segtree/metas/base.hpp
   _extendedRequiredBy: []
   _extendedVerifiedWith:
   - icon: ':heavy_check_mark:'
@@ -17,9 +17,8 @@ data:
   _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
-  bundledCode: "#line 1 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\n\
-    \n\n#line 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include\
-    \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segtree::metas\
+  bundledCode: "#line 1 \"cp-algo/data_structures/segtree/metas/affine.hpp\"\n\n\n\
+    #line 1 \"cp-algo/data_structures/segtree/metas/base.hpp\"\n\n\nnamespace cp_algo::data_structures::segtree::metas\
     \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
     \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
     \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
@@ -44,7 +43,7 @@ data:
     \            return {A, B, C, D};\n        }\n        \n        linfrac adj()\
     \ {\n            return {d, -b, -c, a};\n        }\n        \n        // apply\
     \ linfrac to A/B\n        auto apply(base A, base B) {\n            return std::pair{a\
-    \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\
+    \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segtree/metas/affine.hpp\"\
     \nnamespace cp_algo::data_structures::segtree::metas {\n    template<typename\
     \ base>\n    struct affine_meta: base_meta<affine_meta<base>> {\n        using\
     \ meta = affine_meta;\n        using lin = algebra::lin<base>;\n\n        base\
@@ -70,19 +69,19 @@ data:
     \ L, meta const& R, int, int) override {\n            sum = L.sum + R.sum;\n \
     \       }\n    };\n}\n#endif // CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_AFFINE_HPP"
   dependsOn:
-  - cp-algo/data_structures/segment_tree/metas/base.hpp
+  - cp-algo/data_structures/segtree/metas/base.hpp
   - cp-algo/algebra/affine.hpp
   isVerificationFile: false
-  path: cp-algo/data_structures/segment_tree/metas/affine.hpp
+  path: cp-algo/data_structures/segtree/metas/affine.hpp
   requiredBy: []
-  timestamp: '2024-02-11 12:35:24+01:00'
+  timestamp: '2024-02-11 13:25:01+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
-documentation_of: cp-algo/data_structures/segment_tree/metas/affine.hpp
+documentation_of: cp-algo/data_structures/segtree/metas/affine.hpp
 layout: document
 redirect_from:
-- /library/cp-algo/data_structures/segment_tree/metas/affine.hpp
-- /library/cp-algo/data_structures/segment_tree/metas/affine.hpp.html
-title: cp-algo/data_structures/segment_tree/metas/affine.hpp
+- /library/cp-algo/data_structures/segtree/metas/affine.hpp
+- /library/cp-algo/data_structures/segtree/metas/affine.hpp.html
+title: cp-algo/data_structures/segtree/metas/affine.hpp
 ---

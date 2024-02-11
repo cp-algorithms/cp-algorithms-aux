@@ -50,7 +50,9 @@ namespace cp_algo::algebra {
         poly_t reverse(size_t n) const {return poly::impl::reverse(*this, n);}
         poly_t reverse() const {return reverse(size(a));}
         
-        std::array<poly_t, 2> divmod(poly_t const& b) const {return poly::impl::divmod(*this, b);}
+        std::array<poly_t, 2> divmod(poly_t const& b) const {
+            return poly::impl::divmod(*this, b);
+        }
         
         // finds a linfrac<poly_t> that changes A/B to A'/B' such that
         // deg B' is at least 2 times less than deg A

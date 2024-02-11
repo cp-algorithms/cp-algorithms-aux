@@ -3,9 +3,10 @@
 #include "../../affine.hpp"
 #include <cassert>
 #include <vector>
+#include <tuple>
 // operations related to gcd and Euclidean algo
 namespace cp_algo::algebra::poly::impl {
-    void concat(std::vector<auto> &a, std::vector<auto> const& b) {
+    void concat(auto &a, auto const& b) {
         a.insert(a.end(), b.begin(), b.end());
     }
     template<typename poly>

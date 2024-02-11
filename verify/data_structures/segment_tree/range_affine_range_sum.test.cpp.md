@@ -40,7 +40,7 @@ data:
     \n// @brief Range Affine Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_affine_range_sum\"\
     \n#line 1 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\n\n\n#line\
     \ 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include <functional>\n\
-    #include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segment_tree::metas\
+    #include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segtree::metas\
     \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
     \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
     \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
@@ -66,7 +66,7 @@ data:
     \ {\n            return {d, -b, -c, a};\n        }\n        \n        // apply\
     \ linfrac to A/B\n        auto apply(base A, base B) {\n            return std::pair{a\
     \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\
-    \nnamespace cp_algo::data_structures::segment_tree::metas {\n    template<typename\
+    \nnamespace cp_algo::data_structures::segtree::metas {\n    template<typename\
     \ base>\n    struct affine_meta: base_meta<affine_meta<base>> {\n        using\
     \ meta = affine_meta;\n        using lin = algebra::lin<base>;\n\n        base\
     \ sum = 0;\n        lin to_push = {};\n\n        affine_meta() {}\n        affine_meta(base\
@@ -77,20 +77,20 @@ data:
     \                }\n                to_push = {};\n            }\n        }\n\n\
     \        void pull(meta const& L, meta const& R, int, int) override {\n      \
     \      sum = L.sum + R.sum;\n        }\n    };\n}\n\n#line 1 \"cp-algo/data_structures/segment_tree.hpp\"\
-    \n\n\n#include <vector>\nnamespace cp_algo::data_structures::segment_tree {\n\
-    \    template<typename meta>\n    struct segment_tree {\n        const int N;\n\
-    \        std::vector<meta> _meta;\n\n        segment_tree(int n): N(n), _meta(4\
-    \ * N) {}\n\n        segment_tree(std::vector<meta> leafs): N(size(leafs)), _meta(4\
-    \ * N) {\n            build(leafs);\n        }\n\n        void pull(int v, int\
-    \ l, int r) {\n            if(r - l > 1) {\n                _meta[v].pull(_meta[2\
-    \ * v], _meta[2 * v + 1], l, r);\n            }\n        }\n\n        void push(int\
-    \ v, int l, int r) {\n            if(r - l > 1) {\n                _meta[v].push(&_meta[2\
-    \ * v], &_meta[2 * v + 1], l, r);\n            } else {\n                _meta[v].push(nullptr,\
-    \ nullptr, l, r);\n            }\n        }\n\n        void build(auto &a, int\
-    \ v, size_t l, size_t r) {\n            if(r - l == 1) {\n                if(l\
-    \ < size(a)) {\n                    _meta[v] = a[l];\n                }\n    \
-    \        } else {\n                size_t m = (l + r) / 2;\n                build(a,\
-    \ 2 * v, l, m);\n                build(a, 2 * v + 1, m, r);\n                pull(v,\
+    \n\n\n#include <vector>\nnamespace cp_algo::data_structures {\n    template<typename\
+    \ meta>\n    struct segtree_t {\n        const int N;\n        std::vector<meta>\
+    \ _meta;\n\n        segtree_t(int n): N(n), _meta(4 * N) {}\n\n        segtree_t(std::vector<meta>\
+    \ leafs): N(size(leafs)), _meta(4 * N) {\n            build(leafs);\n        }\n\
+    \n        void pull(int v, int l, int r) {\n            if(r - l > 1) {\n    \
+    \            _meta[v].pull(_meta[2 * v], _meta[2 * v + 1], l, r);\n          \
+    \  }\n        }\n\n        void push(int v, int l, int r) {\n            if(r\
+    \ - l > 1) {\n                _meta[v].push(&_meta[2 * v], &_meta[2 * v + 1],\
+    \ l, r);\n            } else {\n                _meta[v].push(nullptr, nullptr,\
+    \ l, r);\n            }\n        }\n\n        void build(auto &a, int v, size_t\
+    \ l, size_t r) {\n            if(r - l == 1) {\n                if(l < size(a))\
+    \ {\n                    _meta[v] = a[l];\n                }\n            } else\
+    \ {\n                size_t m = (l + r) / 2;\n                build(a, 2 * v,\
+    \ l, m);\n                build(a, 2 * v + 1, m, r);\n                pull(v,\
     \ l, r);\n            }\n        }\n\n        void build(auto &a) {\n        \
     \    build(a, 1, 0, N);\n        }\n\n        void exec_on_segment(int a, int\
     \ b, auto func, auto proceed, auto stop, int v, int l, int r) {\n            push(v,\
@@ -161,37 +161,37 @@ data:
     \ &in, modular<m> &x) {\n        return in >> x.r;\n    }\n    \n    template<int\
     \ m>\n    std::ostream& operator << (std::ostream &out, modular<m> const& x) {\n\
     \        return out << x.r % m;\n    }\n}\n\n#line 6 \"verify/data_structures/segment_tree/range_affine_range_sum.test.cpp\"\
-    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures::segment_tree;\n\
-    \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = metas::affine_meta<base>;\n\
+    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
+    \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = segtree::metas::affine_meta<base>;\n\
     \nvoid solve() {\n    int n, q;\n    cin >> n >> q;\n    vector<meta> a(n);\n\
     \    for(int i = 0; i < n; i++) {\n        int ai;\n        cin >> ai;\n     \
-    \   a[i] = {ai};\n    }\n    segment_tree<meta> me(a);\n    while(q--) {\n   \
-    \     int t;\n        cin >> t;\n        if(t == 0) {\n            int l, r, b,\
-    \ c;\n            cin >> l >> r >> b >> c;\n            me.exec_on_segment(l,\
-    \ r, [&](auto& meta) {\n                meta.to_push.prepend(meta::lin(b, c));\n\
-    \            });\n        } else {\n            int l, r;\n            cin >>\
-    \ l >> r;\n            base ans = 0;\n            me.exec_on_segment(l, r, [&](auto\
-    \ meta) {\n                ans += meta.sum;\n            });\n            cout\
-    \ << ans << \"\\n\";\n        }\n    }\n}\n\nsigned main() {\n    //freopen(\"\
-    input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n \
-    \   int t = 1;\n    while(t--) {\n        solve();\n    }\n}\n"
+    \   a[i] = {ai};\n    }\n    segtree_t<meta> me(a);\n    while(q--) {\n      \
+    \  int t;\n        cin >> t;\n        if(t == 0) {\n            int l, r, b, c;\n\
+    \            cin >> l >> r >> b >> c;\n            me.exec_on_segment(l, r, [&](auto&\
+    \ meta) {\n                meta.to_push.prepend(meta::lin(b, c));\n          \
+    \  });\n        } else {\n            int l, r;\n            cin >> l >> r;\n\
+    \            base ans = 0;\n            me.exec_on_segment(l, r, [&](auto meta)\
+    \ {\n                ans += meta.sum;\n            });\n            cout << ans\
+    \ << \"\\n\";\n        }\n    }\n}\n\nsigned main() {\n    //freopen(\"input.txt\"\
+    , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n\
+    \    while(t--) {\n        solve();\n    }\n}\n"
   code: "// @brief Range Affine Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_affine_range_sum\"\
     \n#include \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\n#include\
     \ \"cp-algo/data_structures/segment_tree.hpp\"\n#include \"cp-algo/algebra/modular.hpp\"\
-    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures::segment_tree;\n\
-    \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = metas::affine_meta<base>;\n\
+    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
+    \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = segtree::metas::affine_meta<base>;\n\
     \nvoid solve() {\n    int n, q;\n    cin >> n >> q;\n    vector<meta> a(n);\n\
     \    for(int i = 0; i < n; i++) {\n        int ai;\n        cin >> ai;\n     \
-    \   a[i] = {ai};\n    }\n    segment_tree<meta> me(a);\n    while(q--) {\n   \
-    \     int t;\n        cin >> t;\n        if(t == 0) {\n            int l, r, b,\
-    \ c;\n            cin >> l >> r >> b >> c;\n            me.exec_on_segment(l,\
-    \ r, [&](auto& meta) {\n                meta.to_push.prepend(meta::lin(b, c));\n\
-    \            });\n        } else {\n            int l, r;\n            cin >>\
-    \ l >> r;\n            base ans = 0;\n            me.exec_on_segment(l, r, [&](auto\
-    \ meta) {\n                ans += meta.sum;\n            });\n            cout\
-    \ << ans << \"\\n\";\n        }\n    }\n}\n\nsigned main() {\n    //freopen(\"\
-    input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n \
-    \   int t = 1;\n    while(t--) {\n        solve();\n    }\n}\n"
+    \   a[i] = {ai};\n    }\n    segtree_t<meta> me(a);\n    while(q--) {\n      \
+    \  int t;\n        cin >> t;\n        if(t == 0) {\n            int l, r, b, c;\n\
+    \            cin >> l >> r >> b >> c;\n            me.exec_on_segment(l, r, [&](auto&\
+    \ meta) {\n                meta.to_push.prepend(meta::lin(b, c));\n          \
+    \  });\n        } else {\n            int l, r;\n            cin >> l >> r;\n\
+    \            base ans = 0;\n            me.exec_on_segment(l, r, [&](auto meta)\
+    \ {\n                ans += meta.sum;\n            });\n            cout << ans\
+    \ << \"\\n\";\n        }\n    }\n}\n\nsigned main() {\n    //freopen(\"input.txt\"\
+    , \"r\", stdin);\n    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n\
+    \    while(t--) {\n        solve();\n    }\n}\n"
   dependsOn:
   - cp-algo/data_structures/segment_tree/metas/affine.hpp
   - cp-algo/data_structures/segment_tree/metas/base.hpp
@@ -204,7 +204,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/segment_tree/range_affine_range_sum.test.cpp

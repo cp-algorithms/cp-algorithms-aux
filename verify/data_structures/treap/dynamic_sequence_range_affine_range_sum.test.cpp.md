@@ -151,10 +151,10 @@ data:
     \ on Library Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
     \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
     \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    */\nnamespace cp_algo::data_structures::treap {\n    template<typename meta>\n\
-    \    struct treap_node {\n\n        using node = treap_node;\n        using treap\
-    \ = node*;\n        meta _meta;\n        int prior = random::rng();\n        size_t\
-    \ size = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
+    */\nnamespace cp_algo::data_structures {\n    template<typename meta>\n    struct\
+    \ treap_node {\n        using node = treap_node;\n        using treap = node*;\n\
+    \        meta _meta;\n        int prior = random::rng();\n        size_t size\
+    \ = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
     \ {L, R};\n\n        treap pull() {\n            _meta.pull(children[L], children[R]);\n\
     \            size = 1 + _safe(children[L], size) + _safe(children[R], size);\n\
     \            return this;\n        }\n\n        treap push() {\n            _meta.push(children[L],\
@@ -200,23 +200,23 @@ data:
     \ : st[0]->pull_all();\n        }\n    };\n\n    struct null_meta {\n        void\
     \ pull(auto const, auto const) {}\n        void push(auto&, auto&) {}\n    };\n\
     }\n\n#line 6 \"verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp\"\
-    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures::treap;\n\
-    \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = metas::reverse_meta<base>;\n\
-    using node = treap_node<meta>;\nusing treap = node::treap;\n\nvoid solve() {\n\
+    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
+    \nusing base = cp_algo::algebra::modular<998244353>;\nusing meta = treap::metas::reverse_meta<base>;\n\
+    using node = treap_node<meta>;\nusing treap_t = node::treap;\n\nvoid solve() {\n\
     \    istream_iterator<int> input(cin);\n    int n = *input++;\n    int q = *input++;\n\
-    \    vector<treap> nodes(n);\n    generate_n(begin(nodes), n, [&](){\n       \
-    \ return new node(meta(*input++));\n    });\n    treap me = node::build(nodes);\n\
+    \    vector<treap_t> nodes(n);\n    generate_n(begin(nodes), n, [&](){\n     \
+    \   return new node(meta(*input++));\n    });\n    auto me = node::build(nodes);\n\
     \n    while(q--) {\n        int t = *input++;\n        if(t == 0) {\n        \
     \    int i = *input++;\n            base x = *input++;\n            node::insert(me,\
     \ i, new node(meta(x)));\n        } else if(t == 1) {\n            node::erase(me,\
     \ *input++);\n        } else if(t == 2) {\n            int l = *input++;\n   \
-    \         int r = *input++;\n            node::exec_on_segment(me, l, r, [](treap\
+    \         int r = *input++;\n            node::exec_on_segment(me, l, r, [](auto\
     \ &t) {\n                _safe_meta(t, reverse = 1);\n            });\n      \
     \  } else if(t == 3) {\n            int l = *input++;\n            int r = *input++;\n\
     \            base b = *input++;\n            base c = *input++;\n            node::exec_on_segment(me,\
-    \ l, r, [b, c](treap &t) {\n                _safe_meta(t, add_push(meta::lin(b,\
+    \ l, r, [b, c](auto &t) {\n                _safe_meta(t, add_push(meta::lin(b,\
     \ c)));\n            });\n        } else {\n            int l = *input++;\n  \
-    \          int r = *input++;\n            node::exec_on_segment(me, l, r, [](treap\
+    \          int r = *input++;\n            node::exec_on_segment(me, l, r, [](auto\
     \ t) {\n                cout << _safe_meta(t, sum) << \"\\n\";\n            });\n\
     \        }\n    }\n}\n\nsigned main() {\n    //freopen(\"input.txt\", \"r\", stdin);\n\
     \    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n    while(t--)\
@@ -224,23 +224,23 @@ data:
   code: "// @brief Dynamic Range Affine Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/dynamic_sequence_range_affine_range_sum\"\
     \n#include \"cp-algo/algebra/modular.hpp\"\n#include \"cp-algo/data_structures/treap/metas/reverse.hpp\"\
     \n#include \"cp-algo/data_structures/treap.hpp\"\n#include <bits/stdc++.h>\n\n\
-    using namespace std;\nusing namespace cp_algo::data_structures::treap;\n\nusing\
-    \ base = cp_algo::algebra::modular<998244353>;\nusing meta = metas::reverse_meta<base>;\n\
-    using node = treap_node<meta>;\nusing treap = node::treap;\n\nvoid solve() {\n\
+    using namespace std;\nusing namespace cp_algo::data_structures;\n\nusing base\
+    \ = cp_algo::algebra::modular<998244353>;\nusing meta = treap::metas::reverse_meta<base>;\n\
+    using node = treap_node<meta>;\nusing treap_t = node::treap;\n\nvoid solve() {\n\
     \    istream_iterator<int> input(cin);\n    int n = *input++;\n    int q = *input++;\n\
-    \    vector<treap> nodes(n);\n    generate_n(begin(nodes), n, [&](){\n       \
-    \ return new node(meta(*input++));\n    });\n    treap me = node::build(nodes);\n\
+    \    vector<treap_t> nodes(n);\n    generate_n(begin(nodes), n, [&](){\n     \
+    \   return new node(meta(*input++));\n    });\n    auto me = node::build(nodes);\n\
     \n    while(q--) {\n        int t = *input++;\n        if(t == 0) {\n        \
     \    int i = *input++;\n            base x = *input++;\n            node::insert(me,\
     \ i, new node(meta(x)));\n        } else if(t == 1) {\n            node::erase(me,\
     \ *input++);\n        } else if(t == 2) {\n            int l = *input++;\n   \
-    \         int r = *input++;\n            node::exec_on_segment(me, l, r, [](treap\
+    \         int r = *input++;\n            node::exec_on_segment(me, l, r, [](auto\
     \ &t) {\n                _safe_meta(t, reverse = 1);\n            });\n      \
     \  } else if(t == 3) {\n            int l = *input++;\n            int r = *input++;\n\
     \            base b = *input++;\n            base c = *input++;\n            node::exec_on_segment(me,\
-    \ l, r, [b, c](treap &t) {\n                _safe_meta(t, add_push(meta::lin(b,\
+    \ l, r, [b, c](auto &t) {\n                _safe_meta(t, add_push(meta::lin(b,\
     \ c)));\n            });\n        } else {\n            int l = *input++;\n  \
-    \          int r = *input++;\n            node::exec_on_segment(me, l, r, [](treap\
+    \          int r = *input++;\n            node::exec_on_segment(me, l, r, [](auto\
     \ t) {\n                cout << _safe_meta(t, sum) << \"\\n\";\n            });\n\
     \        }\n    }\n}\n\nsigned main() {\n    //freopen(\"input.txt\", \"r\", stdin);\n\
     \    ios::sync_with_stdio(0);\n    cin.tie(0);\n    int t = 1;\n    while(t--)\
@@ -260,7 +260,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp

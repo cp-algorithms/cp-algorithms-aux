@@ -86,10 +86,10 @@ data:
     \ on Library Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
     \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
     \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    */\nnamespace cp_algo::data_structures::treap {\n    template<typename meta>\n\
-    \    struct treap_node {\n\n        using node = treap_node;\n        using treap\
-    \ = node*;\n        meta _meta;\n        int prior = random::rng();\n        size_t\
-    \ size = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
+    */\nnamespace cp_algo::data_structures {\n    template<typename meta>\n    struct\
+    \ treap_node {\n        using node = treap_node;\n        using treap = node*;\n\
+    \        meta _meta;\n        int prior = random::rng();\n        size_t size\
+    \ = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
     \ {L, R};\n\n        treap pull() {\n            _meta.pull(children[L], children[R]);\n\
     \            size = 1 + _safe(children[L], size) + _safe(children[R], size);\n\
     \            return this;\n        }\n\n        treap push() {\n            _meta.push(children[L],\
@@ -135,34 +135,34 @@ data:
     \ : st[0]->pull_all();\n        }\n    };\n\n    struct null_meta {\n        void\
     \ pull(auto const, auto const) {}\n        void push(auto&, auto&) {}\n    };\n\
     }\n\n#line 5 \"verify/data_structures/treap/range_reverse_range_sum.test.cpp\"\
-    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures::treap;\n\
-    \nusing meta = metas::reverse_meta<int64_t>;\nusing node = treap_node<meta>;\n\
-    using treap = node::treap;\n\nvoid solve() {\n    istream_iterator<int> input(cin);\n\
-    \    int n = *input++;\n    int q = *input++;\n    vector<treap> nodes(n);\n \
-    \   generate_n(begin(nodes), n, [&](){\n        return new node(meta(*input++));\n\
-    \    });\n    treap me = node::build(nodes);\n    while(q--) {\n        int t\
-    \ = *input++;\n        int l = *input++;\n        int r = *input++;\n        if(t\
-    \ == 0) {\n            node::exec_on_segment(me, l, r, [](treap &t) {\n      \
-    \          _safe_meta(t, reverse = true);\n            });\n        } else {\n\
-    \            node::exec_on_segment(me, l, r, [](treap const& t) {\n          \
-    \      cout << _safe_meta(t, sum) << \"\\n\";\n            });\n        }\n  \
-    \  }\n}\n\nsigned main() {\n    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n\
+    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
+    \nusing meta = treap::metas::reverse_meta<int64_t>;\nusing node = treap_node<meta>;\n\
+    using treap_t = node::treap;\n\nvoid solve() {\n    istream_iterator<int> input(cin);\n\
+    \    int n = *input++;\n    int q = *input++;\n    vector<treap_t> nodes(n);\n\
+    \    generate_n(begin(nodes), n, [&](){\n        return new node(meta(*input++));\n\
+    \    });\n    auto me = node::build(nodes);\n    while(q--) {\n        int t =\
+    \ *input++;\n        int l = *input++;\n        int r = *input++;\n        if(t\
+    \ == 0) {\n            node::exec_on_segment(me, l, r, [](auto &t) {\n       \
+    \         _safe_meta(t, reverse = true);\n            });\n        } else {\n\
+    \            node::exec_on_segment(me, l, r, [](auto const& t) {\n           \
+    \     cout << _safe_meta(t, sum) << \"\\n\";\n            });\n        }\n   \
+    \ }\n}\n\nsigned main() {\n    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n\
     \    cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n\
     }\n"
   code: "// @brief Range Reverse Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_reverse_range_sum\"\
     \n#include \"cp-algo/data_structures/treap/metas/reverse.hpp\"\n#include \"cp-algo/data_structures/treap.hpp\"\
-    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures::treap;\n\
-    \nusing meta = metas::reverse_meta<int64_t>;\nusing node = treap_node<meta>;\n\
-    using treap = node::treap;\n\nvoid solve() {\n    istream_iterator<int> input(cin);\n\
-    \    int n = *input++;\n    int q = *input++;\n    vector<treap> nodes(n);\n \
-    \   generate_n(begin(nodes), n, [&](){\n        return new node(meta(*input++));\n\
-    \    });\n    treap me = node::build(nodes);\n    while(q--) {\n        int t\
-    \ = *input++;\n        int l = *input++;\n        int r = *input++;\n        if(t\
-    \ == 0) {\n            node::exec_on_segment(me, l, r, [](treap &t) {\n      \
-    \          _safe_meta(t, reverse = true);\n            });\n        } else {\n\
-    \            node::exec_on_segment(me, l, r, [](treap const& t) {\n          \
-    \      cout << _safe_meta(t, sum) << \"\\n\";\n            });\n        }\n  \
-    \  }\n}\n\nsigned main() {\n    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n\
+    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
+    \nusing meta = treap::metas::reverse_meta<int64_t>;\nusing node = treap_node<meta>;\n\
+    using treap_t = node::treap;\n\nvoid solve() {\n    istream_iterator<int> input(cin);\n\
+    \    int n = *input++;\n    int q = *input++;\n    vector<treap_t> nodes(n);\n\
+    \    generate_n(begin(nodes), n, [&](){\n        return new node(meta(*input++));\n\
+    \    });\n    auto me = node::build(nodes);\n    while(q--) {\n        int t =\
+    \ *input++;\n        int l = *input++;\n        int r = *input++;\n        if(t\
+    \ == 0) {\n            node::exec_on_segment(me, l, r, [](auto &t) {\n       \
+    \         _safe_meta(t, reverse = true);\n            });\n        } else {\n\
+    \            node::exec_on_segment(me, l, r, [](auto const& t) {\n           \
+    \     cout << _safe_meta(t, sum) << \"\\n\";\n            });\n        }\n   \
+    \ }\n}\n\nsigned main() {\n    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n\
     \    cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n\
     }\n"
   dependsOn:
@@ -176,7 +176,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/treap/range_reverse_range_sum.test.cpp

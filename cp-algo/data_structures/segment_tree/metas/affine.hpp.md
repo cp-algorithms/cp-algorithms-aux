@@ -19,7 +19,7 @@ data:
     links: []
   bundledCode: "#line 1 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\n\
     \n\n#line 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include\
-    \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segment_tree::metas\
+    \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segtree::metas\
     \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
     \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
     \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
@@ -45,7 +45,7 @@ data:
     \ {\n            return {d, -b, -c, a};\n        }\n        \n        // apply\
     \ linfrac to A/B\n        auto apply(base A, base B) {\n            return std::pair{a\
     \ * A + b * B, c * A + d * B};\n        }\n    };\n}\n\n#line 5 \"cp-algo/data_structures/segment_tree/metas/affine.hpp\"\
-    \nnamespace cp_algo::data_structures::segment_tree::metas {\n    template<typename\
+    \nnamespace cp_algo::data_structures::segtree::metas {\n    template<typename\
     \ base>\n    struct affine_meta: base_meta<affine_meta<base>> {\n        using\
     \ meta = affine_meta;\n        using lin = algebra::lin<base>;\n\n        base\
     \ sum = 0;\n        lin to_push = {};\n\n        affine_meta() {}\n        affine_meta(base\
@@ -57,7 +57,7 @@ data:
     \        void pull(meta const& L, meta const& R, int, int) override {\n      \
     \      sum = L.sum + R.sum;\n        }\n    };\n}\n\n"
   code: "#ifndef CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_AFFINE_HPP\n#define CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_AFFINE_HPP\n\
-    #include \"base.hpp\"\n#include \"../../../algebra/affine.hpp\"\nnamespace cp_algo::data_structures::segment_tree::metas\
+    #include \"base.hpp\"\n#include \"../../../algebra/affine.hpp\"\nnamespace cp_algo::data_structures::segtree::metas\
     \ {\n    template<typename base>\n    struct affine_meta: base_meta<affine_meta<base>>\
     \ {\n        using meta = affine_meta;\n        using lin = algebra::lin<base>;\n\
     \n        base sum = 0;\n        lin to_push = {};\n\n        affine_meta() {}\n\
@@ -75,7 +75,7 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/segment_tree/metas/affine.hpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_affine_range_sum.test.cpp

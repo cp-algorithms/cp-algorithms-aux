@@ -1004,7 +1004,7 @@ data:
   isVerificationFile: false
   path: cp-algo/algebra/polynomial.hpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/algebra/polynomial/convolution107.test.cpp

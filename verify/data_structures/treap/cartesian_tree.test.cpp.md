@@ -42,10 +42,10 @@ data:
     \ Library Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
     \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
     \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    */\nnamespace cp_algo::data_structures::treap {\n    template<typename meta>\n\
-    \    struct treap_node {\n\n        using node = treap_node;\n        using treap\
-    \ = node*;\n        meta _meta;\n        int prior = random::rng();\n        size_t\
-    \ size = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
+    */\nnamespace cp_algo::data_structures {\n    template<typename meta>\n    struct\
+    \ treap_node {\n        using node = treap_node;\n        using treap = node*;\n\
+    \        meta _meta;\n        int prior = random::rng();\n        size_t size\
+    \ = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
     \ {L, R};\n\n        treap pull() {\n            _meta.pull(children[L], children[R]);\n\
     \            size = 1 + _safe(children[L], size) + _safe(children[R], size);\n\
     \            return this;\n        }\n\n        treap push() {\n            _meta.push(children[L],\
@@ -91,32 +91,34 @@ data:
     \ : st[0]->pull_all();\n        }\n    };\n\n    struct null_meta {\n        void\
     \ pull(auto const, auto const) {}\n        void push(auto&, auto&) {}\n    };\n\
     }\n\n#line 5 \"verify/data_structures/treap/cartesian_tree.test.cpp\"\n#include\
-    \ <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures::treap;\n\
-    \nstruct val_meta: metas::base_meta {\n    int val;\n    val_meta(int val): val(val){}\n\
-    };\n\nusing node = treap_node<val_meta>;\nusing treap = node::treap;\n\nvoid solve()\
-    \ {\n    istream_iterator<int> input(cin);\n    int n = *input++;\n    vector<treap>\
-    \ nodes(n);\n    for(int i = 0; i < n; i++) {\n        nodes[i] = new node(val_meta(i),\
-    \ *input++);\n    }\n    treap me = node::build(nodes);\n    vector<int> p(n,\
-    \ -1);\n    node::exec_on_each(me, [&](treap t) {\n        for(auto child: t->children)\
-    \ {\n            if(child) {\n                p[_safe_meta(child, val)] = _safe_meta(t,\
-    \ val);\n            }\n        }\n    });\n    for(int i = 0; i < n; i++) {\n\
-    \        cout << (p[i] == -1 ? i : p[i]) << ' ';\n    }\n}\n\nsigned main() {\n\
-    \    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n \
-    \   cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n}\n"
+    \ <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
+    \nstruct val_meta: treap::metas::base_meta {\n    int val;\n    val_meta(int val):\
+    \ val(val){}\n};\n\nusing node = treap_node<val_meta>;\nusing treap_t = node::treap;\n\
+    \nvoid solve() {\n    istream_iterator<int> input(cin);\n    int n = *input++;\n\
+    \    vector<treap_t> nodes(n);\n    for(int i = 0; i < n; i++) {\n        nodes[i]\
+    \ = new node(val_meta(i), *input++);\n    }\n    auto me = node::build(nodes);\n\
+    \    vector<int> p(n, -1);\n    node::exec_on_each(me, [&](auto t) {\n       \
+    \ for(auto child: t->children) {\n            if(child) {\n                p[_safe_meta(child,\
+    \ val)] = _safe_meta(t, val);\n            }\n        }\n    });\n    for(int\
+    \ i = 0; i < n; i++) {\n        cout << (p[i] == -1 ? i : p[i]) << ' ';\n    }\n\
+    }\n\nsigned main() {\n    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n\
+    \    cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n\
+    }\n"
   code: "// @brief Build Cartesian Tree\n#define PROBLEM \"https://judge.yosupo.jp/problem/cartesian_tree\"\
     \n#include \"cp-algo/data_structures/treap/metas/base.hpp\"\n#include \"cp-algo/data_structures/treap.hpp\"\
-    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures::treap;\n\
-    \nstruct val_meta: metas::base_meta {\n    int val;\n    val_meta(int val): val(val){}\n\
-    };\n\nusing node = treap_node<val_meta>;\nusing treap = node::treap;\n\nvoid solve()\
-    \ {\n    istream_iterator<int> input(cin);\n    int n = *input++;\n    vector<treap>\
-    \ nodes(n);\n    for(int i = 0; i < n; i++) {\n        nodes[i] = new node(val_meta(i),\
-    \ *input++);\n    }\n    treap me = node::build(nodes);\n    vector<int> p(n,\
-    \ -1);\n    node::exec_on_each(me, [&](treap t) {\n        for(auto child: t->children)\
-    \ {\n            if(child) {\n                p[_safe_meta(child, val)] = _safe_meta(t,\
-    \ val);\n            }\n        }\n    });\n    for(int i = 0; i < n; i++) {\n\
-    \        cout << (p[i] == -1 ? i : p[i]) << ' ';\n    }\n}\n\nsigned main() {\n\
-    \    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n \
-    \   cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n}\n"
+    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
+    \nstruct val_meta: treap::metas::base_meta {\n    int val;\n    val_meta(int val):\
+    \ val(val){}\n};\n\nusing node = treap_node<val_meta>;\nusing treap_t = node::treap;\n\
+    \nvoid solve() {\n    istream_iterator<int> input(cin);\n    int n = *input++;\n\
+    \    vector<treap_t> nodes(n);\n    for(int i = 0; i < n; i++) {\n        nodes[i]\
+    \ = new node(val_meta(i), *input++);\n    }\n    auto me = node::build(nodes);\n\
+    \    vector<int> p(n, -1);\n    node::exec_on_each(me, [&](auto t) {\n       \
+    \ for(auto child: t->children) {\n            if(child) {\n                p[_safe_meta(child,\
+    \ val)] = _safe_meta(t, val);\n            }\n        }\n    });\n    for(int\
+    \ i = 0; i < n; i++) {\n        cout << (p[i] == -1 ? i : p[i]) << ' ';\n    }\n\
+    }\n\nsigned main() {\n    //freopen(\"input.txt\", \"r\", stdin);\n    ios::sync_with_stdio(0);\n\
+    \    cin.tie(0);\n    int t = 1;\n    while(t--) {\n        solve();\n    }\n\
+    }\n"
   dependsOn:
   - cp-algo/data_structures/treap/metas/base.hpp
   - cp-algo/data_structures/treap/common.hpp
@@ -126,7 +128,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/treap/cartesian_tree.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/treap/cartesian_tree.test.cpp

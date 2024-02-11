@@ -35,10 +35,10 @@ data:
     \ Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
     \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
     \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    */\nnamespace cp_algo::data_structures::treap {\n    template<typename meta>\n\
-    \    struct treap_node {\n\n        using node = treap_node;\n        using treap\
-    \ = node*;\n        meta _meta;\n        int prior = random::rng();\n        size_t\
-    \ size = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
+    */\nnamespace cp_algo::data_structures {\n    template<typename meta>\n    struct\
+    \ treap_node {\n        using node = treap_node;\n        using treap = node*;\n\
+    \        meta _meta;\n        int prior = random::rng();\n        size_t size\
+    \ = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
     \ {L, R};\n\n        treap pull() {\n            _meta.pull(children[L], children[R]);\n\
     \            size = 1 + _safe(children[L], size) + _safe(children[R], size);\n\
     \            return this;\n        }\n\n        treap push() {\n            _meta.push(children[L],\
@@ -89,10 +89,10 @@ data:
     /* Submissions on Library Judge:\n  Range Reverse Range Sum, 558ms - https://judge.yosupo.jp/submission/147860\n\
     \  Cartesian Tree, 229ms - https://judge.yosupo.jp/submission/147858\n  Dynamic\
     \ Sequence Range Affine Range Sum, 2245ms - https://judge.yosupo.jp/submission/148948\n\
-    */\nnamespace cp_algo::data_structures::treap {\n    template<typename meta>\n\
-    \    struct treap_node {\n\n        using node = treap_node;\n        using treap\
-    \ = node*;\n        meta _meta;\n        int prior = random::rng();\n        size_t\
-    \ size = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
+    */\nnamespace cp_algo::data_structures {\n    template<typename meta>\n    struct\
+    \ treap_node {\n        using node = treap_node;\n        using treap = node*;\n\
+    \        meta _meta;\n        int prior = random::rng();\n        size_t size\
+    \ = 1;\n        treap children[2] = {nullptr, nullptr};\n        enum subtree\
     \ {L, R};\n\n        treap pull() {\n            _meta.pull(children[L], children[R]);\n\
     \            size = 1 + _safe(children[L], size) + _safe(children[R], size);\n\
     \            return this;\n        }\n\n        treap push() {\n            _meta.push(children[L],\
@@ -144,7 +144,7 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/treap.hpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/treap/range_reverse_range_sum.test.cpp

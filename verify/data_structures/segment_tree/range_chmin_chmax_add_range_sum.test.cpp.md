@@ -25,12 +25,12 @@ data:
     \n// @brief Range Chmin Chmax Add Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum\"\
     \n#line 1 \"cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\n\
     \n\n#line 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include\
-    \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segment_tree::metas\
+    \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segtree::metas\
     \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
     \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
     \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
     \n#line 7 \"cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\n\
-    namespace cp_algo::data_structures::segment_tree::metas {\n    struct chmin_chmax_sum_meta:\
+    namespace cp_algo::data_structures::segtree::metas {\n    struct chmin_chmax_sum_meta:\
     \ base_meta<chmin_chmax_sum_meta> {\n        static constexpr int64_t inf = 1e12;\n\
     \n        using meta = chmin_chmax_sum_meta;\n        int64_t sum = 0, add = 0;\n\
     \n        template<typename Comp>\n        struct data {\n            int64_t\
@@ -71,20 +71,20 @@ data:
     \ b) {\n            return [b](meta const& t) {return t.mn.proceed(b);};\n   \
     \     }\n        static auto stop_chmax(int64_t b) {\n            return [b](meta\
     \ const& t) {return t.mn.stop(b);};\n        }\n    };\n}\n\n#line 1 \"cp-algo/data_structures/segment_tree.hpp\"\
-    \n\n\n#include <vector>\nnamespace cp_algo::data_structures::segment_tree {\n\
-    \    template<typename meta>\n    struct segment_tree {\n        const int N;\n\
-    \        std::vector<meta> _meta;\n\n        segment_tree(int n): N(n), _meta(4\
-    \ * N) {}\n\n        segment_tree(std::vector<meta> leafs): N(size(leafs)), _meta(4\
-    \ * N) {\n            build(leafs);\n        }\n\n        void pull(int v, int\
-    \ l, int r) {\n            if(r - l > 1) {\n                _meta[v].pull(_meta[2\
-    \ * v], _meta[2 * v + 1], l, r);\n            }\n        }\n\n        void push(int\
-    \ v, int l, int r) {\n            if(r - l > 1) {\n                _meta[v].push(&_meta[2\
-    \ * v], &_meta[2 * v + 1], l, r);\n            } else {\n                _meta[v].push(nullptr,\
-    \ nullptr, l, r);\n            }\n        }\n\n        void build(auto &a, int\
-    \ v, size_t l, size_t r) {\n            if(r - l == 1) {\n                if(l\
-    \ < size(a)) {\n                    _meta[v] = a[l];\n                }\n    \
-    \        } else {\n                size_t m = (l + r) / 2;\n                build(a,\
-    \ 2 * v, l, m);\n                build(a, 2 * v + 1, m, r);\n                pull(v,\
+    \n\n\n#include <vector>\nnamespace cp_algo::data_structures {\n    template<typename\
+    \ meta>\n    struct segtree_t {\n        const int N;\n        std::vector<meta>\
+    \ _meta;\n\n        segtree_t(int n): N(n), _meta(4 * N) {}\n\n        segtree_t(std::vector<meta>\
+    \ leafs): N(size(leafs)), _meta(4 * N) {\n            build(leafs);\n        }\n\
+    \n        void pull(int v, int l, int r) {\n            if(r - l > 1) {\n    \
+    \            _meta[v].pull(_meta[2 * v], _meta[2 * v + 1], l, r);\n          \
+    \  }\n        }\n\n        void push(int v, int l, int r) {\n            if(r\
+    \ - l > 1) {\n                _meta[v].push(&_meta[2 * v], &_meta[2 * v + 1],\
+    \ l, r);\n            } else {\n                _meta[v].push(nullptr, nullptr,\
+    \ l, r);\n            }\n        }\n\n        void build(auto &a, int v, size_t\
+    \ l, size_t r) {\n            if(r - l == 1) {\n                if(l < size(a))\
+    \ {\n                    _meta[v] = a[l];\n                }\n            } else\
+    \ {\n                size_t m = (l + r) / 2;\n                build(a, 2 * v,\
+    \ l, m);\n                build(a, 2 * v + 1, m, r);\n                pull(v,\
     \ l, r);\n            }\n        }\n\n        void build(auto &a) {\n        \
     \    build(a, 1, 0, N);\n        }\n\n        void exec_on_segment(int a, int\
     \ b, auto func, auto proceed, auto stop, int v, int l, int r) {\n            push(v,\
@@ -101,16 +101,16 @@ data:
     \ stop, 1, 0, N);\n        }\n\n        void exec_on_segment(int a, int b, auto\
     \ func) {\n            exec_on_segment(a, b, func, default_true, default_false);\n\
     \        }\n    };\n}\n\n#line 5 \"verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp\"\
-    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures::segment_tree;\n\
-    using meta = metas::chmin_chmax_sum_meta;\n\nvoid solve() {\n    int n, q;\n \
-    \   cin >> n >> q;\n    vector<meta> a(n);\n    for(int i = 0; i < n; i++) {\n\
-    \        int64_t ai;\n        cin >> ai;\n        a[i] = {ai};\n    }\n    segment_tree<meta>\
-    \ me(a);\n    while(q--) {\n        int t, l, r;\n        int64_t b;\n       \
-    \ cin >> t >> l >> r;\n        if(t == 0) {\n            cin >> b;\n         \
-    \   me.exec_on_segment(l, r,\n                [b](auto& meta) {meta.chmin = b;},\n\
-    \                meta::proceed_chmin(b), meta::stop_chmin(b));\n        } else\
-    \ if(t == 1) {\n            cin >> b;\n            me.exec_on_segment(l, r,\n\
-    \                [b](auto& meta) {meta.chmax = b;},\n                meta::proceed_chmax(b),\
+    \n#include <bits/stdc++.h>\n\nusing namespace std;\nusing namespace cp_algo::data_structures;\n\
+    using meta = segtree::metas::chmin_chmax_sum_meta;\n\nvoid solve() {\n    int\
+    \ n, q;\n    cin >> n >> q;\n    vector<meta> a(n);\n    for(int i = 0; i < n;\
+    \ i++) {\n        int64_t ai;\n        cin >> ai;\n        a[i] = {ai};\n    }\n\
+    \    segtree_t<meta> me(a);\n    while(q--) {\n        int t, l, r;\n        int64_t\
+    \ b;\n        cin >> t >> l >> r;\n        if(t == 0) {\n            cin >> b;\n\
+    \            me.exec_on_segment(l, r,\n                [b](auto& meta) {meta.chmin\
+    \ = b;},\n                meta::proceed_chmin(b), meta::stop_chmin(b));\n    \
+    \    } else if(t == 1) {\n            cin >> b;\n            me.exec_on_segment(l,\
+    \ r,\n                [b](auto& meta) {meta.chmax = b;},\n                meta::proceed_chmax(b),\
     \ meta::stop_chmax(b));\n        } else if(t == 2) {\n            cin >> b;\n\
     \            me.exec_on_segment(l, r,\n                [b](auto& meta) {meta.add\
     \ = b;});\n        } else {\n            int64_t ans = 0;\n            me.exec_on_segment(l,\
@@ -121,10 +121,10 @@ data:
   code: "// @brief Range Chmin Chmax Add Range Sum\n#define PROBLEM \"https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum\"\
     \n#include \"cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\n\
     #include \"cp-algo/data_structures/segment_tree.hpp\"\n#include <bits/stdc++.h>\n\
-    \nusing namespace std;\nusing namespace cp_algo::data_structures::segment_tree;\n\
-    using meta = metas::chmin_chmax_sum_meta;\n\nvoid solve() {\n    int n, q;\n \
+    \nusing namespace std;\nusing namespace cp_algo::data_structures;\nusing meta\
+    \ = segtree::metas::chmin_chmax_sum_meta;\n\nvoid solve() {\n    int n, q;\n \
     \   cin >> n >> q;\n    vector<meta> a(n);\n    for(int i = 0; i < n; i++) {\n\
-    \        int64_t ai;\n        cin >> ai;\n        a[i] = {ai};\n    }\n    segment_tree<meta>\
+    \        int64_t ai;\n        cin >> ai;\n        a[i] = {ai};\n    }\n    segtree_t<meta>\
     \ me(a);\n    while(q--) {\n        int t, l, r;\n        int64_t b;\n       \
     \ cin >> t >> l >> r;\n        if(t == 0) {\n            cin >> b;\n         \
     \   me.exec_on_segment(l, r,\n                [b](auto& meta) {meta.chmin = b;},\n\
@@ -145,7 +145,7 @@ data:
   isVerificationFile: true
   path: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: TEST_ACCEPTED
   verifiedWith: []
 documentation_of: verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp

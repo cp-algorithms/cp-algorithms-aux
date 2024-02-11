@@ -16,12 +16,12 @@ data:
     links: []
   bundledCode: "#line 1 \"cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\
     \n\n\n#line 1 \"cp-algo/data_structures/segment_tree/metas/base.hpp\"\n\n\n#include\
-    \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segment_tree::metas\
+    \ <functional>\n#include <algorithm>\n#include <cstdint>\nnamespace cp_algo::data_structures::segtree::metas\
     \ {\n    template<typename derived_meta>\n    struct base_meta {\n        using\
     \ meta = derived_meta;\n        virtual void pull(meta const&, meta const&, int,\
     \ int) {};\n        virtual void push(meta*, meta*, int, int) {};\n    };\n}\n\
     \n#line 7 \"cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp\"\n\
-    namespace cp_algo::data_structures::segment_tree::metas {\n    struct chmin_chmax_sum_meta:\
+    namespace cp_algo::data_structures::segtree::metas {\n    struct chmin_chmax_sum_meta:\
     \ base_meta<chmin_chmax_sum_meta> {\n        static constexpr int64_t inf = 1e12;\n\
     \n        using meta = chmin_chmax_sum_meta;\n        int64_t sum = 0, add = 0;\n\
     \n        template<typename Comp>\n        struct data {\n            int64_t\
@@ -65,7 +65,7 @@ data:
   code: "#ifndef CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_CHMIN_CHMAX_ADD_HPP\n\
     #define CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_CHMIN_CHMAX_ADD_HPP\n#include\
     \ \"base.hpp\"\n#include <functional>\n#include <algorithm>\n#include <cstdint>\n\
-    namespace cp_algo::data_structures::segment_tree::metas {\n    struct chmin_chmax_sum_meta:\
+    namespace cp_algo::data_structures::segtree::metas {\n    struct chmin_chmax_sum_meta:\
     \ base_meta<chmin_chmax_sum_meta> {\n        static constexpr int64_t inf = 1e12;\n\
     \n        using meta = chmin_chmax_sum_meta;\n        int64_t sum = 0, add = 0;\n\
     \n        template<typename Comp>\n        struct data {\n            int64_t\
@@ -111,7 +111,7 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp
   requiredBy: []
-  timestamp: '2024-02-11 11:53:49+01:00'
+  timestamp: '2024-02-11 12:35:24+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segment_tree/range_chmin_chmax_add_range_sum.test.cpp

@@ -128,27 +128,6 @@ namespace cp_algo::algebra {
             return {D, *this - D * b};
         }
         
-        // (ax+b) / (cx+d)
-        struct transform {
-            poly a, b, c, d;
-            transform(poly a, poly b = T(1), poly c = T(1), poly d = T(0)): a(a), b(b), c(c), d(d){}
-            
-            transform operator *(transform const& t) {
-                return {
-                    a*t.a + b*t.c, a*t.b + b*t.d,
-                    c*t.a + d*t.c, c*t.b + d*t.d
-                };
-            }
-            
-            transform adj() {
-                return transform(d, -b, -c, a);
-            }
-            
-            auto apply(poly A, poly B) {
-                return std::make_pair(a * A + b * B, c * A + d * B);
-            }
-        };
-        
         template<typename Q>
         static void concat(std::vector<Q> &a, std::vector<Q> const& b) {
             for(auto it: b) {
@@ -156,9 +135,9 @@ namespace cp_algo::algebra {
             }
         }
         
-        // finds a transform that changes A/B to A'/B' such that
+        // finds a linfrac<poly> that changes A/B to A'/B' such that
         // deg B' is at least 2 times less than deg A
-        static std::pair<std::vector<poly>, transform> half_gcd(poly A, poly B) {
+        static std::pair<std::vector<poly>, linfrac<poly>> half_gcd(poly A, poly B) {
             assert(A.deg() >= B.deg());
             int m = (A.deg() + 1) / 2;
             if(B.deg() < m) {
@@ -175,13 +154,13 @@ namespace cp_algo::algebra {
             auto [as, Ts] = half_gcd(A.div_xk(k), B.div_xk(k));
             concat(ar, {ai});
             concat(ar, as);
-            return {ar, Tr * transform(ai) * Ts};
+            return {ar, Tr * linfrac<poly>(ai) * Ts};
         }
         
-        // return a transform that reduces A / B to gcd(A, B) / 0
-        static std::pair<std::vector<poly>, transform> full_gcd(poly A, poly B) {
+        // return a linfrac<poly> that reduces A / B to gcd(A, B) / 0
+        static std::pair<std::vector<poly>, linfrac<poly>> full_gcd(poly A, poly B) {
             std::vector<poly> ak;
-            std::vector<transform> trs;
+            std::vector<linfrac<poly>> trs;
             while(!B.is_zero()) {
                 if(2 * B.deg() > A.deg()) {
                     auto [a, Tr] = half_gcd(A, B);
@@ -228,9 +207,9 @@ namespace cp_algo::algebra {
             assert(0);
         }
         
-        static transform convergent(auto L, auto R) { // computes product on [L, R)
+        static linfrac<poly> convergent(auto L, auto R) { // computes product on [L, R)
             if(R - L == 1) {
-                return transform(*L);
+                return linfrac<poly>(*L);
             } else {
                 int s = 0;
                 for(int i = 0; i < R - L; i++) {

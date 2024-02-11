@@ -3,8 +3,8 @@
 #include <optional>
 #include <cassert>
 namespace cp_algo::algebra {
-    template<typename base>
     // a * x + b
+    template<typename base>
     struct lin {
         base a = 1, b = 0;
         std::optional<base> c;
@@ -30,6 +30,31 @@ namespace cp_algo::algebra {
 
         base eval(base x) const {
             return a * x + b;
+        }
+    };
+
+    // (ax+b) / (cx+d)
+    template<typename base>
+    struct linfrac {
+        // default constructor for a continued fraction block
+        base a, b = base(1), c = base(1), d = base(0);
+        linfrac(base a): a(a) {}
+        linfrac(base a, base b, base c, base d): a(a), b(b), c(c), d(d) {}
+        
+        // composition of two linfracs
+        linfrac operator *(linfrac const& t) {
+            auto [A, C] = apply(t.a, t.c);
+            auto [B, D] = apply(t.b, t.d);
+            return {A, B, C, D};
+        }
+        
+        linfrac adj() {
+            return {d, -b, -c, a};
+        }
+        
+        // apply linfrac to A/B
+        auto apply(base A, base B) {
+            return std::pair{a * A + b * B, c * A + d * B};
         }
     };
 }

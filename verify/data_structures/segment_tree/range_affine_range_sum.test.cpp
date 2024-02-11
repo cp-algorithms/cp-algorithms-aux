@@ -1,7 +1,7 @@
 // @brief Range Affine Range Sum
 #define PROBLEM "https://judge.yosupo.jp/problem/range_affine_range_sum"
-#include "cp-algo/data_structures/segment_tree/metas/affine.hpp"
-#include "cp-algo/data_structures/segment_tree.hpp"
+#include "cp-algo/data_structures/segtree/metas/affine.hpp"
+#include "cp-algo/data_structures/segtree.hpp"
 #include "cp-algo/algebra/modular.hpp"
 #include <bits/stdc++.h>
 

@@ -1,7 +1,7 @@
 // @brief Range Chmin Chmax Add Range Sum
 #define PROBLEM "https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum"
-#include "cp-algo/data_structures/segment_tree/metas/chmin_chmax_add.hpp"
-#include "cp-algo/data_structures/segment_tree.hpp"
+#include "cp-algo/data_structures/segtree/metas/chmin_chmax_add.hpp"
+#include "cp-algo/data_structures/segtree.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

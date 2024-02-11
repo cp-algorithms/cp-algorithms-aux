@@ -9,10 +9,9 @@ namespace cp_algo::algebra::poly::impl {
             p.a.pop_back();
         }
     }
-    auto neg(auto const& p) {
-        auto res = p.a;
-        std::ranges::transform(res, begin(res), std::negate<>{});
-        return res;
+    auto neg(auto p) {
+        std::ranges::transform(p.a, begin(p.a), std::negate<>{});
+        return p;
     }
 }
 #endif // CP_ALGO_ALGEBRA_POLY_IMPL_BASE_HPP

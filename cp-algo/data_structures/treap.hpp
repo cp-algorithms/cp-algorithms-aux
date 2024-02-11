@@ -5,8 +5,8 @@
 #include <array>
 namespace cp_algo::data_structures::treap {
     template<typename meta>
-    struct node: std::enable_shared_from_this<node<meta>> {
-        using treap = std::shared_ptr<node>;
+    struct node {
+        using treap = node*;
         meta _meta;
         int prior = random::rng();
         size_t size = 1;
@@ -18,18 +18,18 @@ namespace cp_algo::data_structures::treap {
         node(meta _meta, int prior): _meta(_meta), prior(prior) {}
 
         static treap make_treap(auto...args) {
-            return std::make_shared<node>(args...);
+            return new node(args...);
         }
 
         treap pull() {
             _meta.pull(children[L], children[R]);
             size = 1 + _safe(children[L], size) + _safe(children[R], size);
-            return this->shared_from_this();
+            return this;
         }
 
         treap push() {
             _meta.push(children[L], children[R]);
-            return this->shared_from_this();
+            return this;
         }
 
         // set i-th child and pull metadata
@@ -82,6 +82,7 @@ namespace cp_algo::data_structures::treap {
         static void erase(treap &A, size_t pos) {
             auto [L, MR] = split(A, pos);
             auto [M, R] = split(MR, 1);
+            delete M;
             A = merge(L, R);
         }
 
@@ -103,7 +104,7 @@ namespace cp_algo::data_structures::treap {
             push();
             _safe(children[L], push_all());
             _safe(children[R], push_all());
-            return this->shared_from_this();
+            return this;
         }
 
         static treap build(auto const& nodes) {

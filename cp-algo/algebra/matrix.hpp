@@ -83,9 +83,7 @@ namespace cp_algo::algebra {
             matrix res(n, b.m);
             for(size_t i = 0; i < n; i++) {
                 for(size_t j = 0; j < m; j++) {
-                    for(size_t k = 0; k < b.m; k++) {
-                        res[i][k].add_unsafe(a[i][j].r * b[j][k].r);
-                    }
+                    add_scaled(res[i], b[j], a[i][j]);
                 }
             }
             return res.normalize();

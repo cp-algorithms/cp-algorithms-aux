@@ -1,13 +1,13 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy:
@@ -39,12 +39,12 @@ data:
   - icon: ':heavy_check_mark:'
     path: verify/data_structures/segtree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
     title: Dynamic Range Affine Range Sum
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: hpp
-  _verificationStatusIcon: ':question:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links:
     - https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
@@ -169,8 +169,8 @@ data:
   - cp-algo/algebra/poly.hpp
   - cp-algo/algebra/matrix.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-11 14:42:51+01:00'
-  verificationStatus: LIBRARY_SOME_WA
+  timestamp: '2024-02-11 15:34:32+01:00'
+  verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segtree/range_affine_range_sum.test.cpp
   - verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp

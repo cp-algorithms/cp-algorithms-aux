@@ -1,26 +1,26 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/treap/common.hpp
     title: cp-algo/data_structures/treap/common.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/treap/metas/base.hpp
     title: cp-algo/data_structures/treap/metas/base.hpp
   _extendedRequiredBy: []
   _extendedVerifiedWith:
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
     title: Dynamic Range Affine Range Sum
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
     title: Range Reverse Range Sum
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: hpp
-  _verificationStatusIcon: ':x:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/data_structures/treap/metas/reverse.hpp\"\n\n\n\
@@ -93,8 +93,8 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/treap/metas/reverse.hpp
   requiredBy: []
-  timestamp: '2024-02-11 14:42:51+01:00'
-  verificationStatus: LIBRARY_ALL_WA
+  timestamp: '2024-02-11 15:34:32+01:00'
+  verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/treap/range_reverse_range_sum.test.cpp
   - verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp

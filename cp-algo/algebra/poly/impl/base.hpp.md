@@ -24,21 +24,20 @@ data:
     #include <algorithm>\n// really basic operations, typically taking O(n)\nnamespace\
     \ cp_algo::algebra::poly::impl {\n    void normalize(auto& p) {\n        while(p.deg()\
     \ >= 0 && p.lead() == 0) {\n            p.a.pop_back();\n        }\n    }\n  \
-    \  auto neg(auto const& p) {\n        auto res = p.a;\n        std::ranges::transform(res,\
-    \ begin(res), std::negate<>{});\n        return res;\n    }\n}\n\n"
+    \  auto neg(auto p) {\n        std::ranges::transform(p.a, begin(p.a), std::negate<>{});\n\
+    \        return p;\n    }\n}\n\n"
   code: "#ifndef CP_ALGO_ALGEBRA_POLY_IMPL_BASE_HPP\n#define CP_ALGO_ALGEBRA_POLY_IMPL_BASE_HPP\n\
     #include <functional>\n#include <algorithm>\n// really basic operations, typically\
     \ taking O(n)\nnamespace cp_algo::algebra::poly::impl {\n    void normalize(auto&\
     \ p) {\n        while(p.deg() >= 0 && p.lead() == 0) {\n            p.a.pop_back();\n\
-    \        }\n    }\n    auto neg(auto const& p) {\n        auto res = p.a;\n  \
-    \      std::ranges::transform(res, begin(res), std::negate<>{});\n        return\
-    \ res;\n    }\n}\n#endif // CP_ALGO_ALGEBRA_POLY_IMPL_BASE_HPP\n"
+    \        }\n    }\n    auto neg(auto p) {\n        std::ranges::transform(p.a,\
+    \ begin(p.a), std::negate<>{});\n        return p;\n    }\n}\n#endif // CP_ALGO_ALGEBRA_POLY_IMPL_BASE_HPP\n"
   dependsOn: []
   isVerificationFile: false
   path: cp-algo/algebra/poly/impl/base.hpp
   requiredBy:
   - cp-algo/algebra/poly.hpp
-  timestamp: '2024-02-11 14:42:51+01:00'
+  timestamp: '2024-02-11 15:34:32+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/algebra/poly/convolution107.test.cpp

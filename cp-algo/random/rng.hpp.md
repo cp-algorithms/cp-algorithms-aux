@@ -8,13 +8,13 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/matrix.hpp
     title: cp-algo/algebra/matrix.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/poly.hpp
     title: cp-algo/algebra/poly.hpp
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/data_structures/treap.hpp
     title: cp-algo/data_structures/treap.hpp
   _extendedVerifiedWith:
@@ -33,21 +33,21 @@ data:
   - icon: ':heavy_check_mark:'
     path: verify/data_structures/segtree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/cartesian_tree.test.cpp
     title: Build Cartesian Tree
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
     title: Dynamic Range Affine Range Sum
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
     title: Dynamic Range Affine Range Sum
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
     title: Range Reverse Range Sum
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: hpp
-  _verificationStatusIcon: ':question:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/random/rng.hpp\"\n\n\n#include <chrono>\n#include\
@@ -66,8 +66,8 @@ data:
   - cp-algo/algebra/matrix.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-11 14:42:51+01:00'
-  verificationStatus: LIBRARY_SOME_WA
+  timestamp: '2024-02-11 15:34:32+01:00'
+  verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segtree/range_affine_range_sum.test.cpp
   - verify/data_structures/treap/range_reverse_range_sum.test.cpp

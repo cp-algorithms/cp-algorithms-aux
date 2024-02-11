@@ -8,7 +8,7 @@ data:
   - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/matrix.hpp
     title: cp-algo/algebra/matrix.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
   - icon: ':heavy_check_mark:'
@@ -30,12 +30,12 @@ data:
   - icon: ':heavy_check_mark:'
     path: verify/data_structures/segtree/range_affine_range_sum.test.cpp
     title: Range Affine Range Sum
-  - icon: ':x:'
+  - icon: ':heavy_check_mark:'
     path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
     title: Dynamic Range Affine Range Sum
-  _isVerificationFailed: true
+  _isVerificationFailed: false
   _pathExtension: hpp
-  _verificationStatusIcon: ':question:'
+  _verificationStatusIcon: ':heavy_check_mark:'
   attributes:
     links: []
   bundledCode: "#line 1 \"cp-algo/algebra/common.hpp\"\n\n\n#include <cstdint>\nnamespace\
@@ -86,8 +86,8 @@ data:
   - cp-algo/algebra/matrix.hpp
   - cp-algo/algebra/modular.hpp
   - cp-algo/algebra/fft.hpp
-  timestamp: '2024-02-11 14:42:51+01:00'
-  verificationStatus: LIBRARY_SOME_WA
+  timestamp: '2024-02-11 15:34:32+01:00'
+  verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segtree/range_affine_range_sum.test.cpp
   - verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp

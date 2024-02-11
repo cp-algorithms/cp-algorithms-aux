@@ -1,16 +1,16 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/common.hpp
     title: cp-algo/algebra/common.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/modular.hpp
     title: cp-algo/algebra/modular.hpp
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/random/rng.hpp
     title: cp-algo/random/rng.hpp
   _extendedRequiredBy:
@@ -246,7 +246,7 @@ data:
   path: cp-algo/algebra/fft.hpp
   requiredBy:
   - cp-algo/algebra/poly.hpp
-  timestamp: '2024-02-11 14:42:51+01:00'
+  timestamp: '2024-02-11 15:34:32+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/algebra/poly/convolution107.test.cpp

@@ -3,10 +3,10 @@ data:
   libraryCategories:
   - name: cp-algo/algebra
     pages:
-    - icon: ':question:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/affine.hpp
       title: cp-algo/algebra/affine.hpp
-    - icon: ':question:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/common.hpp
       title: cp-algo/algebra/common.hpp
     - icon: ':heavy_check_mark:'
@@ -15,7 +15,7 @@ data:
     - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/matrix.hpp
       title: cp-algo/algebra/matrix.hpp
-    - icon: ':question:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/algebra/modular.hpp
       title: cp-algo/algebra/modular.hpp
     - icon: ':heavy_check_mark:'
@@ -42,25 +42,25 @@ data:
     - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/segtree.hpp
       title: cp-algo/data_structures/segtree.hpp
-    - icon: ':x:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/treap.hpp
       title: cp-algo/data_structures/treap.hpp
   - name: cp-algo/data_structures/treap
     pages:
-    - icon: ':x:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/treap/common.hpp
       title: cp-algo/data_structures/treap/common.hpp
   - name: cp-algo/data_structures/treap/metas
     pages:
-    - icon: ':x:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/treap/metas/base.hpp
       title: cp-algo/data_structures/treap/metas/base.hpp
-    - icon: ':x:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/data_structures/treap/metas/reverse.hpp
       title: cp-algo/data_structures/treap/metas/reverse.hpp
   - name: cp-algo/random
     pages:
-    - icon: ':question:'
+    - icon: ':heavy_check_mark:'
       path: cp-algo/random/rng.hpp
       title: cp-algo/random/rng.hpp
   verificationCategories:
@@ -90,13 +90,13 @@ data:
       title: Range Chmin Chmax Add Range Sum
   - name: verify/data_structures/treap
     pages:
-    - icon: ':x:'
+    - icon: ':heavy_check_mark:'
       path: verify/data_structures/treap/cartesian_tree.test.cpp
       title: Build Cartesian Tree
-    - icon: ':x:'
+    - icon: ':heavy_check_mark:'
       path: verify/data_structures/treap/dynamic_sequence_range_affine_range_sum.test.cpp
       title: Dynamic Range Affine Range Sum
-    - icon: ':x:'
+    - icon: ':heavy_check_mark:'
       path: verify/data_structures/treap/range_reverse_range_sum.test.cpp
       title: Range Reverse Range Sum
 layout: toppage

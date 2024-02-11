@@ -1,7 +1,7 @@
 ---
 data:
   _extendedDependsOn:
-  - icon: ':question:'
+  - icon: ':heavy_check_mark:'
     path: cp-algo/algebra/affine.hpp
     title: cp-algo/algebra/affine.hpp
   - icon: ':heavy_check_mark:'
@@ -74,7 +74,7 @@ data:
   isVerificationFile: false
   path: cp-algo/data_structures/segtree/metas/affine.hpp
   requiredBy: []
-  timestamp: '2024-02-11 14:42:51+01:00'
+  timestamp: '2024-02-11 15:34:32+01:00'
   verificationStatus: LIBRARY_ALL_AC
   verifiedWith:
   - verify/data_structures/segtree/range_affine_range_sum.test.cpp

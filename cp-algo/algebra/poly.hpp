@@ -1,5 +1,5 @@
-#ifndef CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
-#define CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
+#ifndef CP_ALGO_ALGEBRA_POLY_HPP
+#define CP_ALGO_ALGEBRA_POLY_HPP
 #include "poly/impl/base.hpp"
 #include "poly/impl/div.hpp"
 #include "common.hpp"
@@ -38,7 +38,7 @@ namespace cp_algo::algebra {
         poly_t reverse(size_t n) const {return poly::impl::reverse(*this, n);}
         poly_t reverse() const {return reverse(size(a));}
         
-        std::pair<poly_t, poly_t> divmod(poly_t const& b) const {return poly::impl::divmod(*this, b);}
+        std::array<poly_t, 2> divmod(poly_t const& b) const {return poly::impl::divmod(*this, b);}
         
         template<typename Q>
         static void concat(std::vector<Q> &a, std::vector<Q> const& b) {
@@ -827,4 +827,4 @@ namespace cp_algo::algebra {
         return b * a;
     }
 };
-#endif // CP_ALGO_ALGEBRA_POLYNOMIAL_HPP
+#endif // CP_ALGO_ALGEBRA_POLY_HPP

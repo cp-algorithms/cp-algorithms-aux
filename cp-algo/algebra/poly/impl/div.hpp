@@ -6,7 +6,7 @@
 namespace cp_algo::algebra::poly::impl {
     auto divmod_slow(auto const& p, auto const& q) {
         auto R = p;
-        decltype(R) D;
+        auto D = decltype(p){};
         auto q_lead_inv = q.lead().inv();
         while(R.deg() >= q.deg()) {
             D.a.push_back(R.lead() * q_lead_inv);
@@ -18,16 +18,20 @@ namespace cp_algo::algebra::poly::impl {
             R.a.pop_back();
         }
         std::ranges::reverse(D.a);
-        return std::pair{D, R};
+        R.normalize();
+        return std::array{D, R};
     }
     auto divmod(auto const& p, auto const& q) {
         assert(!q.is_zero());
         int d = p.deg() - q.deg();
+        if(std::min(d, q.deg()) < magic) {
+            return divmod_slow(p, q);
+        }
         auto D = decltype(p){};
         if(d >= 0) {
             D = (p.reverse().mod_xk(d + 1) * q.reverse().inv(d + 1)).mod_xk(d + 1).reverse(d + 1);
         }
-        return std::pair{D, p - D * q};
+        return std::array{D, p - D * q};
     }
 }
 #endif // CP_ALGO_ALGEBRA_POLY_IMPL_DIV_HPP

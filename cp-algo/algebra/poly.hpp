@@ -132,7 +132,7 @@ namespace cp_algo::algebra {
         bool operator == (const poly_t &t) const {return a == t.a;}
         bool operator != (const poly_t &t) const {return a != t.a;}
         
-        poly_t deriv(int k = 1) { // calculate derivative
+        poly_t deriv(int k = 1) const { // calculate derivative
             if(deg() + 1 < k) {
                 return poly_t(T(0));
             }
@@ -143,7 +143,7 @@ namespace cp_algo::algebra {
             return res;
         }
         
-        poly_t integr() { // calculate integral with C = 0
+        poly_t integr() const { // calculate integral with C = 0
             std::vector<T> res(deg() + 2);
             for(int i = 0; i <= deg(); i++) {
                 res[i + 1] = a[i] * small_inv<T>(i + 1);
@@ -162,12 +162,12 @@ namespace cp_algo::algebra {
             return res;
         }
         
-        poly_t log(size_t n) { // calculate log p(x) mod x^n
+        poly_t log(size_t n) const { // calculate log p(x) mod x^n
             assert(a[0] == T(1));
             return (deriv().mod_xk(n) * inv(n)).integr().mod_xk(n);
         }
         
-        poly_t exp(size_t n) { // calculate exp p(x) mod x^n
+        poly_t exp(size_t n) const { // calculate exp p(x) mod x^n
             if(is_zero()) {
                 return T(1);
             }
@@ -182,27 +182,13 @@ namespace cp_algo::algebra {
             return ans.mod_xk(n);
         }
         
-        poly_t pow_bin(int64_t k, size_t n) { // O(n log n log k)
+        poly_t pow_bin(int64_t k, size_t n) const { // O(n log n log k)
             if(k == 0) {
                 return poly_t(1).mod_xk(n);
             } else {
                 auto t = pow(k / 2, n);
                 t = (t * t).mod_xk(n);
                 return (k % 2 ? *this * t : t).mod_xk(n);
-            }
-        }
-        
-        // Do not compute inverse from scratch
-        poly_t powmod_hint(int64_t k, poly_t const& md, poly_t const& mdinv) {
-            if(k == 0) {
-                return poly_t(1);
-            } else {
-                auto t = powmod_hint(k / 2, md, mdinv);
-                t = (t * t).divmod_hint(md, mdinv).second;
-                if(k % 2) {
-                    t = (t * *this).divmod_hint(md, mdinv).second;
-                }
-                return t;
             }
         }
 
@@ -222,7 +208,7 @@ namespace cp_algo::algebra {
             return (a.circular_closure(m) * b.circular_closure(m)).circular_closure(m);
         }
 
-        poly_t powmod_circular(int64_t k, size_t m) {
+        poly_t powmod_circular(int64_t k, size_t m) const {
             if(k == 0) {
                 return poly_t(1);
             } else {
@@ -235,24 +221,13 @@ namespace cp_algo::algebra {
             }
         }
         
-        poly_t powmod(int64_t k, poly_t const& md) {
-            int d = md.deg();
-            if(d == -1) {
-                return k ? *this : poly_t(T(1));
-            }
-            if(md == xk(d)) {
-                return pow(k, d);
-            }
-            if(md == xk(d) - poly_t(T(1))) {
-                return powmod_circular(k, d);
-            }
-            auto mdinv = md.reverse().inv(md.deg() + 1);
-            return powmod_hint(k, md, mdinv);
+        poly_t powmod(int64_t k, poly_t const& md) const {
+            return poly::impl::powmod(*this, k, md);
         }
         
         // O(d * n) with the derivative trick from
         // https://codeforces.com/blog/entry/73947?#comment-581173
-        poly_t pow_dn(int64_t k, size_t n) {
+        poly_t pow_dn(int64_t k, size_t n) const {
             if(n == 0) {
                 return poly_t(T(0));
             }
@@ -271,7 +246,7 @@ namespace cp_algo::algebra {
         
         // calculate p^k(n) mod x^n in O(n log n)
         // might be quite slow due to high constant
-        poly_t pow(int64_t k, size_t n) {
+        poly_t pow(int64_t k, size_t n) const {
             if(is_zero()) {
                 return k ? *this : poly_t(1);
             }

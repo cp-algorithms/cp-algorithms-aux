@@ -37,9 +37,9 @@ namespace cp_algo::algebra {
     // (ax+b) / (cx+d)
     template<typename base>
     struct linfrac {
-        // default constructor for a continued fraction block
-        base a, b = base(1), c = base(1), d = base(0);
-        linfrac(base a): a(a) {}
+        base a, b, c, d;
+        linfrac(): a(1), b(0), c(0), d(1) {} // x, identity for composition
+        linfrac(base a): a(a), b(1), c(1), d(0) {} // a + 1/x, for continued fractions
         linfrac(base a, base b, base c, base d): a(a), b(b), c(c), d(d) {}
         
         // composition of two linfracs

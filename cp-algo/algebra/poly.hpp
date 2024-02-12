@@ -153,7 +153,7 @@ namespace cp_algo::algebra {
         
         std::optional<poly_t> inv_mod(poly_t const &t) const {
             assert(!t.is_zero());
-            if(false && std::min(deg(), t.deg()) < magic) {
+            if(std::min(deg(), t.deg()) < magic) {
                 return inv_mod_slow(t);
             }
             auto A = t, B = *this % t;

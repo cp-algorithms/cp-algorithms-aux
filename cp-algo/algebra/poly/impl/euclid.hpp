@@ -1,57 +1,61 @@
 #ifndef CP_ALGO_ALGEBRA_POLY_IMPL_EUCLID_HPP
 #define CP_ALGO_ALGEBRA_POLY_IMPL_EUCLID_HPP
 #include "../../affine.hpp"
+#include "../../fft.hpp"
+#include <algorithm>
+#include <numeric>
 #include <cassert>
 #include <vector>
 #include <tuple>
+#include <list>
 // operations related to gcd and Euclidean algo
 namespace cp_algo::algebra::poly::impl {
-    void concat(auto &a, auto const& b) {
-        a.insert(a.end(), b.begin(), b.end());
-    }
     template<typename poly>
-    std::pair<std::vector<poly>, linfrac<poly>> half_gcd(poly A, poly B) {
+    auto half_gcd(poly &&A, poly &&B) {
         assert(A.deg() >= B.deg());
-        int m = (A.deg() + 1) / 2;
+        using poly_t = std::decay_t<poly>;
+        std::list<poly_t> a;
+        linfrac<poly_t> T;
+        int m = size(A.a) / 2;
         if(B.deg() < m) {
-            return {};
+            return std::pair{a, T};
         }
         auto [ar, Tr] = half_gcd(A.div_xk(m), B.div_xk(m));
-        std::tie(A, B) = Tr.adj().apply(A, B);
+        std::tie(A, B) = Tr.apply(A, B);
+        a = ar;
+        T = Tr;
         if(B.deg() < m) {
-            return std::pair{ar, Tr};
+            return std::pair{a, T};
         }
         auto [ai, R] = A.divmod(B);
         std::tie(A, B) = {B, R};
         int k = 2 * m - A.deg();
         auto [as, Ts] = half_gcd(A.div_xk(k), B.div_xk(k));
-        ar.push_back(ai);
-        concat(ar, as);
-        return std::pair{ar, Tr * linfrac(ai) * Ts};
+        a.push_back(ai);
+        a.splice(end(a), as);
+        T = Ts * -linfrac(ai).adj() * T;
+        if constexpr (std::is_reference_v<poly>) {
+            std::tie(A, B) = Ts.apply(A, B);
+        }
+        return std::pair{a, T};
     }
     template<typename poly>
-    auto full_gcd(poly A, poly B) {
-        std::vector<poly> ak;
-        std::vector<linfrac<poly>> trs;
+    auto full_gcd(poly &&A, poly &&B) {
+        using poly_t = std::decay_t<poly>;
+        std::list<poly_t> ak;
+        std::vector<linfrac<poly_t>> trs;
         while(!B.is_zero()) {
-            if(2 * B.deg() > A.deg()) {
-                auto [a, Tr] = half_gcd(A, B);
-                concat(ak, a);
-                trs.push_back(Tr);
-                std::tie(A, B) = trs.back().adj().apply(A, B);
-            } else {
-                auto [a, R] = A.divmod(B);
-                ak.push_back(a);
-                trs.emplace_back(a);
-                std::tie(A, B) = {B, R};
-            }
+            auto [a0, R] = A.divmod(B);
+            ak.push_back(a0);
+            trs.push_back(-linfrac(a0).adj());
+            std::tie(A, B) = {B, R};
+
+            auto [a, Tr] = half_gcd(A, B);
+            ak.splice(end(ak), a);
+            trs.push_back(Tr);
         }
-        trs.emplace_back();
-        while(trs.size() >= 2) {
-            trs[trs.size() - 2] = trs[trs.size() - 2] * trs[trs.size() - 1];
-            trs.pop_back();
-        }
-        return std::pair{ak, trs.back()};
+        std::ranges::reverse(trs);
+        return std::pair{ak, std::accumulate(begin(trs), end(trs), linfrac<poly_t>{}, std::multiplies{})};
     }
 }
 #endif // CP_ALGO_ALGEBRA_POLY_IMPL_EUCLID_HPP

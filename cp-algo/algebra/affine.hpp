@@ -41,7 +41,7 @@ namespace cp_algo::algebra {
         linfrac(): a(1), b(0), c(0), d(1) {} // x, identity for composition
         linfrac(base a): a(a), b(1), c(1), d(0) {} // a + 1/x, for continued fractions
         linfrac(base a, base b, base c, base d): a(a), b(b), c(c), d(d) {}
-        
+
         // composition of two linfracs
         linfrac operator *(linfrac const& t) {
             auto [A, C] = apply(t.a, t.c);
@@ -49,6 +49,10 @@ namespace cp_algo::algebra {
             return {A, B, C, D};
         }
         
+        linfrac operator-() const {
+            return {-a, -b, -c, -d};
+        }
+
         linfrac adj() {
             return {d, -b, -c, a};
         }

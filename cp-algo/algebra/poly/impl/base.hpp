@@ -11,7 +11,7 @@ namespace cp_algo::algebra::poly::impl {
         }
     }
     auto neg(auto p) {
-        std::ranges::transform(p.a, begin(p.a), std::negate<>{});
+        std::ranges::transform(p.a, begin(p.a), std::negate{});
         return p;
     }
     auto& scale(auto &p, auto x) {
@@ -23,13 +23,13 @@ namespace cp_algo::algebra::poly::impl {
     }
     auto& add(auto &p, auto q) {
         p.a.resize(std::max(p.a.size(), q.a.size()));
-        std::ranges::transform(p.a, q.a, begin(p.a), std::plus<>{});
+        std::ranges::transform(p.a, q.a, begin(p.a), std::plus{});
         normalize(p);
         return p;
     }
     auto& sub(auto &p, auto q) {
         p.a.resize(std::max(p.a.size(), q.a.size()));
-        std::ranges::transform(p.a, q.a, begin(p.a), std::minus<>{});
+        std::ranges::transform(p.a, q.a, begin(p.a), std::minus{});
         normalize(p);
         return p;
     }

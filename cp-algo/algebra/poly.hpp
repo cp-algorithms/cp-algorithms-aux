@@ -11,6 +11,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <list>
 namespace cp_algo::algebra {
     template<typename T>
     struct poly_t {
@@ -56,21 +57,21 @@ namespace cp_algo::algebra {
         
         // finds a linfrac<poly_t> that changes A/B to A'/B' such that
         // deg B' is at least 2 times less than deg A
-        static std::pair<std::vector<poly_t>, linfrac<poly_t>> half_gcd(poly_t A, poly_t B) {
+        static std::pair<std::list<poly_t>, linfrac<poly_t>> half_gcd(auto &&A, auto &&B) {
             return poly::impl::half_gcd(A, B);
         }
         
         // return a linfrac<poly_t> that reduces A / B to gcd(A, B) / 0
-        static std::pair<std::vector<poly_t>, linfrac<poly_t>> full_gcd(poly_t A, poly_t B) {
+        static std::pair<std::list<poly_t>, linfrac<poly_t>> full_gcd(auto &&A, auto &&B) {
             return poly::impl::full_gcd(A, B);
         }
                 
-        static poly_t gcd(poly_t A, poly_t B) {
+        static poly_t gcd(poly_t &&A, poly_t &&B) {
             if(A.deg() < B.deg()) {
                 return gcd(B, A);
             }
-            auto [a, Tr] = full_gcd(A, B);
-            return Tr.d * A - Tr.b * B;
+            full_gcd(A, B);
+            return A;
         }
 
         
@@ -90,19 +91,19 @@ namespace cp_algo::algebra {
             assert(0);
         }
         
-        static linfrac<poly_t> convergent(auto L, auto R) { // computes product on [L, R)
-            if(R - L == 1) {
-                return linfrac<poly_t>(*L);
+        static auto convergent(auto L, auto R) { // computes product on [L, R)
+            if(R == next(L)) {
+                return linfrac(*L);
             } else {
                 int s = 0;
-                for(int i = 0; i < R - L; i++) {
-                    s += L[i].a.size();
+                for(auto it = L; it != R; it++) {
+                    s += it->a.size();
                 }
                 int c = 0;
-                for(int i = 0; i < R - L; i++) {
-                    c += L[i].a.size();
+                for(auto it = L; it != R; it++) {
+                    c += it->a.size();
                     if(2 * c > s) {
-                        return convergent(L, L + i) * convergent(L + i, R);
+                        return convergent(L, it) * convergent(it, R);
                     }
                 }
                 assert(0);
@@ -118,18 +119,15 @@ namespace cp_algo::algebra {
                 return poly_t(1);
             }
             auto [a, Tr] = full_gcd(R1, R2);
-            int dr = (d + 1) - a[0].deg();
-            int dp = 0;
-            for(size_t i = 0; i + 1 < a.size(); i++) {
-                dr -= a[i + 1].deg();
-                dp += a[i].deg();
-                if(dr < dp) {
-                    auto ans = convergent(begin(a), begin(a) + i + 1);
+            a.emplace_back();
+            int delta = (d + 1) - a.front().deg();
+            for(auto it = begin(a); ; it++) {
+                delta -= it->deg() + next(it)->deg();
+                if(delta < 0) {
+                    auto ans = convergent(begin(a), next(it));
                     return ans.a / ans.a.lead();
                 }
             }
-            auto ans = convergent(begin(a), end(a));
-            return ans.a / ans.a.lead();
         }
         
         // calculate inv to *this modulo t
@@ -151,18 +149,16 @@ namespace cp_algo::algebra {
             }
         }
         
-        std::optional<poly_t> inv_mod(poly_t const &t) const {
+        std::optional<poly_t> inv_mod(poly_t t) const {
             assert(!t.is_zero());
             if(std::min(deg(), t.deg()) < magic) {
                 return inv_mod_slow(t);
             }
-            auto A = t, B = *this % t;
-            auto [a, Tr] = full_gcd(A, B);
-            auto g = Tr.d * A - Tr.b * B;
-            if(g.deg() != 0) {
+            auto [a, Tr] = full_gcd(t, poly_t(*this));
+            if(t.deg() != 0) {
                 return std::nullopt;
             }
-            return -Tr.b / g[0];
+            return Tr.b / t[0];
         };
         
         poly_t conj() const { // A(x) -> A(-x)

@@ -15,10 +15,10 @@ void solve() {
     cin >> n;
     vector<base> a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
-    auto Q = polyn(a).min_rec(n - 1);
+    auto Q = polyn(a).min_rec(n);
     int d = Q.deg();
     cout << d << endl;
-    (-Q.reverse().div_xk(1)).print(d);
+    (-Q / Q[d]).reverse().div_xk(1).print(d);
 }
 
 signed main() {

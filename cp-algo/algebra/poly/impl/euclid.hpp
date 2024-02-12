@@ -2,6 +2,7 @@
 #define CP_ALGO_ALGEBRA_POLY_IMPL_EUCLID_HPP
 #include "../../affine.hpp"
 #include "../../fft.hpp"
+#include <functional>
 #include <algorithm>
 #include <numeric>
 #include <cassert>
@@ -58,6 +59,44 @@ namespace cp_algo::algebra::poly::impl {
         }
         return {ak, std::accumulate(rbegin(trs), rend(trs), linfrac<poly_t>{}, std::multiplies{})};
     }
+
+    // computes product of linfrac on [L, R)
+    auto convergent(auto L, auto R) {
+        using poly = decltype(L)::value_type;
+        if(R == next(L)) {
+            return linfrac(*L);
+        } else {
+            int s = std::transform_reduce(L, R, 0, std::plus{}, std::mem_fn(&poly::deg));
+            auto M = L;
+            for(int c = M->deg(); 2 * c <= s; M++) {
+                c += next(M)->deg();
+            }
+            return convergent(L, M) * convergent(M, R);
+        }
+    }
+    template<typename poly>
+    poly min_rec(poly const& p, size_t d) {
+        auto R2 = p.mod_xk(d).reverse(d), R1 = poly::xk(d);
+        if(R2.is_zero()) {
+            return poly(1);
+        }
+        auto [a, Tr] = full_gcd(R1, R2);
+        a.emplace_back();
+        auto pref = begin(a);
+        for(int delta = d - a.front().deg(); delta >= 0; pref++) {
+            delta -= pref->deg() + next(pref)->deg();
+        }
+        return convergent(begin(a), pref).a;
+    }
+
+    template<typename poly>
+    std::optional<poly> inv_mod(poly p, poly q) {
+        assert(!q.is_zero());
+        auto [a, Tr] = full_gcd(q, p);
+        if(q.deg() != 0) {
+            return std::nullopt;
+        }
+        return Tr.b / q[0];
+    }
 }
 #endif // CP_ALGO_ALGEBRA_POLY_IMPL_EUCLID_HPP
-        

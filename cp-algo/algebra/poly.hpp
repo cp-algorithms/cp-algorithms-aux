@@ -30,9 +30,9 @@ namespace cp_algo::algebra {
         poly_t operator + (poly_t const& t) const {return poly_t(*this) += t;}
         poly_t operator - (poly_t const& t) const {return poly_t(*this) -= t;}
         
-        poly_t mod_xk(size_t k) const {return poly::impl::mod_xk(*this, k);}
-        poly_t mul_xk(size_t k) const {return poly::impl::mul_xk(*this, k);}
-        poly_t div_xk(size_t k) const {return poly::impl::div_xk(*this, k);}
+        poly_t mod_xk(size_t k) const {return poly::impl::mod_xk(*this, k);} // %= x^k
+        poly_t mul_xk(size_t k) const {return poly::impl::mul_xk(*this, k);} // *= x^k
+        poly_t div_xk(size_t k) const {return poly::impl::div_xk(*this, k);} // /= x^k
         poly_t substr(size_t l, size_t r) const {return poly::impl::substr(*this, l, r);}
         
         poly_t operator *= (const poly_t &t) {fft::mul(a, t.a); normalize(); return *this;}
@@ -55,110 +55,29 @@ namespace cp_algo::algebra {
             return poly::impl::divmod(*this, b);
         }
         
-        // finds a linfrac<poly_t> that changes A/B to A'/B' such that
-        // deg B' is at least 2 times less than deg A
+        // reduces A/B to A'/B' such that
+        // deg B' < deg A / 2
         static std::pair<std::list<poly_t>, linfrac<poly_t>> half_gcd(auto &&A, auto &&B) {
             return poly::impl::half_gcd(A, B);
         }
-        
-        // return a linfrac<poly_t> that reduces A / B to gcd(A, B) / 0
+        // reduces A / B to gcd(A, B) / 0
         static std::pair<std::list<poly_t>, linfrac<poly_t>> full_gcd(auto &&A, auto &&B) {
             return poly::impl::full_gcd(A, B);
         }
-                
         static poly_t gcd(poly_t &&A, poly_t &&B) {
-            if(A.deg() < B.deg()) {
-                return gcd(B, A);
-            }
             full_gcd(A, B);
             return A;
         }
-
         
-        // Returns the characteristic polynomial
+        // Returns a (non-monic) characteristic polynomial
         // of the minimum linear recurrence for the sequence
-        poly_t min_rec_slow(int d) const {
-            auto R1 = mod_xk(d + 1).reverse(d + 1), R2 = xk(d + 1);
-            auto Q1 = poly_t(T(1)), Q2 = poly_t(T(0));
-            while(!R2.is_zero()) {
-                auto [a, nR] = R1.divmod(R2); // R1 = a*R2 + nR, deg nR < deg R2
-                std::tie(R1, R2) = std::make_tuple(R2, nR);
-                std::tie(Q1, Q2) = std::make_tuple(Q2, Q1 + a * Q2);
-                if(R2.deg() < Q2.deg()) {
-                    return Q2 / Q2.lead();
-                }
-            }
-            assert(0);
-        }
-        
-        static auto convergent(auto L, auto R) { // computes product on [L, R)
-            if(R == next(L)) {
-                return linfrac(*L);
-            } else {
-                int s = 0;
-                for(auto it = L; it != R; it++) {
-                    s += it->a.size();
-                }
-                int c = 0;
-                for(auto it = L; it != R; it++) {
-                    c += it->a.size();
-                    if(2 * c > s) {
-                        return convergent(L, it) * convergent(it, R);
-                    }
-                }
-                assert(0);
-            }
-        }
-        
-        poly_t min_rec(int d) const {
-            if(d < magic) {
-                return min_rec_slow(d);
-            }
-            auto R2 = mod_xk(d + 1).reverse(d + 1), R1 = xk(d + 1);
-            if(R2.is_zero()) {
-                return poly_t(1);
-            }
-            auto [a, Tr] = full_gcd(R1, R2);
-            a.emplace_back();
-            int delta = (d + 1) - a.front().deg();
-            for(auto it = begin(a); ; it++) {
-                delta -= it->deg() + next(it)->deg();
-                if(delta < 0) {
-                    auto ans = convergent(begin(a), next(it));
-                    return ans.a / ans.a.lead();
-                }
-            }
+        poly_t min_rec(size_t d) const {
+            return poly::impl::min_rec(*this, d);
         }
         
         // calculate inv to *this modulo t
-        // quadratic complexity
-        std::optional<poly_t> inv_mod_slow(poly_t const& t) const {
-            auto R1 = *this, R2 = t;
-            auto Q1 = poly_t(T(1)), Q2 = poly_t(T(0));
-            int k = 0;
-            while(!R2.is_zero()) {
-                k ^= 1;
-                auto [a, nR] = R1.divmod(R2);
-                std::tie(R1, R2) = std::make_tuple(R2, nR);
-                std::tie(Q1, Q2) = std::make_tuple(Q2, Q1 + a * Q2);
-            }
-            if(R1.deg() > 0) {
-                return std::nullopt;
-            } else {
-                return (k ? -Q1 : Q1) / R1[0];
-            }
-        }
-        
-        std::optional<poly_t> inv_mod(poly_t t) const {
-            assert(!t.is_zero());
-            if(std::min(deg(), t.deg()) < magic) {
-                return inv_mod_slow(t);
-            }
-            auto [a, Tr] = full_gcd(t, poly_t(*this));
-            if(t.deg() != 0) {
-                return std::nullopt;
-            }
-            return Tr.b / t[0];
+        std::optional<poly_t> inv_mod(poly_t const& t) const {
+            return poly::impl::inv_mod(*this, t);
         };
         
         poly_t conj() const { // A(x) -> A(-x)

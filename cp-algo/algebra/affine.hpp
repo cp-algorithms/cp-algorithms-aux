@@ -3,6 +3,7 @@
 #include <optional>
 #include <utility>
 #include <cassert>
+#include <tuple>
 namespace cp_algo::algebra {
     // a * x + b
     template<typename base>
@@ -43,23 +44,27 @@ namespace cp_algo::algebra {
         linfrac(base a, base b, base c, base d): a(a), b(b), c(c), d(d) {}
 
         // composition of two linfracs
-        linfrac operator *(linfrac const& t) {
-            auto [A, C] = apply(t.a, t.c);
-            auto [B, D] = apply(t.b, t.d);
-            return {A, B, C, D};
+        linfrac operator * (linfrac t) const {
+            return t.prepend(linfrac(*this));
         }
-        
+
         linfrac operator-() const {
             return {-a, -b, -c, -d};
         }
 
-        linfrac adj() {
+        linfrac adj() const {
             return {d, -b, -c, a};
         }
         
+        linfrac& prepend(linfrac const& t) {
+            t.apply(a, c);
+            t.apply(b, d);
+            return *this;
+        }
+
         // apply linfrac to A/B
-        auto apply(base A, base B) {
-            return std::pair{a * A + b * B, c * A + d * B};
+        void apply(base &A, base &B) const {
+            std::tie(A, B) = std::pair{a * A + b * B, c * A + d * B};
         }
     };
 }

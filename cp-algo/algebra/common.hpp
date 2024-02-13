@@ -6,13 +6,17 @@ namespace cp_algo::algebra {
     const int maxn = 1 << 20;
     const int magic = 250; // threshold for sizes to run the naive algo
 
-    auto bpow(auto x, int64_t n, auto ans, auto op) {
-        for(; n; n /= 2, x = op(x, x)) {
+    auto bpow(auto const& x, int64_t n, auto const& one, auto op) {
+        if(n == 0) {
+            return one;
+        } else {
+            auto t = bpow(x, n / 2, one, op);
+            t = op(t, t);
             if(n % 2) {
-                ans = op(ans, x);
+                t = op(t, x);
             }
+            return t;
         }
-        return ans;
     }
     auto bpow(auto x, int64_t n, auto ans) {
         return bpow(x, n, ans, std::multiplies{});

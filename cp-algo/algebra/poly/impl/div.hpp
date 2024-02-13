@@ -58,8 +58,7 @@ namespace cp_algo::algebra::poly::impl {
         if(md == poly::xk(d) - poly(1)) {
             return p.powmod_circular(k, d);
         }
-        auto mdinv = md.reverse().inv(md.deg() + 1);
-        return powmod_hint(p, k, md, mdinv);
+        return powmod_hint(p, k, md, md.reverse().inv(md.deg() + 1));
     }
 }
 #endif // CP_ALGO_ALGEBRA_POLY_IMPL_DIV_HPP

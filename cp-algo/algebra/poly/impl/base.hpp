@@ -36,13 +36,20 @@ namespace cp_algo::algebra::poly::impl {
     auto mod_xk(auto const& p, size_t k) {
         return std::vector(begin(p.a), begin(p.a) + std::min(k, p.a.size()));
     }
-    auto mul_xk(auto p, size_t k) {
+    auto mul_xk(auto p, int k) {
+        if(k < 0) {
+            return p.div_xk(-k);
+        }
         p.a.insert(begin(p.a), k, 0);
         normalize(p);
         return p;
     }
-    auto div_xk(auto const& p, size_t k) {
-        return std::vector(begin(p.a) + std::min(k, p.a.size()), end(p.a));
+    template<typename poly>
+    poly div_xk(poly const& p, int k) {
+        if(k < 0) {
+            return p.mul_xk(-k);
+        }
+        return std::vector(begin(p.a) + std::min<size_t>(k, p.a.size()), end(p.a));
     }
     auto substr(auto const& p, size_t l, size_t r) {
         return std::vector(

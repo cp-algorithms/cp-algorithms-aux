@@ -80,7 +80,7 @@ namespace cp_algo::algebra {
             return poly::impl::inv_mod(*this, t);
         };
         
-        poly_t conj() const { // A(x) -> A(-x)
+        poly_t negx() const { // A(x) -> A(-x)
             auto res = *this;
             for(int i = 1; i <= deg(); i += 2) {
                 res.a[i] = -res[i];
@@ -571,26 +571,11 @@ namespace cp_algo::algebra {
             return (P * Q.inv(Q.deg() + 1))[k];
         }
         
-        poly_t inv(int n) const { // get inverse series mod x^n
-            auto Q = mod_xk(n);
-            if(n == 1) {
-                return Q[0].inv();
-            }
-            // Q(-x) = P0(x^2) + xP1(x^2)
-            auto [P0, P1] = Q.mulx(-1).bisect();
-            
-            int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
-            
-            auto P0f = fft::dft(P0.a, N);
-            auto P1f = fft::dft(P1.a, N);
-            
-            auto TTf = fft::dft(( // Q(x)*Q(-x) = Q0(x^2)^2 - x^2 Q1(x^2)^2
-                poly_t(P0f * P0f) - poly_t(P1f * P1f).mul_xk(1)
-            ).inv((n + 1) / 2).a, N);
-            
-            return (
-                poly_t(P0f * TTf).x2() + poly_t(P1f * TTf).x2().mul_xk(1)
-            ).mod_xk(n);
+        poly_t inv(size_t n) const { // get inverse series mod x^n
+            return poly::impl::inv(*this, n);
+        }
+        poly_t inv(uint64_t k, size_t n) const { // [x^k]..[x^{k+n-1}] of inv()
+            return poly::impl::inv(*this, k, n);
         }
         
         // compute A(B(x)) mod x^n in O(n^2)

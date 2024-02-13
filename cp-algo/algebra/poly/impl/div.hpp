@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_ALGEBRA_POLY_IMPL_DIV_HPP
 #define CP_ALGO_ALGEBRA_POLY_IMPL_DIV_HPP
+#include "../../fft.hpp"
 #include "../../common.hpp"
 #include <cassert>
 // operations related to polynomial division
@@ -59,6 +60,43 @@ namespace cp_algo::algebra::poly::impl {
             return p.powmod_circular(k, d);
         }
         return powmod_hint(p, k, md, md.reverse().inv(md.deg() + 1));
+    }
+
+    template<typename poly>
+    poly inv(poly const& q, int64_t k, size_t n) {
+        if(k <= std::min<int64_t>(n, size(q.a))) {
+            return q.inv(k+n).div_xk(k);
+        }
+        if(k % 2) {
+            return inv(q, k - 1, n + 1).div_xk(1);
+        }
+        auto [q0, q1] = q.negx().bisect();
+        
+        auto qq = inv(q0*q0 - (q1*q1).mul_xk(1), k / 2 - q0.deg(), (n + 1) / 2 + q0.deg());
+        return ((q0*qq).x2() + (q1*qq).x2().mul_xk(1)).div_xk(2*q0.deg()).mod_xk(n);
+    }
+
+    template<typename poly>
+    poly inv(poly const& p, size_t n) {
+        auto q = p.mod_xk(n);
+        if(n == 1) {
+            return poly(1) / q[0];
+        }
+        // Q(-x) = P0(x^2) + xP1(x^2)
+        auto [q0, q1] = q.negx().bisect();
+        
+        int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
+        
+        auto q0f = fft::dft(q0.a, N);
+        auto q1f = fft::dft(q1.a, N);
+        
+        auto TTf = fft::dft(( // Q(x)*Q(-x) = Q0(x^2)^2 - x^2 Q1(x^2)^2
+            poly(q0f * q0f) - poly(q1f * q1f).mul_xk(1)
+        ).inv((n + 1) / 2).a, N);
+        
+        return (
+            poly(q0f * TTf).x2() + poly(q1f * TTf).x2().mul_xk(1)
+        ).mod_xk(n);
     }
 }
 #endif // CP_ALGO_ALGEBRA_POLY_IMPL_DIV_HPP

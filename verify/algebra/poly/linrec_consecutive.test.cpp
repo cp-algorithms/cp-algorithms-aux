@@ -20,12 +20,7 @@ void solve() {
     polyn A = polyn(a);
     polyn Q = polyn::xk(0) - polyn(c).mul_xk(1);
     polyn P = (A * Q).mod_xk(d);
-    A = (P * Q.inv(2 * d)).mod_xk(2 * d);
-    A = A.reverse(2 * d);
-    polyn shift = polyn::xk(1).powmod(k, Q.reverse(d + 1));
-    polyn An = (A * shift).div_xk(d - 1).mod_xk(d + 1).reverse(d + 1);
-    polyn Pn = (An * Q).mod_xk(d);
-    (Pn * Q.inv(M)).print(M);
+    (P * Q.inv(k - d, M + d)).div_xk(d).print(M);
 }
 
 signed main() {

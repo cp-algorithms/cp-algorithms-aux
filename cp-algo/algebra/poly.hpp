@@ -536,7 +536,7 @@ namespace cp_algo::algebra {
         }
         
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
-        std::pair<poly_t, poly_t> bisect() const {
+        std::array<poly_t, 2> bisect() const {
             std::vector<T> res[2];
             res[0].reserve(deg() / 2 + 1);
             res[1].reserve(deg() / 2 + 1);
@@ -570,11 +570,14 @@ namespace cp_algo::algebra {
             }
             return (P * Q.inv(Q.deg() + 1))[k];
         }
-        
-        poly_t inv(size_t n) const { // get inverse series mod x^n
+
+        // inverse series mod x^n
+        poly_t inv(size_t n) const {
             return poly::impl::inv(*this, n);
         }
-        poly_t inv(uint64_t k, size_t n) const { // [x^k]..[x^{k+n-1}] of inv()
+        // [x^k]..[x^{k+n-1}] of inv()
+        // supports negative k if k+n >= 0
+        poly_t inv(int64_t k, size_t n) const {
             return poly::impl::inv(*this, k, n);
         }
         

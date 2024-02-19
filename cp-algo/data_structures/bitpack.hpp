@@ -29,11 +29,14 @@ namespace cp_algo::data_structures {
             }
         }
 
-        bitpack& operator ^= (bitpack const& t) {
-            for(size_t i = 0; i < blocks; i++) {
+        bitpack& xor_hint(bitpack const& t, size_t hint) {
+            for(size_t i = hint / bits_per_block; i < blocks; i++) {
                 data[i] ^= t.data[i];
             }
             return *this;
+        }
+        bitpack& operator ^= (bitpack const& t) {
+            return xor_hint(t, 0);
         }
         bitpack operator ^ (bitpack const& t) const {
             return bitpack(*this) ^= t;
@@ -63,7 +66,9 @@ namespace cp_algo::data_structures {
                 res += bits_per_block;
                 i++;
             }
-            res += std::countr_zero(data[i]);
+            if(i < blocks) {
+                res += std::countr_zero(data[i]);
+            }
             return std::min(res, n);
         }
     };

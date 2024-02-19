@@ -22,7 +22,7 @@ void solve() {
         a[i] = row;
         for(int j = 0; j < i; j++) {
             if(a[i][lead[j]]) {
-                a[i] ^= a[j];
+                a[i].xor_hint(a[j], lead[j]);
             }
         }
         lead[i] = a[i].ctz();

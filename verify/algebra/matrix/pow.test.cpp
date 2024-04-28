@@ -14,7 +14,7 @@ void solve() {
     int n;
     uint64_t k;
     cin >> n >> k;
-    matrix<mod> a(n, n);
+    matrix<modular<mod>> a(n, n);
     a.read();
     a.pow(k).print();
 }

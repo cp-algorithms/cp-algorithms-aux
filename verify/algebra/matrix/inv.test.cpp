@@ -13,7 +13,7 @@ const int mod = 998244353;
 void solve() {
     int n;
     cin >> n;
-    matrix<mod> a(n, n);
+    matrix<modular<mod>> a(n, n);
     a.read();
     auto ai = a.inv();
     if(!ai) {

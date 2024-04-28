@@ -49,8 +49,10 @@ namespace cp_algo::algebra {
         explicit operator int() const {return r;}
         int64_t rem() const {return 2 * r > m ? r - m : r;}
 
-        static constexpr uint64_t mm = (uint64_t)m * m;
-        void add_unsafe(uint64_t t) {r += t; r = std::min<uint64_t>(r, r - mm);}
+        // Only use if you really know what you're doing!
+        static constexpr uint64_t mm = 8LL * m * m;
+        void add_unsafe(uint64_t t) {r += t;}
+        void pseudonormalize() {r = std::min(r, r - mm);}
         modular& normalize() {if(r >= m) r %= m; return *this;}
     };
     

@@ -50,23 +50,29 @@ namespace cp_algo::geometry {
 
     template<typename point>
     std::vector<point> convex_hull(std::vector<point> r) {
-        size_t n = size(r);
-        if(n <= 1) {
-            return r;
+        std::ranges::sort(r);
+        if(size(r) <= 1 || r[0] == r.back()) {
+            return empty(r) ? r : std::vector{r[0]};
         }
-        std::ranges::nth_element(r, std::begin(r));
-        std::ranges::sort(std::views::drop(r, 1), point::ccw_abs, [&](auto it){return it - r[0];});
-        if(r[0] == r.back()) {
-            return {r[0]};
-        }
-        std::vector<point> res = {r[0]};
-        for(size_t i = 1; i < n; i++) {
-            while(res.size() > 1 && !point::ccw(res.back() - *(end(res) - 2), r[i] - res.back())) {
-                res.pop_back();
+        std::vector<point> hull = {r[0]};
+        for(int half: {0, 1}) {
+            size_t base = size(hull);
+            for(auto it: std::views::drop(r, 1)) {
+                while(size(hull) >= base + 1) {
+                    point a = hull.back();
+                    if(point::ccw(it - a, *(end(hull) - 2) - a)) {
+                        break;
+                    } else {
+                        hull.pop_back();
+                    }
+                }
+                hull.push_back(it);
             }
-            res.push_back(r[i]);
+            std::ranges::reverse(r);
+            std::ignore = half;
         }
-        return res;
+        hull.pop_back();
+        return hull;
     }
 }
 #endif // CP_ALGO_GEOMETRY_POINT_HPP

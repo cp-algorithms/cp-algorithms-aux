@@ -10,7 +10,9 @@ namespace cp_algo::algebra {
         using Base::Base;
 
         void add_scaled(derived const& b, base scale, size_t i = 0) {
-            *this += scale * b;
+            for(; i < this->size(); i++) {
+                (*this)[i] += scale * b[i];
+            }
         }
         auto& normalize() {
             return *this;

@@ -201,7 +201,7 @@ namespace cp_algo::algebra {
             auto [pivots, free] = A.template gauss<reverse>();
             matrix sols(size(free), m);
             for(size_t j = 0; j < size(pivots); j++) {
-                base scale = A[j][pivots[j]].inv();
+                base scale = base(1) / A[j][pivots[j]];
                 for(size_t i = 0; i < size(free); i++) {
                     sols[i][pivots[j]] = A[j][free[i]] * scale;
                 }

@@ -218,11 +218,11 @@ namespace cp_algo::algebra {
             if(sols.n < t.m || sols.submatrix(
                 std::slice(sols.n - t.m, t.m, 1),
                 std::slice(m, t.m, 1)
-            ) != eye(t.m)) {
+            ) != -eye(t.m)) {
                 return std::nullopt;
             } else {
                 return std::array{
-                   -sols.submatrix(std::slice(sols.n - t.m, t.m, 1),
+                    sols.submatrix(std::slice(sols.n - t.m, t.m, 1),
                                    std::slice(0, m, 1)),
                     sols.submatrix(std::slice(0, sols.n - t.m, 1),
                                    std::slice(0, m, 1))

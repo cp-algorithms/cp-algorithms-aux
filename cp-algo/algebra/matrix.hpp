@@ -105,7 +105,7 @@ namespace cp_algo::algebra {
 
         matrix pow(uint64_t k) const {
             assert(n() == m());
-            return bpow(*this, k, eye(n));
+            return bpow(*this, k, eye(n()));
         }
 
         static matrix rand(size_t n, size_t m) {

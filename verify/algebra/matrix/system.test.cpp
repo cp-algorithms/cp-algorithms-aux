@@ -21,7 +21,7 @@ void solve() {
         cout << -1 << "\n";
     } else {
         auto [sol, basis] = *x;
-        cout << basis.n << "\n";
+        cout << basis.n() << "\n";
         sol.print();
         basis.print();
     }

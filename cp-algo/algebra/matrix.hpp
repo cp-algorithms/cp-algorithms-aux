@@ -32,6 +32,11 @@ namespace cp_algo::algebra {
         matrix& operator *=(base t) {for(auto &it: *this) it *= t; return *this;}
         matrix operator *(base t) const {return matrix(*this) *= t;}
 
+        matrix operator-() const {return Base::operator-();}
+        matrix operator-(matrix const& t) const {return Base::operator-(t);}
+        matrix operator+(matrix const& t) const {return Base::operator+(t);}
+        matrix& operator*=(matrix const& t) {return *this = *this * t;}
+
         bool operator == (matrix const& t) const {
             return dim() == t.dim() && std::ranges::equal(*this, t,
                 [](auto const& r1, auto const& r2) {
@@ -57,16 +62,16 @@ namespace cp_algo::algebra {
 
         // concatenate matrices
         matrix operator |(matrix const& b) const {
-            assert(n == b.n);
+            assert(n() == b.n());
             matrix res(n(), m()+b.m());
             for(size_t i = 0; i < n(); i++) {
-                res[i][std::slice(0,m,1)] = row(i);
-                res[i][std::slice(m,b.m,1)] = b[i];
+                res[i][std::slice(0, m(), 1)] = row(i);
+                res[i][std::slice(m(), b.m(), 1)] = b[i];
             }
             return res;
         }
         matrix submatrix(auto slicex, auto slicey) const {
-            std::valarray res = (*this)[slicex];
+            matrix res = (*this)[slicex];
             for(auto &row: res) {
                 row = vector<base>(row[slicey]);
             }
@@ -134,7 +139,7 @@ namespace cp_algo::algebra {
                         row(rk) += row(j);
                     }
                 }
-                if(rk == n || row(rk).normalize()[i] == 0) {
+                if(rk == n() || row(rk).normalize()[i] == 0) {
                     free.push_back(i);
                 } else {
                     pivots.push_back(i);
@@ -214,7 +219,7 @@ namespace cp_algo::algebra {
             } else {
                 return std::array{
                     sols.submatrix(std::slice(sols.n() - t.m(), t.m(), 1),
-                                   std::slice(0, m, 1)),
+                                   std::slice(0, m(), 1)),
                     sols.submatrix(std::slice(0, sols.n() - t.m(), 1),
                                    std::slice(0, m(), 1))
                 };

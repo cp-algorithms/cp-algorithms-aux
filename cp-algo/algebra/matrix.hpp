@@ -110,9 +110,9 @@ namespace cp_algo::algebra {
 
         static matrix rand(size_t n, size_t m) {
             matrix res(n, m);
-            for(size_t i = 0; i < n; i++) {
-                for(size_t j = 0; j < m; j++) {
-                    res[i][j] = random::rng();
+            for(auto &it: res) {
+                for(auto &jt: it) {
+                    jt = random::rng();
                 }
             }
             return res;
@@ -134,17 +134,17 @@ namespace cp_algo::algebra {
             size_t rk = 0;
             std::vector<size_t> free, pivots;
             for(size_t i = 0; i < lim; i++) {
-                for(size_t j = rk; j < n() && row(rk).normalize(i) == 0; j++) {
+                for(size_t j = rk; j < n() && row(rk).normalize(i) == base(0); j++) {
                     if(row(j).normalize(i) != 0) {
                         row(rk) += row(j);
                     }
                 }
-                if(rk == n() || row(rk).normalize()[i] == 0) {
+                if(rk == n() || row(rk).normalize()[i] == base(0)) {
                     free.push_back(i);
                 } else {
                     pivots.push_back(i);
                     base dinv = -base(1) / row(rk)[i];
-                    for(size_t j = mode == reverse ? 0 : rk; j < n(); j++) {
+                    for(size_t j = (mode == normal) * rk; j < n(); j++) {
                         if(j != rk) {
                             row(j).add_scaled(row(rk), row(j).normalize(i) * dinv, i);
                         }

@@ -37,8 +37,8 @@ namespace cp_algo::algebra {
         modular operator - () const {return std::min(-r, m - r);}
         modular operator * (const modular &t) const {return r * t.r;}
         modular operator / (const modular &t) const {return *this * t.inv();}
-        modular& operator += (const modular &t) {r += t.r; r = std::min<uint64_t>(r, r - m); return *this;}
-        modular& operator -= (const modular &t) {r -= t.r; r = std::min<uint64_t>(r, r + m); return *this;}
+        modular& operator += (const modular &t) {r += t.r; r = std::min(r, r - m); return *this;}
+        modular& operator -= (const modular &t) {r -= t.r; r = std::min(r, r + m); return *this;}
         modular operator + (const modular &t) const {return modular(*this) += t;}
         modular operator - (const modular &t) const {return modular(*this) -= t;}
         modular& operator *= (const modular &t) {return *this = *this * t;}

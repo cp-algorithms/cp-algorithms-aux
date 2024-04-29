@@ -2,12 +2,21 @@
 #define CP_ALGO_ALGEBRA_VECTOR_HPP
 #include "common.hpp"
 #include "modular.hpp"
+#include <functional>
+#include <algorithm>
 #include <valarray>
+#include <iostream>
+#include <iterator>
 namespace cp_algo::algebra {
     template<class derived, typename base>
     struct vector_base: std::valarray<base> {
         using Base = std::valarray<base>;
         using Base::Base;
+
+        auto begin() {return std::begin(*static_cast<Base*>(this));}
+        auto end() {return std::end(*static_cast<Base*>(this));}
+        auto begin() const {return std::begin(*static_cast<Base const*>(this));}
+        auto end() const {return std::end(*static_cast<Base const*>(this));}
 
         void add_scaled(derived const& b, base scale, size_t i = 0) {
             for(; i < this->size(); i++) {
@@ -19,6 +28,15 @@ namespace cp_algo::algebra {
         }
         auto& normalize(size_t i) {
             return (*this)[i];
+        }
+        void read() {
+            for(auto &it: *this) {
+                std::cin >> it;
+            }
+        }
+        void print() const {
+            std::ranges::copy(*this, std::ostream_iterator<base>(std::cout, " "));
+            std::cout << "\n";
         }
     };
 
@@ -41,16 +59,12 @@ namespace cp_algo::algebra {
             }
             counter++;
             if(counter == 8) {
+                std::ranges::for_each(*this, std::mem_fn(&base::pseudonormalize));
                 counter = 0;
-                for(size_t i = 0; i < this->size(); i++) {
-                    (*this)[i].pseudonormalize();
-                }
             }
         }
         auto& normalize() {
-            for(size_t i = 0; i < this->size(); i++) {
-                (*this)[i].normalize();
-            }
+            std::ranges::for_each(*this, std::mem_fn(&base::normalize));
             return *this;
         }
         auto& normalize(size_t i) {

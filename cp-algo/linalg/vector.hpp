@@ -1,13 +1,12 @@
-#ifndef CP_ALGO_ALGEBRA_VECTOR_HPP
-#define CP_ALGO_ALGEBRA_VECTOR_HPP
-#include "common.hpp"
-#include "modular.hpp"
+#ifndef CP_ALGO_LINALG_VECTOR_HPP
+#define CP_ALGO_LINALG_VECTOR_HPP
+#include "../algebra/modular.hpp"
 #include <functional>
 #include <algorithm>
 #include <valarray>
 #include <iostream>
 #include <iterator>
-namespace cp_algo::algebra {
+namespace cp_algo::linalg {
     template<class derived, typename base>
     struct vector_base: std::valarray<base> {
         using Base = std::valarray<base>;
@@ -47,8 +46,9 @@ namespace cp_algo::algebra {
     };
 
     template<int mod>
-    struct vector<modular<mod>>: vector_base<vector<modular<mod>>, modular<mod>> {
-        using base = modular<mod>;
+    struct vector<algebra::modular<mod>>:
+            vector_base<vector<algebra::modular<mod>>, algebra::modular<mod>> {
+        using base = algebra::modular<mod>;
         using Base = vector_base<vector<base>, base>;
         using Base::Base;
 
@@ -72,4 +72,4 @@ namespace cp_algo::algebra {
         }
     };
 }
-#endif // CP_ALGO_ALGEBRA_VECTOR_HPP
+#endif // CP_ALGO_LINALG_VECTOR_HPP

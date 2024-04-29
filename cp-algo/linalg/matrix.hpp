@@ -1,13 +1,14 @@
-#ifndef CP_ALGO_ALGEBRA_MATRIX_HPP
-#define CP_ALGO_ALGEBRA_MATRIX_HPP
+#ifndef CP_ALGO_LINALG_MATRIX_HPP
+#define CP_ALGO_LINALG_MATRIX_HPP
 #include "../random/rng.hpp"
+#include "../algebra/common.hpp"
 #include "vector.hpp"
 #include <iostream>
 #include <optional>
 #include <cassert>
 #include <vector>
 #include <array>
-namespace cp_algo::algebra {
+namespace cp_algo::linalg {
     template<typename base>
     struct matrix: std::valarray<vector<base>> {
         using Base = std::valarray<vector<base>>;
@@ -227,4 +228,4 @@ namespace cp_algo::algebra {
         }
     };
 }
-#endif // CP_ALGO_ALGEBRA_MATRIX_HPP
+#endif // CP_ALGO_LINALG_MATRIX_HPP

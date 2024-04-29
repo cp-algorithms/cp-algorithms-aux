@@ -2,10 +2,11 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/inverse_matrix"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("avx2,tune=native")
-#include "cp-algo/algebra/matrix.hpp"
+#include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
+using namespace cp_algo::linalg;
 using namespace cp_algo::algebra;
 
 const int mod = 998244353;

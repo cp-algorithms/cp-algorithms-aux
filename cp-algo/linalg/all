@@ -1,0 +1,5 @@
+#ifndef CP_ALGO_LINALG_ALL
+#define CP_ALGO_LINALG_ALL
+#include "vector.hpp"
+#include "matrix.hpp"
+#endif // CP_ALGO_LINALG_ALL

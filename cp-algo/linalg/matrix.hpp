@@ -10,20 +10,14 @@
 #include <array>
 namespace cp_algo::linalg {
     template<typename base>
-    struct matrix: std::valarray<vector<base>> {
-        using Base = std::valarray<vector<base>>;
+    struct matrix: valarray_base<matrix<base>, vector<base>> {
+        using Base = valarray_base<matrix<base>, vector<base>>;
         using Base::Base;
 
-        matrix(vector<base> t): Base(t, 1) {}
         matrix(size_t n): Base(vector<base>(n), n) {}
         matrix(size_t n, size_t m): Base(vector<base>(m), n) {}
 
-        auto begin() {return std::begin(*static_cast<Base*>(this));}
-        auto end() {return std::end(*static_cast<Base*>(this));}
-        auto begin() const {return std::begin(*static_cast<Base const*>(this));}
-        auto end() const {return std::end(*static_cast<Base const*>(this));}
-
-        size_t n() const {return Base::size();}
+        size_t n() const {return size(*this);}
         size_t m() const {return n() ? size(row(0)) : 0;}
         auto dim() const {return std::array{n(), m()};}
 
@@ -33,18 +27,8 @@ namespace cp_algo::linalg {
         matrix& operator *=(base t) {for(auto &it: *this) it *= t; return *this;}
         matrix operator *(base t) const {return matrix(*this) *= t;}
 
-        matrix operator-() const {return Base::operator-();}
-        matrix operator-(matrix const& t) const {return Base::operator-(t);}
-        matrix operator+(matrix const& t) const {return Base::operator+(t);}
+        // Make sure the result is matrix, not Base
         matrix& operator*=(matrix const& t) {return *this = *this * t;}
-
-        bool operator == (matrix const& t) const {
-            return dim() == t.dim() && std::ranges::equal(*this, t,
-                [](auto const& r1, auto const& r2) {
-                    return (r1 == r2).min();
-                });
-        }
-        bool operator != (matrix const& t) const {return !(*this == t);}
 
         void read() {
             std::ranges::for_each(*this, std::mem_fn(&vector<base>::read));
@@ -61,13 +45,12 @@ namespace cp_algo::linalg {
             return res;
         }
 
-        // concatenate matrices
+        // Concatenate matrices
         matrix operator |(matrix const& b) const {
             assert(n() == b.n());
             matrix res(n(), m()+b.m());
             for(size_t i = 0; i < n(); i++) {
-                res[i][std::slice(0, m(), 1)] = row(i);
-                res[i][std::slice(m(), b.m(), 1)] = b[i];
+                res[i] = row(i) | b[i];
             }
             return res;
         }
@@ -109,17 +92,13 @@ namespace cp_algo::linalg {
             return bpow(*this, k, eye(n()));
         }
 
-        static matrix rand(size_t n, size_t m) {
+        static matrix random(size_t n, size_t m) {
             matrix res(n, m);
-            for(auto &it: res) {
-                for(auto &jt: it) {
-                    jt = random::rng();
-                }
-            }
+            std::ranges::generate(res, std::bind(vector<base>::random, m));
             return res;
         }
-        static matrix rand(size_t n) {
-            return rand(n, n);
+        static matrix random(size_t n) {
+            return random(n, n);
         }
 
         matrix& normalize() {

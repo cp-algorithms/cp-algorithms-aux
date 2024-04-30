@@ -9,8 +9,9 @@
 #include <vector>
 #include <array>
 namespace cp_algo::linalg {
-    template<typename base>
-    struct matrix: valarray_base<matrix<base>, vec<base>> {
+    template<typename base_t>
+    struct matrix: valarray_base<matrix<base_t>, vec<base_t>> {
+        using base = base_t;
         using Base = valarray_base<matrix<base>, vec<base>>;
         using Base::Base;
 

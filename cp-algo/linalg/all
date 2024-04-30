@@ -2,4 +2,5 @@
 #define CP_ALGO_LINALG_ALL
 #include "vector.hpp"
 #include "matrix.hpp"
+#include "frobenius.hpp"
 #endif // CP_ALGO_LINALG_ALL

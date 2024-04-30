@@ -35,8 +35,8 @@ namespace cp_algo::linalg {
     };
 
     template<class vector, typename base>
-    struct vector_base: valarray_base<vector_base<vector, base>, base> {
-        using Base = valarray_base<vector_base<vector, base>, base>;
+    struct vector_base: valarray_base<vector, base> {
+        using Base = valarray_base<vector, base>;
         using Base::Base;
 
         static vector ei(size_t n, size_t i) {

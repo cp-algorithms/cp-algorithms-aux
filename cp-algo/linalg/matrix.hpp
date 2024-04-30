@@ -88,7 +88,7 @@ namespace cp_algo::linalg {
         }
 
         vec<base> apply(vec<base> const& x) const {
-            return (matrix(x) * T())[0];
+            return (matrix(x) * *this)[0];
         }
 
         matrix pow(uint64_t k) const {

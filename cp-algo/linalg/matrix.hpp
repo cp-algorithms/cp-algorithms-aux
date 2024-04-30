@@ -114,33 +114,24 @@ namespace cp_algo::linalg {
 
         enum Mode {normal, reverse};
         template<Mode mode = normal>
-        auto gauss(size_t lim) {
-            size_t rk = 0;
-            std::vector<size_t> free, pivots;
-            for(size_t i = 0; i < lim; i++) {
-                for(size_t j = rk; j < n() && row(rk).normalize(i) == base(0); j++) {
-                    if(row(j).normalize(i) != 0) {
-                        row(rk) += row(j);
+        matrix& gauss() {
+            for(size_t i = 0; i < n(); i++) {
+                row(i).normalize();
+                for(size_t j = (mode == normal) * i; j < n(); j++) {
+                    if(j != i) {
+                        row(j).reduce_by(row(i));
                     }
-                }
-                if(rk == n() || row(rk).normalize()[i] == base(0)) {
-                    free.push_back(i);
-                } else {
-                    pivots.push_back(i);
-                    for(size_t j = (mode == normal) * rk; j < n(); j++) {
-                        if(j != rk) {
-                            row(j).reduce_by(row(rk));
-                        }
-                    }
-                    rk += 1;
                 }
             }
-            normalize();
-            return std::array{pivots, free};
+            return normalize();
         }
         template<Mode mode = normal>
-        auto gauss() {
-            return gauss<mode>(m());
+        auto echelonize(size_t lim) {
+            return gauss<mode>().sort_classify(lim);
+        }
+        template<Mode mode = normal>
+        auto echelonize() {
+            return echelonize<mode>(m());
         }
 
         size_t rank() const {
@@ -153,7 +144,7 @@ namespace cp_algo::linalg {
         base det() const {
             assert(n() == m());
             matrix b = *this;
-            b.gauss();
+            b.echelonize();
             base res = 1;
             for(size_t i = 0; i < n(); i++) {
                 res *= b[i][i];
@@ -164,7 +155,7 @@ namespace cp_algo::linalg {
         std::optional<matrix> inv() const {
             assert(n() == m());
             matrix b = *this | eye(n());
-            if(size(b.gauss<reverse>(n())[0]) < n()) {
+            if(size(b.echelonize<reverse>(n())[0]) < n()) {
                 return std::nullopt;
             }
             for(size_t i = 0; i < n(); i++) {
@@ -177,7 +168,7 @@ namespace cp_algo::linalg {
         // but it would be slower :(
         auto kernel() const {
             auto A = *this;
-            auto [pivots, free] = A.template gauss<reverse>();
+            auto [pivots, free] = A.template echelonize<reverse>();
             matrix sols(size(free), m());
             for(size_t j = 0; j < size(pivots); j++) {
                 base scale = base(1) / A[j][pivots[j]];
@@ -207,6 +198,29 @@ namespace cp_algo::linalg {
                                    std::slice(0, m(), 1))
                 };
             }
+        }
+    private:
+        // To be called after a gaussian elimination run
+        // Sorts rows by pivots and classifies
+        // variables into pivots and free
+        auto sort_classify(size_t lim) {
+            size_t rk = 0;
+            std::vector<size_t> free, pivots;
+            for(size_t j = 0; j < lim; j++) {
+                for(size_t i = rk + 1; i < n() && row(rk)[j] == base(0); i++) {
+                    if(row(i)[j] != base(0)) {
+                        std::swap(row(i), row(rk));
+                        row(rk) = -row(rk);
+                    }
+                }
+                if(rk < n() && row(rk)[j] != base(0)) {
+                    pivots.push_back(j);
+                    rk++;
+                } else {
+                    free.push_back(j);
+                }
+            }
+            return std::array{pivots, free};
         }
     };
 }

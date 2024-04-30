@@ -151,10 +151,10 @@ namespace cp_algo::linalg {
         }
 
         size_t rank() const {
-            if(n() < m()) {
+            if(n() > m()) {
                 return T().rank();
             }
-            return size(matrix(*this).gauss()[0]);
+            return size(matrix(*this).echelonize()[0]);
         }
 
         base det() const {

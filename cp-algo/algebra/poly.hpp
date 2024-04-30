@@ -33,7 +33,7 @@ namespace cp_algo::algebra {
         poly_t mod_xk(size_t k) const {return poly::impl::mod_xk(*this, k);} // %= x^k
         poly_t mul_xk(size_t k) const {return poly::impl::mul_xk(*this, k);} // *= x^k
         poly_t div_xk(size_t k) const {return poly::impl::div_xk(*this, k);} // /= x^k
-        poly_t substr(size_t l, size_t r) const {return poly::impl::substr(*this, l, r);}
+        poly_t substr(size_t l, size_t k) const {return poly::impl::substr(*this, l, k);}
         
         poly_t operator *= (const poly_t &t) {fft::mul(a, t.a); normalize(); return *this;}
         poly_t operator * (const poly_t &t) const {return poly_t(*this) *= t;}

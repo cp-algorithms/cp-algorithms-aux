@@ -51,10 +51,10 @@ namespace cp_algo::algebra::poly::impl {
         }
         return std::vector(begin(p.a) + std::min<size_t>(k, p.a.size()), end(p.a));
     }
-    auto substr(auto const& p, size_t l, size_t r) {
+    auto substr(auto const& p, size_t l, size_t k) {
         return std::vector(
             begin(p.a) + std::min(l, p.a.size()),
-            begin(p.a) + std::min(r, p.a.size())
+            begin(p.a) + std::min(l + k, p.a.size())
         );
     }
     auto reverse(auto p, size_t n) {

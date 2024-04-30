@@ -24,8 +24,6 @@ namespace cp_algo::linalg {
         bool operator != (vec const& t) const {return !(*this == t);}
 
         vec operator-() const {return Base::operator-();}
-        vec operator-(vec const& t) const {return Base::operator-(t);}
-        vec operator+(vec const& t) const {return Base::operator+(t);}
 
         static vec from_range(auto const& R) {
             vec res(std::ranges::distance(R));
@@ -44,9 +42,6 @@ namespace cp_algo::linalg {
             res[i] = 1;
             return res;
         }
-
-        // Make sure the result is vec, not Base
-        vec operator*(base t) const {return Base::operator*(t);}
 
         void add_scaled(vec const& b, base scale, size_t i = 0) {
             assert(false);

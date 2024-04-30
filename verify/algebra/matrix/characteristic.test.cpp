@@ -18,12 +18,8 @@ void solve() {
     cin >> n;
     matrix<base> A(n);
     A.read();
-    auto blocks = frobenius_basis(A);
-    polyn res(1);
-    for(auto &[basis, rec]: blocks) {
-        res *= rec;
-    }
-    res.print();
+    auto blocks = frobenius_form(A);
+    reduce(begin(blocks), end(blocks), polyn(1), multiplies{}).print();
 }
 
 signed main() {

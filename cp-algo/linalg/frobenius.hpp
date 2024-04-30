@@ -3,64 +3,74 @@
 #include "matrix.hpp"
 #include "../algebra/poly.hpp"
 #include <vector>
-namespace cp_algo::linalg {    
-    template<bool reduce = false>
-    auto frobenius_basis(auto const& A) {
+namespace cp_algo::linalg {
+    enum frobenius_mode {blocks, full};
+    template<frobenius_mode mode = blocks>
+    auto frobenius_form(auto const& A) {
         using matrix = std::decay_t<decltype(A)>;
         using base = matrix::base;
         using polyn = algebra::poly_t<base>;
         assert(A.n() == A.m());
         size_t n = A.n();
-        struct krylov {
-            std::vector<vec<base>> basis; 
-            polyn rec;
-        };
-        std::vector<krylov> blocks;
-        std::vector<vec<base>> reduced;
-        while(size(reduced) < n) {
+        std::vector<polyn> charps;
+        std::vector<vec<base>> basis, basis_init;
+        while(size(basis) < n) {
+            size_t start = size(basis);
             auto generate_block = [&](auto x) {
-                krylov block;
                 while(true) {
-                    vec<base> y = x | vec<base>::ei(n + 1, size(reduced));
-                    for(auto &it: reduced) {
+                    vec<base> y = x | vec<base>::ei(n + 1, size(basis));
+                    for(auto &it: basis) {
                         y.reduce_by(it);
                     }
                     y.normalize();
                     if(vec<base>(y[std::slice(0, n, 1)]) == vec<base>(n)) {
-                        block.rec = std::vector<base>(
-                            begin(y) + n + size(reduced) - size(block.basis),
-                            begin(y) + n + size(reduced) + 1
-                        );
-                        return std::pair{block, vec<base>(y[std::slice(n, n, 1)])};
+                        return polyn(std::vector<base>(begin(y) + n, end(y)));
                     } else {
-                        block.basis.push_back(x);
-                        reduced.push_back(y);
+                        basis_init.push_back(x);
+                        basis.push_back(y);
                         x = A.apply(x);
                     }
                 }
             };
-            auto [block, full_rec] = generate_block(vec<base>::random(n));
-            if constexpr (reduce) {
-                if(vec<base>(full_rec[std::slice(0, size(reduced), 1)]) != vec<base>(size(reduced))) {
-                    auto x = block.basis[0];
-                    size_t start = 0;
-                    for(auto &[basis, rec]: blocks) {
-                        polyn cur_rec = std::vector<base>(
-                            begin(full_rec) + start, begin(full_rec) + start + rec.deg()
-                        );
-                        auto shift = cur_rec / block.rec;
+            auto full_rec = generate_block(vec<base>::random(n));
+            // Extra trimming to make it block-diagonal (expensive)
+            if constexpr (mode == full) {
+                if(full_rec.mod_xk(start) != polyn()) {
+                    auto charp = full_rec.div_xk(start);
+                    auto x = basis_init[start];
+                    start = 0;
+                    for(auto &rec: charps) {
+                        polyn cur_rec = full_rec.substr(start, rec.deg());
+                        auto shift = cur_rec / charp;
                         for(int j = 0; j <= shift.deg(); j++) {
-                            x.add_scaled(basis[j], shift[j]);
+                            x.add_scaled(basis_init[start + j], shift[j]);
                         }
                         start += rec.deg();
                     }
-                    reduced.erase(begin(reduced) + start, end(reduced));
-                    tie(block, full_rec) = generate_block(x.normalize());
+                    basis.resize(start);
+                    basis_init.resize(start);
+                    full_rec = generate_block(x.normalize());
                 }
             }
-            blocks.push_back(block);
+            charps.push_back(full_rec.div_xk(start));
         }
-        return blocks;
+        // Find transform matrices while we're at it...
+        if constexpr (mode == full) {
+            for(size_t i = 0; i < size(basis); i++) {
+                for(size_t j = i + 1; j < size(basis); j++) {
+                    basis[i].reduce_by(basis[j]);
+                }
+                basis[i].normalize();
+                basis[i] = vec<base>(
+                    basis[i][std::slice(n, n, 1)]
+                ) * (base(1) / basis[i][i]);
+            }
+            auto T = matrix::from_range(basis_init);
+            auto Tinv = matrix::from_range(basis);
+            return std::tuple{T, Tinv, charps};
+        } else {
+            return charps;
+        }
     }
 };
 #endif // CP_ALGO_LINALG_FROBENIUS_HPP

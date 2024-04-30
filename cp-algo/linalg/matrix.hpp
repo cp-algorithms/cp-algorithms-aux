@@ -42,6 +42,30 @@ namespace cp_algo::linalg {
             }
         }
 
+        static matrix block_diagonal(std::vector<matrix> const& blocks) {
+            size_t n = 0;
+            for(auto &it: blocks) {
+                assert(it.n() == it.m());
+                n += it.n();
+            }
+            matrix res(n);
+            n = 0;
+            for(auto &it: blocks) {
+                for(size_t i = 0; i < it.n(); i++) {
+                    res[n + i][std::slice(n, it.n(), 1)] = it[i];
+                }
+                n += it.n();
+            }
+            return res;
+        }
+        static matrix random(size_t n, size_t m) {
+            matrix res(n, m);
+            std::ranges::generate(res, std::bind(vec<base>::random, m));
+            return res;
+        }
+        static matrix random(size_t n) {
+            return random(n, n);
+        }
         static matrix eye(size_t n) {
             matrix res(n);
             for(size_t i = 0; i < n; i++) {
@@ -97,15 +121,6 @@ namespace cp_algo::linalg {
             return bpow(*this, k, eye(n()));
         }
 
-        static matrix random(size_t n, size_t m) {
-            matrix res(n, m);
-            std::ranges::generate(res, std::bind(vec<base>::random, m));
-            return res;
-        }
-        static matrix random(size_t n) {
-            return random(n, n);
-        }
-
         matrix& normalize() {
             for(auto &it: *this) {
                 it.normalize();
@@ -113,8 +128,8 @@ namespace cp_algo::linalg {
             return *this;
         }
 
-        enum Mode {normal, reverse};
-        template<Mode mode = normal>
+        enum gauss_mode {normal, reverse};
+        template<gauss_mode mode = normal>
         matrix& gauss() {
             for(size_t i = 0; i < n(); i++) {
                 row(i).normalize();
@@ -126,11 +141,11 @@ namespace cp_algo::linalg {
             }
             return normalize();
         }
-        template<Mode mode = normal>
+        template<gauss_mode mode = normal>
         auto echelonize(size_t lim) {
             return gauss<mode>().sort_classify(lim);
         }
-        template<Mode mode = normal>
+        template<gauss_mode mode = normal>
         auto echelonize() {
             return echelonize<mode>(m());
         }

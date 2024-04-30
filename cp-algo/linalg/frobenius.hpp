@@ -2,6 +2,7 @@
 #define CP_ALGO_LINALG_FROBENIUS_HPP
 #include "matrix.hpp"
 #include "../algebra/poly.hpp"
+#include <algorithm>
 #include <vector>
 namespace cp_algo::linalg {
     enum frobenius_mode {blocks, full};
@@ -71,6 +72,24 @@ namespace cp_algo::linalg {
         } else {
             return charps;
         }
+    }
+
+    template<typename base>
+    auto frobenius_pow(matrix<base> A, uint64_t k) {
+        using polyn = algebra::poly_t<base>;
+        auto [T, Tinv, charps] = frobenius_form<full>(A);
+        std::vector<matrix<base>> blocks;
+        for(auto charp: charps) {
+            matrix<base> block(charp.deg());
+            auto xk = polyn::xk(1).powmod(k, charp);
+            for(size_t i = 0; i < block.n(); i++) {
+                std::ranges::copy(xk.a, begin(block[i]));
+                xk = xk.mul_xk(1) % charp;
+            }
+            blocks.push_back(block);
+        }
+        auto S = matrix<base>::block_diagonal(blocks);
+        return Tinv * S * T;
     }
 };
 #endif // CP_ALGO_LINALG_FROBENIUS_HPP

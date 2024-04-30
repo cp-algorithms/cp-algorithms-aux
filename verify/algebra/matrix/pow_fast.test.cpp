@@ -13,24 +13,6 @@ const int mod = 998244353;
 using base = modular<mod>;
 using polyn = poly_t<base>;
 
-template<typename base>
-auto frobenius_pow(matrix<base> A, uint64_t k) {
-    using polyn = poly_t<base>;
-    auto [T, Tinv, charps] = frobenius_form<full>(A);
-    vector<matrix<base>> blocks;
-    for(auto charp: charps) {
-        matrix<base> block(charp.deg());
-        auto xk = polyn::xk(1).powmod(k, charp);
-        for(size_t i = 0; i < block.n(); i++) {
-            ranges::copy(xk.a, begin(block[i]));
-            xk = xk.mul_xk(1) % charp;
-        }
-        blocks.push_back(block);
-    }
-    auto S = matrix<base>::block_diagonal(blocks);
-    return Tinv * S * T;
-}
-
 void solve() {
     size_t n;
     uint64_t k;

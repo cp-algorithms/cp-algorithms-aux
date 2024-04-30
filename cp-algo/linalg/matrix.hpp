@@ -31,10 +31,14 @@ namespace cp_algo::linalg {
         matrix& operator*=(matrix const& t) {return *this = *this * t;}
 
         void read() {
-            std::ranges::for_each(*this, std::mem_fn(&vec<base>::read));
+            for(auto &it: *this) {
+                it.read();
+            }
         }
         void print() const {
-            std::ranges::for_each(*this, std::mem_fn(&vec<base>::print));
+            for(auto const& it: *this) {
+                it.print();
+            }
         }
 
         static matrix eye(size_t n) {

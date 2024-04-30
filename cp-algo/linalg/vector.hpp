@@ -98,7 +98,7 @@ namespace cp_algo::linalg {
         void reduce_by(vector &t) {
             auto [pivot, pinv] = t.find_pivot();
             if(pivot < size(*this)) {
-                add_scaled(t, -(*this)[pivot] * pinv, pivot);
+                add_scaled(t, -normalize(pivot) * pinv, pivot);
             }
         }
     private:
@@ -124,12 +124,16 @@ namespace cp_algo::linalg {
                 (*this)[i].add_unsafe(scale.r * b[i].r);
             }
             if(++counter == 8) {
-                std::ranges::for_each(*this, std::mem_fn(&base::pseudonormalize));
+                for(auto &it: *this) {
+                    it.pseudonormalize();
+                }
                 counter = 0;
             }
         }
         auto& normalize() {
-            std::ranges::for_each(*this, std::mem_fn(&base::normalize));
+            for(auto &it: *this) {
+                it.normalize();
+            }
             return *this;
         }
         auto& normalize(size_t i) {

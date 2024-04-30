@@ -10,12 +10,12 @@
 #include <array>
 namespace cp_algo::linalg {
     template<typename base>
-    struct matrix: valarray_base<matrix<base>, vector<base>> {
-        using Base = valarray_base<matrix<base>, vector<base>>;
+    struct matrix: valarray_base<matrix<base>, vec<base>> {
+        using Base = valarray_base<matrix<base>, vec<base>>;
         using Base::Base;
 
-        matrix(size_t n): Base(vector<base>(n), n) {}
-        matrix(size_t n, size_t m): Base(vector<base>(m), n) {}
+        matrix(size_t n): Base(vec<base>(n), n) {}
+        matrix(size_t n, size_t m): Base(vec<base>(m), n) {}
 
         size_t n() const {return size(*this);}
         size_t m() const {return n() ? size(row(0)) : 0;}
@@ -31,10 +31,10 @@ namespace cp_algo::linalg {
         matrix& operator*=(matrix const& t) {return *this = *this * t;}
 
         void read() {
-            std::ranges::for_each(*this, std::mem_fn(&vector<base>::read));
+            std::ranges::for_each(*this, std::mem_fn(&vec<base>::read));
         }
         void print() const {
-            std::ranges::for_each(*this, std::mem_fn(&vector<base>::print));
+            std::ranges::for_each(*this, std::mem_fn(&vec<base>::print));
         }
 
         static matrix eye(size_t n) {
@@ -57,7 +57,7 @@ namespace cp_algo::linalg {
         matrix submatrix(auto slicex, auto slicey) const {
             matrix res = (*this)[slicex];
             for(auto &row: res) {
-                row = vector<base>(row[slicey]);
+                row = vec<base>(row[slicey]);
             }
             return res;
         }
@@ -83,8 +83,8 @@ namespace cp_algo::linalg {
             return res.normalize();
         }
 
-        vector<base> apply(vector<base> const& x) const {
-            return (matrix(x) * *this)[0];
+        vec<base> apply(vec<base> const& x) const {
+            return (matrix(x) * T())[0];
         }
 
         matrix pow(uint64_t k) const {
@@ -94,7 +94,7 @@ namespace cp_algo::linalg {
 
         static matrix random(size_t n, size_t m) {
             matrix res(n, m);
-            std::ranges::generate(res, std::bind(vector<base>::random, m));
+            std::ranges::generate(res, std::bind(vec<base>::random, m));
             return res;
         }
         static matrix random(size_t n) {

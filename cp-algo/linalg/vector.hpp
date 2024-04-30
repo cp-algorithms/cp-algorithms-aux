@@ -26,12 +26,24 @@ namespace cp_algo::linalg {
         derived operator-() const {return Base::operator-();}
         derived operator-(derived const& t) const {return Base::operator-(t);}
         derived operator+(derived const& t) const {return Base::operator+(t);}
+
+        static derived from_range(auto const& R) {
+            derived res(std::ranges::distance(R));
+            std::ranges::copy(R, res.begin());
+            return res;
+        }
     };
 
     template<class vector, typename base>
     struct vector_base: valarray_base<vector_base<vector, base>, base> {
         using Base = valarray_base<vector_base<vector, base>, base>;
         using Base::Base;
+
+        static vector ei(size_t n, size_t i) {
+            vector res(n);
+            res[i] = 1;
+            return res;
+        }
 
         // Make sure the result is vector, not Base
         vector operator*(base t) const {return Base::operator*(t);}
@@ -72,7 +84,7 @@ namespace cp_algo::linalg {
         // Generally, vector shouldn't be modified
         // after it's pivot index is set
         std::pair<size_t, base> find_pivot() {
-            if(pivot == -1) {
+            if(pivot == size_t(-1)) {
                 pivot = 0;
                 while(pivot < size(*this) && normalize(pivot) == base(0)) {
                     pivot++;
@@ -95,19 +107,19 @@ namespace cp_algo::linalg {
     };
 
     template<typename base>
-    struct vector: vector_base<vector<base>, base> {
-        using Base = vector_base<vector<base>, base>;
+    struct vec: vector_base<vec<base>, base> {
+        using Base = vector_base<vec<base>, base>;
         using Base::Base;
     };
 
     template<int mod>
-    struct vector<algebra::modular<mod>>:
-            vector_base<vector<algebra::modular<mod>>, algebra::modular<mod>> {
+    struct vec<algebra::modular<mod>>:
+            vector_base<vec<algebra::modular<mod>>, algebra::modular<mod>> {
         using base = algebra::modular<mod>;
-        using Base = vector_base<vector<base>, base>;
+        using Base = vector_base<vec<base>, base>;
         using Base::Base;
 
-        void add_scaled(vector const& b, base scale, size_t i = 0) {
+        void add_scaled(vec const& b, base scale, size_t i = 0) {
             for(; i < size(*this); i++) {
                 (*this)[i].add_unsafe(scale.r * b[i].r);
             }

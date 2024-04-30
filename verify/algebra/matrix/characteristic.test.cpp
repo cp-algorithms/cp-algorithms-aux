@@ -28,6 +28,7 @@ void solve() {
         for(auto &it: basis) {
             y.reduce_by(it);
         }
+        y.normalize();
         if(vec<base>(y[slice(0, n, 1)]) == vec<base>(n)) {
             vector<base> cur(begin(y) + n + size(basis) - degree,
                              begin(y) + n + size(basis) + 1);

@@ -127,10 +127,9 @@ namespace cp_algo::linalg {
                     free.push_back(i);
                 } else {
                     pivots.push_back(i);
-                    base dinv = -base(1) / row(rk)[i];
                     for(size_t j = (mode == normal) * rk; j < n(); j++) {
                         if(j != rk) {
-                            row(j).add_scaled(row(rk), row(j).normalize(i) * dinv, i);
+                            row(j).reduce_by(row(rk));
                         }
                     }
                     rk += 1;

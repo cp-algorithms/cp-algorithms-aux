@@ -8,7 +8,7 @@
 #include <iostream>
 #include <iterator>
 namespace cp_algo::linalg {
-    template<class derived, typename base>
+    template<class vec, typename base>
     struct valarray_base: std::valarray<base> {
         using Base = std::valarray<base>;
         using Base::Base;
@@ -20,35 +20,36 @@ namespace cp_algo::linalg {
         auto begin() const {return std::begin(*static_cast<Base const*>(this));}
         auto end() const {return std::end(*static_cast<Base const*>(this));}
 
-        bool operator == (derived const& t) const {return std::ranges::equal(*this, t);}
-        bool operator != (derived const& t) const {return !(*this == t);}
+        bool operator == (vec const& t) const {return std::ranges::equal(*this, t);}
+        bool operator != (vec const& t) const {return !(*this == t);}
 
-        derived operator-() const {return Base::operator-();}
-        derived operator-(derived const& t) const {return Base::operator-(t);}
-        derived operator+(derived const& t) const {return Base::operator+(t);}
+        vec operator-() const {return Base::operator-();}
+        vec operator-(vec const& t) const {return Base::operator-(t);}
+        vec operator+(vec const& t) const {return Base::operator+(t);}
 
-        static derived from_range(auto const& R) {
-            derived res(std::ranges::distance(R));
+        static vec from_range(auto const& R) {
+            vec res(std::ranges::distance(R));
             std::ranges::copy(R, res.begin());
             return res;
         }
     };
 
-    template<class vector, typename base>
-    struct vector_base: valarray_base<vector, base> {
-        using Base = valarray_base<vector, base>;
+    template<class vec, typename base>
+    struct vec_base: valarray_base<vec, base> {
+        using Base = valarray_base<vec, base>;
         using Base::Base;
 
-        static vector ei(size_t n, size_t i) {
-            vector res(n);
+        static vec ei(size_t n, size_t i) {
+            vec res(n);
             res[i] = 1;
             return res;
         }
 
-        // Make sure the result is vector, not Base
-        vector operator*(base t) const {return Base::operator*(t);}
+        // Make sure the result is vec, not Base
+        vec operator*(base t) const {return Base::operator*(t);}
 
-        void add_scaled(vector const& b, base scale, size_t i = 0) {
+        void add_scaled(vec const& b, base scale, size_t i = 0) {
+            assert(false);
             for(; i < size(*this); i++) {
                 (*this)[i] += scale * b[i];
             }
@@ -68,25 +69,26 @@ namespace cp_algo::linalg {
             std::ranges::copy(*this, std::ostream_iterator<base>(std::cout, " "));
             std::cout << "\n";
         }
-        static vector random(size_t n) {
-            vector res(n);
+        static vec random(size_t n) {
+            vec res(n);
             std::ranges::generate(res, random::rng);
             return res;
         }
         // Concatenate vectors
-        vector operator |(vector const& t) const {
-            vector res(size(*this) + size(t));
+        vec operator |(vec const& t) const {
+            vec res(size(*this) + size(t));
             res[std::slice(0, size(*this), 1)] = *this;
             res[std::slice(size(*this), size(t), 1)] = t;
             return res;
         }
 
-        // Generally, vector shouldn't be modified
+        // Generally, vec shouldn't be modified
         // after it's pivot index is set
         std::pair<size_t, base> find_pivot() {
+            auto true_this = static_cast<vec*>(this);
             if(pivot == size_t(-1)) {
                 pivot = 0;
-                while(pivot < size(*this) && normalize(pivot) == base(0)) {
+                while(pivot < size(*this) && true_this->normalize(pivot) == base(0)) {
                     pivot++;
                 }
                 if(pivot < size(*this)) {
@@ -95,10 +97,11 @@ namespace cp_algo::linalg {
             }
             return {pivot, pivot_inv};
         }
-        void reduce_by(vector &t) {
+        void reduce_by(vec &t) {
+            auto true_this = static_cast<vec*>(this);
             auto [pivot, pinv] = t.find_pivot();
             if(pivot < size(*this)) {
-                add_scaled(t, -normalize(pivot) * pinv, pivot);
+                true_this->add_scaled(t, -true_this->normalize(pivot) * pinv, pivot);
             }
         }
     private:
@@ -107,16 +110,16 @@ namespace cp_algo::linalg {
     };
 
     template<typename base>
-    struct vec: vector_base<vec<base>, base> {
-        using Base = vector_base<vec<base>, base>;
+    struct vec: vec_base<vec<base>, base> {
+        using Base = vec_base<vec<base>, base>;
         using Base::Base;
     };
 
     template<int mod>
     struct vec<algebra::modular<mod>>:
-            vector_base<vec<algebra::modular<mod>>, algebra::modular<mod>> {
+            vec_base<vec<algebra::modular<mod>>, algebra::modular<mod>> {
         using base = algebra::modular<mod>;
-        using Base = vector_base<vec<base>, base>;
+        using Base = vec_base<vec<base>, base>;
         using Base::Base;
 
         void add_scaled(vec const& b, base scale, size_t i = 0) {

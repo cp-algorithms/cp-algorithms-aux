@@ -43,16 +43,16 @@ namespace cp_algo::linalg {
             return res;
         }
 
-        void add_scaled(vec const& b, base scale, size_t i = 0) {
+        virtual void add_scaled(vec const& b, base scale, size_t i = 0) {
             assert(false);
             for(; i < size(*this); i++) {
                 (*this)[i] += scale * b[i];
             }
         }
-        auto& normalize() {
-            return *this;
+        virtual vec& normalize() {
+            return *static_cast<vec*>(this);
         }
-        auto& normalize(size_t i) {
+        virtual base& normalize(size_t i) {
             return (*this)[i];
         }
         void read() {
@@ -80,10 +80,9 @@ namespace cp_algo::linalg {
         // Generally, vec shouldn't be modified
         // after it's pivot index is set
         std::pair<size_t, base> find_pivot() {
-            auto true_this = static_cast<vec*>(this);
             if(pivot == size_t(-1)) {
                 pivot = 0;
-                while(pivot < size(*this) && true_this->normalize(pivot) == base(0)) {
+                while(pivot < size(*this) && normalize(pivot) == base(0)) {
                     pivot++;
                 }
                 if(pivot < size(*this)) {
@@ -93,10 +92,9 @@ namespace cp_algo::linalg {
             return {pivot, pivot_inv};
         }
         void reduce_by(vec &t) {
-            auto true_this = static_cast<vec*>(this);
             auto [pivot, pinv] = t.find_pivot();
             if(pivot < size(*this)) {
-                true_this->add_scaled(t, -true_this->normalize(pivot) * pinv, pivot);
+                add_scaled(t, -normalize(pivot) * pinv, pivot);
             }
         }
     private:
@@ -117,7 +115,7 @@ namespace cp_algo::linalg {
         using Base = vec_base<vec<base>, base>;
         using Base::Base;
 
-        void add_scaled(vec const& b, base scale, size_t i = 0) {
+        void add_scaled(vec const& b, base scale, size_t i = 0) override {
             for(; i < size(*this); i++) {
                 (*this)[i].add_unsafe(scale.r * b[i].r);
             }
@@ -128,13 +126,13 @@ namespace cp_algo::linalg {
                 counter = 0;
             }
         }
-        auto& normalize() {
+        vec& normalize() override {
             for(auto &it: *this) {
                 it.normalize();
             }
             return *this;
         }
-        auto& normalize(size_t i) {
+        base& normalize(size_t i) override {
             return (*this)[i].normalize();
         }
     private:

@@ -32,7 +32,7 @@ namespace cp_algo::algebra {
 
     template<typename T>
     T fact(int n) {
-        static T F[maxn];
+        static std::vector<T> F(maxn);
         static bool init = false;
         if(!init) {
             F[0] = T(1);
@@ -46,7 +46,7 @@ namespace cp_algo::algebra {
     
     template<typename T>
     T rfact(int n) {
-        static T F[maxn];
+        static std::vector<T> F(maxn);
         static bool init = false;
         if(!init) {
             F[maxn - 1] = T(1) / fact<T>(maxn - 1);
@@ -60,7 +60,7 @@ namespace cp_algo::algebra {
 
     template<typename T>
     T small_inv(int n) {
-        static T F[maxn];
+        static std::vector<T> F(maxn);
         static bool init = false;
         if(!init) {
             for(int i = 1; i < maxn; i++) {
@@ -69,6 +69,15 @@ namespace cp_algo::algebra {
             init = true;
         }
         return F[n];
+    }
+
+    template<typename T>
+    T nCr(int n, int r) {
+        if(r < 0 || r > n) {
+            return T(0);
+        } else {
+            return fact<T>(n) * rfact<T>(r) * rfact<T>(n-r);
+        }
     }
 }
 #endif // CP_ALGO_ALGEBRA_COMMON_HPP

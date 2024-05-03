@@ -3,43 +3,25 @@
 #include "common.hpp"
 #include "modular.hpp"
 #include <algorithm>
+#include <complex>
 #include <cassert>
 #include <vector>
 namespace cp_algo::algebra::fft {
     using ftype = double;
-    struct point {
-        ftype x, y;
-        
-        ftype real() {return x;}
-        ftype imag() {return y;}
-        
-        point(): x(0), y(0){}
-        point(ftype x, ftype y = 0): x(x), y(y){}
-        
-        static point polar(ftype rho, ftype ang) {
-            return point{rho * cos(ang), rho * sin(ang)};
-        }
-        
-        point conj() const {
-            return {x, -y};
-        }
-        
-        point operator +=(const point &t) {x += t.x, y += t.y; return *this;}
-        point operator +(const point &t) const {return point(*this) += t;}
-        point operator -(const point &t) const {return {x - t.x, y - t.y};}
-        point operator *(const point &t) const {return {x * t.x - y * t.y, x * t.y + y * t.x};}
-    };
+    using point = std::complex<ftype>;
 
-    point w[maxn]; // w[2^n + k] = exp(pi * k / (2^n))
-    int bitr[maxn];// b[2^n + k] = bitreverse(k)
+    std::vector<point> w; // w[2^n + k] = exp(pi * k / (2^n))
+    std::vector<int> bitr;// b[2^n + k] = bitreverse(k)
     const ftype pi = acos(-1);
     bool initiated = 0;
     void init() {
         if(!initiated) {
+            w.resize(maxn);
+            bitr.resize(maxn);
             for(int i = 1; i < maxn; i *= 2) {
                 int ti = i / 2;
                 for(int j = 0; j < i; j++) {
-                    w[i + j] = point::polar(ftype(1), pi * j / i);
+                    w[i + j] = std::polar(ftype(1), pi * j / i);
                     if(ti) {
                         bitr[i + j] = 2 * bitr[ti + j % ti] + (j >= ti);
                     }
@@ -113,8 +95,8 @@ namespace cp_algo::algebra::fft {
             }
             std::vector<point> C(n), D(n);
             for(size_t i = 0; i < n; i++) {
-                C[i] = A[i] * (B[i] + B[(n - i) % n].conj());
-                D[i] = A[i] * (B[i] - B[(n - i) % n].conj());
+                C[i] = A[i] * (B[i] + conj(B[(n - i) % n]));
+                D[i] = A[i] * (B[i] - conj(B[(n - i) % n]));
             }
             fft(C, n);
             fft(D, n);

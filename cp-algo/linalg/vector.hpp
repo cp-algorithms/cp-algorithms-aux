@@ -33,6 +33,17 @@ namespace cp_algo::linalg {
     };
 
     template<class vec, typename base>
+    vec operator+(valarray_base<vec, base> const& a, valarray_base<vec, base> const& b) {
+        return *static_cast<std::valarray<base> const*>(&a) 
+             + *static_cast<std::valarray<base> const*>(&b);
+    }
+    template<class vec, typename base>
+    vec operator-(valarray_base<vec, base> const& a, valarray_base<vec, base> const& b) {
+        return *static_cast<std::valarray<base> const*>(&a) 
+             - *static_cast<std::valarray<base> const*>(&b);
+    }
+
+    template<class vec, typename base>
     struct vec_base: valarray_base<vec, base> {
         using Base = valarray_base<vec, base>;
         using Base::Base;

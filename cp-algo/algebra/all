@@ -1,6 +1,6 @@
 #ifndef CP_ALGO_ALGEBRA_ALL
 #define CP_ALGO_ALGEBRA_ALL
-#include "modular.hpp"
+#include "modint.hpp"
 #include "affine.hpp"
 #include "common.hpp"
 #include "poly.hpp"

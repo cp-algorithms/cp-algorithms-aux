@@ -3,7 +3,7 @@
 #include "poly/impl/euclid.hpp"
 #include "poly/impl/base.hpp"
 #include "poly/impl/div.hpp"
-#include "common.hpp"
+#include "number_theory.hpp"
 #include "fft.hpp"
 #include <functional>
 #include <algorithm>
@@ -277,7 +277,7 @@ namespace cp_algo::algebra {
                 auto ans = div_xk(i).sqrt(n - i / 2);
                 return ans ? ans->mul_xk(i / 2) : ans;
             }
-            auto st = (*this)[0].sqrt();
+            auto st = algebra::sqrt((*this)[0]);
             if(st) {
                 poly_t ans = *st;
                 size_t a = 1;

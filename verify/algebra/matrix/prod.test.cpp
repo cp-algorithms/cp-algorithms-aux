@@ -14,7 +14,7 @@ const int mod = 998244353;
 void solve() {
     int n, m, k;
     cin >> n >> m >> k;
-    matrix<modular<mod>> a(n, m), b(m, k);
+    matrix<modint<mod>> a(n, m), b(m, k);
     a.read();
     b.read();
     (a * b).print();

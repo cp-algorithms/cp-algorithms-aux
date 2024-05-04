@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_ALGEBRA_FFT_HPP
 #define CP_ALGO_ALGEBRA_FFT_HPP
 #include "common.hpp"
-#include "modular.hpp"
+#include "modint.hpp"
 #include <algorithm>
 #include <complex>
 #include <cassert>
@@ -75,7 +75,7 @@ namespace cp_algo::algebra::fft {
         static constexpr int split = 1 << 15;
         std::vector<point> A;
         
-        dft(std::vector<modular<m>> const& a, size_t n): A(n) {
+        dft(std::vector<modint<m>> const& a, size_t n): A(n) {
             for(size_t i = 0; i < std::min(n, a.size()); i++) {
                 A[i] = point(
                     a[i].rem() % split,
@@ -91,7 +91,7 @@ namespace cp_algo::algebra::fft {
             assert(A.size() == B.A.size());
             size_t n = A.size();
             if(!n) {
-                return std::vector<modular<m>>();
+                return std::vector<modint<m>>();
             }
             std::vector<point> C(n), D(n);
             for(size_t i = 0; i < n; i++) {
@@ -103,11 +103,11 @@ namespace cp_algo::algebra::fft {
             reverse(begin(C) + 1, end(C));
             reverse(begin(D) + 1, end(D));
             int t = 2 * n;
-            std::vector<modular<m>> res(n);
+            std::vector<modint<m>> res(n);
             for(size_t i = 0; i < n; i++) {
-                modular<m> A0 = llround(C[i].real() / t);
-                modular<m> A1 = llround(C[i].imag() / t + D[i].imag() / t);
-                modular<m> A2 = llround(D[i].real() / t);
+                modint<m> A0 = llround(C[i].real() / t);
+                modint<m> A1 = llround(C[i].imag() / t + D[i].imag() / t);
+                modint<m> A2 = llround(D[i].real() / t);
                 res[i] = A0 + A1 * split - A2 * split * split;
             }
             return res;
@@ -129,7 +129,7 @@ namespace cp_algo::algebra::fft {
     }
     
     template<int m>
-    void mul(std::vector<modular<m>> &a, std::vector<modular<m>> b) {
+    void mul(std::vector<modint<m>> &a, std::vector<modint<m>> b) {
         if(std::min(a.size(), b.size()) < magic) {
             mul_slow(a, b);
             return;

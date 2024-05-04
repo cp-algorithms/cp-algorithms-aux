@@ -1,6 +1,6 @@
 #ifndef CP_ALGO_LINALG_VECTOR_HPP
 #define CP_ALGO_LINALG_VECTOR_HPP
-#include "../algebra/modular.hpp"
+#include "../algebra/modint.hpp"
 #include "../random/rng.hpp"
 #include <functional>
 #include <algorithm>
@@ -15,10 +15,10 @@ namespace cp_algo::linalg {
 
         valarray_base(base const& t): Base(t, 1) {}
 
-        auto begin() {return std::begin(*static_cast<Base*>(this));}
-        auto end() {return std::end(*static_cast<Base*>(this));}
-        auto begin() const {return std::begin(*static_cast<Base const*>(this));}
-        auto end() const {return std::end(*static_cast<Base const*>(this));}
+        auto begin() {return std::begin(static_cast<Base&>(*this));}
+        auto end() {return std::end(static_cast<Base&>(*this));}
+        auto begin() const {return std::begin(static_cast<Base const&>(*this));}
+        auto end() const {return std::end(static_cast<Base const&>(*this));}
 
         bool operator == (vec const& t) const {return std::ranges::equal(*this, t);}
         bool operator != (vec const& t) const {return !(*this == t);}
@@ -34,13 +34,13 @@ namespace cp_algo::linalg {
 
     template<class vec, typename base>
     vec operator+(valarray_base<vec, base> const& a, valarray_base<vec, base> const& b) {
-        return *static_cast<std::valarray<base> const*>(&a) 
-             + *static_cast<std::valarray<base> const*>(&b);
+        return static_cast<std::valarray<base> const&>(a) 
+             + static_cast<std::valarray<base> const&>(b);
     }
     template<class vec, typename base>
     vec operator-(valarray_base<vec, base> const& a, valarray_base<vec, base> const& b) {
-        return *static_cast<std::valarray<base> const*>(&a) 
-             - *static_cast<std::valarray<base> const*>(&b);
+        return static_cast<std::valarray<base> const&>(a) 
+             - static_cast<std::valarray<base> const&>(b);
     }
 
     template<class vec, typename base>
@@ -60,10 +60,10 @@ namespace cp_algo::linalg {
                 (*this)[i] += scale * b[i];
             }
         }
-        virtual vec& normalize() {
-            return *static_cast<vec*>(this);
+        virtual vec const& normalize() {
+            return static_cast<vec&>(*this);
         }
-        virtual base& normalize(size_t i) {
+        virtual base normalize(size_t i) {
             return (*this)[i];
         }
         void read() {
@@ -120,15 +120,15 @@ namespace cp_algo::linalg {
     };
 
     template<int mod>
-    struct vec<algebra::modular<mod>>:
-            vec_base<vec<algebra::modular<mod>>, algebra::modular<mod>> {
-        using base = algebra::modular<mod>;
+    struct vec<algebra::modint<mod>>:
+            vec_base<vec<algebra::modint<mod>>, algebra::modint<mod>> {
+        using base = algebra::modint<mod>;
         using Base = vec_base<vec<base>, base>;
         using Base::Base;
 
         void add_scaled(vec const& b, base scale, size_t i = 0) override {
             for(; i < size(*this); i++) {
-                (*this)[i].add_unsafe(scale.r * b[i].r);
+                (*this)[i].add_unsafe(scale.getr() * b[i].getr());
             }
             if(++counter == 8) {
                 for(auto &it: *this) {
@@ -137,13 +137,13 @@ namespace cp_algo::linalg {
                 counter = 0;
             }
         }
-        vec& normalize() override {
+        vec const& normalize() override {
             for(auto &it: *this) {
                 it.normalize();
             }
             return *this;
         }
-        base& normalize(size_t i) override {
+        base normalize(size_t i) override {
             return (*this)[i].normalize();
         }
     private:

@@ -2,13 +2,13 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/range_affine_range_sum"
 #include "cp-algo/data_structures/segtree/metas/affine.hpp"
 #include "cp-algo/data_structures/segtree.hpp"
-#include "cp-algo/algebra/modular.hpp"
+#include "cp-algo/algebra/modint.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::data_structures;
 
-using base = cp_algo::algebra::modular<998244353>;
+using base = cp_algo::algebra::modint<998244353>;
 using meta = segtree::metas::affine_meta<base>;
 
 void solve() {

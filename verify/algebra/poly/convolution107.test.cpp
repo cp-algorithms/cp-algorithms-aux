@@ -7,7 +7,7 @@ using namespace std;
 using namespace cp_algo::algebra;
 
 const int mod = 1e9 + 7;
-using base = modular<mod>;
+using base = modint<mod>;
 using polyn = poly_t<base>;
 
 void solve() {

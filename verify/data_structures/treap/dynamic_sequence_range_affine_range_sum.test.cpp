@@ -1,6 +1,6 @@
 // @brief Dynamic Range Affine Range Sum
 #define PROBLEM "https://judge.yosupo.jp/problem/dynamic_sequence_range_affine_range_sum"
-#include "cp-algo/algebra/modular.hpp"
+#include "cp-algo/algebra/modint.hpp"
 #include "cp-algo/data_structures/treap/metas/reverse.hpp"
 #include "cp-algo/data_structures/treap.hpp"
 #include <bits/stdc++.h>
@@ -8,7 +8,7 @@
 using namespace std;
 using namespace cp_algo::data_structures::treap;
 
-using base = cp_algo::algebra::modular<998244353>;
+using base = cp_algo::algebra::modint<998244353>;
 using meta = metas::reverse_meta<base>;
 using node_t = node<meta>;
 using treap = node_t::treap;

@@ -8,7 +8,7 @@ using namespace cp_algo::algebra;
 using namespace cp_algo::random;
 
 const int mod = 998244353;
-using base = modular<mod>;
+using base = modint<mod>;
 using polyn = poly_t<base>;
 
 void find_roots_impl(polyn const& p, vector<base> &res) {

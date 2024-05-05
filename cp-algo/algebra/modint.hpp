@@ -58,7 +58,6 @@ namespace cp_algo::algebra {
     };
     template<typename modint>
     std::istream& operator >> (std::istream &in, modint_base<modint> &x) {
-
         return in >> x.setr();
     }
     template<typename modint>

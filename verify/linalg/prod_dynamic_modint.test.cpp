@@ -1,4 +1,4 @@
-// @brief Matrix Product
+// @brief Matrix Product (dynamic modint)
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_product"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("avx2,tune=native")
@@ -8,13 +8,15 @@
 using namespace std;
 using namespace cp_algo::linalg;
 using namespace cp_algo::algebra;
+using base = dynamic_modint;
 
 const int mod = 998244353;
 
 void solve() {
+    base::switch_mod(mod);
     int n, m, k;
     cin >> n >> m >> k;
-    matrix<modint<mod>> a(n, m), b(m, k);
+    matrix<base> a(n, m), b(m, k);
     a.read();
     b.read();
     (a * b).print();

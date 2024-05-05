@@ -43,7 +43,6 @@ namespace cp_algo::algebra {
         }
         return F[n];
     }
-    
     template<typename T>
     T rfact(int n) {
         static std::vector<T> F(maxn);
@@ -57,7 +56,6 @@ namespace cp_algo::algebra {
         }
         return F[n];
     }
-
     template<typename T>
     T small_inv(int n) {
         static std::vector<T> F(maxn);

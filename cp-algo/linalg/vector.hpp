@@ -56,7 +56,6 @@ namespace cp_algo::linalg {
         }
 
         virtual void add_scaled(vec const& b, base scale, size_t i = 0) {
-            assert(false);
             for(; i < size(*this); i++) {
                 (*this)[i] += scale * b[i];
             }

@@ -7,6 +7,7 @@
 #include <valarray>
 #include <iostream>
 #include <iterator>
+#include <cassert>
 namespace cp_algo::linalg {
     template<class vec, typename base>
     struct valarray_base: std::valarray<base> {

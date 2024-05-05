@@ -3,8 +3,6 @@
 #include "../random/rng.hpp"
 #include "affine.hpp"
 #include "modint.hpp"
-#include <algorithm>
-#include <iostream>
 #include <optional>
 namespace cp_algo::algebra {
     // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm

@@ -16,10 +16,10 @@ namespace cp_algo::linalg {
 
         valarray_base(base const& t): Base(t, 1) {}
 
-        auto begin() {return std::begin(static_cast<Base&>(*this));}
-        auto end() {return std::end(static_cast<Base&>(*this));}
-        auto begin() const {return std::begin(static_cast<Base const&>(*this));}
-        auto end() const {return std::end(static_cast<Base const&>(*this));}
+        auto begin() {return std::begin(to_valarray());}
+        auto begin() const {return std::begin(to_valarray());}
+        auto end() {return std::end(to_valarray());}
+        auto end() const {return std::end(to_valarray());}
 
         bool operator == (vec const& t) const {return std::ranges::equal(*this, t);}
         bool operator != (vec const& t) const {return !(*this == t);}
@@ -31,17 +31,17 @@ namespace cp_algo::linalg {
             std::ranges::copy(R, res.begin());
             return res;
         }
+        Base& to_valarray() {return static_cast<Base&>(*this);}
+        Base const& to_valarray() const {return static_cast<Base const&>(*this);}
     };
 
     template<class vec, typename base>
     vec operator+(valarray_base<vec, base> const& a, valarray_base<vec, base> const& b) {
-        return static_cast<std::valarray<base> const&>(a) 
-             + static_cast<std::valarray<base> const&>(b);
+        return a.to_valarray() + b.to_valarray();
     }
     template<class vec, typename base>
     vec operator-(valarray_base<vec, base> const& a, valarray_base<vec, base> const& b) {
-        return static_cast<std::valarray<base> const&>(a) 
-             - static_cast<std::valarray<base> const&>(b);
+        return a.to_valarray() - b.to_valarray();
     }
 
     template<class vec, typename base>

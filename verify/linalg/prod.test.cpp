@@ -8,12 +8,11 @@
 using namespace std;
 using namespace cp_algo::linalg;
 using namespace cp_algo::algebra;
-using base = dynamic_modint;
 
 const int mod = 998244353;
+using base = modint<mod>;
 
 void solve() {
-    base::switch_mod(mod);
     int n, m, k;
     cin >> n >> m >> k;
     matrix<base> a(n, m), b(m, k);

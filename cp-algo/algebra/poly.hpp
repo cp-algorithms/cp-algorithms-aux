@@ -654,8 +654,8 @@ namespace cp_algo::algebra {
             return ans;
         }
     };
-    
-    static auto operator * (const auto& a, const poly_t<auto>& b) {
+    template<typename base>
+    static auto operator * (const auto& a, const poly_t<base>& b) {
         return b * a;
     }
 };

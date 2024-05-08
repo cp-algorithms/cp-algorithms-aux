@@ -53,8 +53,8 @@ namespace cp_algo::algebra::fft {
             }
         }
     }
-    
-    void mul_slow(std::vector<auto> &a, const std::vector<auto> &b) {
+    template<typename base>
+    void mul_slow(std::vector<base> &a, const std::vector<base> &b) {
         if(a.empty() || b.empty()) {
             a.clear();
         } else {

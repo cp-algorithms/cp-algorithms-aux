@@ -6,8 +6,7 @@
 #include <optional>
 namespace cp_algo::algebra {
     // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
-    template<typename base>
-    requires(std::is_base_of_v<modint_base<base>, base>)
+    template<modint_type base>
     std::optional<base> sqrt(base b) {
         if(b == base(0)) {
             return base(0);
@@ -28,8 +27,7 @@ namespace cp_algo::algebra {
         }
     }
 
-    template<typename base>
-    requires(std::is_base_of_v<modint_base<base>, base>)
+    template<modint_type base>
     bool is_prime_mod() {
         auto m = base::mod();
         if(m == 1 || m % 2 == 0) {

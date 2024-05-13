@@ -68,6 +68,9 @@ namespace cp_algo::algebra {
         return out << x.getr();
     }
 
+    template<typename modint>
+    concept modint_type = std::is_base_of_v<modint_base<modint>, modint>;
+
     template<int64_t m>
     struct modint: modint_base<modint<m>> {
         static constexpr int64_t mod() {return m;}

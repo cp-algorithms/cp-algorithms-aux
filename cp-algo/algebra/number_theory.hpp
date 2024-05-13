@@ -3,7 +3,10 @@
 #include "../random/rng.hpp"
 #include "affine.hpp"
 #include "modint.hpp"
+#include <algorithm>
 #include <optional>
+#include <vector>
+#include <bit>
 namespace cp_algo::algebra {
     // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
     template<modint_type base>
@@ -26,43 +29,64 @@ namespace cp_algo::algebra {
             }
         }
     }
-
-    template<modint_type base>
-    bool is_prime_mod() {
-        auto m = base::mod();
+    // https://en.wikipedia.org/wiki/Miller–Rabin_primality_test
+    bool is_prime(uint64_t m) {
         if(m == 1 || m % 2 == 0) {
             return m == 2;
         }
-        auto m1 = m - 1;
-        int d = 0;
-        while(m1 % 2 == 0) {
-            m1 /= 2;
-            d++;
-        }
-        auto test = [&](auto x) {
-            x = bpow(x, m1);
-            if(x == 0 || x == 1 || x == -1) {
+        // m - 1 = 2^s * d
+        int s = std::countr_zero(m - 1);
+        auto d = (m - 1) >> s;
+        using base = dynamic_modint;
+        auto test = [&](base x) {
+            x = bpow(x, d);
+            if(std::abs(x.rem()) <= 1) {
                 return true;
             }
-            for(int i = 0; i <= d; i++) {
-                if(x == -1) {
-                    return true;
-                }
+            for(int i = 1; i < s && x != -1; i++) {
                 x *= x;
             }
-            return false;
+            return x == -1;
         };
-        for(base b: {2, 325, 9375, 28178, 450775, 9780504, 1795265022}) {
-            if(!test(b)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    bool is_prime(int64_t m) {
-        return dynamic_modint::with_switched_mod(m, [](){
-            return is_prime_mod<dynamic_modint>();
+        return base::with_switched_mod(m, [&](){
+            // Works for all m < 2^64: https://miller-rabin.appspot.com
+            return std::ranges::all_of(std::array{
+                2, 325, 9375, 28178, 450775, 9780504, 1795265022
+            }, test);
         });
+    }
+    // https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
+    void factorize(uint64_t m, std::vector<int64_t> &res) {
+        if(m % 2 == 0) {
+            res.push_back(2);
+            factorize(m / 2, res);
+        } else if(is_prime(m)) {
+            res.push_back(m);
+        } else if(m > 1) {
+            uint64_t g = 1;
+            using base = dynamic_modint;
+            base::with_switched_mod(m, [&]() {
+                while(g == 1 || g == m) {
+                    auto f = [t = random::rng()](auto x) {
+                        return x * x + t;
+                    };
+                    g = 1;
+                    base x, y;
+                    while(g == 1) {
+                        x = f(x);
+                        y = f(f(y));
+                        g = std::gcd(m, (x - y).getr());
+                    }
+                }
+            });
+            factorize(g, res);
+            factorize(m / g, res);
+        }
+    }
+    auto factorize(int64_t m) {
+        std::vector<int64_t> res;
+        factorize(m, res);
+        return res;
     }
 }
 #endif // CP_ALGO_ALGEBRA_NUMBER_THEORY_HPP

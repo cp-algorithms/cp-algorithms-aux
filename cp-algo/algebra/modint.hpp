@@ -88,9 +88,14 @@ namespace cp_algo::algebra {
         auto static with_switched_mod(int64_t tmp, auto callback) {
             auto prev = mod();
             switch_mod(tmp);
-            auto res = callback();
-            switch_mod(prev);
-            return res;
+            if constexpr(std::is_void_v<std::invoke_result_t<decltype(callback)>>) {
+                callback();
+                switch_mod(prev);
+            } else {
+                auto res = callback();
+                switch_mod(prev);
+                return res;
+            }
         }
     private:
         static int64_t m;

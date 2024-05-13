@@ -27,5 +27,44 @@ namespace cp_algo::algebra {
             }
         }
     }
+
+    template<typename base>
+    requires(std::is_base_of_v<modint_base<base>, base>)
+    bool is_prime_mod() {
+        auto m = base::mod();
+        if(m == 1 || m % 2 == 0) {
+            return m == 2;
+        }
+        auto m1 = m - 1;
+        int d = 0;
+        while(m1 % 2 == 0) {
+            m1 /= 2;
+            d++;
+        }
+        auto test = [&](auto x) {
+            x = bpow(x, m1);
+            if(x == 0 || x == 1 || x == -1) {
+                return true;
+            }
+            for(int i = 0; i <= d; i++) {
+                if(x == -1) {
+                    return true;
+                }
+                x *= x;
+            }
+            return false;
+        };
+        for(base b: {2, 325, 9375, 28178, 450775, 9780504, 1795265022}) {
+            if(!test(b)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    bool is_prime(int64_t m) {
+        return dynamic_modint::with_switched_mod(m, [](){
+            return is_prime_mod<dynamic_modint>();
+        });
+    }
 }
 #endif // CP_ALGO_ALGEBRA_NUMBER_THEORY_HPP

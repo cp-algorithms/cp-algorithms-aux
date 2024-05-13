@@ -1,0 +1,26 @@
+// @brief Primality Test
+#define PROBLEM "https://judge.yosupo.jp/problem/primality_test"
+#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC target("avx2,tune=native")
+#include "cp-algo/algebra/number_theory.hpp"
+#include <bits/stdc++.h>
+
+using namespace std;
+using namespace cp_algo::algebra;
+
+void solve() {
+    int64_t m;
+    cin >> m;
+    cout << (is_prime(m) ? "Yes" : "No") << "\n";
+}
+
+signed main() {
+    //freopen("input.txt", "r", stdin);
+    ios::sync_with_stdio(0);
+    cin.tie(0);
+    int t = 1;
+    cin >> t;
+    while(t--) {
+        solve();
+    }
+}

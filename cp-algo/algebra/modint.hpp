@@ -85,7 +85,7 @@ namespace cp_algo::algebra {
         using Base::Base;
 
         // Wrapper for temp switching
-        auto static with_switched_mod(int64_t tmp, auto callback) {
+        auto static with_mod(int64_t tmp, auto callback) {
             auto prev = mod();
             switch_mod(tmp);
             if constexpr(std::is_void_v<std::invoke_result_t<decltype(callback)>>) {

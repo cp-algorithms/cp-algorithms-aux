@@ -48,7 +48,7 @@ namespace cp_algo::algebra {
             }
             return x == -1;
         };
-        return base::with_switched_mod(m, [&](){
+        return base::with_mod(m, [&](){
             // Works for all m < 2^64: https://miller-rabin.appspot.com
             return std::ranges::all_of(std::array{
                 2, 325, 9375, 28178, 450775, 9780504, 1795265022
@@ -64,7 +64,7 @@ namespace cp_algo::algebra {
             res.push_back(m);
         } else if(m > 1) {
             using base = dynamic_modint;
-            base::with_switched_mod(m, [&]() {
+            base::with_mod(m, [&]() {
                 base t = random::rng();
                 auto f = [&](auto x) {
                     return x * x + t;
@@ -90,10 +90,29 @@ namespace cp_algo::algebra {
             });
         }
     }
-    auto factorize(int64_t m) {
+    std::vector<int64_t> factorize(int64_t m) {
         std::vector<int64_t> res;
         factorize(m, res);
         return res;
+    }
+    int64_t primitive_root(int64_t p) {
+        using base = dynamic_modint;
+        return base::with_mod(p, [p](){
+            auto fact = factorize(p - 1);
+            auto is_primitive_root = [&](base x) {
+                for(auto t: fact) {
+                    if(bpow(x, (p - 1) / t) == 1) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+            base t = 1;
+            while(!is_primitive_root(t)) {
+                t = random::rng();
+            }
+            return t.getr();
+        });
     }
 }
 #endif // CP_ALGO_ALGEBRA_NUMBER_THEORY_HPP

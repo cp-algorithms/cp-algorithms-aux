@@ -1,10 +1,10 @@
-#ifndef CP_ALGO_ALGEBRA_POLY_IMPL_DIV_HPP
-#define CP_ALGO_ALGEBRA_POLY_IMPL_DIV_HPP
+#ifndef CP_ALGO_MATH_POLY_IMPL_DIV_HPP
+#define CP_ALGO_MATH_POLY_IMPL_DIV_HPP
 #include "../../fft.hpp"
 #include "../../common.hpp"
 #include <cassert>
 // operations related to polynomial division
-namespace cp_algo::algebra::poly::impl {
+namespace cp_algo::math::poly::impl {
     auto divmod_slow(auto const& p, auto const& q) {
         auto R = p;
         auto D = decltype(p){};
@@ -113,4 +113,4 @@ namespace cp_algo::algebra::poly::impl {
         ).mod_xk(n);
     }
 }
-#endif // CP_ALGO_ALGEBRA_POLY_IMPL_DIV_HPP
+#endif // CP_ALGO_MATH_POLY_IMPL_DIV_HPP

@@ -1,14 +1,14 @@
 #ifndef CP_ALGO_LINALG_VECTOR_HPP
 #define CP_ALGO_LINALG_VECTOR_HPP
-#include "../algebra/modint.hpp"
 #include "../random/rng.hpp"
+#include "../math/modint.hpp"
 #include <functional>
 #include <algorithm>
 #include <valarray>
 #include <iostream>
 #include <iterator>
 #include <cassert>
-namespace cp_algo::linalg {
+namespace cp_algo::math::linalg {
     template<class vec, typename base>
     struct valarray_base: std::valarray<base> {
         using Base = std::valarray<base>;
@@ -120,7 +120,7 @@ namespace cp_algo::linalg {
     };
 
     template<typename base>
-    requires(std::is_base_of_v<algebra::modint_base<base>, base>)
+    requires(std::is_base_of_v<math::modint_base<base>, base>)
     struct vec<base>: vec_base<vec<base>, base> {
         using Base = vec_base<vec<base>, base>;
         using Base::Base;

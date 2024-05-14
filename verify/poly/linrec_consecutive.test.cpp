@@ -1,10 +1,10 @@
 // @brief Consecutive Terms of Linear Recursion
 #define PROBLEM "https://judge.yosupo.jp/problem/consecutive_terms_of_linear_recurrent_sequence"
-#include "cp-algo/algebra/poly.hpp"
+#include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::algebra;
+using namespace cp_algo::math;
 
 const int mod = 998244353;
 using base = modint<mod>;

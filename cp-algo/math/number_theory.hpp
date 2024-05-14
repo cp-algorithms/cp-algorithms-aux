@@ -1,5 +1,5 @@
-#ifndef CP_ALGO_ALGEBRA_NUMBER_THEORY_HPP
-#define CP_ALGO_ALGEBRA_NUMBER_THEORY_HPP
+#ifndef CP_ALGO_MATH_NUMBER_THEORY_HPP
+#define CP_ALGO_MATH_NUMBER_THEORY_HPP
 #include "../random/rng.hpp"
 #include "affine.hpp"
 #include "modint.hpp"
@@ -7,7 +7,7 @@
 #include <optional>
 #include <vector>
 #include <bit>
-namespace cp_algo::algebra {
+namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
     template<modint_type base>
     std::optional<base> sqrt(base b) {
@@ -115,4 +115,4 @@ namespace cp_algo::algebra {
         });
     }
 }
-#endif // CP_ALGO_ALGEBRA_NUMBER_THEORY_HPP
+#endif // CP_ALGO_MATH_NUMBER_THEORY_HPP

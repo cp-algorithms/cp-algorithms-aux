@@ -1,16 +1,16 @@
 #ifndef CP_ALGO_LINALG_FROBENIUS_HPP
 #define CP_ALGO_LINALG_FROBENIUS_HPP
+#include "../math/poly.hpp"
 #include "matrix.hpp"
-#include "../algebra/poly.hpp"
 #include <algorithm>
 #include <vector>
-namespace cp_algo::linalg {
+namespace cp_algo::math::linalg {
     enum frobenius_mode {blocks, full};
     template<frobenius_mode mode = blocks>
     auto frobenius_form(auto const& A) {
         using matrix = std::decay_t<decltype(A)>;
         using base = matrix::base;
-        using polyn = algebra::poly_t<base>;
+        using polyn = math::poly_t<base>;
         assert(A.n() == A.m());
         size_t n = A.n();
         std::vector<polyn> charps;
@@ -76,7 +76,7 @@ namespace cp_algo::linalg {
 
     template<typename base>
     auto frobenius_pow(matrix<base> A, uint64_t k) {
-        using polyn = algebra::poly_t<base>;
+        using polyn = math::poly_t<base>;
         auto [T, Tinv, charps] = frobenius_form<full>(A);
         std::vector<matrix<base>> blocks;
         for(auto charp: charps) {

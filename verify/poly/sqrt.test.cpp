@@ -1,11 +1,11 @@
 // @brief Sqrt of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/sqrt_of_formal_power_series"
-#include "cp-algo/algebra/poly.hpp"
-#include "cp-algo/algebra/modint.hpp"
+#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/modint.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::algebra;
+using namespace cp_algo::math;
 
 const int mod = 998244353;
 using base = modint<mod>;

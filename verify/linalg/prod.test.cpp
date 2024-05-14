@@ -6,8 +6,8 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::linalg;
-using namespace cp_algo::algebra;
+using namespace cp_algo::math::linalg;
+using namespace cp_algo::math;
 
 const int mod = 998244353;
 using base = modint<mod>;

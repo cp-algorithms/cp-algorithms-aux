@@ -1,12 +1,12 @@
 #ifndef CP_ALGO_DATA_STRUCTURES_TREAP_METAS_REVERSE_HPP
 #define CP_ALGO_DATA_STRUCTURES_TREAP_METAS_REVERSE_HPP
 #include "base.hpp"
-#include "../../../algebra/affine.hpp"
+#include "../../../math/affine.hpp"
 #include <algorithm>
 namespace cp_algo::data_structures::treap::metas {
         template<typename base>
         struct reverse_meta: base_meta {
-            using lin = algebra::lin<base>;
+            using lin = math::lin<base>;
             base val;
             size_t sz = 1;
             bool reverse = false;

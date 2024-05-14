@@ -1,10 +1,10 @@
-#ifndef CP_ALGO_ALGEBRA_POLY_IMPL_BASE_HPP
-#define CP_ALGO_ALGEBRA_POLY_IMPL_BASE_HPP
+#ifndef CP_ALGO_MATH_POLY_IMPL_BASE_HPP
+#define CP_ALGO_MATH_POLY_IMPL_BASE_HPP
 #include <functional>
 #include <algorithm>
 #include <iostream>
 // really basic operations, typically taking O(n)
-namespace cp_algo::algebra::poly::impl {
+namespace cp_algo::math::poly::impl {
     void normalize(auto& p) {
         while(p.deg() >= 0 && p.lead() == 0) {
             p.a.pop_back();
@@ -64,4 +64,4 @@ namespace cp_algo::algebra::poly::impl {
         return p;
     }
 }
-#endif // CP_ALGO_ALGEBRA_POLY_IMPL_BASE_HPP
+#endif // CP_ALGO_MATH_POLY_IMPL_BASE_HPP

@@ -1,10 +1,10 @@
 // @brief Convolution mod $10^9+7$
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_1000000007"
-#include "cp-algo/algebra/poly.hpp"
+#include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::algebra;
+using namespace cp_algo::math;
 
 const int mod = 1e9 + 7;
 using base = modint<mod>;

@@ -1,12 +1,12 @@
 #ifndef CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_AFFINE_HPP
 #define CP_ALGO_DATA_STRUCTURES_SEGMENT_TREE_METAS_AFFINE_HPP
 #include "base.hpp"
-#include "../../../algebra/affine.hpp"
+#include "../../../math/affine.hpp"
 namespace cp_algo::data_structures::segtree::metas {
     template<typename base>
     struct affine_meta: base_meta<affine_meta<base>> {
         using meta = affine_meta;
-        using lin = algebra::lin<base>;
+        using lin = math::lin<base>;
 
         base sum = 0;
         lin to_push = {};

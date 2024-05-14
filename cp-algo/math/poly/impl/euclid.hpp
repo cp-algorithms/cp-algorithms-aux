@@ -1,5 +1,5 @@
-#ifndef CP_ALGO_ALGEBRA_POLY_IMPL_EUCLID_HPP
-#define CP_ALGO_ALGEBRA_POLY_IMPL_EUCLID_HPP
+#ifndef CP_ALGO_MATH_POLY_IMPL_EUCLID_HPP
+#define CP_ALGO_MATH_POLY_IMPL_EUCLID_HPP
 #include "../../affine.hpp"
 #include "../../fft.hpp"
 #include <functional>
@@ -10,7 +10,7 @@
 #include <tuple>
 #include <list>
 // operations related to gcd and Euclidean algo
-namespace cp_algo::algebra::poly::impl {
+namespace cp_algo::math::poly::impl {
     template<typename poly>
     using gcd_result = std::pair<
         std::list<std::decay_t<poly>>,
@@ -99,4 +99,4 @@ namespace cp_algo::algebra::poly::impl {
         return Tr.b / q[0];
     }
 }
-#endif // CP_ALGO_ALGEBRA_POLY_IMPL_EUCLID_HPP
+#endif // CP_ALGO_MATH_POLY_IMPL_EUCLID_HPP

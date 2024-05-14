@@ -1,10 +1,10 @@
 // @brief Polynomial Root Finding
 #define PROBLEM "https://judge.yosupo.jp/problem/polynomial_root_finding"
-#include "cp-algo/algebra/poly.hpp"
+#include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
-using namespace cp_algo::algebra;
+using namespace cp_algo::math;
 using namespace cp_algo::random;
 
 const int mod = 998244353;

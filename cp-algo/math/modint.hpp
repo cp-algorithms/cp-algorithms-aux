@@ -1,8 +1,8 @@
-#ifndef CP_ALGO_ALGEBRA_MODINT_HPP
-#define CP_ALGO_ALGEBRA_MODINT_HPP
+#ifndef CP_ALGO_MATH_MODINT_HPP
+#define CP_ALGO_MATH_MODINT_HPP
 #include "common.hpp"
 #include <iostream>
-namespace cp_algo::algebra {
+namespace cp_algo::math {
     template<typename modint>
     struct modint_base {
         static int64_t mod() {
@@ -102,4 +102,4 @@ namespace cp_algo::algebra {
     };
     int64_t dynamic_modint::m = 0;
 }
-#endif // CP_ALGO_ALGEBRA_MODINT_HPP
+#endif // CP_ALGO_MATH_MODINT_HPP

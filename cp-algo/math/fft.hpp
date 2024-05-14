@@ -1,12 +1,12 @@
-#ifndef CP_ALGO_ALGEBRA_FFT_HPP
-#define CP_ALGO_ALGEBRA_FFT_HPP
+#ifndef CP_ALGO_MATH_FFT_HPP
+#define CP_ALGO_MATH_FFT_HPP
 #include "common.hpp"
 #include "modint.hpp"
 #include <algorithm>
 #include <complex>
 #include <cassert>
 #include <vector>
-namespace cp_algo::algebra::fft {
+namespace cp_algo::math::fft {
     using ftype = double;
     using point = std::complex<ftype>;
 
@@ -143,4 +143,4 @@ namespace cp_algo::algebra::fft {
         }
     }
 }
-#endif // CP_ALGO_ALGEBRA_FFT_HPP
+#endif // CP_ALGO_MATH_FFT_HPP

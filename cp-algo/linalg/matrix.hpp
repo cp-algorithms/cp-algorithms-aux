@@ -1,14 +1,14 @@
 #ifndef CP_ALGO_LINALG_MATRIX_HPP
 #define CP_ALGO_LINALG_MATRIX_HPP
 #include "../random/rng.hpp"
-#include "../algebra/common.hpp"
+#include "../math/common.hpp"
 #include "vector.hpp"
 #include <iostream>
 #include <optional>
 #include <cassert>
 #include <vector>
 #include <array>
-namespace cp_algo::linalg {
+namespace cp_algo::math::linalg {
     template<typename base_t>
     struct matrix: valarray_base<matrix<base_t>, vec<base_t>> {
         using base = base_t;

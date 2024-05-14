@@ -1,8 +1,9 @@
-#ifndef CP_ALGO_ALGEBRA_POLY_HPP
-#define CP_ALGO_ALGEBRA_POLY_HPP
+#ifndef CP_ALGO_MATH_POLY_HPP
+#define CP_ALGO_MATH_POLY_HPP
 #include "poly/impl/euclid.hpp"
 #include "poly/impl/base.hpp"
 #include "poly/impl/div.hpp"
+#include "combinatorics.hpp"
 #include "number_theory.hpp"
 #include "fft.hpp"
 #include <functional>
@@ -12,7 +13,7 @@
 #include <utility>
 #include <vector>
 #include <list>
-namespace cp_algo::algebra {
+namespace cp_algo::math {
     template<typename T>
     struct poly_t {
         using base = T;
@@ -277,7 +278,7 @@ namespace cp_algo::algebra {
                 auto ans = div_xk(i).sqrt(n - i / 2);
                 return ans ? ans->mul_xk(i / 2) : ans;
             }
-            auto st = algebra::sqrt((*this)[0]);
+            auto st = math::sqrt((*this)[0]);
             if(st) {
                 poly_t ans = *st;
                 size_t a = 1;
@@ -659,4 +660,4 @@ namespace cp_algo::algebra {
         return b * a;
     }
 };
-#endif // CP_ALGO_ALGEBRA_POLY_HPP
+#endif // CP_ALGO_MATH_POLY_HPP

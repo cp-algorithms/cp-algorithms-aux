@@ -2,12 +2,12 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/primitive_root"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("avx2,tune=native")
-#include "cp-algo/algebra/number_theory.hpp"
+#include "cp-algo/math/number_theory.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo;
-using namespace algebra;
+using namespace math;
 using base = dynamic_modint;
 
 void solve() {

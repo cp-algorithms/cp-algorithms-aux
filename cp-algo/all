@@ -8,7 +8,7 @@
 namespace cp_algo {
     using namespace data_structures;
     using namespace geometry;
-    using namespace algebra;
+    using namespace math;
     using namespace linalg;
     using namespace random;
 }

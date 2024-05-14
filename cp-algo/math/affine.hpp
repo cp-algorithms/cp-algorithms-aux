@@ -1,10 +1,10 @@
-#ifndef CP_ALGO_ALGEBRA_AFFINE_HPP
-#define CP_ALGO_ALGEBRA_AFFINE_HPP
+#ifndef CP_ALGO_MATH_AFFINE_HPP
+#define CP_ALGO_MATH_AFFINE_HPP
 #include <optional>
 #include <utility>
 #include <cassert>
 #include <tuple>
-namespace cp_algo::algebra {
+namespace cp_algo::math {
     // a * x + b
     template<typename base>
     struct lin {
@@ -68,4 +68,4 @@ namespace cp_algo::algebra {
         }
     };
 }
-#endif // CP_ALGO_ALGEBRA_AFFINE_HPP
+#endif // CP_ALGO_MATH_AFFINE_HPP

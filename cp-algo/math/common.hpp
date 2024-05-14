@@ -1,8 +1,8 @@
-#ifndef CP_ALGO_ALGEBRA_COMMON_HPP
-#define CP_ALGO_ALGEBRA_COMMON_HPP
+#ifndef CP_ALGO_MATH_COMMON_HPP
+#define CP_ALGO_MATH_COMMON_HPP
 #include <functional>
 #include <cstdint>
-namespace cp_algo::algebra {
+namespace cp_algo::math {
 #ifdef CP_ALGO_MAXN
     const int maxn = CP_ALGO_MAXN;
 #else
@@ -29,7 +29,6 @@ namespace cp_algo::algebra {
     T bpow(T const& x, int64_t n) {
         return bpow(x, n, T(1));
     }
-
     template<typename T>
     T fact(int n) {
         static std::vector<T> F(maxn);
@@ -68,14 +67,5 @@ namespace cp_algo::algebra {
         }
         return F[n];
     }
-
-    template<typename T>
-    T nCr(int n, int r) {
-        if(r < 0 || r > n) {
-            return T(0);
-        } else {
-            return fact<T>(n) * rfact<T>(r) * rfact<T>(n-r);
-        }
-    }
 }
-#endif // CP_ALGO_ALGEBRA_COMMON_HPP
+#endif // CP_ALGO_MATH_COMMON_HPP

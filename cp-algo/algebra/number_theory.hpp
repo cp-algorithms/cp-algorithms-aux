@@ -58,29 +58,36 @@ namespace cp_algo::algebra {
     // https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
     void factorize(uint64_t m, std::vector<int64_t> &res) {
         if(m % 2 == 0) {
-            res.push_back(2);
             factorize(m / 2, res);
+            res.push_back(2);
         } else if(is_prime(m)) {
             res.push_back(m);
         } else if(m > 1) {
-            uint64_t g = 1;
             using base = dynamic_modint;
             base::with_switched_mod(m, [&]() {
-                while(g == 1 || g == m) {
-                    auto f = [t = random::rng()](auto x) {
-                        return x * x + t;
-                    };
-                    g = 1;
-                    base x, y;
-                    while(g == 1) {
+                base t = random::rng();
+                auto f = [&](auto x) {
+                    return x * x + t;
+                };
+                base x, y;
+                base g = 1;
+                while(g == 1) {
+                    for(int i = 0; i < 64; i++) {
                         x = f(x);
                         y = f(f(y));
-                        g = std::gcd(m, (x - y).getr());
+                        if(x == y) [[unlikely]] {
+                            t = random::rng();
+                            x = y = 0;
+                        } else {
+                            base t = g * (x - y);
+                            g = t == 0 ? g : t;
+                        }
                     }
+                    g = std::gcd(g.getr(), m);
                 }
+                factorize(g.getr(), res);
+                factorize(m / g.getr(), res);
             });
-            factorize(g, res);
-            factorize(m / g, res);
         }
     }
     auto factorize(int64_t m) {

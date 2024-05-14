@@ -29,6 +29,8 @@ namespace cp_algo::math {
     T bpow(T const& x, int64_t n) {
         return bpow(x, n, T(1));
     }
+    // fact/rfact/small_inv are caching
+    // Beware of usage with dynamic mod
     template<typename T>
     T fact(int n) {
         static std::vector<T> F(maxn);
@@ -42,13 +44,15 @@ namespace cp_algo::math {
         }
         return F[n];
     }
+    // Only works for modint types
     template<typename T>
     T rfact(int n) {
         static std::vector<T> F(maxn);
         static bool init = false;
         if(!init) {
-            F[maxn - 1] = T(1) / fact<T>(maxn - 1);
-            for(int i = maxn - 2; i >= 0; i--) {
+            int t = std::min<int64_t>(T::mod(), maxn) - 1;
+            F[t] = T(1) / fact<T>(t);
+            for(int i = t - 1; i >= 0; i--) {
                 F[i] = F[i + 1] * T(i + 1);
             }
             init = true;

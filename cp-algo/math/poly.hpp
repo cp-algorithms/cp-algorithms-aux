@@ -499,12 +499,12 @@ namespace cp_algo::math {
         }
         
         // [x^k] (a corr b) = sum_{i} a{(k-m)+i}*bi
-        static poly_t corr(poly_t a, poly_t b) { // cross-correlation
+        static poly_t corr(poly_t const& a, poly_t const& b) { // cross-correlation
             return a * b.reverse();
         }
 
         // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
-        static poly_t semicorr(poly_t a, poly_t b) {
+        static poly_t semicorr(poly_t const& a, poly_t const& b) {
             return corr(a, b).div_xk(b.deg());
         }
         

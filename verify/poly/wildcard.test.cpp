@@ -15,6 +15,7 @@ string matches(string const& A, string const& B, char wild = '*') {
     static base c_to_int[2][26];
     static bool init = false;
     if(!init) {
+        init = true;
         for(int i = 0; i < 26; i++) {
             c_to_int[0][i] = polar(1., (double)cp_algo::random::rng());
             c_to_int[1][i] = conj(c_to_int[0][i]);
@@ -33,7 +34,7 @@ string matches(string const& A, string const& B, char wild = '*') {
     string ans(size(ST[0]) - size(ST[1]) + 1, '0');
     for(size_t j = 0; j <= size(ans); j++) {
         ans[j] = '0' + (
-            abs(dist0[j].imag()) < 1e-4 && abs(dist0[j].real() - round(dist0[j].real())) < 1e-4
+            abs(dist0[j].imag()) < 1e-8 && abs(dist0[j].real() - round(dist0[j].real())) < 1e-8
         );
     }
     return ans;

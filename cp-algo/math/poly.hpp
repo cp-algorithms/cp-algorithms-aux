@@ -504,6 +504,13 @@ namespace cp_algo::math {
         }
 
         // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
+        static poly_t inner_semicorr(poly_t const& a, poly_t const& b) {
+            auto ta = a.a;
+            fft::circular_mul(ta, b.reverse().a);
+            return poly_t(ta).div_xk(b.deg());
+        }
+
+        // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
         static poly_t semicorr(poly_t const& a, poly_t const& b) {
             return corr(a, b).div_xk(b.deg());
         }

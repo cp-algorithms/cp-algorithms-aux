@@ -6,6 +6,7 @@
 #include <complex>
 #include <cassert>
 #include <vector>
+#include <bit>
 namespace cp_algo::math::fft {
     using ftype = double;
     using point = std::complex<ftype>;
@@ -70,47 +71,88 @@ namespace cp_algo::math::fft {
         }
     }
     
-    template<modint_type base>
+    template<typename base>
     struct dft {
-        static constexpr int split = 1 << 15;
         std::vector<point> A;
         
         dft(std::vector<base> const& a, size_t n): A(n) {
             for(size_t i = 0; i < std::min(n, a.size()); i++) {
-                A[i] = point(
-                    a[i].rem() % split,
-                    a[i].rem() / split
-                );
+                A[i] = a[i];
             }
             if(n) {
                 fft(A, n);
             }
         }
     
-        auto operator * (dft const& B) {
+        auto operator *= (dft const& B) {
             assert(A.size() == B.A.size());
             size_t n = A.size();
             if(!n) {
                 return std::vector<base>();
             }
-            std::vector<point> C(n), D(n);
+            for(size_t i = 0; i < n; i++) {
+                A[i] *= B[i];
+            }
+            fft(A, n);
+            reverse(begin(A) + 1, end(A));
+            std::vector<base> res(n);
+            for(size_t i = 0; i < n; i++) {
+                res[i] = A[i];
+                res[i] /= n;
+            }
+            return res;
+        }
+
+        auto operator * (dft const& B) const {
+            return dft(*this) *= B;
+        }
+        
+        point& operator [](int i) {return A[i];}
+        point operator [](int i) const {return A[i];}
+    };
+
+    template<modint_type base>
+    struct dft<base> {
+        static constexpr int split = 1 << 15;
+        std::vector<point> A;
+        
+        dft(std::vector<base> const& a, size_t n): A(n) {
+            for(size_t i = 0; i < std::min(n, a.size()); i++) {
+                A[i] = point(a[i].rem() % split, a[i].rem() / split);
+            }
+            if(n) {
+                fft(A, n);
+            }
+        }
+    
+        auto operator *= (dft const& B) {
+            assert(A.size() == B.A.size());
+            size_t n = A.size();
+            if(!n) {
+                return std::vector<base>();
+            }
+            std::vector<point> C(n);
             for(size_t i = 0; i < n; i++) {
                 C[i] = A[i] * (B[i] + conj(B[(n - i) % n]));
-                D[i] = A[i] * (B[i] - conj(B[(n - i) % n]));
+                A[i] = A[i] * (B[i] - conj(B[(n - i) % n]));
             }
             fft(C, n);
-            fft(D, n);
+            fft(A, n);
             reverse(begin(C) + 1, end(C));
-            reverse(begin(D) + 1, end(D));
+            reverse(begin(A) + 1, end(A));
             int t = 2 * n;
             std::vector<base> res(n);
             for(size_t i = 0; i < n; i++) {
                 base A0 = llround(C[i].real() / t);
-                base A1 = llround(C[i].imag() / t + D[i].imag() / t);
-                base A2 = llround(D[i].real() / t);
+                base A1 = llround(C[i].imag() / t + A[i].imag() / t);
+                base A2 = llround(A[i].real() / t);
                 res[i] = A0 + A1 * split - A2 * split * split;
             }
             return res;
+        }
+
+        auto operator * (dft const& B) const {
+            return dft(*this) *= B;
         }
         
         point& operator [](int i) {return A[i];}
@@ -121,14 +163,10 @@ namespace cp_algo::math::fft {
         if(!as || !bs) {
             return 0;
         }
-        size_t n = as + bs - 1;
-        while(__builtin_popcount(n) != 1) {
-            n++;
-        }
-        return n;
+        return std::bit_ceil(as + bs - 1);
     }
     
-    template<modint_type base>
+    template<typename base>
     void mul(std::vector<base> &a, std::vector<base> const& b) {
         if(std::min(a.size(), b.size()) < magic) {
             mul_slow(a, b);
@@ -137,30 +175,19 @@ namespace cp_algo::math::fft {
         auto n = com_size(a.size(), b.size());
         auto A = dft<base>(a, n);
         if(a == b) {
-            a = A * A;
+            a = A *= A;
         } else {
-            a = A * dft<base>(b, n);
+            a = A *= dft<base>(b, n);
         }
     }
     template<typename base>
-    void mul(std::vector<base> &a, std::vector<base> const& b) {
-        if(std::min(a.size(), b.size()) < magic) {
-            mul_slow(a, b);
-            return;
-        }
-        auto n = com_size(a.size(), b.size());
-        a.resize(n);
-        auto B(b);
-        B.resize(n);
-        fft(a, n);
-        fft(B, n);
-        for(size_t i = 0; i < n; i++) {
-            a[i] *= B[i];
-        }
-        fft(a, n);
-        reverse(begin(a) + 1, end(a));
-        for(size_t i = 0; i < n; i++) {
-            a[i] /= n;
+    void circular_mul(std::vector<base> &a, std::vector<base> const& b) {
+        auto n = std::bit_ceil(a.size());
+        auto A = dft<base>(a, n);
+        if(a == b) {
+            a = A *= A;
+        } else {
+            a = A *= dft<base>(b, n);
         }
     }
 }

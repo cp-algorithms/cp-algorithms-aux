@@ -30,7 +30,7 @@ string matches(string const& A, string const& B, char wild = '*') {
         }
         P[i] = coeffs;
     }
-    auto dist0 = polyn::semicorr(P[0], P[1]);
+    auto dist0 = polyn::inner_semicorr(P[0], P[1]);
     string ans(size(ST[0]) - size(ST[1]) + 1, '0');
     for(size_t j = 0; j <= size(ans); j++) {
         ans[j] = '0' + (

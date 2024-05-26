@@ -5,8 +5,9 @@
 #include <iostream>
 // really basic operations, typically taking O(n)
 namespace cp_algo::math::poly::impl {
-    void normalize(auto& p) {
-        while(p.deg() >= 0 && p.lead() == 0) {
+    template<typename polyn>
+    void normalize(polyn& p) {
+        while(p.deg() >= 0 && p.lead() == typename polyn::base(0)) {
             p.a.pop_back();
         }
     }

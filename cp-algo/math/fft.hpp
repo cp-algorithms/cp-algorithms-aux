@@ -142,5 +142,26 @@ namespace cp_algo::math::fft {
             a = A * dft<base>(b, n);
         }
     }
+    template<typename base>
+    void mul(std::vector<base> &a, std::vector<base> const& b) {
+        if(std::min(a.size(), b.size()) < magic) {
+            mul_slow(a, b);
+            return;
+        }
+        auto n = com_size(a.size(), b.size());
+        a.resize(n);
+        auto B(b);
+        B.resize(n);
+        fft(a, n);
+        fft(B, n);
+        for(size_t i = 0; i < n; i++) {
+            a[i] *= B[i];
+        }
+        fft(a, n);
+        reverse(begin(a) + 1, end(a));
+        for(size_t i = 0; i < n; i++) {
+            a[i] /= n;
+        }
+    }
 }
 #endif // CP_ALGO_MATH_FFT_HPP

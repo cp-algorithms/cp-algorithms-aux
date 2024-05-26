@@ -8,32 +8,41 @@
 using namespace std;
 using namespace cp_algo::math;
 
-const int mod = 1e9 + 9;
-
-using base = modint<mod>;
+using base = complex<double>;
 using polyn = poly_t<base>;
 
-void solve() {
-    string ST[2];
-    cin >> ST[0] >> ST[1];
-    polyn P[2][3];
-    for(int i: {0, 1}) {
-        for(int j: {1, 2, 3}) {
-            vector<base> coeffs(size(ST[i]));
-            for(size_t k = 0; k < size(ST[i]); k++) {
-                coeffs[k] = bpow(base(ST[i][k] == '*' ? 0 : ST[i][k] - 'a' + 1), j);
-            }
-            P[i][j-1] = coeffs;
+string matches(string const& A, string const& B, char wild = '*') {
+    static base c_to_int[2][26];
+    static bool init = false;
+    if(!init) {
+        for(int i = 0; i < 26; i++) {
+            c_to_int[0][i] = polar(1., (double)cp_algo::random::rng());
+            c_to_int[1][i] = conj(c_to_int[0][i]);
         }
     }
-    auto dist = polyn::semicorr(P[0][0], P[1][2])
-        + polyn::semicorr(P[0][2], P[1][0])
-        - 2*polyn::semicorr(P[0][1], P[1][1]);
+    string ST[2] = {A, B};
+    polyn P[2];
+    for(int i: {0, 1}) {
+        vector<base> coeffs(size(ST[i]));
+        for(size_t k = 0; k < size(ST[i]); k++) {
+            coeffs[k] = base(ST[i][k] == wild ? 0 : c_to_int[i][ST[i][k] - 'a']);
+        }
+        P[i] = coeffs;
+    }
+    auto dist0 = polyn::semicorr(P[0], P[1]);
     string ans(size(ST[0]) - size(ST[1]) + 1, '0');
     for(size_t j = 0; j <= size(ans); j++) {
-        ans[j] = '0' + int(dist[j] == 0);
+        ans[j] = '0' + (
+            abs(dist0[j].imag()) < 1e-4 && abs(dist0[j].real() - round(dist0[j].real())) < 1e-4
+        );
     }
-    cout << ans << "\n";
+    return ans;
+}
+
+void solve() {
+    string a, b;
+    cin >> a >> b;
+    cout << matches(a, b) << "\n";
 }
 
 signed main() {

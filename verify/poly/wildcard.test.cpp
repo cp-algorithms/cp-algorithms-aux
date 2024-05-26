@@ -2,6 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/wildcard_pattern_matching"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("avx2,tune=native")
+#define CP_ALGO_MAXN 1 << 19
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

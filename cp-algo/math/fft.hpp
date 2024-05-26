@@ -84,7 +84,7 @@ namespace cp_algo::math::fft {
             }
         }
     
-        auto operator *= (dft const& B) {
+        std::vector<base> operator *= (dft const& B) {
             assert(A.size() == B.A.size());
             size_t n = A.size();
             if(!n) {
@@ -95,12 +95,14 @@ namespace cp_algo::math::fft {
             }
             fft(A, n);
             reverse(begin(A) + 1, end(A));
-            std::vector<base> res(n);
             for(size_t i = 0; i < n; i++) {
-                res[i] = A[i];
-                res[i] /= n;
+                A[i] /= n;
             }
-            return res;
+            if constexpr (std::is_same_v<base, point>) {
+                return A;
+            } else {
+                return {begin(A), end(A)};
+            }
         }
 
         auto operator * (dft const& B) const {
@@ -125,16 +127,22 @@ namespace cp_algo::math::fft {
             }
         }
     
-        auto operator *= (dft const& B) {
+        std::vector<base> operator *= (dft const& B) {
             assert(A.size() == B.A.size());
             size_t n = A.size();
             if(!n) {
                 return std::vector<base>();
             }
             std::vector<point> C(n);
-            for(size_t i = 0; i < n; i++) {
-                C[i] = A[i] * (B[i] + conj(B[(n - i) % n]));
-                A[i] = A[i] * (B[i] - conj(B[(n - i) % n]));
+            for(size_t i = 0; 2 * i <= n; i++) {
+                int x = i;
+                int y = (n - i) % n;
+                std::tie(C[x], A[x], C[y], A[y]) = std::make_tuple(
+                    A[x] * (B[x] + conj(B[y])),
+                    A[x] * (B[x] - conj(B[y])),
+                    A[y] * (B[y] + conj(B[x])),
+                    A[y] * (B[y] - conj(B[x]))
+                );
             }
             fft(C, n);
             fft(A, n);

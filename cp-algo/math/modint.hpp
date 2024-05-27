@@ -86,16 +86,12 @@ namespace cp_algo::math {
 
         // Wrapper for temp switching
         auto static with_mod(int64_t tmp, auto callback) {
-            auto prev = mod();
+            struct scoped {
+                int prev = mod();
+                ~scoped() {switch_mod(prev);}
+            } _;
             switch_mod(tmp);
-            if constexpr(std::is_void_v<std::invoke_result_t<decltype(callback)>>) {
-                callback();
-                switch_mod(prev);
-            } else {
-                auto res = callback();
-                switch_mod(prev);
-                return res;
-            }
+            return callback();
         }
     private:
         static int64_t m;

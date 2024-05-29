@@ -1,7 +1,7 @@
 // @brief Binomial Coefficient (Prime Mod)
 #define PROBLEM "https://judge.yosupo.jp/problem/binomial_coefficient_prime_mod"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("avx2,tune=native")
+#pragma GCC target("tune=native")
 #define CP_ALGO_MAXN 1e7
 #include "cp-algo/math/modint.hpp"
 #include "cp-algo/math/combinatorics.hpp"

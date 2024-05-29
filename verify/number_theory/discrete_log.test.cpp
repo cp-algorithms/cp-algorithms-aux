@@ -1,7 +1,7 @@
 // @brief Discrete Logarithm
 #define PROBLEM "https://judge.yosupo.jp/problem/discrete_logarithm_mod"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("avx2,tune=native")
+#pragma GCC target("tune=native")
 #include "cp-algo/math/number_theory.hpp"
 #include <bits/stdc++.h>
 

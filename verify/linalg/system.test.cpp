@@ -1,7 +1,7 @@
 // @brief System of Linear Equations
 #define PROBLEM "https://judge.yosupo.jp/problem/system_of_linear_equations"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("avx2,tune=native")
+#pragma GCC target("tune=native")
 #include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
 

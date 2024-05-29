@@ -2,7 +2,7 @@
 // @brief Determinant of Matrix (Mod 2)
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_det_mod_2"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("avx2,tune=native")
+#pragma GCC target("tune=native")
 #include "cp-algo/data_structures/bitpack.hpp"
 #include <bits/stdc++.h>
 

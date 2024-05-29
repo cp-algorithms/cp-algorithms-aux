@@ -1,7 +1,7 @@
 // @brief Polynomial Taylor Shift
 #define PROBLEM "https://judge.yosupo.jp/problem/polynomial_taylor_shift"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("avx2,tune=native")
+#pragma GCC target("tune=native")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

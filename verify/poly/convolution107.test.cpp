@@ -1,5 +1,7 @@
 // @brief Convolution mod $10^9+7$
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_1000000007"
+#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC target("tune=native")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

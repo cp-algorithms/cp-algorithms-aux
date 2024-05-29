@@ -87,7 +87,7 @@ namespace cp_algo::math {
         // Wrapper for temp switching
         auto static with_mod(int64_t tmp, auto callback) {
             struct scoped {
-                int prev = mod();
+                int64_t prev = mod();
                 ~scoped() {switch_mod(prev);}
             } _;
             switch_mod(tmp);

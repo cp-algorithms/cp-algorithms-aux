@@ -15,6 +15,14 @@ namespace cp_algo::math::fft {
     std::vector<int> bitr;// b[2^n + k] = bitreverse(k)
     const ftype pi = acos(-1);
     bool initiated = 0;
+    size_t bitreverse(size_t n, size_t k) {
+        size_t hn = n / 2;
+        if(k >= hn) {
+            return 2 * bitr[k] + 1;
+        } else {
+            return 2 * bitr[hn + k];
+        }
+    }
     void init() {
         if(!initiated) {
             w.resize(maxn);
@@ -32,24 +40,34 @@ namespace cp_algo::math::fft {
         }
     }
     
+    void ifft(auto &a, int n) {
+        init();
+        if(n == 1) {
+            return;
+        }
+        for(int i = 1; i < n; i *= 2) {
+            for(int j = 0; j < n; j += 2 * i) {
+                for(int k = j; k < j + i; k++) {
+                    std::tie(a[k], a[k + i]) = std::pair{
+                        a[k] + a[k + i] * conj(w[i + k - j]),
+                        a[k] - a[k + i] * conj(w[i + k - j])
+                    };
+                }
+            }
+        }
+    }
     void fft(auto &a, int n) {
         init();
         if(n == 1) {
             return;
         }
-        int hn = n / 2;
-        for(int i = 0; i < n; i++) {
-            int ti = 2 * bitr[hn + i % hn] + (i > hn);
-            if(i < ti) {
-                std::swap(a[i], a[ti]);
-            }
-        }
-        for(int i = 1; i < n; i *= 2) {
+        for(int i = n / 2; i >= 1; i /= 2) {
             for(int j = 0; j < n; j += 2 * i) {
                 for(int k = j; k < j + i; k++) {
-                    point t = a[k + i] * w[i + k - j];
-                    a[k + i] = a[k] - t;
-                    a[k] += t;
+                    std::tie(a[k], a[k + i]) = std::pair{
+                        a[k] + a[k + i],
+                        (a[k] - a[k + i]) * w[i + k - j]
+                    };
                 }
             }
         }
@@ -93,8 +111,7 @@ namespace cp_algo::math::fft {
             for(size_t i = 0; i < n; i++) {
                 A[i] *= B[i];
             }
-            fft(A, n);
-            reverse(begin(A) + 1, end(A));
+            ifft(A, n);
             for(size_t i = 0; i < n; i++) {
                 A[i] /= n;
             }
@@ -126,17 +143,18 @@ namespace cp_algo::math::fft {
                 fft(A, n);
             }
         }
-    
-        std::vector<base> operator *= (dft const& B) {
+
+        std::vector<base> operator *= (dft B) {
             assert(A.size() == B.A.size());
             size_t n = A.size();
             if(!n) {
                 return std::vector<base>();
             }
             std::vector<point> C(n);
-            for(size_t i = 0; 2 * i <= n; i++) {
-                int x = i;
-                int y = (n - i) % n;
+            for(size_t i = 0; 2 * i <= n; i++) {//
+                size_t j = (n - i) % n;
+                size_t x = bitreverse(n, i);
+                size_t y = bitreverse(n, j);
                 std::tie(C[x], A[x], C[y], A[y]) = std::make_tuple(
                     A[x] * (B[x] + conj(B[y])),
                     A[x] * (B[x] - conj(B[y])),
@@ -144,10 +162,8 @@ namespace cp_algo::math::fft {
                     A[y] * (B[y] - conj(B[x]))
                 );
             }
-            fft(C, n);
-            fft(A, n);
-            reverse(begin(C) + 1, end(C));
-            reverse(begin(A) + 1, end(A));
+            ifft(C, n);
+            ifft(A, n);
             int t = 2 * n;
             std::vector<base> res(n);
             for(size_t i = 0; i < n; i++) {

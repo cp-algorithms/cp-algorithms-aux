@@ -29,8 +29,15 @@ namespace cp_algo::math::fft {
             bitr.resize(maxn);
             for(int i = 1; i < maxn; i *= 2) {
                 int ti = i / 2;
+                ftype arg = pi / i;
+                point base = std::polar(1., arg);
+                point cur = 1.;
                 for(int j = 0; j < i; j++) {
-                    w[i + j] = std::polar(ftype(1), pi * j / i);
+                    if((j & 15) == 0) {
+                        cur = std::polar(1., j * arg);
+                    }
+                    w[i + j] = cur;
+                    cur *= base;
                     if(ti) {
                         bitr[i + j] = 2 * bitr[ti + j % ti] + (j >= ti);
                     }

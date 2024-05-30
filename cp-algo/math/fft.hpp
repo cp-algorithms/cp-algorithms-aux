@@ -17,7 +17,7 @@ namespace cp_algo::math::fft {
     bool initiated = 0;
     size_t bitreverse(size_t n, size_t k) {
         size_t hn = n / 2;
-        if(k >= hn) {
+        if(k >= hn && n > 1) {
             return 2 * bitr[k] + 1;
         } else {
             return 2 * bitr[hn + k];
@@ -151,7 +151,7 @@ namespace cp_algo::math::fft {
                 return std::vector<base>();
             }
             std::vector<point> C(n);
-            for(size_t i = 0; 2 * i <= n; i++) {//
+            for(size_t i = 0; 2 * i <= n; i++) {
                 size_t j = (n - i) % n;
                 size_t x = bitreverse(n, i);
                 size_t y = bitreverse(n, j);

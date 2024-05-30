@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_1000000007"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/fft.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -10,7 +10,6 @@ using namespace cp_algo::math;
 
 const int mod = 1e9 + 7;
 using base = modint<mod>;
-using polyn = poly_t<base>;
 
 void solve() {
     int n, m;
@@ -18,7 +17,8 @@ void solve() {
     vector<base> a(n), b(m);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     copy_n(istream_iterator<base>(cin), m, begin(b));
-    (polyn(a) * polyn(b)).print(n + m - 1);
+    fft::mul(a, b);
+    ranges::copy(views::take(a, n + m - 1), ostream_iterator<base>(cout, " "));
 }
 
 signed main() {

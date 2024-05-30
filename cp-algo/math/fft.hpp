@@ -8,13 +8,15 @@
 #include <vector>
 #include <bit>
 namespace cp_algo::math::fft {
-    using ftype = double;
-    using point = std::complex<ftype>;
-
-    std::vector<point> w; // w[2^n + k] = exp(pi * k / (2^n))
-    std::vector<int> bitr;// b[2^n + k] = bitreverse(k)
-    const ftype pi = acos(-1);
-    bool initiated = 0;
+    const auto bitr = [](){
+        std::vector<size_t> bitr(maxn);
+        for(size_t n = 2; n < maxn; n *= 2) {
+            for(size_t k = 0; k < n; k++) {
+                bitr[n + k] = bitr[n + k / 2] / 2 + (k & 1) * (n / 2);
+            }
+        }
+        return bitr;
+    }();
     size_t bitreverse(size_t n, size_t k) {
         size_t hn = n / 2;
         if(k >= hn && n > 1) {
@@ -23,62 +25,123 @@ namespace cp_algo::math::fft {
             return 2 * bitr[hn + k];
         }
     }
-    void init() {
-        if(!initiated) {
-            w.resize(maxn);
-            bitr.resize(maxn);
-            for(int i = 1; i < maxn; i *= 2) {
-                int ti = i / 2;
-                ftype arg = pi / i;
-                point base = std::polar(1., arg);
-                point cur = 1.;
-                for(int j = 0; j < i; j++) {
-                    if((j & 15) == 0) {
-                        cur = std::polar(1., j * arg);
-                    }
-                    w[i + j] = cur;
-                    cur *= base;
-                    if(ti) {
-                        bitr[i + j] = 2 * bitr[ti + j % ti] + (j >= ti);
-                    }
-                }
-            }
-            initiated = 1;
-        }
+
+    using ftype = double;
+    static constexpr size_t bytes = 32;
+    static constexpr size_t flen = bytes / sizeof(ftype);
+    using point = std::complex<ftype>;
+    using vftype [[gnu::vector_size(bytes)]] = ftype;
+    using vpoint = std::complex<vftype>;
+
+    constexpr vftype to_vec(ftype x) {
+        return vftype{} + x;
     }
-    
-    void ifft(auto &a, int n) {
-        init();
-        if(n == 1) {
-            return;
+    constexpr vpoint to_vec(point r) {
+        return {to_vec(r.real()), to_vec(r.imag())};
+    }
+    struct cvector {
+        std::vector<vftype> x, y;
+        cvector() {}
+        cvector(size_t n) {
+            resize(n);
         }
-        for(int i = 1; i < n; i *= 2) {
-            for(int j = 0; j < n; j += 2 * i) {
-                for(int k = j; k < j + i; k++) {
-                    std::tie(a[k], a[k + i]) = std::pair{
-                        a[k] + a[k + i] * conj(w[i + k - j]),
-                        a[k] - a[k + i] * conj(w[i + k - j])
+        void resize(size_t n) {
+            n = std::bit_ceil(std::max<size_t>(n, 4));
+            if(size() != n) {
+                x.resize(n / flen);
+                y.resize(n / flen);
+            }
+        }
+        template<class pt = point>
+        void set(size_t k, pt t) {
+            if constexpr(std::is_same_v<pt, point>) {
+                x[k / flen][k % flen] = real(t);
+                y[k / flen][k % flen] = imag(t);
+            } else {
+                x[k / flen] = real(t);
+                y[k / flen] = imag(t);
+            }
+        }
+        template<class pt = point>
+        pt get(size_t k) const {
+            if constexpr(std::is_same_v<pt, point>) {
+                return {x[k / flen][k % flen], y[k / flen][k % flen]};
+            } else {
+                return {x[k / flen], y[k / flen]};
+            }
+        }
+        size_t size() const {
+            return flen * std::size(x);
+        }
+        void dot(cvector const& t) {
+            size_t n = size();
+            for(size_t k = 0; k < n; k += flen) {
+                set(k, get<vpoint>(k) * t.get<vpoint>(k));
+            }
+        }
+        static const cvector roots;
+
+        void ifft() {
+            size_t n = size();
+            for(size_t i = 1; i < n; i *= 2) {
+                for(size_t j = 0; j < n; j += 2 * i) {
+                    auto butterfly = [&]<class pt>(pt) {
+                        size_t step = sizeof(pt) / sizeof(point);
+                        for(size_t k = j; k < j + i; k += step) {
+                            auto T = get<pt>(k + i) * conj(roots.get<pt>(i + k - j));
+                            set(k + i, get<pt>(k) - T);
+                            set(k, get<pt>(k) + T);
+                        }
                     };
+                    if(2 * i <= flen) {
+                        butterfly(point{});
+                    } else {
+                        butterfly(vpoint{});
+                    }
                 }
             }
+            for(size_t k = 0; k < n; k += flen) {
+                set(k, get<vpoint>(k) /= to_vec(n));
+            }
         }
-    }
-    void fft(auto &a, int n) {
-        init();
-        if(n == 1) {
-            return;
-        }
-        for(int i = n / 2; i >= 1; i /= 2) {
-            for(int j = 0; j < n; j += 2 * i) {
-                for(int k = j; k < j + i; k++) {
-                    std::tie(a[k], a[k + i]) = std::pair{
-                        a[k] + a[k + i],
-                        (a[k] - a[k + i]) * w[i + k - j]
+        void fft() {
+            size_t n = size();
+            for(size_t i = n / 2; i >= 1; i /= 2) {
+                for(size_t j = 0; j < n; j += 2 * i) {
+                    auto butterfly = [&]<class pt>(pt) {
+                        size_t step = sizeof(pt) / sizeof(point);
+                        for(size_t k = j; k < j + i; k += step) {
+                            auto A = get<pt>(k) + get<pt>(k + i);
+                            auto B = get<pt>(k) - get<pt>(k + i);
+                            set(k, A);
+                            set(k + i, B * roots.get<pt>(i + k - j));
+                        }
                     };
+                    if(2 * i <= flen) {
+                        butterfly(point{});
+                    } else {
+                        butterfly(vpoint{});
+                    }
                 }
             }
         }
-    }
+    };
+    const cvector cvector::roots = []() {
+        cvector res(maxn);
+        for(size_t n = 1; n < maxn; n *= 2) {
+            auto base = std::polar(1., std::numbers::pi / n);
+            point cur = 1;
+            for(size_t k = 0; k < n; k++) {
+                if((k & 15) == 0) {
+                    cur = std::polar(1., std::numbers::pi * k / n);
+                }
+                res.set(n + k, cur);
+                cur *= base;
+            }
+        }
+        return res;
+    }();
+
     template<typename base>
     void mul_slow(std::vector<base> &a, const std::vector<base> &b) {
         if(a.empty() || b.empty()) {
@@ -98,14 +161,14 @@ namespace cp_algo::math::fft {
     
     template<typename base>
     struct dft {
-        std::vector<point> A;
+        cvector A;
         
         dft(std::vector<base> const& a, size_t n): A(n) {
             for(size_t i = 0; i < std::min(n, a.size()); i++) {
-                A[i] = a[i];
+                A.set(i, a[i]);
             }
             if(n) {
-                fft(A, n);
+                A.fft();
             }
         }
     
@@ -115,39 +178,33 @@ namespace cp_algo::math::fft {
             if(!n) {
                 return std::vector<base>();
             }
-            for(size_t i = 0; i < n; i++) {
-                A[i] *= B[i];
+            A.dot(B.A);
+            A.ifft();
+            std::vector<base> res(n);
+            for(size_t k = 0; k < n; k++) {
+                res[k] = A.get(k);
             }
-            ifft(A, n);
-            for(size_t i = 0; i < n; i++) {
-                A[i] /= n;
-            }
-            if constexpr (std::is_same_v<base, point>) {
-                return A;
-            } else {
-                return {begin(A), end(A)};
-            }
+            return res;
         }
 
         auto operator * (dft const& B) const {
             return dft(*this) *= B;
         }
         
-        point& operator [](int i) {return A[i];}
-        point operator [](int i) const {return A[i];}
+        point operator [](int i) const {return A.get(i);}
     };
 
     template<modint_type base>
     struct dft<base> {
         static constexpr int split = 1 << 15;
-        std::vector<point> A;
+        cvector A;
         
         dft(std::vector<base> const& a, size_t n): A(n) {
             for(size_t i = 0; i < std::min(n, a.size()); i++) {
-                A[i] = point(a[i].rem() % split, a[i].rem() / split);
+                A.set(i, point{a[i].rem() % split, a[i].rem() / split});
             }
             if(n) {
-                fft(A, n);
+                A.fft();
             }
         }
 
@@ -157,26 +214,25 @@ namespace cp_algo::math::fft {
             if(!n) {
                 return std::vector<base>();
             }
-            std::vector<point> C(n);
+            cvector C(n);
             for(size_t i = 0; 2 * i <= n; i++) {
                 size_t j = (n - i) % n;
                 size_t x = bitreverse(n, i);
                 size_t y = bitreverse(n, j);
-                std::tie(C[x], A[x], C[y], A[y]) = std::make_tuple(
-                    A[x] * (B[x] + conj(B[y])),
-                    A[x] * (B[x] - conj(B[y])),
-                    A[y] * (B[y] + conj(B[x])),
-                    A[y] * (B[y] - conj(B[x]))
-                );
+                auto Ax = A.get(x), Bx = B[x];
+                auto Ay = A.get(y), By = B[y];
+                C.set(x, Ax * (Bx + conj(By)));
+                A.set(x, Ax * (Bx - conj(By)));
+                C.set(y, Ay * (By + conj(Bx)));
+                A.set(y, Ay * (By - conj(Bx)));
             }
-            ifft(C, n);
-            ifft(A, n);
-            int t = 2 * n;
+            A.ifft();
+            C.ifft();
             std::vector<base> res(n);
             for(size_t i = 0; i < n; i++) {
-                base A0 = llround(C[i].real() / t);
-                base A1 = llround(C[i].imag() / t + A[i].imag() / t);
-                base A2 = llround(A[i].real() / t);
+                base A0 = llround(C.get(i).real()) / 2;
+                base A1 = llround(C.get(i).imag() + A.get(i).imag()) / 2;
+                base A2 = llround(A.get(i).real()) / 2;
                 res[i] = A0 + A1 * split - A2 * split * split;
             }
             return res;
@@ -186,8 +242,7 @@ namespace cp_algo::math::fft {
             return dft(*this) *= B;
         }
         
-        point& operator [](int i) {return A[i];}
-        point operator [](int i) const {return A[i];}
+        point operator [](int i) const {return A.get(i);}
     };
     
     size_t com_size(size_t as, size_t bs) {

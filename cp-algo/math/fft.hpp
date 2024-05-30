@@ -151,7 +151,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        std::vector<base> operator *= (dft B) {
+        std::vector<base> operator *= (dft const& B) {
             assert(A.size() == B.A.size());
             size_t n = A.size();
             if(!n) {

@@ -46,7 +46,7 @@ namespace cp_algo::math::fft {
             resize(n);
         }
         void resize(size_t n) {
-            n = std::bit_ceil(std::max<size_t>(n, flen));
+            n = std::bit_ceil(std::max<size_t>(n, 4));
             if(size() != n) {
                 x.resize(n / flen);
                 y.resize(n / flen);
@@ -201,45 +201,50 @@ namespace cp_algo::math::fft {
         
         dft(std::vector<base> const& a, size_t n): A(n) {
             for(size_t i = 0; i < std::min(n, a.size()); i++) {
-                A.set(i, point{a[i].rem() % split, a[i].rem() / split});
+                A.set(i, point{
+                    ftype(a[i].rem() % split),
+                    ftype(a[i].rem() / split)
+                });
             }
             if(n) {
                 A.fft();
             }
         }
 
-        std::vector<base> operator *= (dft const& B) {
-            assert(A.size() == B.A.size());
+        std::vector<base> mul(auto &&B) {
+            assert(A.size() == B.size());
             size_t n = A.size();
             if(!n) {
                 return std::vector<base>();
             }
-            cvector C(n);
             for(size_t i = 0; 2 * i <= n; i++) {
                 size_t j = (n - i) % n;
                 size_t x = bitreverse(n, i);
                 size_t y = bitreverse(n, j);
-                auto Ax = A.get(x), Bx = B[x];
-                auto Ay = A.get(y), By = B[y];
-                C.set(x, Ax * (Bx + conj(By)));
+                auto Ax = A.get(x), Bx = B.get(x);
+                auto Ay = A.get(y), By = B.get(y);
+                B.set(x, Ax * (Bx + conj(By)));
                 A.set(x, Ax * (Bx - conj(By)));
-                C.set(y, Ay * (By + conj(Bx)));
+                B.set(y, Ay * (By + conj(Bx)));
                 A.set(y, Ay * (By - conj(Bx)));
             }
             A.ifft();
-            C.ifft();
+            B.ifft();
             std::vector<base> res(n);
             for(size_t i = 0; i < n; i++) {
-                base A0 = llround(C.get(i).real()) / 2;
-                base A1 = llround(C.get(i).imag() + A.get(i).imag()) / 2;
+                base A0 = llround(B.get(i).real()) / 2;
+                base A1 = llround(B.get(i).imag() + A.get(i).imag()) / 2;
                 base A2 = llround(A.get(i).real()) / 2;
                 res[i] = A0 + A1 * split - A2 * split * split;
             }
             return res;
         }
+        std::vector<base> operator *= (auto &&B) {
+            return mul(B.A);
+        }
 
         auto operator * (dft const& B) const {
-            return dft(*this) *= B;
+            return dft(*this) *= dft(B);
         }
         
         point operator [](int i) const {return A.get(i);}
@@ -261,7 +266,7 @@ namespace cp_algo::math::fft {
         auto n = com_size(a.size(), b.size());
         auto A = dft<base>(a, n);
         if(a == b) {
-            a = A *= A;
+            a = A *= dft<base>(A);
         } else {
             a = A *= dft<base>(b, n);
         }
@@ -271,7 +276,7 @@ namespace cp_algo::math::fft {
         auto n = std::bit_ceil(a.size());
         auto A = dft<base>(a, n);
         if(a == b) {
-            a = A *= A;
+            a = A *= dft<base>(A);
         } else {
             a = A *= dft<base>(b, n);
         }

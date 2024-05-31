@@ -14,13 +14,12 @@ using fft::ftype;
 using fft::point;
 using fft::cvector;
 
-auto semicorr(auto &a, auto &b) {
+void semicorr(auto &a, auto &b) {
     b.resize(size(a));
     a.fft();
     b.fft();
     a.dot(b);
     a.ifft();
-    return a;
 }
 
 auto is_integer = [](point a) {
@@ -52,10 +51,10 @@ string matches(string const& A, string const& B, char wild = '*') {
             P[i].set(idx, val);
         }
     }
-    auto corr = semicorr(P[0], P[1]);
+    semicorr(P[0], P[1]);
     string ans(size(A) - size(B) + 1, '0');
     for(size_t j = 0; j < size(ans); j++) {
-        ans[j] = '0' + is_integer(corr.get(size(B) - 1 + j));
+        ans[j] = '0' + is_integer(P[0].get(size(B) - 1 + j));
     }
     return ans;
 }

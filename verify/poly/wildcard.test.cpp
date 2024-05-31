@@ -2,7 +2,6 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/wildcard_pattern_matching"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
-#define CP_ALGO_MAXN 1 << 19
 #include "cp-algo/math/fft.hpp"
 #include "cp-algo/random/rng.hpp"
 #include <bits/stdc++.h>

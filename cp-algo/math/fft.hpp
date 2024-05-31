@@ -7,25 +7,8 @@
 #include <cassert>
 #include <vector>
 #include <bit>
-namespace cp_algo::math::fft {
-    const auto bitr = [](){
-        std::vector<size_t> bitr(maxn);
-        for(size_t n = 2; n < maxn; n *= 2) {
-            for(size_t k = 0; k < n; k++) {
-                bitr[n + k] = bitr[n + k / 2] / 2 + (k & 1) * (n / 2);
-            }
-        }
-        return bitr;
-    }();
-    size_t bitreverse(size_t n, size_t k) {
-        size_t hn = n / 2;
-        if(k >= hn && n > 1) {
-            return 2 * bitr[k] + 1;
-        } else {
-            return 2 * bitr[hn + k];
-        }
-    }
 
+namespace cp_algo::math::fft {
     using ftype = double;
     static constexpr size_t bytes = 32;
     static constexpr size_t flen = bytes / sizeof(ftype);
@@ -33,13 +16,22 @@ namespace cp_algo::math::fft {
     using vftype [[gnu::vector_size(bytes)]] = ftype;
     using vpoint = std::complex<vftype>;
 
-    constexpr vftype to_vec(ftype x) {
-        return vftype{} + x;
+#define WITH_IV(...)                             \
+  [&]<size_t ... i>(std::index_sequence<i...>) { \
+      return __VA_ARGS__;                        \
+  }(std::make_index_sequence<flen>());
+
+    template<typename ft>
+    constexpr ft to_ft(auto x) {
+        return ft{} + x;
     }
-    constexpr vpoint to_vec(point r) {
-        return {to_vec(r.real()), to_vec(r.imag())};
+    template<typename pt>
+    constexpr pt to_pt(point r) {
+        using ft = std::conditional_t<std::is_same_v<point, pt>, ftype, vftype>;
+        return {to_ft<ft>(r.real()), to_ft<ft>(r.imag())};
     }
     struct cvector {
+        static constexpr size_t pre_roots = 1 << 17;
         std::vector<vftype> x, y;
         cvector() {}
         cvector(size_t n) {
@@ -84,54 +76,74 @@ namespace cp_algo::math::fft {
             }
         }
         static const cvector roots;
+        template<class pt = point>
+        static pt root(size_t n, size_t k) {
+            if(n < pre_roots) {
+                return cvector::roots.get<pt>(n + k);
+            } else {
+                auto arg = std::numbers::pi / n;
+                if constexpr(std::is_same_v<pt, point>) {
+                    return {cos(k * arg), sin(k * arg)};
+                } else {
+                    return WITH_IV(pt{vftype{cos((k + i) * arg)...},
+                                      vftype{sin((k + i) * arg)...}});
+                }
+            }
+        }
+        template<class pt = point>
+        static void exec_on_roots(size_t n, size_t m, auto &&callback) {
+            size_t step = sizeof(pt) / sizeof(point);
+            pt cur;
+            pt arg = to_pt<pt>(root<point>(n, step));
+            for(size_t i = 0; i < m; i += step) {
+                cur = (i & 63) == 0 || n < pre_roots ? root<pt>(n, i) : cur * arg;
+                callback(i, cur);
+            }
+        }
 
         void ifft() {
             size_t n = size();
             for(size_t i = 1; i < n; i *= 2) {
                 for(size_t j = 0; j < n; j += 2 * i) {
-                    auto butterfly = [&]<class pt>(pt) {
-                        size_t step = sizeof(pt) / sizeof(point);
-                        for(size_t k = j; k < j + i; k += step) {
-                            auto T = get<pt>(k + i) * conj(roots.get<pt>(i + k - j));
-                            set(k + i, get<pt>(k) - T);
-                            set(k, get<pt>(k) + T);
-                        }
+                    auto butterfly = [&]<class pt>(size_t k, pt rt) {
+                        k += j;
+                        auto t = get<pt>(k + i) * conj(rt);
+                        set(k + i, get<pt>(k) - t);
+                        set(k, get<pt>(k) + t);
                     };
                     if(2 * i <= flen) {
-                        butterfly(point{});
+                        exec_on_roots(i, i, butterfly);
                     } else {
-                        butterfly(vpoint{});
+                        exec_on_roots<vpoint>(i, i, butterfly);
                     }
                 }
             }
             for(size_t k = 0; k < n; k += flen) {
-                set(k, get<vpoint>(k) /= to_vec(n));
+                set(k, get<vpoint>(k) /= to_pt<vpoint>(n));
             }
         }
         void fft() {
             size_t n = size();
             for(size_t i = n / 2; i >= 1; i /= 2) {
                 for(size_t j = 0; j < n; j += 2 * i) {
-                    auto butterfly = [&]<class pt>(pt) {
-                        size_t step = sizeof(pt) / sizeof(point);
-                        for(size_t k = j; k < j + i; k += step) {
-                            auto A = get<pt>(k) + get<pt>(k + i);
-                            auto B = get<pt>(k) - get<pt>(k + i);
-                            set(k, A);
-                            set(k + i, B * roots.get<pt>(i + k - j));
-                        }
+                    auto butterfly = [&]<class pt>(size_t k, pt rt) {
+                        k += j;
+                        auto A = get<pt>(k) + get<pt>(k + i);
+                        auto B = get<pt>(k) - get<pt>(k + i);
+                        set(k, A);
+                        set(k + i, B * rt);
                     };
                     if(2 * i <= flen) {
-                        butterfly(point{});
+                        exec_on_roots(i, i, butterfly);
                     } else {
-                        butterfly(vpoint{});
+                        exec_on_roots<vpoint>(i, i, butterfly);
                     }
                 }
             }
         }
     };
     const cvector cvector::roots = []() {
-        cvector res(2 * maxn);
+        cvector res(pre_roots);
         for(size_t n = 1; n < res.size(); n *= 2) {
             auto base = std::polar(1., std::numbers::pi / n);
             point cur = 1;
@@ -145,15 +157,6 @@ namespace cp_algo::math::fft {
         }
         return res;
     }();
-    point root(size_t n, size_t k) {
-        if(n < maxn) {
-            return cvector::roots.get(n + k);
-        } else if(k % 2 == 0) {
-            return root(n / 2, k / 2);
-        } else {
-            return std::polar(1., std::numbers::pi * k / n);
-        }
-    }
 
     template<typename base>
     void mul_slow(std::vector<base> &a, const std::vector<base> &b) {
@@ -171,7 +174,7 @@ namespace cp_algo::math::fft {
             }
         }
     }
-    
+
     template<typename base>
     struct dft {
         cvector A;
@@ -184,7 +187,7 @@ namespace cp_algo::math::fft {
                 A.fft();
             }
         }
-    
+
         std::vector<base> operator *= (dft const& B) {
             assert(A.size() == B.A.size());
             size_t n = A.size();
@@ -203,7 +206,7 @@ namespace cp_algo::math::fft {
         auto operator * (dft const& B) const {
             return dft(*this) *= B;
         }
-        
+
         point operator [](int i) const {return A.get(i);}
     };
 
@@ -211,18 +214,9 @@ namespace cp_algo::math::fft {
     struct dft<base> {
         static constexpr int split = 1 << 15;
         cvector A, B;
-
-        void exec_on_roots(size_t n, size_t m, auto &&callback) {
-            point cur = 1;
-            point step = root(n, 1);
-            for(size_t i = 0; i < m; i++) {
-                callback(i, cur);
-                cur = (i & 15) == 0 || 2 * n < maxn ? root(n, i + 1) : cur * step;
-            }
-        }
         
         dft(std::vector<base> const& a, size_t n): A(n), B(n) {
-            exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
+            cvector::exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
                 A.set(i % n, A.get(i % n) + ftype(a[i].rem() % split) * rt);
                 B.set(i % n, B.get(i % n) + ftype(a[i].rem() / split) * rt);
     
@@ -249,7 +243,7 @@ namespace cp_algo::math::fft {
             B.ifft();
             C.ifft();
             std::vector<base> res(2 * n);
-            exec_on_roots(2 * n, n, [&](size_t i, point rt) {
+            cvector::exec_on_roots(2 * n, n, [&](size_t i, point rt) {
                 rt = conj(rt);
                 auto Ai = A.get(i) * rt;
                 auto Bi = B.get(i) * rt;

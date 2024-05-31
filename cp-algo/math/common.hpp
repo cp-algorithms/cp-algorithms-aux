@@ -8,7 +8,7 @@ namespace cp_algo::math {
 #else
     const int maxn = 1 << 19;
 #endif
-    const int magic = 250; // threshold for sizes to run the naive algo
+    const int magic = 128; // threshold for sizes to run the naive algo
 
     auto bpow(auto const& x, int64_t n, auto const& one, auto op) {
         if(n == 0) {

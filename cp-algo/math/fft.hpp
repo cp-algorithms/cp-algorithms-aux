@@ -279,7 +279,7 @@ namespace cp_algo::math::fft {
     
     template<typename base>
     void mul(std::vector<base> &a, std::vector<base> const& b) {
-        if(std::min(a.size(), b.size()) < 1) {
+        if(std::min(a.size(), b.size()) < magic) {
             mul_slow(a, b);
             return;
         }

@@ -70,6 +70,10 @@ namespace cp_algo::math::fft {
                 return {x[k / flen], y[k / flen]};
             }
         }
+        vpoint vget(size_t k) const {
+            return get<vpoint>(k);
+        }
+
         size_t size() const {
             return flen * std::size(x);
         }
@@ -127,8 +131,8 @@ namespace cp_algo::math::fft {
         }
     };
     const cvector cvector::roots = []() {
-        cvector res(maxn);
-        for(size_t n = 1; n < maxn; n *= 2) {
+        cvector res(2 * maxn);
+        for(size_t n = 1; n < res.size(); n *= 2) {
             auto base = std::polar(1., std::numbers::pi / n);
             point cur = 1;
             for(size_t k = 0; k < n; k++) {
@@ -197,50 +201,52 @@ namespace cp_algo::math::fft {
     template<modint_type base>
     struct dft<base> {
         static constexpr int split = 1 << 15;
-        cvector A;
+        cvector A, B;
         
-        dft(std::vector<base> const& a, size_t n): A(n) {
-            for(size_t i = 0; i < std::min(n, a.size()); i++) {
-                A.set(i, point{
-                    ftype(a[i].rem() % split),
-                    ftype(a[i].rem() / split)
-                });
+        dft(std::vector<base> const& a, size_t n): A(n), B(n) {
+            for(size_t i = 0; i < size(a); i++) {
+                A.set(i % n, A.get(i % n) + ftype(a[i].rem() % split) * cvector::roots.get(2 * n + i));
+                B.set(i % n, B.get(i % n) + ftype(a[i].rem() / split) * cvector::roots.get(2 * n + i));
             }
             if(n) {
                 A.fft();
+                B.fft();
             }
         }
 
-        std::vector<base> mul(auto &&B) {
-            assert(A.size() == B.size());
+        std::vector<base> mul(auto &&C, auto &&D) {
+            assert(A.size() == C.size());
             size_t n = A.size();
             if(!n) {
                 return std::vector<base>();
             }
-            for(size_t i = 0; 2 * i <= n; i++) {
-                size_t j = (n - i) % n;
-                size_t x = bitreverse(n, i);
-                size_t y = bitreverse(n, j);
-                auto Ax = A.get(x), Bx = B.get(x);
-                auto Ay = A.get(y), By = B.get(y);
-                B.set(x, Ax * (Bx + conj(By)));
-                A.set(x, Ax * (Bx - conj(By)));
-                B.set(y, Ay * (By + conj(Bx)));
-                A.set(y, Ay * (By - conj(Bx)));
+            for(size_t i = 0; i < n; i += flen) {
+                auto tmp = A.vget(i) * D.vget(i) + B.vget(i) * C.vget(i);
+                A.set(i, A.vget(i) * C.vget(i));
+                B.set(i, B.vget(i) * D.vget(i));
+                C.set(i, tmp);
             }
             A.ifft();
             B.ifft();
-            std::vector<base> res(n);
+            C.ifft();
+            std::vector<base> res(2 * n);
             for(size_t i = 0; i < n; i++) {
-                base A0 = llround(B.get(i).real()) / 2;
-                base A1 = llround(B.get(i).imag() + A.get(i).imag()) / 2;
-                base A2 = llround(A.get(i).real()) / 2;
-                res[i] = A0 + A1 * split - A2 * split * split;
+                auto Ai = A.get(i) * conj(cvector::roots.get(2 * n + i));
+                auto Bi = B.get(i) * conj(cvector::roots.get(2 * n + i));
+                auto Ci = C.get(i) * conj(cvector::roots.get(2 * n + i));
+                base A0 = llround(real(Ai));
+                base A1 = llround(real(Ci));
+                base A2 = llround(real(Bi));
+                res[i] = A0 + A1 * split + A2 * split * split;
+                base B0 = llround(imag(Ai));
+                base B1 = llround(imag(Ci));
+                base B2 = llround(imag(Bi));
+                res[n + i] = B0 + B1 * split + B2 * split * split;
             }
             return res;
         }
         std::vector<base> operator *= (auto &&B) {
-            return mul(B.A);
+            return mul(B.A, B.B);
         }
 
         auto operator * (dft const& B) const {
@@ -254,12 +260,12 @@ namespace cp_algo::math::fft {
         if(!as || !bs) {
             return 0;
         }
-        return std::bit_ceil(as + bs - 1);
+        return std::max(flen, std::bit_ceil(as + bs - 1) / 2);
     }
     
     template<typename base>
     void mul(std::vector<base> &a, std::vector<base> const& b) {
-        if(std::min(a.size(), b.size()) < magic) {
+        if(std::min(a.size(), b.size()) < 1) {
             mul_slow(a, b);
             return;
         }
@@ -273,7 +279,7 @@ namespace cp_algo::math::fft {
     }
     template<typename base>
     void circular_mul(std::vector<base> &a, std::vector<base> const& b) {
-        auto n = std::bit_ceil(a.size());
+        auto n = std::max(flen, std::bit_ceil(max(a.size(), b.size())) / 2);
         auto A = dft<base>(a, n);
         if(a == b) {
             a = A *= dft<base>(A);

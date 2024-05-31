@@ -6,7 +6,7 @@ namespace cp_algo::math {
 #ifdef CP_ALGO_MAXN
     const int maxn = CP_ALGO_MAXN;
 #else
-    const int maxn = 1 << 20;
+    const int maxn = 1 << 19;
 #endif
     const int magic = 250; // threshold for sizes to run the naive algo
 

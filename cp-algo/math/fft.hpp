@@ -145,6 +145,15 @@ namespace cp_algo::math::fft {
         }
         return res;
     }();
+    point root(size_t n, size_t k) {
+        if(n < maxn) {
+            return cvector::roots.get(n + k);
+        } else if(k % 2 == 0) {
+            return root(n / 2, k / 2);
+        } else {
+            return std::polar(1., std::numbers::pi * k / n);
+        }
+    }
 
     template<typename base>
     void mul_slow(std::vector<base> &a, const std::vector<base> &b) {
@@ -202,12 +211,22 @@ namespace cp_algo::math::fft {
     struct dft<base> {
         static constexpr int split = 1 << 15;
         cvector A, B;
+
+        void exec_on_roots(size_t n, size_t m, auto &&callback) {
+            point cur = 1;
+            point step = root(n, 1);
+            for(size_t i = 0; i < m; i++) {
+                callback(i, cur);
+                cur = (i & 15) == 0 || 2 * n < maxn ? root(n, i + 1) : cur * step;
+            }
+        }
         
         dft(std::vector<base> const& a, size_t n): A(n), B(n) {
-            for(size_t i = 0; i < size(a); i++) {
-                A.set(i % n, A.get(i % n) + ftype(a[i].rem() % split) * cvector::roots.get(2 * n + i));
-                B.set(i % n, B.get(i % n) + ftype(a[i].rem() / split) * cvector::roots.get(2 * n + i));
-            }
+            exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
+                A.set(i % n, A.get(i % n) + ftype(a[i].rem() % split) * rt);
+                B.set(i % n, B.get(i % n) + ftype(a[i].rem() / split) * rt);
+    
+            });
             if(n) {
                 A.fft();
                 B.fft();
@@ -230,10 +249,11 @@ namespace cp_algo::math::fft {
             B.ifft();
             C.ifft();
             std::vector<base> res(2 * n);
-            for(size_t i = 0; i < n; i++) {
-                auto Ai = A.get(i) * conj(cvector::roots.get(2 * n + i));
-                auto Bi = B.get(i) * conj(cvector::roots.get(2 * n + i));
-                auto Ci = C.get(i) * conj(cvector::roots.get(2 * n + i));
+            exec_on_roots(2 * n, n, [&](size_t i, point rt) {
+                rt = conj(rt);
+                auto Ai = A.get(i) * rt;
+                auto Bi = B.get(i) * rt;
+                auto Ci = C.get(i) * rt;
                 base A0 = llround(real(Ai));
                 base A1 = llround(real(Ci));
                 base A2 = llround(real(Bi));
@@ -242,7 +262,7 @@ namespace cp_algo::math::fft {
                 base B1 = llround(imag(Ci));
                 base B2 = llround(imag(Bi));
                 res[n + i] = B0 + B1 * split + B2 * split * split;
-            }
+            });
             return res;
         }
         std::vector<base> operator *= (auto &&B) {

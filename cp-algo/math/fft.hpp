@@ -79,7 +79,7 @@ namespace cp_algo::math::fft {
         template<class pt = point>
         static pt root(size_t n, size_t k) {
             if(n < pre_roots) {
-                return cvector::roots.get<pt>(n + k);
+                return roots.get<pt>(n + k);
             } else {
                 auto arg = std::numbers::pi / n;
                 if constexpr(std::is_same_v<pt, point>) {

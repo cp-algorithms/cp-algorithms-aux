@@ -96,7 +96,11 @@ namespace cp_algo::math::fft {
             pt cur;
             pt arg = to_pt<pt>(root<point>(n, step));
             for(size_t i = 0; i < m; i += step) {
-                cur = (i & 63) == 0 || n < pre_roots ? root<pt>(n, i) : cur * arg;
+                if(i % 64 == 0 || n < pre_roots) {
+                    cur = root<pt>(n, i);
+                } else {
+                    cur *= arg;
+                }
                 callback(i, cur);
             }
         }

@@ -231,11 +231,12 @@ namespace cp_algo::math::fft {
             }
         }
 
-        std::vector<base> mul(auto &&C, auto &&D) {
+        void mul(auto &&C, auto &&D, auto &res) {
             assert(A.size() == C.size());
             size_t n = A.size();
             if(!n) {
-                return std::vector<base>();
+                res = {};
+                return;
             }
             for(size_t i = 0; i < n; i += flen) {
                 auto tmp = A.vget(i) * D.vget(i) + B.vget(i) * C.vget(i);
@@ -246,7 +247,7 @@ namespace cp_algo::math::fft {
             A.ifft();
             B.ifft();
             C.ifft();
-            std::vector<base> res(2 * n);
+            res.resize(2 * n);
             cvector::exec_on_roots(2 * n, n, [&](size_t i, point rt) {
                 rt = conj(rt);
                 auto Ai = A.get(i) * rt;
@@ -261,10 +262,14 @@ namespace cp_algo::math::fft {
                 base B2 = llround(imag(Bi));
                 res[n + i] = B0 + B1 * split + B2 * split * split;
             });
-            return res;
+        }
+        void mul(auto &&B, auto& res) {
+            mul(B.A, B.B, res);
         }
         std::vector<base> operator *= (auto &&B) {
-            return mul(B.A, B.B);
+            std::vector<base> res;
+            mul(B.A, B.B, res);
+            return res;
         }
 
         auto operator * (dft const& B) const {
@@ -290,9 +295,9 @@ namespace cp_algo::math::fft {
         auto n = com_size(a.size(), b.size());
         auto A = dft<base>(a, n);
         if(a == b) {
-            a = A *= dft<base>(A);
+            A.mul(dft<base>(A), a);
         } else {
-            a = A *= dft<base>(b, n);
+            A.mul(dft<base>(b, n), a);
         }
     }
     template<typename base>
@@ -300,9 +305,9 @@ namespace cp_algo::math::fft {
         auto n = std::max(flen, std::bit_ceil(max(a.size(), b.size())) / 2);
         auto A = dft<base>(a, n);
         if(a == b) {
-            a = A *= dft<base>(A);
+            A.mul(dft<base>(A), a);
         } else {
-            a = A *= dft<base>(b, n);
+            A.mul(dft<base>(b, n), a);
         }
     }
 }

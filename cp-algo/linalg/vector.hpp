@@ -89,7 +89,7 @@ namespace cp_algo::math::linalg {
         }
 
         // Generally, vec shouldn't be modified
-        // after it's pivot index is set
+        // after its pivot index is set
         std::pair<size_t, base> find_pivot() {
             if(pivot == size_t(-1)) {
                 pivot = 0;

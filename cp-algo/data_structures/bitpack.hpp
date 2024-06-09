@@ -45,6 +45,9 @@ namespace cp_algo::data_structures {
         int operator[](size_t i) const {
             return (data[i / bits_per_block] >> (i % bits_per_block)) & 1;
         }
+        void set(size_t i) {
+            data[i / bits_per_block] |= 1ULL << (i % bits_per_block);
+        }
 
         std::string to_string() const {
             std::string res(blocks * bits_per_block, '0');

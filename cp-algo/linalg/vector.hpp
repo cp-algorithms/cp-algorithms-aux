@@ -119,8 +119,7 @@ namespace cp_algo::math::linalg {
         using Base::Base;
     };
 
-    template<typename base>
-    requires(std::is_base_of_v<math::modint_base<base>, base>)
+    template<modint_type base>
     struct vec<base>: vec_base<vec<base>, base> {
         using Base = vec_base<vec<base>, base>;
         using Base::Base;

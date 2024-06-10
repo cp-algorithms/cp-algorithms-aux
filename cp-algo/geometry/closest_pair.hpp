@@ -35,7 +35,7 @@ namespace cp_algo::geometry {
                     if(!neigs.count(pp)) {
                         continue;
                     }
-                    for(size_t i: neigs[p + point{dx, dy}]) {
+                    for(size_t i: neigs[pp]) {
                         for(size_t j: id) {
                             if(j == i) {
                                 break;

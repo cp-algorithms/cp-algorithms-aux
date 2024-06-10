@@ -1,11 +1,13 @@
 #ifndef CP_ALGO_GEOMETRY_POINT_HPP
 #define CP_ALGO_GEOMETRY_POINT_HPP
+#include "../random/rng.hpp"
 #include <algorithm>
 #include <iostream>
 #include <complex>
 #include <utility>
 #include <vector>
 #include <ranges>
+#include <map>
 namespace cp_algo::geometry {
     template<typename ftype>
     struct point_t: public std::complex<ftype> {
@@ -73,6 +75,54 @@ namespace cp_algo::geometry {
         }
         hull.pop_back();
         return hull;
+    }
+
+    // Rabin & Lipton
+    template<typename point>
+    auto closest_pair(std::vector<point> const& r) {
+        size_t n = size(r);
+        int64_t md = 1e18;
+        for(size_t i = 0; i < n; i++) {
+            auto A = random::rng() % n;
+            auto B = random::rng() % n;
+            if(A != B) {
+                md = std::min(md, norm(r[A] - r[B]));
+                if(md == 0) {
+                    return std::pair{A, B};
+                }
+            }
+        }
+        std::map<point, std::vector<int>> neigs;
+        md = ceil(sqrtl(md));
+        for(size_t i = 0; i < n; i++) {
+            neigs[r[i] / md].push_back(i);
+        }
+        size_t a = 0, b = 1;
+        md = norm(r[a] - r[b]);
+        for(auto &[p, id]: neigs) {
+            for(int dx: {-1, 0, 1}) {
+                for(int dy: {-1, 0, 1}) {
+                    auto pp = p + point{dx, dy};
+                    if(!neigs.count(pp)) {
+                        continue;
+                    }
+                    for(size_t i: neigs[p + point{dx, dy}]) {
+                        for(size_t j: id) {
+                            if(j == i) {
+                                break;
+                            }
+                            int64_t cur = norm(r[i] - r[j]);
+                            if(cur < md) {
+                                md = cur;
+                                a = i;
+                                b = j;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return std::pair{a, b};
     }
 }
 #endif // CP_ALGO_GEOMETRY_POINT_HPP

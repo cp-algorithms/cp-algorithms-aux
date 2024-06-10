@@ -19,7 +19,7 @@ namespace cp_algo::geometry {
             for(auto it: std::views::drop(r, 1)) {
                 while(size(hull) >= base + 1) {
                     point a = hull.back();
-                    if(point::ccw(it - a, *(end(hull) - 2) - a)) {
+                    if(point::ccw(it - a, end(hull)[-2] - a)) {
                         break;
                     } else {
                         hull.pop_back();

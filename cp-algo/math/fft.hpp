@@ -216,13 +216,15 @@ namespace cp_algo::math::fft {
 
     template<modint_type base>
     struct dft<base> {
-        static constexpr int split = 1 << 15;
+        int split;
         cvector A, B;
         
         dft(std::vector<base> const& a, size_t n): A(n), B(n) {
+            split = std::sqrt(base::mod());
             cvector::exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
-                A.set(i % n, A.get(i % n) + ftype(a[i].rem() % split) * rt);
-                B.set(i % n, B.get(i % n) + ftype(a[i].rem() / split) * rt);
+                size_t ti = std::min(i, i - n);
+                A.set(ti, A.get(ti) + ftype(a[i].rem() % split) * rt);
+                B.set(ti, B.get(ti) + ftype(a[i].rem() / split) * rt);
     
             });
             if(n) {
@@ -248,19 +250,20 @@ namespace cp_algo::math::fft {
             B.ifft();
             C.ifft();
             res.resize(2 * n);
+            auto splitsplit = (base(split) * split).rem();
             cvector::exec_on_roots(2 * n, n, [&](size_t i, point rt) {
                 rt = conj(rt);
                 auto Ai = A.get(i) * rt;
                 auto Bi = B.get(i) * rt;
                 auto Ci = C.get(i) * rt;
-                base A0 = llround(real(Ai));
-                base A1 = llround(real(Ci));
-                base A2 = llround(real(Bi));
-                res[i] = A0 + A1 * split + A2 * split * split;
-                base B0 = llround(imag(Ai));
-                base B1 = llround(imag(Ci));
-                base B2 = llround(imag(Bi));
-                res[n + i] = B0 + B1 * split + B2 * split * split;
+                int64_t A0 = llround(real(Ai));
+                int64_t A1 = llround(real(Ci));
+                int64_t A2 = llround(real(Bi));
+                res[i] = A0 + A1 * split + A2 * splitsplit;
+                int64_t B0 = llround(imag(Ai));
+                int64_t B1 = llround(imag(Ci));
+                int64_t B2 = llround(imag(Bi));
+                res[n + i] = B0 + B1 * split + B2 * splitsplit;
             });
         }
         void mul(auto &&B, auto& res) {

@@ -38,7 +38,7 @@ namespace cp_algo::math::fft {
             resize(n);
         }
         void resize(size_t n) {
-            n = std::bit_ceil(std::max<size_t>(n, 4));
+            n = std::bit_ceil(std::max<size_t>(n, flen));
             if(size() != n) {
                 x.resize(n / flen);
                 y.resize(n / flen);

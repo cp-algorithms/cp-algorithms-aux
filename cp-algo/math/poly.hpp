@@ -12,18 +12,20 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <deque>
 #include <list>
 namespace cp_algo::math {
     template<typename T>
     struct poly_t {
         using base = T;
-        std::vector<T> a;
+        std::deque<T> a;
         
         void normalize() {poly::impl::normalize(*this);}
         
         poly_t(){}
         poly_t(T a0): a{a0} {normalize();}
-        poly_t(std::vector<T> const& t): a(t) {normalize();}
+        poly_t(std::vector<T> const& t): a(begin(t), end(t)) {normalize();}
+        poly_t(std::deque<T> const& t): a(t) {normalize();}
         
         poly_t operator -() const {return poly::impl::neg(*this);}
         poly_t& operator += (poly_t const& t) {return poly::impl::add(*this, t);}
@@ -563,10 +565,10 @@ namespace cp_algo::math {
                 
                 int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
                 
-                auto Q0f = fft::dft(Q0.a, N);
-                auto Q1f = fft::dft(Q1.a, N);
-                auto P0f = fft::dft(P0.a, N);
-                auto P1f = fft::dft(P1.a, N);
+                auto Q0f = fft::dft<T>(Q0.a, N);
+                auto Q1f = fft::dft<T>(Q1.a, N);
+                auto P0f = fft::dft<T>(P0.a, N);
+                auto P1f = fft::dft<T>(P1.a, N);
                 
                 if(k % 2) {
                     P = poly_t(Q0f * P1f) + poly_t(Q1f * P0f);

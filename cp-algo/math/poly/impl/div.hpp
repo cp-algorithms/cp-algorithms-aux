@@ -100,11 +100,11 @@ namespace cp_algo::math::poly::impl {
         
         int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
         
-        auto q0f = fft::dft(q0.a, N);
-        auto q1f = fft::dft(q1.a, N);
+        auto q0f = fft::dft<typename poly::base>(q0.a, N);
+        auto q1f = fft::dft<typename poly::base>(q1.a, N);
 
         // Q(x)*Q(-x) = Q0(x^2)^2 - x^2 Q1(x^2)^2
-        auto qqf = fft::dft(inv(
+        auto qqf = fft::dft<typename poly::base>(inv(
             poly(q0f * q0f) - poly(q1f * q1f).mul_xk(1)
         , (n + 1) / 2).a, N);
         

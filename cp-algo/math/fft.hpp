@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <complex>
 #include <cassert>
+#include <ranges>
 #include <vector>
 #include <bit>
 
@@ -33,16 +34,10 @@ namespace cp_algo::math::fft {
     struct cvector {
         static constexpr size_t pre_roots = 1 << 17;
         std::vector<vftype> x, y;
-        cvector() {}
         cvector(size_t n) {
-            resize(n);
-        }
-        void resize(size_t n) {
-            n = std::bit_ceil(std::max<size_t>(n, flen));
-            if(size() != n) {
-                x.resize(n / flen);
-                y.resize(n / flen);
-            }
+            n = std::max(flen, std::bit_ceil(n));
+            x.resize(n / flen);
+            y.resize(n / flen);
         }
         template<class pt = point>
         void set(size_t k, pt t) {
@@ -163,23 +158,6 @@ namespace cp_algo::math::fft {
     }();
 
     template<typename base>
-    void mul_slow(std::vector<base> &a, const std::vector<base> &b) {
-        if(a.empty() || b.empty()) {
-            a.clear();
-        } else {
-            int n = a.size();
-            int m = b.size();
-            a.resize(n + m - 1);
-            for(int k = n + m - 2; k >= 0; k--) {
-                a[k] *= b[0];
-                for(int j = std::max(k - n + 1, 1); j < std::min(k + 1, m); j++) {
-                    a[k] += a[k - j] * b[j];
-                }
-            }
-        }
-    }
-
-    template<typename base>
     struct dft {
         cvector A;
         
@@ -219,7 +197,7 @@ namespace cp_algo::math::fft {
         int split;
         cvector A, B;
         
-        dft(std::vector<base> const& a, size_t n): A(n), B(n) {
+        dft(auto const& a, size_t n): A(n), B(n) {
             split = std::sqrt(base::mod());
             cvector::exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
                 size_t ti = std::min(i, i - n);
@@ -233,7 +211,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        void mul(auto &&C, auto &&D, auto &res) {
+        void mul(auto &&C, auto &&D, auto &res, size_t k) {
             assert(A.size() == C.size());
             size_t n = A.size();
             if(!n) {
@@ -249,9 +227,8 @@ namespace cp_algo::math::fft {
             A.ifft();
             B.ifft();
             C.ifft();
-            res.resize(2 * n);
             auto splitsplit = (base(split) * split).rem();
-            cvector::exec_on_roots(2 * n, n, [&](size_t i, point rt) {
+            cvector::exec_on_roots(2 * n, std::min(n, k), [&](size_t i, point rt) {
                 rt = conj(rt);
                 auto Ai = A.get(i) * rt;
                 auto Bi = B.get(i) * rt;
@@ -260,18 +237,21 @@ namespace cp_algo::math::fft {
                 int64_t A1 = llround(real(Ci));
                 int64_t A2 = llround(real(Bi));
                 res[i] = A0 + A1 * split + A2 * splitsplit;
+                if(n + i >= k) {
+                    return;
+                }
                 int64_t B0 = llround(imag(Ai));
                 int64_t B1 = llround(imag(Ci));
                 int64_t B2 = llround(imag(Bi));
                 res[n + i] = B0 + B1 * split + B2 * splitsplit;
             });
         }
-        void mul(auto &&B, auto& res) {
-            mul(B.A, B.B, res);
+        void mul(auto &&B, auto& res, size_t k) {
+            mul(B.A, B.B, res, k);
         }
         std::vector<base> operator *= (auto &&B) {
-            std::vector<base> res;
-            mul(B.A, B.B, res);
+            std::vector<base> res(2 * A.size());
+            mul(B.A, B.B, res, size(res));
             return res;
         }
 
@@ -288,30 +268,24 @@ namespace cp_algo::math::fft {
         }
         return std::max(flen, std::bit_ceil(as + bs - 1) / 2);
     }
-    
-    template<typename base>
-    void mul(std::vector<base> &a, std::vector<base> const& b) {
-        if(std::min(a.size(), b.size()) < magic) {
-            mul_slow(a, b);
-            return;
+    void mul_truncate(auto &a, auto const& b, size_t k) {
+        using base = std::decay_t<decltype(a[0])>;
+        auto n = std::max(flen, std::bit_ceil(k) / 2);
+        auto A = dft<base>(std::views::take(a, k), n);
+        if(size(a) < k) {
+            a.resize(k);
         }
-        auto n = com_size(a.size(), b.size());
-        auto A = dft<base>(a, n);
         if(a == b) {
-            A.mul(dft<base>(A), a);
+            A.mul(dft<base>(A), a, k);
         } else {
-            A.mul(dft<base>(b, n), a);
+            A.mul(dft<base>(std::views::take(b, k), n), a, k);
         }
     }
-    template<typename base>
-    void circular_mul(std::vector<base> &a, std::vector<base> const& b) {
-        auto n = std::max(flen, std::bit_ceil(max(a.size(), b.size())) / 2);
-        auto A = dft<base>(a, n);
-        if(a == b) {
-            A.mul(dft<base>(A), a);
-        } else {
-            A.mul(dft<base>(b, n), a);
-        }
+    void mul(auto &a, auto const& b) {
+        mul_truncate(a, b, std::max(size_t(0), size(a) + size(b) - 1));
+    }
+    void circular_mul(auto &a, auto const& b) {
+        mul_truncate(a, b, std::max(size(a), size(b)));
     }
 }
 #endif // CP_ALGO_MATH_FFT_HPP

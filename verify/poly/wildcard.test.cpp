@@ -14,7 +14,6 @@ using fft::point;
 using fft::cvector;
 
 void semicorr(auto &a, auto &b) {
-    b.resize(size(a));
     a.fft();
     b.fft();
     a.dot(b);
@@ -39,10 +38,9 @@ string matches(string const& A, string const& B, char wild = '*') {
         }
     }
     array ST = {&A, &B};
-    cvector P[2];
+    vector<cvector> P(2, size(A));
     for(int i: {0, 1}) {
-        size_t N = size(*ST[i]);
-        P[i].resize(N);
+        size_t N = ST[i]->size();
         for(size_t k = 0; k < N; k++) {
             char c = ST[i]->at(k);
             size_t idx = i ? N - k - 1 : k;

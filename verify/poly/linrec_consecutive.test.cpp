@@ -1,5 +1,6 @@
 // @brief Consecutive Terms of Linear Recursion
 #define PROBLEM "https://judge.yosupo.jp/problem/consecutive_terms_of_linear_recurrent_sequence"
+#pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

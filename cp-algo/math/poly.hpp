@@ -630,8 +630,11 @@ namespace cp_algo::math {
         }
         // [x^k]..[x^{k+n-1}] of inv()
         // supports negative k if k+n >= 0
+        poly_t& inv_inplace(int64_t k, size_t n) {
+            return poly::impl::inv_inplace(*this, k, n);
+        }
         poly_t inv(int64_t k, size_t n) const {
-            return poly::impl::inv(*this, k, n);
+            return poly_t(*this).inv_inplace(k, n);;
         }
         
         // compute A(B(x)) mod x^n in O(n^2)

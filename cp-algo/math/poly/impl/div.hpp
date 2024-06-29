@@ -70,25 +70,38 @@ namespace cp_algo::math::poly::impl {
         }
         return powmod_hint(p, k, md, md.reverse().inv(md.deg() + 1));
     }
-
-    auto interleave(auto const& p) {
-        auto [p0, p1] = p.bisect();
-        return p0 * p0 - (p1 * p1).mul_xk(1);
-    }
     template<typename poly>
-    poly inv(poly const& q, int64_t k, size_t n) {
+    poly& inv_inplace(poly& q, int64_t k, size_t n) {
+        using poly_t = std::decay_t<poly>;
+        using base = poly_t::base;
         if(k <= std::max<int64_t>(n, size(q.a))) {
-            return q.inv(k + n).div_xk(k);
+            return q.inv_inplace(k + n).div_xk_inplace(k);
         }
         if(k % 2) {
-            return inv(q, k - 1, n + 1).div_xk(1);
+            return inv_inplace(q, k - 1, n + 1).div_xk_inplace(1);
         }
-        
-        auto qq = inv(interleave(q), k / 2 - q.deg() / 2, (n + 1) / 2 + q.deg() / 2);
-        auto [q0, q1] = q.negx().bisect();
-        return (
-            (q0 * qq).x2() + (q1 * qq).x2().mul_xk(1)
-        ).div_xk(2*q0.deg()).mod_xk(n);
+        auto [q0, q1] = q.bisect();
+        auto qq = q0 * q0 - (q1 * q1).mul_xk_inplace(1);
+        inv_inplace(qq, k / 2 - q.deg() / 2, (n + 1) / 2 + q.deg() / 2);
+        int N = fft::com_size(size(q0.a), size(qq.a));
+        auto q0f = fft::dft<base>(q0.a, N);
+        auto q1f = fft::dft<base>(q1.a, N);
+        auto qqf = fft::dft<base>(qq.a, N);
+        int M = q0.deg() + (n + 1) / 2;
+        std::deque<base> A(M), B(M);
+        q0f.mul(fft::dft<base>(qqf), A, M);
+        q1f.mul(qqf, B, M);
+        q.a.resize(n + 1);
+        for(size_t i = 0; i < n; i += 2) {
+            q.a[i] = A[q0.deg() + i / 2];
+            q.a[i + 1] = -B[q0.deg() + i / 2];
+        }
+        q.a.pop_back();
+        q.normalize();
+        return q;
+
+        q = (q0 * qq).x2() - (q1 * qq).x2().mul_xk(1);
+        return q.div_xk_inplace(2 * q0.deg()).mod_xk_inplace(n);
     }
     template<typename poly>
     poly& inv_inplace(poly& p, size_t n) {
@@ -100,7 +113,7 @@ namespace cp_algo::math::poly::impl {
         // Q(-x) = P0(x^2) + xP1(x^2)
         auto [q0, q1] = p.bisect(n);
         
-        int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
+        int N = fft::com_size(size(q0.a), (n + 1) / 2);
         
         auto q0f = fft::dft<base>(q0.a, N);
         auto q1f = fft::dft<base>(q1.a, N);

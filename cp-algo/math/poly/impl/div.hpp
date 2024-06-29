@@ -3,6 +3,7 @@
 #include "../../fft.hpp"
 #include "../../common.hpp"
 #include <cassert>
+#include <deque>
 // operations related to polynomial division
 namespace cp_algo::math::poly::impl {
     auto divmod_slow(auto const& p, auto const& q) {
@@ -90,27 +91,34 @@ namespace cp_algo::math::poly::impl {
         ).div_xk(2*q0.deg()).mod_xk(n);
     }
     template<typename poly>
-    poly inv(poly const& p, size_t n) {
+    void inv_inplace(poly&& p, size_t n) {
+        using poly_t = std::decay_t<poly>;
+        using base = poly_t::base;
         if(n == 1) {
-            return poly(1) / p[0];
+            p = base(1) / p[0];
+            return;
         }
         // Q(-x) = P0(x^2) + xP1(x^2)
         auto [q0, q1] = p.bisect(n);
-        q1 *= -1;
         
         int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
         
-        auto q0f = fft::dft<typename poly::base>(q0.a, N);
-        auto q1f = fft::dft<typename poly::base>(q1.a, N);
+        auto q0f = fft::dft<base>(q0.a, N);
+        auto q1f = fft::dft<base>(q1.a, N);
 
         // Q(x)*Q(-x) = Q0(x^2)^2 - x^2 Q1(x^2)^2
-        auto qqf = fft::dft<typename poly::base>(inv(
-            poly(q0f * q0f) - poly(q1f * q1f).mul_xk(1)
-        , (n + 1) / 2).a, N);
+        auto qq = poly_t(q0f * q0f) - poly_t(q1f * q1f).mul_xk(1);
+        inv_inplace(qq, (n + 1) / 2);
+        auto qqf = fft::dft<base>(qq.a, N);
         
-        return (
-            poly(q0f * qqf).x2() + poly(q1f * qqf).x2().mul_xk(1)
-        ).mod_xk(n);
+        auto A = q0f * qqf;
+        auto B = q1f * qqf;
+        p.a.resize(n + 1);
+        for(size_t i = 0; i < n; i += 2) {
+            p.a[i] = A[i / 2];
+            p.a[i + 1] = -B[i / 2];
+        }
+        p.a.pop_back();
     }
 }
 #endif // CP_ALGO_MATH_POLY_IMPL_DIV_HPP

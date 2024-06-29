@@ -538,7 +538,7 @@ namespace cp_algo::math {
         }
         
         poly_t x2() { // P(x) -> P(x^2)
-            std::vector<T> res(2 * a.size());
+            std::deque<T> res(2 * a.size());
             for(size_t i = 0; i < a.size(); i++) {
                 res[2 * i] = a[i];
             }
@@ -583,8 +583,12 @@ namespace cp_algo::math {
         }
 
         // inverse series mod x^n
+        poly_t& inv_inplace(size_t n) {
+            poly::impl::inv_inplace(*this, n);
+            return *this;
+        }
         poly_t inv(size_t n) const {
-            return poly::impl::inv(*this, n);
+            return poly_t(*this).inv_inplace(n);
         }
         // [x^k]..[x^{k+n-1}] of inv()
         // supports negative k if k+n >= 0

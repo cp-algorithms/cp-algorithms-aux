@@ -7,6 +7,7 @@
 #include <cassert>
 #include <ranges>
 #include <vector>
+#include <deque>
 #include <bit>
 
 namespace cp_algo::math::fft {
@@ -249,8 +250,8 @@ namespace cp_algo::math::fft {
         void mul(auto &&B, auto& res, size_t k) {
             mul(B.A, B.B, res, k);
         }
-        std::vector<base> operator *= (auto &&B) {
-            std::vector<base> res(2 * A.size());
+        std::deque<base> operator *= (auto &&B) {
+            std::deque<base> res(2 * A.size());
             mul(B.A, B.B, res, size(res));
             return res;
         }

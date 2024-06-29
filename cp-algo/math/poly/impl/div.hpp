@@ -111,8 +111,9 @@ namespace cp_algo::math::poly::impl {
         inv_inplace(qq, (n + 1) / 2);
         auto qqf = fft::dft<base>(qq.a, N);
         
-        auto A = q0f * qqf;
-        auto B = q1f * qqf;
+        std::deque<base> A((n + 1) / 2), B((n + 1) / 2);
+        q0f.mul(fft::dft<base>(qqf), A, (n + 1) / 2);
+        q1f.mul(qqf, B, (n + 1) / 2);
         p.a.resize(n + 1);
         for(size_t i = 0; i < n; i += 2) {
             p.a[i] = A[i / 2];

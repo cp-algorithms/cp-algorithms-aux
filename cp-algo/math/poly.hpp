@@ -167,7 +167,7 @@ namespace cp_algo::math {
         
         poly_t log(size_t n) const { // calculate log p(x) mod x^n
             assert(a[0] == T(1));
-            return (deriv().mod_xk(n) * inv(n)).integr().mod_xk(n);
+            return (mod_xk(n).deriv() * inv(n)).mod_xk(n - 1).integr();
         }
         
         poly_t exp(size_t n) const { // calculate exp p(x) mod x^n
@@ -547,6 +547,7 @@ namespace cp_algo::math {
         
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
         std::array<poly_t, 2> bisect(size_t n) const {
+            n = std::min(n, size(a));
             std::deque<T> res[2];
             for(size_t i = 0; i < n; i++) {
                 res[i % 2].push_back(a[i]);

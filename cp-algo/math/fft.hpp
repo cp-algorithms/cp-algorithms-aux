@@ -271,6 +271,10 @@ namespace cp_algo::math::fft {
     }
     void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
+        if(size(b) == 0) {
+            a.clear();
+            return;
+        }
         auto n = std::max(flen, std::bit_ceil(
             std::min(k, size(a)) + std::min(k, size(b)) - 1
         ) / 2);

@@ -202,19 +202,29 @@ namespace cp_algo::math {
             return poly_t(*this).log_inplace(n);
         }
         
-        poly_t exp(size_t n) const { // calculate exp p(x) mod x^n
+        poly_t& mul_truncate(poly_t const& t, size_t k) {
+            fft::mul_truncate(a, t.a, k);
+            normalize();
+            return *this;
+        }
+
+        poly_t& exp_inplace(size_t n) {
             if(is_zero()) {
-                return T(1);
+                return *this = T(1);
             }
             assert(a[0] == T(0));
-            poly_t ans = T(1);
+            a[0] = 1;
             size_t a = 1;
             while(a < n) {
-                poly_t C = ans.log(2 * a).div_xk(a) - substr(a, 2 * a);
-                ans -= (ans * C).mod_xk(a).mul_xk(a);
+                poly_t C = log(2 * a).div_xk_inplace(a) - substr(a, 2 * a);
+                *this -= C.mul_truncate(*this, a).mul_xk_inplace(a);
                 a *= 2;
             }
-            return ans.mod_xk(n);
+            return mod_xk_inplace(n);
+        }
+
+        poly_t exp(size_t n) const { // calculate exp p(x) mod x^n
+            return poly_t(*this).exp_inplace(n);
         }
         
         poly_t pow_bin(int64_t k, size_t n) const { // O(n log n log k)
@@ -535,13 +545,6 @@ namespace cp_algo::math {
         // [x^k] (a corr b) = sum_{i} a{(k-m)+i}*bi
         static poly_t corr(poly_t const& a, poly_t const& b) { // cross-correlation
             return a * b.reverse();
-        }
-
-        // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
-        static poly_t inner_semicorr(poly_t const& a, poly_t const& b) {
-            auto ta = a.a;
-            fft::circular_mul(ta, b.reverse().a);
-            return poly_t(ta).div_xk(b.deg());
         }
 
         // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}

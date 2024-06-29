@@ -271,7 +271,9 @@ namespace cp_algo::math::fft {
     }
     void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
-        auto n = std::max(flen, std::bit_ceil(k) / 2);
+        auto n = std::max(flen, std::bit_ceil(
+            std::min(k, size(a)) + std::min(k, size(b)) - 1
+        ) / 2);
         auto A = dft<base>(std::views::take(a, k), n);
         if(size(a) != k) {
             a.resize(k);
@@ -283,12 +285,9 @@ namespace cp_algo::math::fft {
         }
     }
     void mul(auto &a, auto const& b) {
-        if(size(a) || size(b)) {
+        if(size(a)) {
             mul_truncate(a, b, size(a) + size(b) - 1);
         }
-    }
-    void circular_mul(auto &a, auto const& b) {
-        mul_truncate(a, b, std::max(size(a), size(b)));
     }
 }
 #endif // CP_ALGO_MATH_FFT_HPP

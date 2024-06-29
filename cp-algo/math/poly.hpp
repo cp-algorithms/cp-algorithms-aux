@@ -44,7 +44,7 @@ namespace cp_algo::math {
             return *this;
         }
         poly_t& div_xk_inplace(size_t k) {
-            a.erase(begin(a), min(k, size(a)));
+            a.erase(begin(a), begin(a) + std::min(k, size(a)));
             normalize();
             return *this;
         }
@@ -195,9 +195,8 @@ namespace cp_algo::math {
         // calculate log p(x) mod x^n
         poly_t& log_inplace(size_t n) {
             assert(a[0] == T(1));
-            auto t = mod_xk_inplace(n).inv(n);
-            deriv_inplace();
-            return (*this *= t).mod_xk_inplace(n - 1).integr_inplace();
+            mod_xk_inplace(n);
+            return (inv_inplace(n) *= mod_xk_inplace(n).deriv()).mod_xk_inplace(n - 1).integr_inplace();
         }
         poly_t log(size_t n) const {
             return poly_t(*this).log_inplace(n);

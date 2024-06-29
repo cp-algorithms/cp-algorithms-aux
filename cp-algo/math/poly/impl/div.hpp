@@ -99,9 +99,6 @@ namespace cp_algo::math::poly::impl {
         q.a.pop_back();
         q.normalize();
         return q;
-
-        q = (q0 * qq).x2() - (q1 * qq).x2().mul_xk(1);
-        return q.div_xk_inplace(2 * q0.deg()).mod_xk_inplace(n);
     }
     template<typename poly>
     poly& inv_inplace(poly& p, size_t n) {

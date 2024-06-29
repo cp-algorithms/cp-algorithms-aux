@@ -54,7 +54,7 @@ namespace cp_algo::math {
         
         poly_t substr(size_t l, size_t k) const {return poly::impl::substr(*this, l, k);}
         
-        poly_t operator *= (const poly_t &t) {fft::mul(a, t.a); normalize(); return *this;}
+        poly_t& operator *= (const poly_t &t) {fft::mul(a, t.a); normalize(); return *this;}
         poly_t operator * (const poly_t &t) const {return poly_t(*this) *= t;}
 
         poly_t& operator /= (const poly_t &t) {return *this = divmod(t)[0];}
@@ -193,7 +193,7 @@ namespace cp_algo::math {
         }
         
         // calculate log p(x) mod x^n
-        poly_t log_inplace(size_t n) {
+        poly_t& log_inplace(size_t n) {
             assert(a[0] == T(1));
             auto t = mod_xk_inplace(n).inv(n);
             deriv_inplace();

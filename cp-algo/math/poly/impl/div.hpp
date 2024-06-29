@@ -91,12 +91,12 @@ namespace cp_algo::math::poly::impl {
     }
     template<typename poly>
     poly inv(poly const& p, size_t n) {
-        auto q = p.mod_xk(n);
         if(n == 1) {
-            return poly(1) / q[0];
+            return poly(1) / p[0];
         }
         // Q(-x) = P0(x^2) + xP1(x^2)
-        auto [q0, q1] = q.negx().bisect();
+        auto [q0, q1] = p.bisect(n);
+        q1 *= -1;
         
         int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
         

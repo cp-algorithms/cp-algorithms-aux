@@ -546,14 +546,15 @@ namespace cp_algo::math {
         }
         
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
-        std::array<poly_t, 2> bisect() const {
-            std::vector<T> res[2];
-            res[0].reserve(deg() / 2 + 1);
-            res[1].reserve(deg() / 2 + 1);
-            for(int i = 0; i <= deg(); i++) {
+        std::array<poly_t, 2> bisect(size_t n) const {
+            std::deque<T> res[2];
+            for(size_t i = 0; i < n; i++) {
                 res[i % 2].push_back(a[i]);
             }
             return {res[0], res[1]};
+        }
+        std::array<poly_t, 2> bisect() const {
+            return bisect(size(a));
         }
         
         // Find [x^k] P / Q

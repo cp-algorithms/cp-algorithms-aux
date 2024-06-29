@@ -91,12 +91,11 @@ namespace cp_algo::math::poly::impl {
         ).div_xk(2*q0.deg()).mod_xk(n);
     }
     template<typename poly>
-    void inv_inplace(poly&& p, size_t n) {
+    poly& inv_inplace(poly& p, size_t n) {
         using poly_t = std::decay_t<poly>;
         using base = poly_t::base;
         if(n == 1) {
-            p = base(1) / p[0];
-            return;
+            return p = base(1) / p[0];
         }
         // Q(-x) = P0(x^2) + xP1(x^2)
         auto [q0, q1] = p.bisect(n);
@@ -107,7 +106,8 @@ namespace cp_algo::math::poly::impl {
         auto q1f = fft::dft<base>(q1.a, N);
 
         // Q(x)*Q(-x) = Q0(x^2)^2 - x^2 Q1(x^2)^2
-        auto qq = poly_t(q0f * q0f) - poly_t(q1f * q1f).mul_xk(1);
+        auto qq = poly_t(q0f * q0f) - poly_t(q1f * q1f).mul_xk_inplace(1);
+
         inv_inplace(qq, (n + 1) / 2);
         auto qqf = fft::dft<base>(qq.a, N);
         
@@ -120,6 +120,8 @@ namespace cp_algo::math::poly::impl {
             p.a[i + 1] = -B[i / 2];
         }
         p.a.pop_back();
+        p.normalize();
+        return p;
     }
 }
 #endif // CP_ALGO_MATH_POLY_IMPL_DIV_HPP

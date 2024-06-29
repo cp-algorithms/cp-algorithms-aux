@@ -33,9 +33,25 @@ namespace cp_algo::math {
         poly_t operator + (poly_t const& t) const {return poly_t(*this) += t;}
         poly_t operator - (poly_t const& t) const {return poly_t(*this) -= t;}
         
-        poly_t mod_xk(size_t k) const {return poly::impl::mod_xk(*this, k);} // %= x^k
-        poly_t mul_xk(size_t k) const {return poly::impl::mul_xk(*this, k);} // *= x^k
-        poly_t div_xk(size_t k) const {return poly::impl::div_xk(*this, k);} // /= x^k
+        poly_t& mod_xk_inplace(size_t k) {
+            a.resize(std::min(size(a), k));
+            normalize();
+            return *this;
+        }
+        poly_t& mul_xk_inplace(size_t k) {
+            a.insert(begin(a), k, T(0));
+            normalize();
+            return *this;
+        }
+        poly_t& div_xk_inplace(size_t k) {
+            a.erase(begin(a), min(k, size(a)));
+            normalize();
+            return *this;
+        }
+        poly_t mod_xk(size_t k) const {return poly_t(*this).mod_xk_inplace(k);}
+        poly_t mul_xk(size_t k) const {return poly_t(*this).mul_xk_inplace(k);}
+        poly_t div_xk(size_t k) const {return poly_t(*this).div_xk_inplace(k);}
+        
         poly_t substr(size_t l, size_t k) const {return poly::impl::substr(*this, l, k);}
         
         poly_t operator *= (const poly_t &t) {fft::mul(a, t.a); normalize(); return *this;}
@@ -135,17 +151,28 @@ namespace cp_algo::math {
         bool operator == (const poly_t &t) const {return a == t.a;}
         bool operator != (const poly_t &t) const {return a != t.a;}
         
-        poly_t deriv(int k = 1) const { // calculate derivative
+        poly_t& deriv_inplace(int k = 1) {
             if(deg() + 1 < k) {
-                return poly_t(T(0));
+                return *this = poly_t{};
             }
-            std::vector<T> res(deg() + 1 - k);
             for(int i = k; i <= deg(); i++) {
-                res[i - k] = fact<T>(i) * rfact<T>(i - k) * a[i];
+                a[i - k] = fact<T>(i) * rfact<T>(i - k) * a[i];
             }
-            return res;
+            a.resize(deg() + 1 - k);
+            return *this;
         }
-        
+        poly_t deriv(int k = 1) const { // calculate derivative
+            return poly_t(*this).deriv_inplace(k);
+        }
+
+        poly_t& integr_inplace() {
+            a.push_back(0);
+            for(int i = deg() - 1; i >= 0; i--) {
+                a[i + 1] = a[i] * small_inv<T>(i + 1);
+            }
+            a[0] = 0;
+            return *this;
+        }
         poly_t integr() const { // calculate integral with C = 0
             std::vector<T> res(deg() + 2);
             for(int i = 0; i <= deg(); i++) {
@@ -165,9 +192,15 @@ namespace cp_algo::math {
             return res;
         }
         
-        poly_t log(size_t n) const { // calculate log p(x) mod x^n
+        // calculate log p(x) mod x^n
+        poly_t log_inplace(size_t n) {
             assert(a[0] == T(1));
-            return (mod_xk(n).deriv() * inv(n)).mod_xk(n - 1).integr();
+            auto t = mod_xk_inplace(n).inv(n);
+            deriv_inplace();
+            return (*this *= t).mod_xk_inplace(n - 1).integr_inplace();
+        }
+        poly_t log(size_t n) const {
+            return poly_t(*this).log_inplace(n);
         }
         
         poly_t exp(size_t n) const { // calculate exp p(x) mod x^n
@@ -585,8 +618,7 @@ namespace cp_algo::math {
 
         // inverse series mod x^n
         poly_t& inv_inplace(size_t n) {
-            poly::impl::inv_inplace(*this, n);
-            return *this;
+            return poly::impl::inv_inplace(*this, n);
         }
         poly_t inv(size_t n) const {
             return poly_t(*this).inv_inplace(n);

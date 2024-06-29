@@ -16,7 +16,7 @@ void solve() {
     cin >> n;
     vector<base> a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
-    polyn(a).log(n).print(n);
+    polyn(a).log_inplace(n).print(n);
 }
 
 signed main() {

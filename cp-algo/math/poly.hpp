@@ -43,14 +43,17 @@ namespace cp_algo::math {
             normalize();
             return *this;
         }
-        poly_t& div_xk_inplace(size_t k) {
-            a.erase(begin(a), begin(a) + std::min(k, size(a)));
+        poly_t& div_xk_inplace(int64_t k) {
+            if(k < 0) {
+                return mul_xk_inplace(-k);
+            }
+            a.erase(begin(a), begin(a) + std::min<size_t>(k, size(a)));
             normalize();
             return *this;
         }
         poly_t mod_xk(size_t k) const {return poly_t(*this).mod_xk_inplace(k);}
         poly_t mul_xk(size_t k) const {return poly_t(*this).mul_xk_inplace(k);}
-        poly_t div_xk(size_t k) const {return poly_t(*this).div_xk_inplace(k);}
+        poly_t div_xk(int64_t k) const {return poly_t(*this).div_xk_inplace(k);}
         
         poly_t substr(size_t l, size_t k) const {return poly::impl::substr(*this, l, k);}
         

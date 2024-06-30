@@ -3,7 +3,6 @@
 #include "../../fft.hpp"
 #include "../../common.hpp"
 #include <cassert>
-#include <deque>
 // operations related to polynomial division
 namespace cp_algo::math::poly::impl {
     auto divmod_slow(auto const& p, auto const& q) {
@@ -88,7 +87,7 @@ namespace cp_algo::math::poly::impl {
         auto q1f = fft::dft<base>(q1.a, N);
         auto qqf = fft::dft<base>(qq.a, N);
         int M = q0.deg() + (n + 1) / 2;
-        std::deque<base> A(M), B(M);
+        std::vector<base> A(M), B(M);
         q0f.mul(qqf, A, M);
         q1f.mul_inplace(qqf, B, M);
         q.a.resize(n + 1);
@@ -121,7 +120,7 @@ namespace cp_algo::math::poly::impl {
         inv_inplace(qq, (n + 1) / 2);
         auto qqf = fft::dft<base>(qq.a, N);
         
-        std::deque<base> A((n + 1) / 2), B((n + 1) / 2);
+        std::vector<base> A((n + 1) / 2), B((n + 1) / 2);
         q0f.mul(qqf, A, (n + 1) / 2);
         q1f.mul_inplace(qqf, B, (n + 1) / 2);
         p.a.resize(n + 1);

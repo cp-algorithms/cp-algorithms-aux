@@ -7,7 +7,6 @@
 #include <cassert>
 #include <ranges>
 #include <vector>
-#include <deque>
 #include <bit>
 
 namespace cp_algo::math::fft {

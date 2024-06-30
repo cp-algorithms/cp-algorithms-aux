@@ -11,7 +11,7 @@ namespace cp_algo::math::poly::impl {
             p.a.pop_back();
         }
     }
-    auto& neg_inplace(auto &p) {
+    auto neg_inplace(auto &&p) {
         std::ranges::transform(p.a, begin(p.a), std::negate{});
         return p;
     }

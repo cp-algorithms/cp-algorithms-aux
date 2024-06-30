@@ -76,7 +76,7 @@ namespace cp_algo::math::poly::impl {
     }
     template<typename poly>
     poly min_rec(poly const& p, size_t d) {
-        auto R2 = p.mod_xk(d).reverse(d), R1 = poly::xk(d);
+        auto R2 = p.mod_xk(d).reversed(d), R1 = poly::xk(d);
         if(R2.is_zero()) {
             return poly(1);
         }

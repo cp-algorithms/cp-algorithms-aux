@@ -57,8 +57,8 @@ namespace cp_algo::math::poly::impl {
             if(k < md.deg()) {
                 return poly::xk(k);
             } else {
-                auto mdr = md.reverse();
-                return (mdr.inv(k - md.deg() + 1, md.deg()) * mdr).reverse(md.deg());
+                auto mdr = md.reversed();
+                return (mdr.inv(k - md.deg() + 1, md.deg()) * mdr).reversed(md.deg());
             }
         }
         if(md == poly::xk(d)) {
@@ -67,7 +67,7 @@ namespace cp_algo::math::poly::impl {
         if(md == poly::xk(d) - poly(1)) {
             return p.powmod_circular(k, d);
         }
-        return powmod_hint(p, k, md, md.reverse().inv(md.deg() + 1));
+        return powmod_hint(p, k, md, md.reversed().inv(md.deg() + 1));
     }
     template<typename poly>
     poly& inv_inplace(poly& q, int64_t k, size_t n) {

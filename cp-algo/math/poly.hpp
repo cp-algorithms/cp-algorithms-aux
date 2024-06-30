@@ -12,20 +12,19 @@
 #include <optional>
 #include <utility>
 #include <vector>
-#include <deque>
 #include <list>
 namespace cp_algo::math {
     template<typename T>
     struct poly_t {
         using base = T;
-        std::deque<T> a;
+        std::vector<T> a;
         
         void normalize() {poly::impl::normalize(*this);}
         
         poly_t(){}
         poly_t(T a0): a{a0} {normalize();}
-        poly_t(std::vector<T> const& t): a(begin(t), end(t)) {normalize();}
-        poly_t(std::deque<T> const& t): a(t) {normalize();}
+        poly_t(std::vector<T> const& t): a(t) {normalize();}
+        poly_t(std::vector<T>&& t): a(std::move(t)) {normalize();}
         
         poly_t operator -() const {return poly::impl::neg(*this);}
         poly_t& operator += (poly_t const& t) {return poly::impl::add(*this, t);}
@@ -576,7 +575,7 @@ namespace cp_algo::math {
         }
         
         poly_t x2() { // P(x) -> P(x^2)
-            std::deque<T> res(2 * a.size());
+            std::vector<T> res(2 * a.size());
             for(size_t i = 0; i < a.size(); i++) {
                 res[2 * i] = a[i];
             }
@@ -586,7 +585,7 @@ namespace cp_algo::math {
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
         std::array<poly_t, 2> bisect(size_t n) const {
             n = std::min(n, size(a));
-            std::deque<T> res[2];
+            std::vector<T> res[2];
             for(size_t i = 0; i < n; i++) {
                 res[i % 2].push_back(a[i]);
             }

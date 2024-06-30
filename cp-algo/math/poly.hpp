@@ -26,7 +26,7 @@ namespace cp_algo::math {
         poly_t(std::vector<T> const& t): a(t) {normalize();}
         poly_t(std::vector<T>&& t): a(std::move(t)) {normalize();}
         
-        poly_t operator -() const {return poly::impl::neg(*this);}
+        poly_t operator -() const {return poly::impl::neg_inplace(poly_t(*this));}
         poly_t& operator += (poly_t const& t) {return poly::impl::add(*this, t);}
         poly_t& operator -= (poly_t const& t) {return poly::impl::sub(*this, t);}
         poly_t operator + (poly_t const& t) const {return poly_t(*this) += t;}
@@ -69,8 +69,10 @@ namespace cp_algo::math {
         poly_t operator * (T const& x) const {return poly_t(*this) *= x;}
         poly_t operator / (T const& x) const {return poly_t(*this) /= x;}
         
-        poly_t reverse(size_t n) const {return poly::impl::reverse(*this, n);}
-        poly_t reverse() const {return reverse(size(a));}
+        poly_t& reverse(size_t n) {return poly::impl::reverse(*this, n);}
+        poly_t& reverse() {return reverse(size(a));}
+        poly_t reversed(size_t n) {return poly_t(*this).reverse(n);}
+        poly_t reversed() {return poly_t(*this).reverse();}
         
         std::array<poly_t, 2> divmod(poly_t const& b) const {
             return poly::impl::divmod(*this, b);
@@ -433,7 +435,7 @@ namespace cp_algo::math {
             poly_t p_over_q = poly_t(y).chirpz(z, n);
             poly_t q = _1mzkx_prod(z, n);
 
-            return (p_over_q * q).mod_xk(n).reverse(n);
+            return (p_over_q * q).mod_xk_inplace(n).reverse(n);
         }
 
         static poly_t build(std::vector<poly_t> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
@@ -546,7 +548,7 @@ namespace cp_algo::math {
         
         // [x^k] (a corr b) = sum_{i} a{(k-m)+i}*bi
         static poly_t corr(poly_t const& a, poly_t const& b) { // cross-correlation
-            return a * b.reverse();
+            return a * b.reversed();
         }
 
         // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
@@ -609,11 +611,11 @@ namespace cp_algo::math {
                 auto P0f = fft::dft<T>(P0.a, N);
                 auto P1f = fft::dft<T>(P1.a, N);
                 
-                Q = poly_t(Q0f * Q0f) - poly_t(Q1f * Q1f).mul_xk(1);
+                Q = poly_t(Q0f * Q0f) -= poly_t(Q1f * Q1f).mul_xk_inplace(1);
                 if(k % 2) {
-                    P = poly_t(Q0f *= P1f) - poly_t(Q1f *= P0f);
+                    P = poly_t(Q0f *= P1f) -= poly_t(Q1f *= P0f);
                 } else {
-                    P = poly_t(Q0f *= P0f) - poly_t(Q1f *= P1f).mul_xk(1);
+                    P = poly_t(Q0f *= P0f) -= poly_t(Q1f *= P1f).mul_xk_inplace(1);
                 }
                 k /= 2;
             }

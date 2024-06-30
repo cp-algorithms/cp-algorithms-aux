@@ -11,7 +11,7 @@ namespace cp_algo::math::poly::impl {
             p.a.pop_back();
         }
     }
-    auto neg(auto p) {
+    auto& neg_inplace(auto &p) {
         std::ranges::transform(p.a, begin(p.a), std::negate{});
         return p;
     }
@@ -22,13 +22,13 @@ namespace cp_algo::math::poly::impl {
         p.normalize();
         return p;
     }
-    auto& add(auto &p, auto q) {
+    auto& add(auto &p, auto const& q) {
         p.a.resize(std::max(p.a.size(), q.a.size()));
         std::ranges::transform(p.a, q.a, begin(p.a), std::plus{});
         normalize(p);
         return p;
     }
-    auto& sub(auto &p, auto q) {
+    auto& sub(auto &p, auto const& q) {
         p.a.resize(std::max(p.a.size(), q.a.size()));
         std::ranges::transform(p.a, q.a, begin(p.a), std::minus{});
         normalize(p);
@@ -40,7 +40,7 @@ namespace cp_algo::math::poly::impl {
             begin(p.a) + std::min(l + k, p.a.size())
         );
     }
-    auto reverse(auto p, size_t n) {
+    auto& reverse(auto &p, size_t n) {
         p.a.resize(n);
         std::ranges::reverse(p.a);
         normalize(p);

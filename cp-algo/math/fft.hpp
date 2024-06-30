@@ -247,7 +247,7 @@ namespace cp_algo::math::fft {
                 res[n + i] = B0 + B1 * split + B2 * splitsplit;
             });
         }
-        void mul_inplace(auto &B, auto& res, size_t k) {
+        void mul_inplace(auto &&B, auto& res, size_t k) {
             mul(B.A, B.B, res, k);
         }
         void mul(auto const& B, auto& res, size_t k) {

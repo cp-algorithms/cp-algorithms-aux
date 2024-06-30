@@ -212,7 +212,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        void mul(auto &&C, auto &&D, auto &res, size_t k) {
+        void mul(auto &&C, auto const& D, auto &res, size_t k) {
             assert(A.size() == C.size());
             size_t n = A.size();
             if(!n) {
@@ -247,17 +247,24 @@ namespace cp_algo::math::fft {
                 res[n + i] = B0 + B1 * split + B2 * splitsplit;
             });
         }
-        void mul(auto &&B, auto& res, size_t k) {
+        void mul_inplace(auto &B, auto& res, size_t k) {
             mul(B.A, B.B, res, k);
         }
-        std::vector<base> operator *= (auto &&B) {
+        void mul(auto const& B, auto& res, size_t k) {
+            mul(cvector(B.A), B.B, res, k);
+        }
+        std::vector<base> operator *= (dft &B) {
             std::vector<base> res(2 * A.size());
-            mul(B.A, B.B, res, size(res));
+            mul_inplace(B, res, size(res));
             return res;
         }
-
+        std::vector<base> operator *= (dft const& B) {
+            std::vector<base> res(2 * A.size());
+            mul(B, res, size(res));
+            return res;
+        }
         auto operator * (dft const& B) const {
-            return dft(*this) *= dft(B);
+            return dft(*this) *= B;
         }
         
         point operator [](int i) const {return A.get(i);}
@@ -296,9 +303,9 @@ namespace cp_algo::math::fft {
         a.resize(k);
         auto A = dft<base>(a, n);
         if(&a == &b) {
-            A.mul(dft<base>(A), a, k);
+            A.mul(A, a, k);
         } else {
-            A.mul(dft<base>(std::views::take(b, k), n), a, k);
+            A.mul_inplace(dft<base>(std::views::take(b, k), n), a, k);
         }
     }
     void mul(auto &a, auto const& b) {

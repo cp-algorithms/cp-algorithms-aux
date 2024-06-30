@@ -89,8 +89,8 @@ namespace cp_algo::math::poly::impl {
         auto qqf = fft::dft<base>(qq.a, N);
         int M = q0.deg() + (n + 1) / 2;
         std::deque<base> A(M), B(M);
-        q0f.mul(fft::dft<base>(qqf), A, M);
-        q1f.mul(qqf, B, M);
+        q0f.mul(qqf, A, M);
+        q1f.mul_inplace(qqf, B, M);
         q.a.resize(n + 1);
         for(size_t i = 0; i < n; i += 2) {
             q.a[i] = A[q0.deg() + i / 2];
@@ -122,8 +122,8 @@ namespace cp_algo::math::poly::impl {
         auto qqf = fft::dft<base>(qq.a, N);
         
         std::deque<base> A((n + 1) / 2), B((n + 1) / 2);
-        q0f.mul(fft::dft<base>(qqf), A, (n + 1) / 2);
-        q1f.mul(qqf, B, (n + 1) / 2);
+        q0f.mul(qqf, A, (n + 1) / 2);
+        q1f.mul_inplace(qqf, B, (n + 1) / 2);
         p.a.resize(n + 1);
         for(size_t i = 0; i < n; i += 2) {
             p.a[i] = A[i / 2];

@@ -263,6 +263,21 @@ namespace cp_algo::math::fft {
         point operator [](int i) const {return A.get(i);}
     };
     
+    void mul_slow(auto &a, auto const& b, size_t k) {
+        if(empty(a) || empty(b)) {
+            a.clear();
+        } else {
+            int n = std::min(k, size(a));
+            int m = std::min(k, size(b));
+            a.resize(k);
+            for(int j = k - 1; j >= 0; j--) {
+                a[j] *= b[0];
+                for(int i = std::max(j - n, 0) + 1; i < std::min(j + 1, m); i++) {
+                    a[j] += a[j - i] * b[i];
+                }
+            }
+        }
+    }
     size_t com_size(size_t as, size_t bs) {
         if(!as || !bs) {
             return 0;
@@ -271,18 +286,16 @@ namespace cp_algo::math::fft {
     }
     void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
-        if(size(b) == 0) {
-            a.clear();
+        if(std::min({k, size(a), size(b)}) < 64) {
+            mul_slow(a, b, k);
             return;
         }
         auto n = std::max(flen, std::bit_ceil(
             std::min(k, size(a)) + std::min(k, size(b)) - 1
         ) / 2);
-        auto A = dft<base>(std::views::take(a, k), n);
-        if(size(a) != k) {
-            a.resize(k);
-        }
-        if(a == b) {
+        a.resize(k);
+        auto A = dft<base>(a, n);
+        if(&a == &b) {
             A.mul(dft<base>(A), a, k);
         } else {
             A.mul(dft<base>(std::views::take(b, k), n), a, k);

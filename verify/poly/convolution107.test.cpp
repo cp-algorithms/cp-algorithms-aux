@@ -18,7 +18,7 @@ void solve() {
     copy_n(istream_iterator<base>(cin), n, begin(a));
     copy_n(istream_iterator<base>(cin), m, begin(b));
     fft::mul(a, b);
-    ranges::copy(views::take(a, n + m - 1), ostream_iterator<base>(cout, " "));
+    ranges::copy(a, ostream_iterator<base>(cout, " "));
 }
 
 signed main() {

@@ -31,7 +31,7 @@ namespace cp_algo::math::poly::impl {
         }
         poly D;
         if(d >= 0) {
-            D = (p.reverse().mod_xk(d + 1) * qri.mod_xk(d + 1)).mod_xk(d + 1).reverse(d + 1);
+            D = (p.reversed().mod_xk(d + 1) * qri.mod_xk(d + 1)).mod_xk(d + 1).reversed(d + 1);
         }
         return std::array{D, p - D * q};
     }
@@ -41,7 +41,7 @@ namespace cp_algo::math::poly::impl {
         if(std::min(d, q.deg()) < magic) {
             return divmod_slow(p, q);
         }
-        return divmod_hint(p, q, q.reverse().inv(d + 1));
+        return divmod_hint(p, q, q.reversed().inv(d + 1));
     }
 
     template<typename poly>

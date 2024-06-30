@@ -71,8 +71,8 @@ namespace cp_algo::math {
         
         poly_t& reverse(size_t n) {return poly::impl::reverse(*this, n);}
         poly_t& reverse() {return reverse(size(a));}
-        poly_t reversed(size_t n) {return poly_t(*this).reverse(n);}
-        poly_t reversed() {return poly_t(*this).reverse();}
+        poly_t reversed(size_t n) const {return poly_t(*this).reverse(n);}
+        poly_t reversed() const {return poly_t(*this).reverse();}
         
         std::array<poly_t, 2> divmod(poly_t const& b) const {
             return poly::impl::divmod(*this, b);

@@ -17,9 +17,9 @@ void solve() {
     vector<base> a(d), c(d);
     copy_n(istream_iterator<base>(cin), d, begin(a));
     copy_n(istream_iterator<base>(cin), d, begin(c));
-    polyn Q = polyn(1) - polyn(c).mul_xk(1);
-    polyn P = (polyn(a) * Q).mod_xk(d);
-    cout << polyn::kth_rec(P, Q, k) << endl;
+    polyn Q = polyn(1) - polyn(c).mul_xk_inplace(1);
+    polyn P = (polyn(a) * Q).mod_xk_inplace(d);
+    cout << polyn::kth_rec_inplace(P, Q, k) << endl;
 }
 
 signed main() {

@@ -596,10 +596,10 @@ namespace cp_algo::math {
         }
         
         // Find [x^k] P / Q
-        static T kth_rec(poly_t P, poly_t Q, int64_t k) {
+        static T kth_rec_inplace(poly_t &P, poly_t &Q, int64_t k) {
             while(k > Q.deg()) {
                 int n = Q.a.size();
-                auto [Q0, Q1] = Q.mulx(-1).bisect();
+                auto [Q0, Q1] = Q.bisect();
                 auto [P0, P1] = P.bisect();
                 
                 int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
@@ -609,15 +609,18 @@ namespace cp_algo::math {
                 auto P0f = fft::dft<T>(P0.a, N);
                 auto P1f = fft::dft<T>(P1.a, N);
                 
-                if(k % 2) {
-                    P = poly_t(Q0f * P1f) + poly_t(Q1f * P0f);
-                } else {
-                    P = poly_t(Q0f * P0f) + poly_t(Q1f * P1f).mul_xk(1);
-                }
                 Q = poly_t(Q0f * Q0f) - poly_t(Q1f * Q1f).mul_xk(1);
+                if(k % 2) {
+                    P = poly_t(Q0f *= P1f) - poly_t(Q1f *= P0f);
+                } else {
+                    P = poly_t(Q0f *= P0f) - poly_t(Q1f *= P1f).mul_xk(1);
+                }
                 k /= 2;
             }
-            return (P * Q.inv(Q.deg() + 1))[k];
+            return (P *= Q.inv_inplace(Q.deg() + 1))[k];
+        }
+        static T kth_rec(poly_t const& P, poly_t const& Q, int64_t k) {
+            return kth_rec_inplace(poly_t(P), poly_t(Q), k);
         }
 
         // inverse series mod x^n

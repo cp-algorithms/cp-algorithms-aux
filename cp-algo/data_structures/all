@@ -1,6 +1,0 @@
-#ifndef CP_ALGO_DATA_STRUCTURES_ALL
-#define CP_ALGO_DATA_STRUCTURES_ALL
-#include "bitpack.hpp"
-#include "segtree/all"
-#include "treap/all"
-#endif // CP_ALGO_DATA_STRUCTURES_ALL

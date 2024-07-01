@@ -1,6 +1,0 @@
-#ifndef CP_ALGO_GEOMETRY_ALL
-#define CP_ALGO_GEOMETRY_ALL
-#include "point.hpp"
-#include "convex_hull.hpp"
-#include "closest_pair.hpp"
-#endif // CP_ALGO_GEOMETRY_ALL

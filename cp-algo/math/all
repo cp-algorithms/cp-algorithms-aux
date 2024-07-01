@@ -1,8 +1,0 @@
-#ifndef CP_ALGO_MATH_ALL
-#define CP_ALGO_MATH_ALL
-#include "modint.hpp"
-#include "affine.hpp"
-#include "common.hpp"
-#include "poly.hpp"
-#include "fft.hpp"
-#endif // CP_ALGO_MATH_ALL

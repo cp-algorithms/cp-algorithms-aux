@@ -1,4 +1,0 @@
-#ifndef CP_ALGO_RANDOM_ALL
-#define CP_ALGO_RANDOM_ALL
-#include "rng.hpp"
-#endif // CP_ALGO_RANDOM_ALL

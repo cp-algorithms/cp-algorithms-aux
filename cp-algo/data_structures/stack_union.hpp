@@ -1,26 +1,27 @@
 #ifndef CP_ALGO_DATA_STRUCTURES_STACK_UNION_HPP
 #define CP_ALGO_DATA_STRUCTURES_STACK_UNION_HPP
+#include "../bump_alloc.hpp"
 #include <cstddef>
 #include <vector>
 namespace cp_algo::data_structures {
     template<class datatype>
     struct stack_union {
-        stack_union(size_t n): n(n), head(n), next(1), data(1) {}
+        stack_union(int n = 0): n(n), head(n), next(1), data(1) {}
 
-        void push(size_t v, datatype const& vdata) {
+        void push(int v, datatype const& vdata) {
             next.push_back(head[v]);
             head[v] = size(next) - 1;
             data.push_back(vdata);
         }
         template<typename... Args>
-        void emplace(size_t v, Args&&... vdata) {
+        void emplace(int v, Args&&... vdata) {
             next.push_back(head[v]);
             head[v] = size(next) - 1;
             data.emplace_back(std::forward<Args...>(vdata...));
         }
 
-        size_t n;
-        std::vector<size_t> head, next;
+        int n;
+        std::vector<int> head, next;
         std::vector<datatype> data;
     };
 }

@@ -1,7 +1,7 @@
 // @brief Cycle Detection (Directed)
 #define PROBLEM "https://judge.yosupo.jp/problem/cycle_detection"
 #pragma GCC optimize("Ofast,unroll-loops")
-//#pragma GCC target("tune=native")
+#pragma GCC target("tune=native")
 #include "cp-algo/graph/cycle.hpp"
 #include <bits/stdc++.h>
 

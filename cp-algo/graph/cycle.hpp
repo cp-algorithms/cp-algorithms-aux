@@ -4,13 +4,13 @@
 #include <algorithm>
 #include <vector>
 namespace cp_algo::graph {
-    std::vector<size_t> find_cycle(auto const& g) {
+    std::vector<int> find_cycle(auto const& g) {
         std::vector<char> state(g.n);
-        std::vector<size_t> cycle;
-        auto dfs = [&](auto self, size_t v, size_t pe) -> bool {
+        std::vector<int> cycle;
+        auto dfs = [&](auto &&self, int v, int pe) -> bool {
             state[v] = 1;
             auto gen = g.adjacent_generator(v);
-            for(size_t e = gen(); ~e; e = gen()) {
+            for(int e = gen(); ~e; e = gen()) {
                 if(e / 2 != pe / 2) {
                     auto u = g.to[e];
                     if(state[u] == 0) {
@@ -29,8 +29,8 @@ namespace cp_algo::graph {
             state[v] = 2;
             return false;
         };
-        for(size_t i: g.nodes_view()) {
-            if(!state[i] && dfs(dfs, i, -1)) {
+        for(int i: g.nodes_view()) {
+            if(!state[i] && dfs(dfs, i, -2)) {
                 break;
             }
         }

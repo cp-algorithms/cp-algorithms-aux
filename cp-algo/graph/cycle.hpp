@@ -5,29 +5,29 @@
 #include <vector>
 namespace cp_algo::graph {
     std::vector<int> find_cycle(auto const& g) {
-        std::vector<char> state(g.n);
+        std::vector<char> state(g.n());
         std::vector<int> cycle;
         auto dfs = [&](auto &&self, int v, int pe) -> bool {
             state[v] = 1;
-            for(int sv = g.adj.head[v]; sv; sv = g.adj.next[sv]) {
-                int e = g.adj.data[sv];
+            bool found = false;
+            g.call_adjacent(v, [&](int e) {
                 if(e / 2 != pe / 2) {
-                    auto u = g.to[e];
+                    int u = g.edge(e).to;
                     if(state[u] == 0) {
                         if(self(self, u, e)) {
-                            if(g.to[cycle[0]] != g.to[cycle.back() ^ 1]) {
+                            if(g.edge(cycle[0]).to != g.edge(cycle.back() ^ 1).to) {
                                 cycle.push_back(e);
                             }
-                            return true;
+                            found = true;
                         }
                     } else if(state[u] == 1) {
                         cycle = {e};
-                        return true;
+                        found = true;
                     }
                 }
-            }
+            }, [&found](){return found;});
             state[v] = 2;
-            return false;
+            return found;
         };
         for(int i: g.nodes_view()) {
             if(!state[i] && dfs(dfs, i, -2)) {

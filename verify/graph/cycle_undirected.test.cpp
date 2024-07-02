@@ -19,7 +19,7 @@ void solve() {
     } else {
         ranges::reverse(res);
         cout << size(res) << "\n";
-        for(auto it: res) {cout << g.to[it] << ' ';}
+        for(auto it: res) {cout << g.edge(it).to << ' ';}
         cout << "\n";
         for(auto it: res) {cout << it / 2 << ' ';}
         cout << "\n";

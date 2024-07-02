@@ -1,6 +1,5 @@
 #ifndef CP_ALGO_DATA_STRUCTURES_STACK_UNION_HPP
 #define CP_ALGO_DATA_STRUCTURES_STACK_UNION_HPP
-#include "../bump_alloc.hpp"
 #include <cstddef>
 #include <vector>
 namespace cp_algo::data_structures {

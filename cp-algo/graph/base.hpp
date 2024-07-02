@@ -25,13 +25,6 @@ namespace cp_algo::graph {
                 add_edge(u, v);
             }
         }
-        auto adjacent_generator(int v) const {
-            return [&adj = adj, v = adj.head[v]]() mutable {
-                int e = v ? adj.data[v] : -1;
-                v = adj.next[v];
-                return e;
-            };
-        }
         auto nodes_view() const {
             return std::views::iota(0, n);
         }

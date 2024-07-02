@@ -9,8 +9,8 @@ namespace cp_algo::graph {
         std::vector<int> cycle;
         auto dfs = [&](auto &&self, int v, int pe) -> bool {
             state[v] = 1;
-            auto gen = g.adjacent_generator(v);
-            for(int e = gen(); ~e; e = gen()) {
+            for(int sv = g.adj.head[v]; sv; sv = g.adj.next[sv]) {
+                int e = g.adj.data[sv];
                 if(e / 2 != pe / 2) {
                     auto u = g.to[e];
                     if(state[u] == 0) {

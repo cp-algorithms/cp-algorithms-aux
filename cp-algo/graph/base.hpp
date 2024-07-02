@@ -25,16 +25,17 @@ namespace cp_algo::graph {
     concept edge_type = std::is_base_of_v<edge_base, edge_info>;
 
     enum type {directed = 0, undirected = 1};
-    template<type undirected, edge_type edge_info = edge_base>
+    template<type _undirected, edge_type edge_info = edge_base>
     struct graph {
-        graph(int n, int v0 = 0): _n(n), m(0), v0(v0), adj(n) {}
+        static constexpr bool undirected = _undirected;
+        graph(int n, int v0 = 0): _n(n), _m(0), v0(v0), _adj(n) {}
 
         void add_edge(int u, edge_info e) {
-            m++;
-            adj.push(u, size(edges));
+            _m++;
+            _adj.push(u, size(edges));
             edges.push_back(e);
             if constexpr (undirected) {
-                adj.push(e.to, size(edges));
+                _adj.push(e.to, size(edges));
             }
             edges.push_back(e.backedge(u));
         }
@@ -44,26 +45,30 @@ namespace cp_algo::graph {
                 add_edge(u, e);
             }
         }
-        void call_adjacent(int v, auto &&callback, auto &&terminate = [](){return false;}) const {
-            for(int sv = adj.head[v]; sv && !terminate(); sv = adj.next[sv]) {
-                callback(adj.data[sv]);
+        void call_adjacent(int v, auto &&callback, auto &&terminate) const {
+            for(int sv = _adj.head[v]; sv && !terminate(); sv = _adj.next[sv]) {
+                callback(_adj.data[sv]);
             }
         }
-        int deg(int v) const {
-            int ans = 0;
-            call_adjacent([&ans](){ans++;});
-            return ans;
+        void call_adjacent(int v, auto &&callback) const {
+            call_adjacent(v, callback, [](){return false;});
+        }
+        void call_edges(auto &&callback) const {
+            for(int v: nodes_view()) {
+                call_adjacent(v, [&](int e) {callback(v, e);});
+            }
         }
         auto nodes_view() const {
             return std::views::iota(0, _n);
         }
-        edge_info& edge(int e) {return edges[e];}
-        edge_info const& edge(int e) const {return edges[e];}
+        auto const& incidence_lists() const {return _adj;}
+        auto const& edge(int e) const {return edges[e];}
         int n() const {return _n;}
+        int m() const {return _m;}
     private:
-        int _n, m, v0;
+        int _n, _m, v0;
         std::vector<edge_info> edges;
-        data_structures::stack_union<int> adj;
+        data_structures::stack_union<int> _adj;
     };
 }
 #endif // CP_ALGO_GRAPH_BASE_HPP

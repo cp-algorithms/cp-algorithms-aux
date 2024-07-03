@@ -9,6 +9,7 @@
 #include <vector>
 #include <array>
 namespace cp_algo::linalg {
+    enum gauss_mode {normal, reverse};
     template<typename base_t>
     struct matrix: valarray_base<matrix<base_t>, vec<base_t>> {
         using base = base_t;
@@ -127,17 +128,28 @@ namespace cp_algo::linalg {
             }
             return *this;
         }
-
-        enum gauss_mode {normal, reverse};
+        template<gauss_mode mode = normal>
+        void eliminate(size_t i, size_t k) {
+            auto kinv = base(1) / row(i).normalize()[k];
+            for(size_t j = (mode == normal) * i; j < n(); j++) {
+                if(j != i) {
+                    row(j).add_scaled(row(i), -row(j).normalize(k) * kinv);
+                }
+            }
+        }
+        template<gauss_mode mode = normal>
+        void eliminate(size_t i) {
+            row(i).normalize();
+            for(size_t j = (mode == normal) * i; j < n(); j++) {
+                if(j != i) {
+                    row(j).reduce_by(row(i));
+                }
+            }
+        }
         template<gauss_mode mode = normal>
         matrix& gauss() {
             for(size_t i = 0; i < n(); i++) {
-                row(i).normalize();
-                for(size_t j = (mode == normal) * i; j < n(); j++) {
-                    if(j != i) {
-                        row(j).reduce_by(row(i));
-                    }
-                }
+                eliminate<mode>(i);
             }
             return normalize();
         }

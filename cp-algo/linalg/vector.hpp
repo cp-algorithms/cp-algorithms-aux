@@ -8,7 +8,7 @@
 #include <iostream>
 #include <iterator>
 #include <cassert>
-namespace cp_algo::math::linalg {
+namespace cp_algo::linalg {
     template<class vec, typename base>
     struct valarray_base: std::valarray<base> {
         using Base = std::valarray<base>;
@@ -119,7 +119,7 @@ namespace cp_algo::math::linalg {
         using Base::Base;
     };
 
-    template<modint_type base>
+    template<math::modint_type base>
     struct vec<base>: vec_base<vec<base>, base> {
         using Base = vec_base<vec<base>, base>;
         using Base::Base;

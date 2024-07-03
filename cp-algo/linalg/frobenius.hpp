@@ -4,7 +4,7 @@
 #include "matrix.hpp"
 #include <algorithm>
 #include <vector>
-namespace cp_algo::math::linalg {
+namespace cp_algo::linalg {
     enum frobenius_mode {blocks, full};
     template<frobenius_mode mode = blocks>
     auto frobenius_form(auto const& A) {

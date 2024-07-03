@@ -8,7 +8,7 @@
 
 using namespace std;
 using namespace cp_algo::math;
-using namespace cp_algo::math::linalg;
+using namespace cp_algo::linalg;
 
 const int mod = 998244353;
 using base = modint<mod>;

@@ -8,7 +8,7 @@
 #include <cassert>
 #include <vector>
 #include <array>
-namespace cp_algo::math::linalg {
+namespace cp_algo::linalg {
     template<typename base_t>
     struct matrix: valarray_base<matrix<base_t>, vec<base_t>> {
         using base = base_t;

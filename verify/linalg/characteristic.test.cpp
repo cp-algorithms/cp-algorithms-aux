@@ -1,8 +1,8 @@
 // @brief Characteristic Polynomial
 #define PROBLEM "https://judge.yosupo.jp/problem/characteristic_polynomial"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
-#define CP_ALGO_MAXN 1 << 12
+//#pragma GCC target("tune=native")
+#define CP_ALGO_MAXN 1 << 10
 #include "cp-algo/linalg/frobenius.hpp"
 #include <bits/stdc++.h>
 

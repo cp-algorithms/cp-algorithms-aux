@@ -56,8 +56,10 @@ namespace cp_algo::linalg {
         }
 
         virtual void add_scaled(vec const& b, base scale, size_t i = 0) {
-            for(; i < size(*this); i++) {
-                (*this)[i] += scale * b[i];
+            if(scale != base(0)) {
+                for(; i < size(*this); i++) {
+                    (*this)[i] += scale * b[i];
+                }
             }
         }
         virtual vec const& normalize() {
@@ -125,14 +127,16 @@ namespace cp_algo::linalg {
         using Base::Base;
 
         void add_scaled(vec const& b, base scale, size_t i = 0) override {
-            for(; i < size(*this); i++) {
-                (*this)[i].add_unsafe(scale.getr() * b[i].getr());
-            }
-            if(++counter == 8) {
-                for(auto &it: *this) {
-                    it.pseudonormalize();
+            if(scale != base(0)) {
+                for(; i < size(*this); i++) {
+                    (*this)[i].add_unsafe(scale.getr() * b[i].getr());
                 }
-                counter = 0;
+                if(++counter == 8) {
+                    for(auto &it: *this) {
+                        it.pseudonormalize();
+                    }
+                    counter = 0;
+                }
             }
         }
         vec const& normalize() override {

@@ -39,14 +39,9 @@ namespace cp_algo::linalg {
                 if(full_rec.mod_xk(start) != polyn()) {
                     auto charp = full_rec.div_xk(start);
                     auto x = basis_init[start];
-                    start = 0;
-                    for(auto &rec: charps) {
-                        polyn cur_rec = full_rec.substr(start, rec.deg());
-                        auto shift = cur_rec / charp;
-                        for(int j = 0; j <= shift.deg(); j++) {
-                            x.add_scaled(basis_init[start + j], shift[j]);
-                        }
-                        start += rec.deg();
+                    auto shift = full_rec / charp;
+                    for(int j = 0; j < shift.deg(); j++) {
+                        x.add_scaled(basis_init[j], shift[j]);
                     }
                     basis.resize(start);
                     basis_init.resize(start);
@@ -75,13 +70,12 @@ namespace cp_algo::linalg {
     }
 
     template<typename base>
-    auto frobenius_pow(matrix<base> A, uint64_t k) {
-        using polyn = math::poly_t<base>;
+    auto with_frobenius(matrix<base> const& A, auto &&callback) {
         auto [T, Tinv, charps] = frobenius_form<full>(A);
         std::vector<matrix<base>> blocks;
         for(auto charp: charps) {
             matrix<base> block(charp.deg());
-            auto xk = polyn::xk(1).powmod(k, charp);
+            auto xk = callback(charp);
             for(size_t i = 0; i < block.n(); i++) {
                 std::ranges::copy(xk.a, begin(block[i]));
                 xk = xk.mul_xk(1) % charp;
@@ -90,6 +84,13 @@ namespace cp_algo::linalg {
         }
         auto S = matrix<base>::block_diagonal(blocks);
         return Tinv * S * T;
+    }
+
+    template<typename base>
+    auto frobenius_pow(matrix<base> const& A, uint64_t k) {
+        return with_frobenius(A, [k](auto const& charp) {
+            return math::poly_t<base>::xk(1).powmod(k, charp);
+        });
     }
 };
 #endif // CP_ALGO_LINALG_FROBENIUS_HPP

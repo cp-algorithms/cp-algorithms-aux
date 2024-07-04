@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/pow_of_matrix"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
-#define CP_ALGO_MAXN 1 << 12
+#define CP_ALGO_MAXN 1 << 10
 #include "cp-algo/linalg/frobenius.hpp"
 #include <bits/stdc++.h>
 

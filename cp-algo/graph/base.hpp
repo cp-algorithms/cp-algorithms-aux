@@ -44,8 +44,8 @@ namespace cp_algo::graph {
         }
         auto const& incidence_lists() const {return _adj;}
         edge_t const& edge(edge_index e) const {return edges[e];}
-        size_t n() const {return _adj.size();}
-        size_t m() const {return size(edges) / 2;}
+        node_index n() const {return _adj.size();}
+        edge_index m() const {return size(edges) / 2;}
     private:
         node_index v0;
         std::vector<edge_t> edges;

@@ -5,11 +5,11 @@
 namespace cp_algo::data_structures {
     template<class datatype>
     struct stack_union {
-        stack_union(int n = 0): n(n), head(n), next(1), data(1) {}
+        stack_union(int n = 0): head(n), next(1), data(1) {}
 
         void push(int v, datatype const& vdata) {
             next.push_back(head[v]);
-            head[v] = size(next) - 1;
+            head[v] = std::size(next) - 1;
             data.push_back(vdata);
         }
         template<typename... Args>
@@ -19,7 +19,9 @@ namespace cp_algo::data_structures {
             data.emplace_back(std::forward<Args...>(vdata...));
         }
 
-        int n;
+        size_t size() const {return std::size(head);}
+        size_t nodes() const {return std::size(data);}
+
         std::vector<int> head, next;
         std::vector<datatype> data;
     };

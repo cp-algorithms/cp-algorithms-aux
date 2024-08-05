@@ -12,6 +12,7 @@ namespace cp_algo::math {
 
     int64_t euler_phi(int64_t m) {
         auto primes = factorize(m);
+        std::ranges::sort(primes);
         auto [from, to] = std::ranges::unique(primes);
         primes.erase(from, to);
         int64_t ans = m;

@@ -19,6 +19,11 @@ namespace cp_algo::data_structures {
             data.emplace_back(std::forward<Args...>(vdata...));
         }
 
+        void reserve(int m) {
+            data.reserve(m);
+            next.reserve(m);
+        }
+
         size_t size() const {return std::size(head);}
         size_t nodes() const {return std::size(data);}
 

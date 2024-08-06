@@ -10,25 +10,26 @@ namespace cp_algo::graph {
     template<type _undirected, edge_type edge_t = edge_base>
     struct graph {
         static constexpr bool undirected = _undirected;
-        graph(int n, int v0 = 0): v0(v0), _adj(n) {}
+        graph(int n, int v0 = 0): v0(v0), adj(n) {}
 
         void add_edge(node_index u, edge_t e) {
-            _adj.push(u, size(edges));
+            adj.push(u, size(edges));
             edges.push_back(e);
             if constexpr (undirected) {
-                _adj.push(e.to, size(edges));
+                adj.push(e.to, size(edges));
             }
             edges.push_back(e.backedge(u));
         }
         void read_edges(node_index m) {
+            adj.reserve(m);
             for(edge_index i = 0; i < m; i++) {
                 auto [u, e] = edge_t::read(v0);
                 add_edge(u, e);
             }
         }
         void call_adjacent(node_index v, auto &&callback, auto &&terminate) const {
-            for(int sv = _adj.head[v]; sv && !terminate(); sv = _adj.next[sv]) {
-                callback(_adj.data[sv]);
+            for(int sv = adj.head[v]; sv && !terminate(); sv = adj.next[sv]) {
+                callback(adj.data[sv]);
             }
         }
         void call_adjacent(node_index v, auto &&callback) const {
@@ -48,14 +49,14 @@ namespace cp_algo::graph {
                 [](edge_index e) {return !(e % 2);}
             );
         }
-        auto const& incidence_lists() const {return _adj;}
+        auto const& incidence_lists() const {return adj;}
         edge_t const& edge(edge_index e) const {return edges[e];}
-        node_index n() const {return _adj.size();}
+        node_index n() const {return adj.size();}
         edge_index m() const {return size(edges) / 2;}
     private:
         node_index v0;
         std::vector<edge_t> edges;
-        data_structures::stack_union<edge_index> _adj;
+        data_structures::stack_union<edge_index> adj;
     };
 }
 #endif // CP_ALGO_GRAPH_BASE_HPP

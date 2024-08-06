@@ -10,15 +10,18 @@ namespace cp_algo::graph {
         std::vector<int> deg(g.n());
         constexpr bool undirected = graph::undirected;
         int res = 0;
-        g.call_edges([&](int u, int e) {
+        g.call_edges([&](edge_index e) {
+            int u = g.edge(e ^ 1).to;
+            int v = g.edge(e).to;
             res = u;
-            if constexpr (undirected) {
-                deg[u] ^= 1;
-            } else {
-                deg[u]++;
-                deg[g.edge(e).to]--;
-            }
+            deg[u]++;
+            deg[v]--;
         });
+        if constexpr (undirected) {
+            for(auto &it: deg) {
+                it = bool(it % 2);
+            }
+        }
         auto nodes = g.nodes_view();
         auto is_start = [&](int v) {return deg[v] > 0;};
         auto starts = std::ranges::count_if(nodes, is_start);
@@ -42,8 +45,7 @@ namespace cp_algo::graph {
                     int e = adj.data[std::exchange(head[v], adj.next[head[v]])];
                     if(!used[e / 2]) {
                         used[e / 2] = 1;
-                        int u = g.edge(e).to;
-                        self(self, u);
+                        self(self, g.edge(e).to);
                         trail.push_back(e);
                     }
                 }

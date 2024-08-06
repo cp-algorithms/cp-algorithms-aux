@@ -35,12 +35,18 @@ namespace cp_algo::graph {
             call_adjacent(v, callback, [](){return false;});
         }
         void call_edges(auto &&callback) const {
-            for(node_index v: nodes_view()) {
-                call_adjacent(v, [&](edge_index e) {callback(v, e);});
+            for(edge_index e: edges_view()) {
+                callback(e);
             }
         }
         auto nodes_view() const {
             return std::views::iota(0, n());
+        }
+        auto edges_view() const {
+            return std::views::filter(
+                std::views::iota(0, 2 * m()),
+                [](edge_index e) {return !(e % 2);}
+            );
         }
         auto const& incidence_lists() const {return _adj;}
         edge_t const& edge(edge_index e) const {return edges[e];}

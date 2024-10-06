@@ -3,7 +3,7 @@
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #define CP_ALGO_MAXN 1e7
-#include "cp-algo/math/modint.hpp"
+#include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/math/combinatorics.hpp"
 #include <bits/stdc++.h>
 

@@ -1,12 +1,6 @@
-#ifndef CP_ALGO_MATH_NUMBER_THEORY_HPP
-#define CP_ALGO_MATH_NUMBER_THEORY_HPP
-#include "cp-algo/random/rng.hpp"
-#include "number_theory/modint.hpp"
-#include "affine.hpp"
-#include <algorithm>
-#include <optional>
-#include <vector>
-#include <bit>
+#ifndef CP_ALGO_NUMBER_THEORY_DISCRETE_LOG_HPP
+#define CP_ALGO_NUMBER_THEORY_DISCRETE_LOG_HPP
+#include "euler.hpp"
 namespace cp_algo::math {
     // Find min non-negative x s.t. a*b^x = c (mod m)
     std::optional<uint64_t> discrete_log(int64_t b, int64_t c, uint64_t m, int64_t a = 1) {
@@ -46,26 +40,5 @@ namespace cp_algo::math {
             return std::nullopt;
         });
     }
-    // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
-    template<modint_type base>
-    std::optional<base> sqrt(base b) {
-        if(b == base(0)) {
-            return base(0);
-        } else if(bpow(b, (b.mod() - 1) / 2) != base(1)) {
-            return std::nullopt;
-        } else {
-            while(true) {
-                base z = random::rng();
-                if(z * z == b) {
-                    return z;
-                }
-                lin<base> x(1, z, b); // x + z (mod x^2 - b)
-                x = bpow(x, (b.mod() - 1) / 2, lin<base>(0, 1, b));
-                if(x.a != base(0)) {
-                    return x.a.inv();
-                }
-            }
-        }
-    }
 }
-#endif // CP_ALGO_MATH_NUMBER_THEORY_HPP
+#endif // CP_ALGO_NUMBER_THEORY_DISCRETE_LOG_HPP

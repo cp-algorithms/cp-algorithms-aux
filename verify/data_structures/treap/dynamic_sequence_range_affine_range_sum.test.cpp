@@ -1,6 +1,6 @@
 // @brief Dynamic Range Affine Range Sum
 #define PROBLEM "https://judge.yosupo.jp/problem/dynamic_sequence_range_affine_range_sum"
-#include "cp-algo/math/modint.hpp"
+#include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/data_structures/treap/metas/reverse.hpp"
 #include "cp-algo/data_structures/treap.hpp"
 #include <bits/stdc++.h>

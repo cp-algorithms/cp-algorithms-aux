@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_LINALG_VECTOR_HPP
 #define CP_ALGO_LINALG_VECTOR_HPP
 #include "../random/rng.hpp"
-#include "../math/modint.hpp"
+#include "../number_theory/modint.hpp"
 #include <functional>
 #include <algorithm>
 #include <valarray>

@@ -1,6 +1,7 @@
-#ifndef CP_ALGO_MATH_TWO_SQUARES_HPP
-#define CP_ALGO_MATH_TWO_SQUARES_HPP
-#include "number_theory.hpp"
+#ifndef CP_ALGO_NUMBER_THEORY_TWO_SQUARES_HPP
+#define CP_ALGO_NUMBER_THEORY_TWO_SQUARES_HPP
+#include "euler.hpp"
+#include <cassert>
 #include <complex>
 #include <utility>
 #include <vector>
@@ -73,4 +74,4 @@ namespace cp_algo::math {
         return nres;
     }
 }
-#endif // CP_ALGO_MATH_TWO_SQUARES_HPP
+#endif // CP_ALGO_NUMBER_THEORY_TWO_SQUARES_HPP

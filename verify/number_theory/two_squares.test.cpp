@@ -1,7 +1,7 @@
 // @brief Represent A Number As Two Square Sum
 #define PROBLEM "https://judge.yosupo.jp/problem/two_square_sum"
 #pragma GCC optimize("Ofast,unroll-loops")
-#include "cp-algo/math/two_squares.hpp"
+#include "cp-algo/number_theory/two_squares.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

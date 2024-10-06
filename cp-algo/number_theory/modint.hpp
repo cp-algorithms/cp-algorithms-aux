@@ -1,6 +1,6 @@
-#ifndef CP_ALGO_MATH_MODINT_HPP
-#define CP_ALGO_MATH_MODINT_HPP
-#include "common.hpp"
+#ifndef CP_ALGO_NUMBER_THEORY_MODINT_HPP
+#define CP_ALGO_NUMBER_THEORY_MODINT_HPP
+#include "cp-algo/math/common.hpp"
 #include <iostream>
 namespace cp_algo::math {
     template<typename modint>

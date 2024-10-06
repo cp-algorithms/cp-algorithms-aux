@@ -1,5 +1,5 @@
-#ifndef CP_ALGO_MATH_PRIMALITY_HPP
-#define CP_ALGO_MATH_PRIMALITY_HPP
+#ifndef CP_ALGO_NUMBER_THEORY_PRIMALITY_HPP
+#define CP_ALGO_NUMBER_THEORY_PRIMALITY_HPP
 #include "modint.hpp"
 #include <algorithm>
 namespace cp_algo::math {
@@ -30,4 +30,4 @@ namespace cp_algo::math {
         });
     }
 }
-#endif // CP_ALGO_MATH_PRIMALITY_HPP
+#endif // CP_ALGO_NUMBER_THEORY_PRIMALITY_HPP

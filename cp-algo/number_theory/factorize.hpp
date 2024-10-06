@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_MATH_FACTORIZE_HPP
 #define CP_ALGO_MATH_FACTORIZE_HPP
 #include "primality.hpp"
-#include "../random/rng.hpp"
+#include "cp-algo/random/rng.hpp"
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
     void factorize(uint64_t m, std::vector<int64_t> &res) {

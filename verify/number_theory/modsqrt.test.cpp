@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/sqrt_mod"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
-#include "cp-algo/math/number_theory.hpp"
+#include "cp-algo/number_theory/discrete_sqrt.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

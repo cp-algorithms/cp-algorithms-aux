@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_MATH_FFT_HPP
 #define CP_ALGO_MATH_FFT_HPP
 #include "common.hpp"
-#include "modint.hpp"
+#include "cp-algo/number_theory/modint.hpp"
 #include <algorithm>
 #include <complex>
 #include <cassert>

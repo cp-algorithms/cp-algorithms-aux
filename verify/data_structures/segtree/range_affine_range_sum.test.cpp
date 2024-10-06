@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/range_affine_range_sum"
 #include "cp-algo/data_structures/segtree/metas/affine.hpp"
 #include "cp-algo/data_structures/segtree.hpp"
-#include "cp-algo/math/modint.hpp"
+#include "cp-algo/number_theory/modint.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

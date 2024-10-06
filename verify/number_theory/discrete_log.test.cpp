@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/discrete_logarithm_mod"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
-#include "cp-algo/math/number_theory.hpp"
+#include "cp-algo/number_theory/discrete_log.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

@@ -1,8 +1,7 @@
 // @brief Primality Test
 #define PROBLEM "https://judge.yosupo.jp/problem/primality_test"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
-#include "cp-algo/math/number_theory.hpp"
+#include "cp-algo/math/primality.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

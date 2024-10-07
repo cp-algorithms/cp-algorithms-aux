@@ -1,8 +1,8 @@
 #ifndef CP_ALGO_NUMBER_THEORY_DISCRETE_SQRT_HPP
 #define CP_ALGO_NUMBER_THEORY_DISCRETE_SQRT_HPP
 #include "modint.hpp"
-#include "cp-algo/random/rng.hpp"
-#include "cp-algo/math/affine.hpp"
+#include "../random/rng.hpp"
+#include "../math/affine.hpp"
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Berlekamp-Rabin_algorithm
     template<modint_type base>

@@ -4,7 +4,7 @@
 #include "poly/impl/base.hpp"
 #include "poly/impl/div.hpp"
 #include "combinatorics.hpp"
-#include "cp-algo/number_theory/discrete_sqrt.hpp"
+#include "../number_theory/discrete_sqrt.hpp"
 #include "fft.hpp"
 #include <functional>
 #include <algorithm>

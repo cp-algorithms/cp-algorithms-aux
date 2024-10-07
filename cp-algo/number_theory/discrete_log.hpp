@@ -26,9 +26,9 @@ namespace cp_algo::math {
             for(size_t k = 0; k < m; k += sqrtmod) {
                 auto it = small.find((base(c) * cur).getr());
                 if(it != end(small)) {
-                    auto cand = base::with_mod(period(base(b)), [&](){
-                        return base(it->second - k);
-                    }).getr();
+                    auto cand = base::with_mod(period(base(b)), [&]() {
+                        return base(it->second - k).getr();
+                    });
                     if(base(a) * bpow(base(b), cand) == base(c)) {
                         return cand;
                     } else {

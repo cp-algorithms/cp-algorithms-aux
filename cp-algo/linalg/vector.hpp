@@ -127,9 +127,10 @@ namespace cp_algo::linalg {
         using Base::Base;
 
         void add_scaled(vec const& b, base scale, size_t i = 0) override {
+            uint64_t scaler = scale.getr();
             if(scale != base(0)) {
                 for(; i < size(*this); i++) {
-                    (*this)[i].add_unsafe(scale.getr() * b[i].getr());
+                    (*this)[i].add_unsafe(scaler * b[i].getr_direct());
                 }
                 if(++counter == 8) {
                     for(auto &it: *this) {

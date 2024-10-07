@@ -25,16 +25,15 @@ namespace cp_algo::math {
             return modint::pw128();
         }
         static uint64_t m_reduce(__uint128_t ab) {
-            if(mod() % 2 == 0) {
+            if(mod() % 2 == 0) [[unlikely]] {
                 return ab % mod();
             } else {
                 uint64_t m = ab * imod();
-                int64_t res = (ab + __uint128_t(m) * mod()) >> 64;
-                return res < mod() ? res : res - mod();
+                return (ab + __uint128_t(m) * mod()) >> 64;
             }
         }
         static uint64_t m_transform(uint64_t a) {
-            if(mod() % 2 == 0) {
+            if(mod() % 2 == 0) [[unlikely]] {
                 return a;
             } else {
                 return m_reduce(a * pw128());
@@ -72,7 +71,25 @@ namespace cp_algo::math {
         modint operator - (const modint &t) const {return modint(to_modint()) -= t;}
         modint operator * (const modint &t) const {return modint(to_modint()) *= t;}
         modint operator / (const modint &t) const {return modint(to_modint()) /= t;}
-        auto operator <=> (const modint_base &t) const = default;
+        // Why <=> doesn't work?..
+        auto operator == (const modint_base &t) const {
+            return std::min(r, r - mod()) == std::min(t.r, t.r - mod());
+        }
+        auto operator != (const modint_base &t) const {
+            return std::min(r, r - mod()) != std::min(t.r, t.r - mod());
+        }
+        auto operator <= (const modint_base &t) const {
+            return std::min(r, r - mod()) <= std::min(t.r, t.r - mod());
+        }
+        auto operator >= (const modint_base &t) const {
+            return std::min(r, r - mod()) >= std::min(t.r, t.r - mod());
+        }
+        auto operator < (const modint_base &t) const {
+            return std::min(r, r - mod()) < std::min(t.r, t.r - mod());
+        }
+        auto operator > (const modint_base &t) const {
+            return std::min(r, r - mod()) > std::min(t.r, t.r - mod());
+        }
         int64_t rem() const {
             uint64_t R = getr();
             return 2 * R > (uint64_t)mod() ? R - mod() : R;
@@ -89,7 +106,10 @@ namespace cp_algo::math {
             return to_modint();
         }
         void setr(uint64_t rr) {r = m_transform(rr);}
-        uint64_t getr() const {return m_reduce(r);}
+        uint64_t getr() const {
+            uint64_t res = m_reduce(r);
+            return std::min(res, res - mod());
+        }
         void setr_direct(uint64_t rr) {r = rr;}
         uint64_t getr_direct() const {return r;}
     private:

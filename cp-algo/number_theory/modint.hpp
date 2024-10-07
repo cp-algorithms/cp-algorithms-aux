@@ -41,7 +41,7 @@ namespace cp_algo::math {
         }
         modint_base(): r(0) {}
         modint_base(int64_t rr): r(rr % mod()) {
-            r = std::min(r, r + mod());
+            r = std::min(r, r + 2 * mod());
             r = m_transform(r);
         }
         modint inv() const {
@@ -49,7 +49,7 @@ namespace cp_algo::math {
         }
         modint operator - () const {
             modint neg;
-            neg.r = std::min(-r, mod() - r);
+            neg.r = std::min(-r, 2 * mod() - r);
             return neg;
         }
         modint& operator /= (const modint &t) {
@@ -60,11 +60,11 @@ namespace cp_algo::math {
             return to_modint();
         }
         modint& operator += (const modint &t) {
-            r += t.r; r = std::min(r, r - mod());
+            r += t.r; r = std::min(r, r - 2 * mod());
             return to_modint();
         }
         modint& operator -= (const modint &t) {
-            r -= t.r; r = std::min(r, r + mod());
+            r -= t.r; r = std::min(r, r + 2 * mod());
             return to_modint();
         }
         modint operator + (const modint &t) const {return modint(to_modint()) += t;}
@@ -72,24 +72,12 @@ namespace cp_algo::math {
         modint operator * (const modint &t) const {return modint(to_modint()) *= t;}
         modint operator / (const modint &t) const {return modint(to_modint()) /= t;}
         // Why <=> doesn't work?..
-        auto operator == (const modint_base &t) const {
-            return std::min(r, r - mod()) == std::min(t.r, t.r - mod());
-        }
-        auto operator != (const modint_base &t) const {
-            return std::min(r, r - mod()) != std::min(t.r, t.r - mod());
-        }
-        auto operator <= (const modint_base &t) const {
-            return std::min(r, r - mod()) <= std::min(t.r, t.r - mod());
-        }
-        auto operator >= (const modint_base &t) const {
-            return std::min(r, r - mod()) >= std::min(t.r, t.r - mod());
-        }
-        auto operator < (const modint_base &t) const {
-            return std::min(r, r - mod()) < std::min(t.r, t.r - mod());
-        }
-        auto operator > (const modint_base &t) const {
-            return std::min(r, r - mod()) > std::min(t.r, t.r - mod());
-        }
+        auto operator == (const modint_base &t) const {return getr() == t.getr();}
+        auto operator != (const modint_base &t) const {return getr() != t.getr();}
+        auto operator <= (const modint_base &t) const {return getr() <= t.getr();}
+        auto operator >= (const modint_base &t) const {return getr() >= t.getr();}
+        auto operator < (const modint_base &t) const {return getr() < t.getr();}
+        auto operator > (const modint_base &t) const {return getr() > t.getr();}
         int64_t rem() const {
             uint64_t R = getr();
             return 2 * R > (uint64_t)mod() ? R - mod() : R;

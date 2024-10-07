@@ -39,7 +39,7 @@ namespace cp_algo::math {
             cnt[p]++;
         }
         // 1, -1, i, -i
-        std::vector<gaussint> res = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        std::vector<gaussint> res = {1};
         for(auto [p, c]: cnt) {
             std::vector<gaussint> nres;
             if(p % 4 == 3) {
@@ -67,8 +67,12 @@ namespace cp_algo::math {
         }
         std::vector<gaussint> nres;
         for(auto p: res) {
-            if(p.real() >= 0 && p.imag() >= 0) {
-                nres.push_back(p);
+            while(p.real() < 0 || p.imag() < 0) {
+                p *= gaussint(0, 1);
+            }
+            nres.push_back(p);
+            if(!p.real() || !p.imag()) {
+                nres.emplace_back(p.imag(), p.real());
             }
         }
         return nres;

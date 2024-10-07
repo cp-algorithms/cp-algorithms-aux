@@ -38,7 +38,6 @@ namespace cp_algo::math {
         for(auto p: primes) {
             cnt[p]++;
         }
-        // 1, -1, i, -i
         std::vector<gaussint> res = {1};
         for(auto [p, c]: cnt) {
             std::vector<gaussint> nres;

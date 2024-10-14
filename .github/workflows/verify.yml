@@ -2,7 +2,7 @@ name: verify
 on:
   push:
     branches:
-      - "master"
+      - "main"
   workflow_dispatch:
     inputs:
       ignore_prev_result:
@@ -183,7 +183,7 @@ jobs:
         with:
           verify-result: ${{ steps.all-artifacts.outputs.artifacts-root }}/Result-*/result.json
   deploy:
-    if: (success() || failure()) && github.ref == 'refs/heads/master' && needs.docs-and-check.outputs.upload-pages == 'true'
+    if: (success() || failure()) && github.ref == 'refs/heads/main' && needs.docs-and-check.outputs.upload-pages == 'true'
     needs: docs-and-check
     environment:
       name: github-pages

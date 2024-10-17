@@ -251,5 +251,7 @@ namespace cp_algo::linalg {
             return std::array{pivots, free};
         }
     };
+    template<typename base_t>
+    auto operator *(base_t t, matrix<base_t> const& A) {return A * t;}
 }
 #endif // CP_ALGO_LINALG_MATRIX_HPP

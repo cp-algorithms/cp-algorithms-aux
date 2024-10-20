@@ -1,8 +1,7 @@
 // @brief Pow of Matrix (Frobenius)
 #define PROBLEM "https://judge.yosupo.jp/problem/pow_of_matrix"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
-#define CP_ALGO_MAXN 1 << 10
+#define CP_ALGO_MAXN 256
 #include "cp-algo/linalg/frobenius.hpp"
 #include <bits/stdc++.h>
 

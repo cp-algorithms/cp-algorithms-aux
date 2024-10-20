@@ -28,9 +28,11 @@ namespace cp_algo::linalg {
 
         matrix& operator *=(base t) {for(auto &it: *this) it *= t; return *this;}
         matrix operator *(base t) const {return matrix(*this) *= t;}
+        matrix& operator /=(base t) {return *this *= base(1) / t;}
+        matrix operator /(base t) const {return matrix(*this) /= t;}
 
         // Make sure the result is matrix, not Base
-        matrix& operator*=(matrix const& t) {return *this = *this * t;}
+        matrix& operator *=(matrix const& t) {return *this = *this * t;}
 
         void read() {
             for(auto &it: *this) {
@@ -227,7 +229,7 @@ namespace cp_algo::linalg {
                 };
             }
         }
-    private:
+
         // To be called after a gaussian elimination run
         // Sorts rows by pivots and classifies
         // variables into pivots and free

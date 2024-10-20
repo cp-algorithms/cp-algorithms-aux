@@ -52,17 +52,20 @@ namespace cp_algo::linalg {
         }
         // Find transform matrices while we're at it...
         if constexpr (mode == full) {
-            for(size_t i = 0; i < size(basis); i++) {
-                for(size_t j = i + 1; j < size(basis); j++) {
+            for(size_t i = 0; i < n; i++) {
+                for(size_t j = i + 1; j < n; j++) {
                     basis[i].reduce_by(basis[j]);
                 }
                 basis[i].normalize();
-                basis[i] = vec<base>(
-                    basis[i][std::slice(n, n, 1)]
-                ) * (base(1) / basis[i][i]);
             }
             auto T = matrix::from_range(basis_init);
             auto Tinv = matrix::from_range(basis);
+            std::ignore = Tinv.sort_classify(n);
+            for(size_t i = 0; i < n; i++) {
+                Tinv[i] = vec<base>(
+                    Tinv[i][std::slice(n, n, 1)]
+                ) * (base(1) / Tinv[i][i]);
+            }
             return std::tuple{T, Tinv, charps};
         } else {
             return charps;

@@ -10,7 +10,7 @@ namespace cp_algo::math {
 #endif
     const int magic = 64; // threshold for sizes to run the naive algo
 
-    auto bpow(auto const& x, int64_t n, auto const& one, auto op) {
+    auto bpow(auto const& x, auto n, auto const& one, auto op) {
         if(n == 0) {
             return one;
         } else {
@@ -22,11 +22,11 @@ namespace cp_algo::math {
             return t;
         }
     }
-    auto bpow(auto x, int64_t n, auto ans) {
+    auto bpow(auto x, auto n, auto ans) {
         return bpow(x, n, ans, std::multiplies{});
     }
     template<typename T>
-    T bpow(T const& x, int64_t n) {
+    T bpow(T const& x, auto n) {
         return bpow(x, n, T(1));
     }
 }

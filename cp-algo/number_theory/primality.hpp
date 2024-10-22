@@ -2,6 +2,7 @@
 #define CP_ALGO_NUMBER_THEORY_PRIMALITY_HPP
 #include "modint.hpp"
 #include <algorithm>
+#include <bit>
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Miller–Rabin_primality_test
     bool is_prime(uint64_t m) {

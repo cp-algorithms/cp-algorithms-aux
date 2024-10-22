@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_NUMBER_THEORY_DISCRETE_LOG_HPP
 #define CP_ALGO_NUMBER_THEORY_DISCRETE_LOG_HPP
 #include "euler.hpp"
+#include <optional>
 namespace cp_algo::math {
     // Find min non-negative x s.t. a*b^x = c (mod m)
     std::optional<uint64_t> discrete_log(int64_t b, int64_t c, uint64_t m, int64_t a = 1) {

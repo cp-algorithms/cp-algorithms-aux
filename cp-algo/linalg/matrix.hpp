@@ -182,16 +182,18 @@ namespace cp_algo::linalg {
             return res;
         }
 
-        std::optional<matrix> inv() const {
+        std::pair<base, matrix> inv() const {
             assert(n() == m());
             matrix b = *this | eye(n());
             if(size(b.echelonize<reverse>(n())[0]) < n()) {
-                return std::nullopt;
+                return {0, {}};
             }
+            base det = 1;
             for(size_t i = 0; i < n(); i++) {
+                det *= b[i][i];
                 b[i] *= base(1) / b[i][i];
             }
-            return b.submatrix(std::slice(0, n(), 1), std::slice(n(), n(), 1));
+            return {det, b.submatrix(std::slice(0, n(), 1), std::slice(n(), n(), 1))};
         }
 
         // Can also just run gauss on T() | eye(m)

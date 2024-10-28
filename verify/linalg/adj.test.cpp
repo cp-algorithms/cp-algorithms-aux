@@ -24,12 +24,11 @@ void solve() {
         A[i][n] = cp_algo::random::rng();
         A[n][i] = cp_algo::random::rng();
     }
-    auto Ai = A.inv();
-    auto D = A.det();
+    auto [D, Ai] = A.inv();
     for(int i: views::iota(0, n)) {
         for(int j: views::iota(0, n)) {
             if(D != 0) {
-                auto res = (*Ai)[n][n] * (*Ai)[i][j] - (*Ai)[i][n] * (*Ai)[n][j];
+                auto res = Ai[n][n] * Ai[i][j] - Ai[i][n] * Ai[n][j];
                 cout << res * D << " \n"[j + 1 == n];
             } else {
                 cout << 0 << " \n"[j + 1 == n];

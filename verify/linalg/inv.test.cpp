@@ -15,11 +15,11 @@ void solve() {
     cin >> n;
     matrix<modint<mod>> a(n, n);
     a.read();
-    auto ai = a.inv();
-    if(!ai) {
+    auto [d, ai] = a.inv();
+    if(d == 0) {
         cout << -1 << "\n";
     } else {
-        ai->print();
+        ai.print();
     }
 }
 

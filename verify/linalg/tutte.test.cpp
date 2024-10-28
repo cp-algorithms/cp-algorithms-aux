@@ -32,17 +32,17 @@ void solve() {
             B[i][j] = T[pivots[i]][pivots[j]];
         }
     }
-    B = *B.inv();
+    auto [d, Bi] = B.inv();
     vector<pair<int, int>> ans;
     for(size_t i = 0; i < size(pivots); i++) {
         for(size_t j = 0; j < size(pivots); j++) {
-            if(T[pivots[i]][pivots[j]] != 0 && B[i][j] != 0) {
+            if(T[pivots[i]][pivots[j]] != 0 && Bi[i][j] != 0) {
                 ans.emplace_back(pivots[i], pivots[j]);
-                B.eliminate<gauss_mode::reverse>(i, j);
-                B.eliminate<gauss_mode::reverse>(j, i);
-                B.normalize();
-                B[i] *= 0;
-                B[j] *= 0;
+                Bi.eliminate<gauss_mode::reverse>(i, j);
+                Bi.eliminate<gauss_mode::reverse>(j, i);
+                Bi.normalize();
+                Bi[i] *= 0;
+                Bi[j] *= 0;
             }
         }
     }

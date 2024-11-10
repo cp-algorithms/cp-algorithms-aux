@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   setup:
-    runs-on: gcc-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -64,7 +64,7 @@ jobs:
           retention-days: 1
 
   verify:
-    runs-on: gcc-latest
+    runs-on: ubuntu-latest
     needs: [setup]
     env:
       SPLIT_SIZE: "20"
@@ -75,6 +75,17 @@ jobs:
           ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
            "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"]
     steps:
+      - name: Install GCC 13
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y g++-14
+      - name: Set GCC 14 as default
+        run: |
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 60
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 60
+      - name: Verify GCC version
+        run: g++ --version
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2147483647
@@ -114,7 +125,7 @@ jobs:
           retention-days: 1
 
   docs-and-check:
-    runs-on: gcc-latest
+    runs-on: ubuntu-latest
     needs: [verify]
     outputs:
       upload-pages: ${{steps.upload-pages.outcome == 'success'}}
@@ -188,7 +199,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: gcc-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

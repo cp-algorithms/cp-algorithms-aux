@@ -4,7 +4,7 @@
 #include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
 
-const int mod = 998244353;
+const int64_t mod = 998244353;
 
 using namespace std;
 using cp_algo::math::modint;

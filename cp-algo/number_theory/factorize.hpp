@@ -11,7 +11,7 @@ namespace cp_algo::math {
         } else if(is_prime(m)) {
             res.push_back(m);
         } else if(m > 1) {
-            using base = dynamic_modint;
+            using base = dynamic_modint<>;
             base::with_mod(m, [&]() {
                 base t = random::rng();
                 auto f = [&](auto x) {

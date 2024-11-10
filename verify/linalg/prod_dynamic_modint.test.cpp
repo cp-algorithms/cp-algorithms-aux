@@ -8,9 +8,9 @@
 using namespace std;
 using namespace cp_algo::linalg;
 using namespace cp_algo::math;
-using base = dynamic_modint;
+using base = dynamic_modint<>;
 
-const int mod = 998244353;
+const int64_t mod = 998244353;
 
 void solve() {
     base::switch_mod(mod);

@@ -12,7 +12,7 @@ namespace cp_algo::math {
         // m - 1 = 2^s * d
         int s = std::countr_zero(m - 1);
         auto d = (m - 1) >> s;
-        using base = dynamic_modint;
+        using base = dynamic_modint<>;
         auto test = [&](base x) {
             x = bpow(x, d);
             if(std::abs(x.rem()) <= 1) {

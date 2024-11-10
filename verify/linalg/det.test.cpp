@@ -9,7 +9,7 @@ using namespace std;
 using namespace cp_algo::linalg;
 using namespace cp_algo::math;
 
-const int mod = 998244353;
+const int64_t mod = 998244353;
 
 void solve() {
     int n;

@@ -25,7 +25,7 @@ namespace cp_algo::math {
         return ans;
     }
     int64_t primitive_root(int64_t p) {
-        using base = dynamic_modint;
+        using base = dynamic_modint<>;
         return base::with_mod(p, [p](){
             base t = 1;
             while(period(t) != p - 1) {

@@ -13,7 +13,7 @@ namespace cp_algo::math {
             return gaussint(1, 1);
         }
         assert(p % 4 == 1);
-        using base = dynamic_modint;
+        using base = dynamic_modint<>;
         return base::with_mod(p, [&](){
             base g = primitive_root(p);
             int64_t i = bpow(g, (p - 1) / 4).getr();

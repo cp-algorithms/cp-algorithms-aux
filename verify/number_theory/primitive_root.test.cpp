@@ -8,7 +8,7 @@
 using namespace std;
 using namespace cp_algo;
 using namespace math;
-using base = dynamic_modint;
+using base = dynamic_modint<>;
 
 void solve() {
     int64_t p;

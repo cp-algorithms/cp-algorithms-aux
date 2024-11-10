@@ -132,7 +132,7 @@ namespace cp_algo::linalg {
                 for(; i < size(*this); i++) {
                     (*this)[i].add_unsafe(scaler * b[i].getr_direct());
                 }
-                if(++counter == 8) {
+                if(++counter == 4) {
                     for(auto &it: *this) {
                         it.pseudonormalize();
                     }

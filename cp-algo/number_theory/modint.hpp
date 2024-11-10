@@ -99,7 +99,7 @@ namespace cp_algo::math {
             return std::min(res, res - mod());
         }
         void setr_direct(uint64_t rr) {r = rr;}
-        uint64_t getr_direct() const {return std::min(r, r - mod());}
+        uint64_t getr_direct() const {return r;}
     private:
         uint64_t r;
         modint& to_modint() {return static_cast<modint&>(*this);}

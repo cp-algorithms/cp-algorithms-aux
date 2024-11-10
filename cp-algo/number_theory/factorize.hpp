@@ -4,15 +4,14 @@
 #include "../random/rng.hpp"
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
-    void factorize(uint64_t m, std::vector<int64_t> &res) {
+    std::basic_string<uint64_t> factorize(uint64_t m) {
         if(m % 2 == 0) {
-            factorize(m / 2, res);
-            res.push_back(2);
+            return factorize(m / 2) + (uint64_t)2;
         } else if(is_prime(m)) {
-            res.push_back(m);
+            return {m};
         } else if(m > 1) {
-            using base = dynamic_modint<>;
-            base::with_mod(m, [&]() {
+            using base = dynamic_modint<int64_t>;
+            return base::with_mod(m, [&]() {
                 base t = random::rng();
                 auto f = [&](auto x) {
                     return x * x + t;
@@ -33,15 +32,11 @@ namespace cp_algo::math {
                     }
                     g = std::gcd(g.getr(), m);
                 }
-                factorize(g.getr(), res);
-                factorize(m / g.getr(), res);
+                return factorize(g.getr()) + factorize(m / g.getr());
             });
+        } else {
+            return {};
         }
-    }
-    std::vector<int64_t> factorize(int64_t m) {
-        std::vector<int64_t> res;
-        factorize(m, res);
-        return res;
     }
 }
 #endif // CP_ALGO_MATH_FACTORIZE_HPP

@@ -4,7 +4,7 @@
 #include <optional>
 namespace cp_algo::math {
     // Find min non-negative x s.t. a*b^x = c (mod m)
-    std::optional<uint64_t> discrete_log(int64_t b, int64_t c, uint64_t m, int64_t a = 1) {
+    std::optional<int64_t> discrete_log(int64_t b, int64_t c, int64_t m, int64_t a = 1) {
         if(std::abs(a - c) % m == 0) {
             return 0;
         }
@@ -24,7 +24,7 @@ namespace cp_algo::math {
             }
             base step = bpow(base(b), sqrtmod);
             cur = 1;
-            for(size_t k = 0; k < m; k += sqrtmod) {
+            for(ptrdiff_t k = 0; k < m; k += sqrtmod) {
                 auto it = small.find((base(c) * cur).getr());
                 if(it != end(small)) {
                     auto cand = base::with_mod(period(base(b)), [&]() {

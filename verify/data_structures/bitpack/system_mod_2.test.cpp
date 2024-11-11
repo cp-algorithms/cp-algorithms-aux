@@ -13,7 +13,7 @@ bitpack<maxn> a[maxn];
 void solve() {
     int n, m;
     cin >> n >> m;
-    string As[n];
+    vector<string> As(n);
     for(int i = 0; i < n; i++) {
         cin >> As[i];
     }

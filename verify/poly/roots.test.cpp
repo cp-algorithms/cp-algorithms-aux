@@ -15,7 +15,7 @@ void find_roots_impl(polyn const& p, vector<base> &res) {
     if(p.deg() == 1) {
         res.push_back(-p[0] / p[1]);
     } else if(p.deg() > 1) {
-        auto A = polyn::gcd(polyn(vector<base>{rng(), 1}).powmod((mod - 1) / 2, p) - base(1), polyn(p));
+        auto A = polyn::gcd(polyn(vector<base>{(base)rng(), 1}).powmod((mod - 1) / 2, p) - base(1), polyn(p));
         find_roots_impl(A, res);
         find_roots_impl(p / A, res);
     }

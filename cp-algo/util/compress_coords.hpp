@@ -3,19 +3,19 @@
 #include <algorithm>
 #include <vector>
 namespace cp_algo {
+    // coords is a range of reference_wrapper<T>
     std::vector<int> compress_coords(auto &coords) {
-        static_assert(std::is_pointer_v<std::ranges::range_value_t<decltype(coords)>>);
         std::vector<int> original;
         original.reserve(size(coords));
-        std::ranges::sort(coords, {}, [](int* x) {return *x;});
+        std::ranges::sort(coords);
         int idx = -1, prev = -1;
-        for(auto x: coords) {
-            if(*x != prev) {
+        for(auto &x: coords) {
+            if(x != prev) {
                 idx++;
-                prev = *x;
-                original.push_back(*x);
+                prev = x;
+                original.push_back(x);
             }
-            *x = idx;
+            x.get() = idx;
         }
         return original;
     }

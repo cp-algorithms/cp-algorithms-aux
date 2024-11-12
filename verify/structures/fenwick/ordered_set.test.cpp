@@ -12,16 +12,16 @@ void solve() {
     int n, q;
     cin >> n >> q;
     vector a(n, 0);
-    vector<int*> coords;
+    vector<reference_wrapper<int>> coords;
     for(auto &it: a) {
         cin >> it;
-        coords.push_back(&it);
+        coords.push_back(ref(it));
     }
     vector queries(q, pair{0, 0});
     for(auto &[t, x]: queries) {
         cin >> t >> x;
         if(t != 2) {
-            coords.push_back(&x);
+            coords.push_back(ref(x));
         }
     }
     auto values = cp_algo::compress_coords(coords);

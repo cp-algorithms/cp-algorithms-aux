@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_GRAPH_MST_HPP
 #define CP_ALGO_GRAPH_MST_HPP
 #include "base.hpp"
-#include "../data_structures/dsu.hpp"
+#include "../structures/dsu.hpp"
 #include <algorithm>
 namespace cp_algo::graph {
     template<weighted_edge_type edge_t>
@@ -11,7 +11,7 @@ namespace cp_algo::graph {
             edges.emplace_back(g.edge(e).w, e);
         });
         std::ranges::sort(edges);
-        data_structures::dsu me(g.n());
+        structures::dsu me(g.n());
         int64_t total = 0;
         std::vector<edge_index> mst;
         for(auto [w, e]: edges) {

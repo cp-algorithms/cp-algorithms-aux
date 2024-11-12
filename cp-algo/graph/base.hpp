@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_GRAPH_BASE_HPP
 #define CP_ALGO_GRAPH_BASE_HPP
 #include "edge_types.hpp"
-#include "../data_structures/stack_union.hpp"
+#include "../structures/stack_union.hpp"
 #include <ranges>
 #include <vector>
 namespace cp_algo::graph {
@@ -56,7 +56,7 @@ namespace cp_algo::graph {
     private:
         node_index v0;
         std::vector<edge_t> edges;
-        data_structures::stack_union<edge_index> adj;
+        structures::stack_union<edge_index> adj;
     };
 }
 #endif // CP_ALGO_GRAPH_BASE_HPP

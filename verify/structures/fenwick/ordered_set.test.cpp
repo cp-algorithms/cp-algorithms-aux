@@ -7,46 +7,55 @@
 using namespace std;
 using cp_algo::structures::fenwick_set;
 
+vector<int> compress(vector<int*> a) {
+    vector<int> nums;
+    ranges::sort(a, {}, [](int* x) {return *x;});
+    int idx = -1, prev = -1;
+    for(auto x: a) {
+        if(*x != prev) {
+            idx++;
+            prev = *x;
+            nums.push_back(*x);
+        }
+        *x = idx;
+    }
+    return nums;
+}
+
 void solve() {
     int n, q;
     cin >> n >> q;
     vector a(n, 0);
-    for(auto &it: a) {cin >> it;}
-    auto nums = a;
+    vector<int*> coords;
+    for(auto &it: a) {
+        cin >> it;
+        coords.push_back(&it);
+    }
     vector queries(q, pair{0, 0});
     for(auto &[t, x]: queries) {
         cin >> t >> x;
-        if(t == 0) {
-            nums.push_back(x);
+        if(t != 2) {
+            coords.push_back(&x);
         }
     }
-    nums.push_back(0);
-    ranges::sort(nums);
-    nums.erase(ranges::unique(nums).begin(), end(nums));
-    auto hashify = [&](int x) {
-        return ranges::lower_bound(nums, x) - begin(nums);
-    };
-    ranges::transform(a, begin(a), hashify);
+    auto nums = compress(coords);
     const int maxc = 1e6;
     fenwick_set<maxc> me(a);
     for(auto [t, x]: queries) {
         if(t == 0) {
-            me.insert(hashify(x));
+            me.insert(x);
         } else if(t == 1) {
-            int y = hashify(x);
-            if(nums[y] == x) {
-                me.erase(y);
-            }
+            me.erase(x);
         } else if(t == 2) {
             int res = me.find_by_order(x-1);
             cout << (res == -1 ? -1 : nums[res]) << '\n';
         } else if(t == 3) {
-            cout << me.order_of_key(hashify(x+1)) << '\n';
+            cout << me.order_of_key(x+1) << '\n';
         } else if(t == 4) {
-            int res = me.pre_upper_bound(hashify(x+1)-1);
+            int res = me.pre_upper_bound(x);
             cout << (res == -1 ? -1 : nums[res]) << '\n';
         } else if(t == 5) {
-            int res = me.lower_bound(hashify(x));
+            int res = me.lower_bound(x);
             cout << (res == -1 ? -1 : nums[res]) << '\n';
         }
     }

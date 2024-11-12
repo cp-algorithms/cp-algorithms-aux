@@ -1,7 +1,7 @@
 
 #ifndef CP_ALGO_STRUCTURES_BITPACK_HPP
 #define CP_ALGO_STRUCTURES_BITPACK_HPP
-#include "cp-algo/bit.hpp"
+#include "bit_array.hpp"
 #include <cstdint>
 #include <cstddef>
 #include <string>

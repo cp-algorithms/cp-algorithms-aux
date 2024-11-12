@@ -1,5 +1,5 @@
-#ifndef CP_ALGO_BUMP_ALLOC_HPP
-#define CP_ALGO_BUMP_ALLOC_HPP
+#ifndef CP_ALGO_UTIL_BUMP_ALLOC_HPP
+#define CP_ALGO_UTIL_BUMP_ALLOC_HPP
 #include <cstddef>
 namespace cp_algo {
     char buf[450 << 20] alignas(32);
@@ -16,4 +16,4 @@ namespace cp_algo {
         void deallocate(T*, size_t) {}
     };
 }
-#endif // CP_ALGO_BUMP_ALLOC_HPP
+#endif // CP_ALGO_UTIL_BUMP_ALLOC_HPP

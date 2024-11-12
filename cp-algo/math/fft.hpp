@@ -290,10 +290,9 @@ namespace cp_algo::math::fft {
         }
         return std::max(flen, std::bit_ceil(as + bs - 1) / 2);
     }
-    static const int naive_threshold = 64;
     void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
-        if(std::min({k, size(a), size(b)}) < naive_threshold) {
+        if(std::min({k, size(a), size(b)}) < magic) {
             mul_slow(a, b, k);
             return;
         }

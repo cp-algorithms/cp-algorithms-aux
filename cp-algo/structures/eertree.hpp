@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "../bump_alloc.hpp"
+#include "../util/bump_alloc.hpp"
 namespace cp_algo::structures {
     template<int sigma = 26, char mch = 'a'>
     struct eertree {

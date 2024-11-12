@@ -1,8 +1,10 @@
 #ifndef CP_ALGO_STRUCTURES_FENWICK_SET_HPP
 #define CP_ALGO_STRUCTURES_FENWICK_SET_HPP
 #include "fenwick.hpp"
-#include "cp-algo/bit.hpp"
+#include "bit_array.hpp"
 namespace cp_algo::structures {
+    template<size_t maxc, typename Uint = uint64_t>
+    using popcount_array = std::array<int, maxc / bit_width<Uint> + 1>;
     // fenwick-based set for [0, maxc)
     template<size_t maxc, typename Uint = uint64_t>
     struct fenwick_set: fenwick<int, popcount_array<maxc, Uint>> {
@@ -24,15 +26,15 @@ namespace cp_algo::structures {
         }
         void insert(size_t x) {
             if(bits.test(x)) return;
+            Base::add(x / word, 1);
             bits.flip(x);
             sz++;
-            Base::add(x / word, 1);
         }
         void erase(size_t x) {
             if(!bits.test(x)) return;
+            Base::add(x / word, -1);
             bits.flip(x);
             sz--;
-            Base::add(x / word, -1);
         }
         size_t order_of_key(size_t x) const {
             return Base::prefix_sum(x / word) + order_of_bit(bits.word(x / word), x % word);

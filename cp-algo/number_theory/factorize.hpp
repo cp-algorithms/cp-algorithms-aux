@@ -5,7 +5,6 @@
 #include <generator>
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
-
     auto proper_divisor(uint64_t m) {
         using base = dynamic_modint<>;
         return m % 2 == 0 ? 2 : base::with_mod(m, [&]() {

@@ -2,7 +2,6 @@
 #define CP_ALGO_STRUCTURES_FENWICK_HPP
 #include <cassert>
 #include <vector>
-#include <bit>
 namespace cp_algo::structures {
     template<typename T, typename Container = std::vector<T>>
     struct fenwick {

@@ -4,7 +4,7 @@
 #include <vector>
 namespace cp_algo {
     // coords is a range of reference_wrapper<T>
-    std::vector<int> compress_coords(auto &coords) {
+    auto compress_coords(auto &coords) {
         std::vector<int> original;
         original.reserve(size(coords));
         std::ranges::sort(coords);

@@ -10,7 +10,7 @@ using namespace cp_algo::math;
 void solve() {
     int64_t m;
     cin >> m;
-    auto res = factorize(m);
+    auto res = to<vector>(factorize(m));
     ranges::sort(res);
     cout << size(res) << " ";
     ranges::copy(res, ostream_iterator<int64_t>(cout, " "));

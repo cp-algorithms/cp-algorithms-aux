@@ -2,16 +2,18 @@
 #define CP_ALGO_MATH_FACTORIZE_HPP
 #include "primality.hpp"
 #include "../random/rng.hpp"
+#include <generator>
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
-    std::basic_string<uint64_t> factorize(uint64_t m) {
+    std::generator<uint64_t> factorize(uint64_t m) {
         if(m % 2 == 0) {
-            return factorize(m / 2) + (uint64_t)2;
+            co_yield std::ranges::elements_of(factorize(m / 2));
+            co_yield 2;
         } else if(is_prime(m)) {
-            return {m};
+            co_yield m;
         } else if(m > 1) {
             using base = dynamic_modint<int64_t>;
-            return base::with_mod(m, [&]() {
+            auto g = base::with_mod(m, [&]() {
                 base t = random::rng();
                 auto f = [&](auto x) {
                     return x * x + t;
@@ -32,10 +34,10 @@ namespace cp_algo::math {
                     }
                     g = std::gcd(g.getr(), m);
                 }
-                return factorize(g.getr()) + factorize(m / g.getr());
+                return g.getr();
             });
-        } else {
-            return {};
+            co_yield std::ranges::elements_of(factorize(g));
+            co_yield std::ranges::elements_of(factorize(m / g));
         }
     }
 }

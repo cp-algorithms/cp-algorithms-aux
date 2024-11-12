@@ -41,8 +41,8 @@ namespace cp_algo::structures {
         T range_sum(size_t l, size_t r) const {
             return prefix_sum(r) - prefix_sum(l);
         }
-        // First r s.t. prefix_sum(r) >= k
-        // Assumes data[x] >= 0 for all x
+        // Last x s.t. k = prefix_sum(x) + r for r > 0
+        // Assumes data[x] >= 0 for all x, returns [x, r]
         auto prefix_lower_bound(T k) const {
             int x = 0;
             for(size_t i = std::bit_floor(n); i; i /= 2) {

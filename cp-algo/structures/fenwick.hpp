@@ -41,7 +41,7 @@ namespace cp_algo::structures {
         T range_sum(size_t l, size_t r) const {
             return prefix_sum(r) - prefix_sum(l);
         }
-        // First r s.t. prefix_sum(r) > k
+        // First r s.t. prefix_sum(r) >= k
         // Assumes data[x] >= 0 for all x
         auto prefix_lower_bound(T k) const {
             int x = 0;

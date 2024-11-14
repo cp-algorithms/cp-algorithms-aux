@@ -9,7 +9,7 @@ namespace cp_algo::structures {
         Container data;
 
         fenwick(auto &&range) {
-            assign(range);
+            assign(move(range));
         }
         void to_prefix_sums() {
             for(size_t i = 1; i < n; i++) {

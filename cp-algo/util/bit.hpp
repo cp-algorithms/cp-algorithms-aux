@@ -11,7 +11,7 @@ namespace cp_algo {
     size_t order_of_bit(auto x, size_t k) {
         return k ? std::popcount(x << (bit_width<decltype(x)> - k)) : 0;
     }
-    // Requires GCC target("popcnt,bmi2")
+    [[gnu::target("bmi2")]]
     size_t kth_set_bit(uint64_t x, size_t k) {
         return std::countr_zero(_pdep_u64(1ULL << k, x));
     }

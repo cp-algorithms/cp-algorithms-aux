@@ -24,12 +24,12 @@ namespace cp_algo {
         if(empty(a)) {
             return;
         }
-        auto mx = std::ranges::max(a);
-        with_bit_floor(size(a), [&]<size_t floor>() {
+        auto [mn, mx] = std::ranges::minmax(a);
+        with_bit_floor<1>(size(a), [&]<size_t floor>() {
             constexpr int base = std::min<size_t>(floor, 1 << 16);
-            for(int64_t i = 1; i <= mx; i *= base) {
+            for(int64_t i = 1; i <= mx - mn; i *= base) {
                 count_sort<base>(a, [&](auto x) {
-                    return x / i % base;
+                    return (x - mn) / i % base;
                 });
             }
         });

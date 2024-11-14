@@ -15,5 +15,15 @@ namespace cp_algo {
     size_t kth_set_bit(uint64_t x, size_t k) {
         return std::countr_zero(_pdep_u64(1ULL << k, x));
     }
+    template<int fl = 0>
+    void with_bit_floor(size_t n, auto &&callback) {
+        if constexpr (fl >= 63) {
+            return;
+        } else if (n >> (fl + 1)) {
+            with_bit_floor<fl + 1>(n, callback);
+        } else {
+            callback.template operator()<1ULL << fl>();
+        }
+    }
 }
 #endif // CP_ALGO_UTIL_BIT_HPP

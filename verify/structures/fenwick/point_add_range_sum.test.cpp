@@ -16,7 +16,7 @@ void solve() {
         int t, x, y;
         cin >> t >> x >> y;
         if(t == 0) {
-            me.add(x, y);
+            me.update(x, y);
         } else {
             cout << me.range_fold(x, y) << '\n';
         }

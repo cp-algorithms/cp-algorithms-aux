@@ -11,14 +11,14 @@ void solve() {
     cin >> n >> q;
     vector<int64_t> a(n + 1);
     for(auto &it: a | views::drop(1)) {cin >> it;}
-    cp_algo::structures::fenwick<int64_t> me(move(a));
+    cp_algo::structures::fenwick me(move(a));
     for(int i = 0; i < q; i++) {
         int t, x, y;
         cin >> t >> x >> y;
         if(t == 0) {
             me.add(x, y);
         } else {
-            cout << me.range_sum(x, y) << '\n';
+            cout << me.range_fold(x, y) << '\n';
         }
     }
 }

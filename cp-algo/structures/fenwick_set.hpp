@@ -22,29 +22,29 @@ namespace cp_algo::structures {
                     bits.flip(x);
                 }
             }
-            Base::to_prefix_sums();
+            Base::to_prefix_folds();
         }
         void insert(size_t x) {
             if(bits.test(x)) return;
-            Base::add(x / word, 1);
+            Base::update(x / word, 1);
             bits.flip(x);
             sz++;
         }
         void erase(size_t x) {
             if(!bits.test(x)) return;
-            Base::add(x / word, -1);
+            Base::update(x / word, -1);
             bits.flip(x);
             sz--;
         }
         size_t order_of_key(size_t x) const {
-            return Base::prefix_sum(x / word) + order_of_bit(bits.word(x / word), x % word);
+            return Base::prefix_fold(x / word) + order_of_bit(bits.word(x / word), x % word);
         }
         size_t find_by_order(size_t order) const {
             if(order >= sz) {
                 return -1;
             }
-            auto [x, remainder] = Base::prefix_lower_bound(order + 1);
-            return x * word + kth_set_bit(bits.word(x), remainder - 1);
+            auto [x, pref] = Base::prefix_lower_bound(order);
+            return x * word + kth_set_bit(bits.word(x), order - pref);
         }
         size_t lower_bound(size_t x) const {
             if(bits.test(x)) {return x;}

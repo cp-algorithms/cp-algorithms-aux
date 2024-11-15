@@ -4,7 +4,7 @@
 #include <vector>
 namespace cp_algo {
     // coords is a range of reference_wrapper<T>
-    auto compress_coords(auto &coords) {
+    auto compress_coords(auto &&coords) {
         using T = std::decay_t<std::unwrap_reference_t<
             std::ranges::range_value_t<decltype(coords)>
         >>;

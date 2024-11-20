@@ -299,9 +299,9 @@ namespace cp_algo::math {
             if(is_zero()) {
                 return k ? *this : poly_t(1);
             }
-            int i = trailing_xk();
+            size_t i = trailing_xk();
             if(i > 0) {
-                return k >= int64_t(n + i - 1) / i ? poly_t(T(0)) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
+                return k >= int64_t(n + i - 1) / (int64_t)i ? poly_t(T(0)) : div_xk(i).pow(k, n - i * k).mul_xk(i * k);
             }
             if(std::min(deg(), (int)n) <= magic) {
                 return pow_dn(k, n);
@@ -319,7 +319,7 @@ namespace cp_algo::math {
             if(is_zero()) {
                 return *this;
             }
-            int i = trailing_xk();
+            size_t i = trailing_xk();
             if(i % 2) {
                 return std::nullopt;
             } else if(i > 0) {

@@ -8,19 +8,15 @@
 #include <ranges>
 #include <vector>
 #include <bit>
+#include <experimental/simd>
 
 namespace cp_algo::math::fft {
     using ftype = double;
-    static constexpr size_t bytes = 32;
-    static constexpr size_t flen = bytes / sizeof(ftype);
     using point = std::complex<ftype>;
-    using vftype [[gnu::vector_size(bytes)]] = ftype;
+    using vftype = std::experimental::native_simd<ftype>;
     using vpoint = std::complex<vftype>;
+    static constexpr size_t flen = vftype::size();
 
-#define WITH_IV(...)                             \
-  [&]<size_t ... i>(std::index_sequence<i...>) { \
-      return __VA_ARGS__;                        \
-  }(std::make_index_sequence<flen>());
 
     template<typename ft>
     constexpr ft to_ft(auto x) {
@@ -76,12 +72,12 @@ namespace cp_algo::math::fft {
             if(n < pre_roots) {
                 return roots.get<pt>(n + k);
             } else {
-                auto arg = std::numbers::pi / n;
+                auto arg = std::numbers::pi / (ftype)n;
                 if constexpr(std::is_same_v<pt, point>) {
-                    return {cos(k * arg), sin(k * arg)};
+                    return {(ftype)cos(k * arg), (ftype)sin(k * arg)};
                 } else {
-                    return WITH_IV(pt{vftype{cos((k + i) * arg)...},
-                                      vftype{sin((k + i) * arg)...}});
+                    return pt{vftype{[&](auto i) {return cos(ftype(k + i) * arg);}},
+                              vftype{[&](auto i) {return sin(ftype(k + i) * arg);}}};
                 }
             }
         }
@@ -118,7 +114,7 @@ namespace cp_algo::math::fft {
                 }
             }
             for(size_t k = 0; k < n; k += flen) {
-                set(k, get<vpoint>(k) /= to_pt<vpoint>(n));
+                set(k, get<vpoint>(k) /= to_pt<vpoint>((ftype)n));
             }
         }
         void fft() {
@@ -144,11 +140,11 @@ namespace cp_algo::math::fft {
     const cvector cvector::roots = []() {
         cvector res(pre_roots);
         for(size_t n = 1; n < res.size(); n *= 2) {
-            auto base = std::polar(1., std::numbers::pi / n);
+            auto base = std::polar(1., std::numbers::pi / (ftype)n);
             point cur = 1;
             for(size_t k = 0; k < n; k++) {
                 if((k & 15) == 0) {
-                    cur = std::polar(1., std::numbers::pi * k / n);
+                    cur = std::polar(1., std::numbers::pi * (ftype)k / (ftype)n);
                 }
                 res.set(n + k, cur);
                 cur *= base;
@@ -198,7 +194,7 @@ namespace cp_algo::math::fft {
         cvector A, B;
         
         dft(auto const& a, size_t n): A(n), B(n) {
-            split = std::sqrt(base::mod());
+            split = int(std::sqrt(base::mod()));
             cvector::exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
                 size_t ti = std::min(i, i - n);
                 A.set(ti, A.get(ti) + ftype(a[i].rem() % split) * rt);
@@ -273,12 +269,12 @@ namespace cp_algo::math::fft {
         if(empty(a) || empty(b)) {
             a.clear();
         } else {
-            int n = std::min(k, size(a));
-            int m = std::min(k, size(b));
+            size_t n = std::min(k, size(a));
+            size_t m = std::min(k, size(b));
             a.resize(k);
-            for(int j = k - 1; j >= 0; j--) {
+            for(int j = int(k - 1); j >= 0; j--) {
                 a[j] *= b[0];
-                for(int i = std::max(j - n, 0) + 1; i < std::min(j + 1, m); i++) {
+                for(size_t i = std::max<size_t>(j - n, 0) + 1; i < std::min<size_t>(j + 1, m); i++) {
                     a[j] += a[j - i] * b[i];
                 }
             }

@@ -82,7 +82,7 @@ namespace cp_algo::math::poly::impl {
         auto [q0, q1] = q.bisect();
         auto qq = q0 * q0 - (q1 * q1).mul_xk_inplace(1);
         inv_inplace(qq, k / 2 - q.deg() / 2, (n + 1) / 2 + q.deg() / 2);
-        int N = fft::com_size(size(q0.a), size(qq.a));
+        size_t N = fft::com_size(size(q0.a), size(qq.a));
         auto q0f = fft::dft<base>(q0.a, N);
         auto q1f = fft::dft<base>(q1.a, N);
         auto qqf = fft::dft<base>(qq.a, N);
@@ -109,7 +109,7 @@ namespace cp_algo::math::poly::impl {
         // Q(-x) = P0(x^2) + xP1(x^2)
         auto [q0, q1] = p.bisect(n);
         
-        int N = fft::com_size(size(q0.a), (n + 1) / 2);
+        size_t N = fft::com_size(size(q0.a), (n + 1) / 2);
         
         auto q0f = fft::dft<base>(q0.a, N);
         auto q1f = fft::dft<base>(q1.a, N);

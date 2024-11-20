@@ -31,10 +31,10 @@ namespace cp_algo::math {
         }
         static UInt m_reduce(UInt2 ab) {
             if(mod() % 2 == 0) [[unlikely]] {
-                return ab % mod();
+                return UInt(ab % mod());
             } else {
-                UInt m = ab * imod();
-                return (ab + (UInt2)m * mod()) >> bits;
+                UInt2 m = (UInt)ab * imod();
+                return UInt((ab + m * mod()) >> bits);
             }
         }
         static UInt m_transform(UInt a) {
@@ -45,7 +45,7 @@ namespace cp_algo::math {
             }
         }
         modint_base(): r(0) {}
-        modint_base(Int2 rr): r(rr % mod()) {
+        modint_base(Int2 rr): r(UInt(rr % mod())) {
             r = std::min(r, r + mod());
             r = m_transform(r);
         }

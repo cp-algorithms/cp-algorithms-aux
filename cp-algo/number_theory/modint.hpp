@@ -158,14 +158,14 @@ namespace cp_algo::math {
             return callback();
         }
     private:
-        static Int m;
-        static Base::UInt im, r1, r2;
+        static thread_local Int m;
+        static thread_local Base::UInt im, r1, r2;
     };
     template<typename Int>
-    Int dynamic_modint<Int>::m = 1;
+    Int thread_local dynamic_modint<Int>::m = 1;
     template<typename Int>
-    dynamic_modint<Int>::Base::UInt dynamic_modint<Int>::im = -1;
+    dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::im = -1;
     template<typename Int>
-    dynamic_modint<Int>::Base::UInt dynamic_modint<Int>::r2 = 0;
+    dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::r2 = 0;
 }
 #endif // CP_ALGO_MATH_MODINT_HPP

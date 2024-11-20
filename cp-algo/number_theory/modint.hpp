@@ -159,7 +159,7 @@ namespace cp_algo::math {
         }
     private:
         static thread_local Int m;
-        static thread_local Base::UInt im, r1, r2;
+        static thread_local Base::UInt im, r2;
     };
     template<typename Int>
     Int thread_local dynamic_modint<Int>::m = 1;

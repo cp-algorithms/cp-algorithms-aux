@@ -1,7 +1,8 @@
 #ifndef CP_ALGO_MATH_FFT_HPP
 #define CP_ALGO_MATH_FFT_HPP
 #include "common.hpp"
-#include "../number_theory/modint.hpp"
+#include "cp-algo/number_theory/modint.hpp"
+#include "cp-algo/util/complex.hpp"
 #include <algorithm>
 #include <complex>
 #include <cassert>
@@ -9,12 +10,11 @@
 #include <vector>
 #include <bit>
 #include <experimental/simd>
-
 namespace cp_algo::math::fft {
     using ftype = double;
-    using point = std::complex<ftype>;
+    using point = complex<ftype>;
     using vftype = std::experimental::native_simd<ftype>;
-    using vpoint = std::complex<vftype>;
+    using vpoint = complex<vftype>;
     static constexpr size_t flen = vftype::size();
 
 
@@ -74,7 +74,7 @@ namespace cp_algo::math::fft {
             } else {
                 auto arg = std::numbers::pi / (ftype)n;
                 if constexpr(std::is_same_v<pt, point>) {
-                    return {(ftype)cos(k * arg), (ftype)sin(k * arg)};
+                    return {cos((ftype)k * arg), sin((ftype)k * arg)};
                 } else {
                     return pt{vftype{[&](auto i) {return cos(ftype(k + i) * arg);}},
                               vftype{[&](auto i) {return sin(ftype(k + i) * arg);}}};
@@ -140,11 +140,11 @@ namespace cp_algo::math::fft {
     const cvector cvector::roots = []() {
         cvector res(pre_roots);
         for(size_t n = 1; n < res.size(); n *= 2) {
-            auto base = std::polar(1., std::numbers::pi / (ftype)n);
+            auto base = polar<ftype>(1., std::numbers::pi / (ftype)n);
             point cur = 1;
             for(size_t k = 0; k < n; k++) {
                 if((k & 15) == 0) {
-                    cur = std::polar(1., std::numbers::pi * (ftype)k / (ftype)n);
+                    cur = polar<ftype>(1., std::numbers::pi * (ftype)k / (ftype)n);
                 }
                 res.set(n + k, cur);
                 cur *= base;

@@ -1,12 +1,12 @@
 #ifndef CP_ALGO_GEOMETRY_POINT_HPP
 #define CP_ALGO_GEOMETRY_POINT_HPP
-#include "../random/rng.hpp"
+#include "cp-algo/util/complex.hpp"
+#include "cp-algo/random/rng.hpp"
 #include <iostream>
-#include <complex>
 namespace cp_algo::geometry {
     template<typename ftype>
-    struct point_t: public std::complex<ftype> {
-        using Base = std::complex<ftype>;
+    struct point_t: complex<ftype> {
+        using Base = complex<ftype>;
         using Base::Base;
 
         point_t(Base const& t): Base(t) {}

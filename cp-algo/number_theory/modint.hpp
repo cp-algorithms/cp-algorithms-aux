@@ -145,7 +145,7 @@ namespace cp_algo::math {
         static void switch_mod(Int nm) {
             m = nm;
             im = m % 2 ? inv2(-m) : 0;
-            r2 = (typename Base::UInt2)(-1) % m + 1;
+            r2 = static_cast<Base::UInt>(static_cast<Base::UInt2>(-1) % m + 1);
         }
 
         // Wrapper for temp switching

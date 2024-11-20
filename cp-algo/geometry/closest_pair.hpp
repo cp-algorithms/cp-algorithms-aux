@@ -21,8 +21,8 @@ namespace cp_algo::geometry {
                 }
             }
         }
-        std::map<point, std::vector<int>> neigs;
-        md = ceil(sqrtl(md));
+        std::map<point, std::vector<size_t>> neigs;
+        md = (int64_t)ceil(sqrt((double)md));
         for(size_t i = 0; i < n; i++) {
             neigs[r[i] / md].push_back(i);
         }

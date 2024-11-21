@@ -39,8 +39,8 @@ namespace cp_algo {
     template<typename T> T abs(complex<T> x) {return x.abs();}
     template<typename T> T& real(complex<T> &x) {return x.real();}
     template<typename T> T& imag(complex<T> &x) {return x.imag();}
-    template<typename T> T real(complex<T> x) {return x.real();}
-    template<typename T> T imag(complex<T> x) {return x.imag();}
+    template<typename T> T real(complex<T> const& x) {return x.real();}
+    template<typename T> T imag(complex<T> const& x) {return x.imag();}
     template<typename T> complex<T> polar(T r, T theta) {return complex<T>::polar(r, theta);}
 }
 #endif // CP_ALGO_UTIL_COMPLEX_HPP

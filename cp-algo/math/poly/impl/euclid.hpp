@@ -19,8 +19,8 @@ namespace cp_algo::math::poly::impl {
     template<typename poly>
     gcd_result<poly> half_gcd(poly &&A, poly &&B) {
         assert(A.deg() >= B.deg());
-        int m = size(A.a) / 2;
-        if(B.deg() < m) {
+        size_t m = size(A.a) / 2;
+        if(B.deg() < (int)m) {
             return {};
         }
         auto [ai, R] = A.divmod(B);
@@ -28,7 +28,7 @@ namespace cp_algo::math::poly::impl {
         std::list a = {ai};
         auto T = -linfrac(ai).adj();
 
-        auto advance = [&](int k) {
+        auto advance = [&](size_t k) {
             auto [ak, Tk] = half_gcd(A.div_xk(k), B.div_xk(k));
             a.splice(end(a), ak);
             T.prepend(Tk);
@@ -83,7 +83,7 @@ namespace cp_algo::math::poly::impl {
         auto [a, Tr] = full_gcd(R1, R2);
         a.emplace_back();
         auto pref = begin(a);
-        for(int delta = d - a.front().deg(); delta >= 0; pref++) {
+        for(int delta = (int)d - a.front().deg(); delta >= 0; pref++) {
             delta -= pref->deg() + next(pref)->deg();
         }
         return convergent(begin(a), pref).a;

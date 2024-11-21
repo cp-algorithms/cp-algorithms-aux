@@ -14,7 +14,7 @@ namespace cp_algo::structures::segtree::metas {
         affine_meta() {}
         affine_meta(base sum): sum(sum) {}
 
-        void push(meta *L, meta *R, int l, int r) override {
+        void push(meta *L, meta *R, size_t l, size_t r) override {
             if(to_push.a != 1 || to_push.b != 0) {
                 sum = to_push.a * sum + to_push.b * (r - l);
                 if(r - l > 1) {
@@ -25,7 +25,7 @@ namespace cp_algo::structures::segtree::metas {
             }
         }
 
-        void pull(meta const& L, meta const& R, int, int) override {
+        void pull(meta const& L, meta const& R, size_t, size_t) override {
             sum = L.sum + R.sum;
         }
     };

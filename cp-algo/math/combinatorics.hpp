@@ -24,7 +24,7 @@ namespace cp_algo::math {
         static std::vector<T> F(maxn);
         static bool init = false;
         if(!init) {
-            int t = std::min<int64_t>(T::mod(), maxn) - 1;
+            int t = (int)std::min<int64_t>(T::mod(), maxn) - 1;
             F[t] = T(1) / fact<T>(t);
             for(int i = t - 1; i >= 0; i--) {
                 F[i] = F[i + 1] * T(i + 1);

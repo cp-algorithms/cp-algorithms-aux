@@ -14,7 +14,7 @@ namespace cp_algo::structures::segtree::metas {
         template<typename Comp>
         struct data {
             int64_t val;
-            int64_t count = 1;
+            size_t count = 1;
             int64_t second = std::max(inf, -inf, comp);
             static const Comp comp;
 
@@ -50,7 +50,7 @@ namespace cp_algo::structures::segtree::metas {
         chmin_chmax_sum_meta() {}
         chmin_chmax_sum_meta(int64_t val): sum(val) {}
 
-        void pull(meta const& L, meta const& R, int, int) override {
+        void pull(meta const& L, meta const& R, size_t, size_t) override {
             sum = L.sum + R.sum;
             mn = L.mn.combine(R.mn);
             mx = L.mx.combine(R.mx);
@@ -62,7 +62,7 @@ namespace cp_algo::structures::segtree::metas {
             t.chmax = std::clamp(t.chmax, chmax, chmin);
         }
 
-        void push(meta* L, meta* R, int l, int r) override {
+        void push(meta* L, meta* R, size_t l, size_t r) override {
             if(r - l > 1) {
                 push(*L);
                 push(*R);

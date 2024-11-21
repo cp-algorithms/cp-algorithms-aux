@@ -86,7 +86,7 @@ namespace cp_algo::math::poly::impl {
         auto q0f = fft::dft<base>(q0.a, N);
         auto q1f = fft::dft<base>(q1.a, N);
         auto qqf = fft::dft<base>(qq.a, N);
-        int M = q0.deg() + (n + 1) / 2;
+        size_t M = q0.deg() + (n + 1) / 2;
         std::vector<base> A(M), B(M);
         q0f.mul(qqf, A, M);
         q1f.mul_inplace(qqf, B, M);

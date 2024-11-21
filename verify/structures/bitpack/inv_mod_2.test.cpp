@@ -11,15 +11,15 @@ const int maxn = 1 << 13;
 bitpack<maxn> a[maxn];
 
 void solve() {
-    int n;
+    size_t n;
     cin >> n;
     string row;
-    vector<int> lead(n);
-    for(int i = 0; i < n; i++) {
+    vector<size_t> lead(n);
+    for(size_t i = 0; i < n; i++) {
         cin >> row;
         a[i] = row;
         a[i].set(n + i);
-        for(int j = 0; j < i; j++) {
+        for(size_t j = 0; j < i; j++) {
             if(a[i][lead[j]]) {
                 a[i].xor_hint(a[j], lead[j]);
             }
@@ -29,13 +29,13 @@ void solve() {
             cout << -1 << "\n";
             return;
         }
-        for(int j = 0; j < i; j++) {
+        for(size_t j = 0; j < i; j++) {
             if(a[j][lead[i]]) {
                 a[j].xor_hint(a[i], lead[i]);
             }
         }
     }
-    for(int i = 0; i < n; i++) {
+    for(size_t i = 0; i < n; i++) {
         while(lead[i] != i) {
             swap(a[i], a[lead[i]]);
             swap(lead[i], lead[lead[i]]);

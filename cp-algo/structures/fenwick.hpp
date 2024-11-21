@@ -63,7 +63,7 @@ namespace cp_algo::structures {
         // Assumes prefix_fold is monotonic
         // returns [x, prefix_fold(x)]
         auto prefix_lower_bound(T k) const {
-            int x = 0;
+            size_t x = 0;
             T pref = {};
             for(size_t i = std::bit_floor(n); i; i /= 2) {
                 if(x + i <= n && op(pref, data[x + i]) <= k) {

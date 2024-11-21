@@ -11,23 +11,23 @@ const int maxn = (1 << 12) + 1;
 bitpack<maxn> a[maxn];
 
 void solve() {
-    int n, m;
+    size_t n, m;
     cin >> n >> m;
     vector<string> As(n);
-    for(int i = 0; i < n; i++) {
+    for(size_t i = 0; i < n; i++) {
         cin >> As[i];
     }
     string bs;
     cin >> bs;
-    for(int i = 0; i < n; i++) {
+    for(size_t i = 0; i < n; i++) {
         As[i] += bs[i];
         a[i] = As[i];
     }
-    vector<int> lead(n);
-    auto vars = views::iota(0, m + 1);
-    set<int> free(begin(vars), end(vars));
-    for(int i = 0; i < n; i++) {
-        for(int j = 0; j < i; j++) {
+    vector<size_t> lead(n);
+    auto vars = views::iota((size_t)0, m + 1);
+    set<size_t> free(begin(vars), end(vars));
+    for(size_t i = 0; i < n; i++) {
+        for(size_t j = 0; j < i; j++) {
             if(a[i][lead[j]]) {
                 a[i].xor_hint(a[j], lead[j]);
             }
@@ -41,7 +41,7 @@ void solve() {
             continue;
         }
         free.erase(lead[i]);
-        for(int j = 0; j < i; j++) {
+        for(size_t j = 0; j < i; j++) {
             if(a[j][lead[i]]) {
                 a[j].xor_hint(a[i], lead[i]);
             }
@@ -50,16 +50,16 @@ void solve() {
     bitpack<maxn> x[maxn];
     for(auto [j, pj]: views::enumerate(free)) {
         x[j].set(pj);
-        for(int i = 0; i < n; i++) {
+        for(size_t i = 0; i < n; i++) {
             if(lead[i] < m && a[i][pj]) {
                 x[j].set(lead[i]);
             }
         }
     }
-    int rk = size(free) - 1;
+    size_t rk = size(free) - 1;
     swap(x[0], x[rk]);
     cout << rk << "\n";
-    for(int i = 0; i <= rk; i++) {
+    for(size_t i = 0; i <= rk; i++) {
         cout << x[i].to_string().substr(0, m) << "\n";
     }
 }

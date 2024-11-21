@@ -462,7 +462,7 @@ namespace cp_algo::math {
             if(is_zero()) {
                 return *this;
             }
-            int n = p.size();
+            size_t n = p.size();
             std::vector<poly_t> tree(4 * n);
             build(tree, 1, begin(p), end(p));
             return to_newton(tree, 1, begin(p), end(p));
@@ -481,7 +481,7 @@ namespace cp_algo::math {
         }
         
         std::vector<T> eval(std::vector<T> x) { // evaluate polynomial in (x1, ..., xn)
-            int n = x.size();
+            size_t n = x.size();
             if(is_zero()) {
                 return std::vector<T>(n, T(0));
             }
@@ -502,7 +502,7 @@ namespace cp_algo::math {
         }
         
         static auto inter(std::vector<T> x, std::vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
-            int n = x.size();
+            size_t n = x.size();
             std::vector<poly_t> tree(4 * n);
             return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(y), end(y));
         }
@@ -600,11 +600,11 @@ namespace cp_algo::math {
         // Find [x^k] P / Q
         static T kth_rec_inplace(poly_t &P, poly_t &Q, int64_t k) {
             while(k > Q.deg()) {
-                int n = Q.a.size();
+                size_t n = Q.a.size();
                 auto [Q0, Q1] = Q.bisect();
                 auto [P0, P1] = P.bisect();
                 
-                int N = fft::com_size((n + 1) / 2, (n + 1) / 2);
+                size_t N = fft::com_size((n + 1) / 2, (n + 1) / 2);
                 
                 auto Q0f = fft::dft<T>(Q0.a, N);
                 auto Q1f = fft::dft<T>(Q1.a, N);
@@ -619,7 +619,7 @@ namespace cp_algo::math {
                 }
                 k /= 2;
             }
-            return (P *= Q.inv_inplace(Q.deg() + 1))[k];
+            return (P *= Q.inv_inplace(Q.deg() + 1))[(int)k];
         }
         static T kth_rec(poly_t const& P, poly_t const& Q, int64_t k) {
             return kth_rec_inplace(poly_t(P), poly_t(Q), k);
@@ -638,7 +638,7 @@ namespace cp_algo::math {
             return poly::impl::inv_inplace(*this, k, n);
         }
         poly_t inv(int64_t k, size_t n) const {
-            return poly_t(*this).inv_inplace(k, n);;
+            return poly_t(*this).inv_inplace(k, n);
         }
         
         // compute A(B(x)) mod x^n in O(n^2)

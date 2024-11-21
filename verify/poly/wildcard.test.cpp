@@ -33,7 +33,7 @@ string matches(string const& A, string const& B, char wild = '*') {
     if(!init) {
         init = true;
         for(int i = 0; i < sigma; i++) {
-            project[0][i] = polar(1., (ftype)cp_algo::random::rng());
+            project[0][i] = cp_algo::polar(1., (ftype)cp_algo::random::rng());
             project[1][i] = conj(project[0][i]);
         }
     }

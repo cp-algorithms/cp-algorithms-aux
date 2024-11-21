@@ -14,7 +14,7 @@ namespace cp_algo {
         }
         original.reserve(size(coords));
         radix_sort(coords);
-        size_t idx = -1;
+        int idx = -1;
         T prev = ~coords.front();
         for(auto &x: coords) {
             if(x != prev) {

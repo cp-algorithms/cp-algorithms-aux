@@ -43,7 +43,7 @@ namespace cp_algo::structures {
             if(order >= sz) {
                 return -1;
             }
-            auto [x, pref] = Base::prefix_lower_bound(order);
+            auto [x, pref] = Base::prefix_lower_bound((int)order);
             return x * word + kth_set_bit(bits.word(x), order - pref);
         }
         size_t lower_bound(size_t x) const {

@@ -33,15 +33,15 @@ void solve() {
         } else if(t == 1) {
             me.erase(x);
         } else if(t == 2) {
-            int res = me.find_by_order(x-1);
+            auto res = (int)me.find_by_order(x-1);
             cout << (res == -1 ? -1 : values[res]) << '\n';
         } else if(t == 3) {
             cout << me.order_of_key(x+1) << '\n';
         } else if(t == 4) {
-            int res = me.pre_upper_bound(x);
+            auto res = (int)me.pre_upper_bound(x);
             cout << (res == -1 ? -1 : values[res]) << '\n';
         } else if(t == 5) {
-            int res = me.lower_bound(x);
+            auto res = (int)me.lower_bound(x);
             cout << (res == -1 ? -1 : values[res]) << '\n';
         }
     }

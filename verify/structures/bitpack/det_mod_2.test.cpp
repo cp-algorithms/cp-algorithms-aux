@@ -16,7 +16,7 @@ void solve() {
     int n;
     cin >> n;
     string row;
-    vector<int> lead(n);
+    vector<size_t> lead(n);
     for(int i = 0; i < n; i++) {
         cin >> row;
         a[i] = row;

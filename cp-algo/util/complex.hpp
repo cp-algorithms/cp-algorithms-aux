@@ -4,6 +4,7 @@
 namespace cp_algo {
     template<typename T>
     struct complex {
+        using value_type = T;
         T x, y;
         constexpr complex() {}
         constexpr complex(T x): x(x), y(0) {}
@@ -26,7 +27,7 @@ namespace cp_algo {
         T abs() const {return std::sqrt(norm());}
         T real() const {return x;}
         T imag() const {return y;}
-        static complex polar(T r, T theta) {return {r * std::cos(theta), r * std::sin(theta)};}
+        static complex polar(T r, T theta) {return {r * cos(theta), r * sin(theta)};}
         auto operator <=> (complex const& t) const = default;
     };
     template<typename T>

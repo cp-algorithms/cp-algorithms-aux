@@ -1,7 +1,6 @@
 // @brief Wildcard Pattern Matching
 #define PROBLEM "https://judge.yosupo.jp/problem/wildcard_pattern_matching"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
 #include "cp-algo/math/fft.hpp"
 #include "cp-algo/random/rng.hpp"
 #include <bits/stdc++.h>

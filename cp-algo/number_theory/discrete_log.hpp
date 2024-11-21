@@ -15,10 +15,10 @@ namespace cp_algo::math {
         // a * b^x is periodic here
         using base = dynamic_modint<>;
         return base::with_mod(m, [&]() -> std::optional<uint64_t> {
-            size_t sqrtmod = std::max<size_t>(1, std::sqrt(m) / 2);
+            int sqrtmod = std::max(1, (int)std::sqrt(m) / 2);
             std::unordered_map<int64_t, int> small;
             base cur = a;
-            for(size_t i = 0; i < sqrtmod; i++) {
+            for(int i = 0; i < sqrtmod; i++) {
                 small[cur.getr()] = i;
                 cur *= b;
             }

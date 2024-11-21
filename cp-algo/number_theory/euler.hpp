@@ -3,7 +3,7 @@
 #include "factorize.hpp"
 namespace cp_algo::math {
     int64_t euler_phi(int64_t m) {
-        auto primes = factorize(m);
+        auto primes = to<std::vector>(factorize(m));
         std::ranges::sort(primes);
         auto [from, to] = std::ranges::unique(primes);
         primes.erase(from, to);

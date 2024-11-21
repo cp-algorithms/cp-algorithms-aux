@@ -16,7 +16,7 @@ namespace cp_algo::graph {
             adj.push(u, (edge_index)size(edges));
             edges.push_back(e);
             if constexpr (undirected) {
-                adj.push(e.to, size(edges));
+                adj.push(e.to, (edge_index)size(edges));
             }
             edges.push_back(e.backedge(u));
         }
@@ -44,15 +44,14 @@ namespace cp_algo::graph {
             return std::views::iota(0, n());
         }
         auto edges_view() const {
-            return std::views::filter(
-                std::views::iota(0, 2 * m()),
+            return std::views::iota(0, 2 * m()) | std::views::filter(
                 [](edge_index e) {return !(e % 2);}
             );
         }
         auto const& incidence_lists() const {return adj;}
         edge_t const& edge(edge_index e) const {return edges[e];}
         node_index n() const {return (node_index)adj.size();}
-        edge_index m() const {return size(edges) / 2;}
+        edge_index m() const {return (edge_index)size(edges) / 2;}
     private:
         node_index v0;
         std::vector<edge_t> edges;

@@ -2,6 +2,7 @@
 #define CP_ALGO_UTIL_COMPLEX_HPP
 #include <cmath>
 namespace cp_algo {
+    // Custom implementation, since std::complex is UB on non-floating types
     template<typename T>
     struct complex {
         using value_type = T;

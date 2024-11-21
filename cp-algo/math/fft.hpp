@@ -4,7 +4,6 @@
 #include "../number_theory/modint.hpp"
 #include "../util/complex.hpp"
 #include <algorithm>
-#include <complex>
 #include <cassert>
 #include <ranges>
 #include <vector>

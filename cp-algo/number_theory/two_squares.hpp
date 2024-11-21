@@ -1,13 +1,13 @@
 #ifndef CP_ALGO_NUMBER_THEORY_TWO_SQUARES_HPP
 #define CP_ALGO_NUMBER_THEORY_TWO_SQUARES_HPP
 #include "euler.hpp"
+#include "../util/complex.hpp"
 #include <cassert>
-#include <complex>
 #include <utility>
 #include <vector>
 #include <map>
 namespace cp_algo::math {
-    using gaussint = std::complex<int64_t>;
+    using gaussint = complex<int64_t>;
     gaussint two_squares_prime_any(int64_t p) {
         if(p == 2) {
             return gaussint(1, 1);

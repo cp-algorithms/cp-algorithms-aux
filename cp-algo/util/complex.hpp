@@ -27,14 +27,18 @@ namespace cp_algo {
         T abs() const {return std::sqrt(norm());}
         T real() const {return x;}
         T imag() const {return y;}
+        T& real() {return x;}
+        T& imag() {return y;}
         static complex polar(T r, T theta) {return {r * cos(theta), r * sin(theta)};}
         auto operator <=> (complex const& t) const = default;
     };
     template<typename T>
-    complex<T> operator * (auto x, complex<T> y) {return y * x;}
+    complex<T> operator * (auto x, complex<T> y) {return y *= x;}
     template<typename T> complex<T> conj(complex<T> x) {return x.conj();}
     template<typename T> T norm(complex<T> x) {return x.norm();}
     template<typename T> T abs(complex<T> x) {return x.abs();}
+    template<typename T> T& real(complex<T> &x) {return x.real();}
+    template<typename T> T& imag(complex<T> &x) {return x.imag();}
     template<typename T> T real(complex<T> x) {return x.real();}
     template<typename T> T imag(complex<T> x) {return x.imag();}
     template<typename T> complex<T> polar(T r, T theta) {return complex<T>::polar(r, theta);}

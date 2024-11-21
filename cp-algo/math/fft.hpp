@@ -87,7 +87,7 @@ namespace cp_algo::math::fft {
             pt cur;
             pt arg = to_pt<pt>(root<point>(n, step));
             for(size_t i = 0; i < m; i += step) {
-                if(i % 64 == 0 || n < pre_roots) {
+                if(i % 32 == 0 || n < pre_roots) {
                     cur = root<pt>(n, i);
                 } else {
                     cur *= arg;
@@ -274,7 +274,7 @@ namespace cp_algo::math::fft {
             a.resize(k);
             for(int j = int(k - 1); j >= 0; j--) {
                 a[j] *= b[0];
-                for(size_t i = std::max<size_t>(j - n, 0) + 1; i < std::min<size_t>(j + 1, m); i++) {
+                for(int i = std::max(j - (int)n, 0) + 1; i < std::min(j + 1, (int)m); i++) {
                     a[j] += a[j - i] * b[i];
                 }
             }

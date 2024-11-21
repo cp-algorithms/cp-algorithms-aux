@@ -18,7 +18,7 @@ namespace cp_algo::math::fft {
     static constexpr size_t flen = vftype::size();
 
     struct cvector {
-        static constexpr size_t pre_roots = 1 << 19;
+        static constexpr size_t pre_roots = 1 << 18;
         std::vector<vftype> x, y;
         cvector(size_t n) {
             n = std::max(flen, std::bit_ceil(n));
@@ -57,12 +57,12 @@ namespace cp_algo::math::fft {
             }
         }
         static const cvector roots;
-        template<class pt = point, bool precalc = false>
-        static pt root(size_t n, size_t k, auto &&arg) {
+        template< bool precalc = false, class ft = point>
+        static auto root(size_t n, size_t k, ft &&arg) {
             if(n < pre_roots && !precalc) {
-                return roots.get<pt>(n + k);
+                return roots.get<complex<ft>>(n + k);
             } else {
-                return polar<typename pt::value_type>(1., arg);
+                return complex<ft>::polar(1., arg);
             }
         }
         template<class pt = point, bool precalc = false>
@@ -78,7 +78,7 @@ namespace cp_algo::math::fft {
                 }
             }();
             for(size_t i = 0; i < m; i += step, k += (ftype)step) {
-                callback(i, root<pt, precalc>(n, i, arg * k));
+                callback(i, root<precalc>(n, i, arg * k));
             }
         }
 
@@ -93,7 +93,7 @@ namespace cp_algo::math::fft {
                         set(k, get<pt>(k) + t);
                     };
                     if(i < flen) {
-                        exec_on_roots(i, i, butterfly);
+                        exec_on_roots<point>(i, i, butterfly);
                     } else {
                         exec_on_roots<vpoint>(i, i, butterfly);
                     }
@@ -115,7 +115,7 @@ namespace cp_algo::math::fft {
                         set(k + i, B * rt);
                     };
                     if(i < flen) {
-                        exec_on_roots(i, i, butterfly);
+                        exec_on_roots<point>(i, i, butterfly);
                     } else {
                         exec_on_roots<vpoint>(i, i, butterfly);
                     }

@@ -1,6 +1,6 @@
 #ifndef CP_ALGO_STRUCTURES_BIT_ARRAY_HPP
 #define CP_ALGO_STRUCTURES_BIT_ARRAY_HPP
-#include "cp-algo/util/bit.hpp"
+#include "../util/bit.hpp"
 namespace cp_algo::structures {
     template<size_t N, typename Uint = uint64_t>
     struct bit_array {

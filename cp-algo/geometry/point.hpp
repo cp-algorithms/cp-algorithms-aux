@@ -1,7 +1,6 @@
 #ifndef CP_ALGO_GEOMETRY_POINT_HPP
 #define CP_ALGO_GEOMETRY_POINT_HPP
-#include "cp-algo/util/complex.hpp"
-#include "cp-algo/random/rng.hpp"
+#include "../util/complex.hpp"
 #include <iostream>
 namespace cp_algo::geometry {
     template<typename ftype>

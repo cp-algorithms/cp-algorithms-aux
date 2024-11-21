@@ -8,7 +8,7 @@ namespace cp_algo::structures::treap {
     struct node {
         using treap = node*;
         meta _meta;
-        int prior = random::rng();
+        int prior = (int)random::rng();
         size_t size = 1;
         treap children[2] = {nullptr, nullptr};
         enum subtree {L, R};

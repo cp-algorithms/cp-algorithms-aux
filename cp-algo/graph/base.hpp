@@ -13,7 +13,7 @@ namespace cp_algo::graph {
         graph(int n, int v0 = 0): v0(v0), adj(n) {}
 
         void add_edge(node_index u, edge_t e) {
-            adj.push(u, size(edges));
+            adj.push(u, (edge_index)size(edges));
             edges.push_back(e);
             if constexpr (undirected) {
                 adj.push(e.to, size(edges));
@@ -51,7 +51,7 @@ namespace cp_algo::graph {
         }
         auto const& incidence_lists() const {return adj;}
         edge_t const& edge(edge_index e) const {return edges[e];}
-        node_index n() const {return adj.size();}
+        node_index n() const {return (node_index)adj.size();}
         edge_index m() const {return size(edges) / 2;}
     private:
         node_index v0;

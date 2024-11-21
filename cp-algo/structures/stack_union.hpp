@@ -9,7 +9,7 @@ namespace cp_algo::structures {
 
         void push(int v, datatype const& vdata) {
             next.push_back(head[v]);
-            head[v] = std::size(next) - 1;
+            head[v] = (int)std::size(next) - 1;
             data.push_back(vdata);
         }
         template<typename... Args>

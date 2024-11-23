@@ -1,7 +1,6 @@
 #ifndef CP_ALGO_MATH_POLY_HPP
 #define CP_ALGO_MATH_POLY_HPP
 #include "poly/impl/euclid.hpp"
-#include "poly/impl/base.hpp"
 #include "poly/impl/div.hpp"
 #include "combinatorics.hpp"
 #include "../number_theory/discrete_sqrt.hpp"
@@ -19,42 +18,60 @@ namespace cp_algo::math {
         using base = T;
         std::vector<T> a;
         
-        void normalize() {poly::impl::normalize(*this);}
+        poly_t& normalize() {
+            while(deg() >= 0 && lead() == base(0)) {
+                a.pop_back();
+            }
+            return *this;
+        }
         
         poly_t(){}
         poly_t(T a0): a{a0} {normalize();}
         poly_t(std::vector<T> const& t): a(t) {normalize();}
         poly_t(std::vector<T>&& t): a(std::move(t)) {normalize();}
         
-        poly_t operator -() const {return poly::impl::neg_inplace(poly_t(*this));}
-        poly_t& operator += (poly_t const& t) {return poly::impl::add(*this, t);}
-        poly_t& operator -= (poly_t const& t) {return poly::impl::sub(*this, t);}
+        poly_t& negate_inplace() {
+            std::ranges::transform(a, begin(a), std::negate{});
+            return *this;
+        }
+        poly_t operator -() const {
+            return poly_t(*this).negate_inplace();
+        }
+        poly_t& operator += (poly_t const& t) {
+            a.resize(std::max(size(a), size(t.a)));
+            std::ranges::transform(a, t.a, begin(a), std::plus{});
+            return normalize();
+        }
+        poly_t& operator -= (poly_t const& t) {
+            a.resize(std::max(size(a), size(t.a)));
+            std::ranges::transform(a, t.a, begin(a), std::minus{});
+            return normalize();
+        }
         poly_t operator + (poly_t const& t) const {return poly_t(*this) += t;}
         poly_t operator - (poly_t const& t) const {return poly_t(*this) -= t;}
         
         poly_t& mod_xk_inplace(size_t k) {
             a.resize(std::min(size(a), k));
-            normalize();
-            return *this;
+            return normalize();
         }
         poly_t& mul_xk_inplace(size_t k) {
             a.insert(begin(a), k, T(0));
-            normalize();
-            return *this;
+            return normalize();
         }
         poly_t& div_xk_inplace(int64_t k) {
             if(k < 0) {
                 return mul_xk_inplace(-k);
             }
             a.erase(begin(a), begin(a) + std::min<size_t>(k, size(a)));
-            normalize();
-            return *this;
+            return normalize();
+        }
+        poly_t &substr_inplace(size_t l, size_t k) {
+            return mod_xk_inplace(l + k).div_xk_inplace(l);
         }
         poly_t mod_xk(size_t k) const {return poly_t(*this).mod_xk_inplace(k);}
         poly_t mul_xk(size_t k) const {return poly_t(*this).mul_xk_inplace(k);}
         poly_t div_xk(int64_t k) const {return poly_t(*this).div_xk_inplace(k);}
-        
-        poly_t substr(size_t l, size_t k) const {return poly::impl::substr(*this, l, k);}
+        poly_t substr(size_t l, size_t k) const {return poly_t(*this).substr_inplace(l, k);}
         
         poly_t& operator *= (const poly_t &t) {fft::mul(a, t.a); normalize(); return *this;}
         poly_t operator * (const poly_t &t) const {return poly_t(*this) *= t;}
@@ -64,12 +81,21 @@ namespace cp_algo::math {
         poly_t operator / (poly_t const& t) const {return poly_t(*this) /= t;}
         poly_t operator % (poly_t const& t) const {return poly_t(*this) %= t;}
 
-        poly_t& operator *= (T const& x) {return *this = poly::impl::scale(*this, x);}
+        poly_t& operator *= (T const& x) {
+            for(auto &it: a) {
+                it *= x;
+            }
+            return normalize();
+        }
         poly_t& operator /= (T const& x) {return *this *= x.inv();}
         poly_t operator * (T const& x) const {return poly_t(*this) *= x;}
         poly_t operator / (T const& x) const {return poly_t(*this) /= x;}
         
-        poly_t& reverse(size_t n) {return poly::impl::reverse(*this, n);}
+        poly_t& reverse(size_t n) {
+            a.resize(n);
+            std::ranges::reverse(a);
+            return normalize();
+        }
         poly_t& reverse() {return reverse(size(a));}
         poly_t reversed(size_t n) const {return poly_t(*this).reverse(n);}
         poly_t reversed() const {return poly_t(*this).reverse();}
@@ -208,8 +234,7 @@ namespace cp_algo::math {
         
         poly_t& mul_truncate(poly_t const& t, size_t k) {
             fft::mul_truncate(a, t.a, k);
-            normalize();
-            return *this;
+            return normalize();
         }
 
         poly_t& exp_inplace(size_t n) {

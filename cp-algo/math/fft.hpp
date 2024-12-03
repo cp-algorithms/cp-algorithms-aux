@@ -2,15 +2,14 @@
 #define CP_ALGO_MATH_FFT_HPP
 #include "../number_theory/modint.hpp"
 #include "cvector.hpp"
-#include <ranges>
 namespace cp_algo::math::fft {
     template<typename base>
     struct dft {
-        cvector A;
+        ftvec A;
         
         dft(std::vector<base> const& a, size_t n): A(n) {
             for(size_t i = 0; i < std::min(n, a.size()); i++) {
-                A.set(i, a[i]);
+                A[i] = a[i];
             }
             if(n) {
                 A.fft();
@@ -27,7 +26,7 @@ namespace cp_algo::math::fft {
             A.ifft();
             std::vector<base> res(n);
             for(size_t k = 0; k < n; k++) {
-                res[k] = A.get(k);
+                res[k] = A[k];
             }
             return res;
         }
@@ -35,22 +34,22 @@ namespace cp_algo::math::fft {
         auto operator * (dft const& B) const {
             return dft(*this) *= B;
         }
-
-        point operator [](int i) const {return A.get(i);}
     };
 
     template<modint_type base>
     struct dft<base> {
         int split;
-        cvector A, B;
+        ftvec A, B;
         
         dft(auto const& a, size_t n): A(n), B(n) {
-            split = int(std::sqrt(base::mod()));
-            cvector::exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
+            n = size(A);
+            split = int(std::sqrt(base::mod())) + 1;
+            ftvec::exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
                 size_t ti = std::min(i, i - n);
-                A.set(ti, A.get(ti) + ftype(a[i].rem() % split) * rt);
-                B.set(ti, B.get(ti) + ftype(a[i].rem() / split) * rt);
-    
+                auto rem = std::remainder(a[i].rem(), split);
+                auto quo = (a[i].rem() - rem) / split;
+                A[ti] += rem * rt;
+                B[ti] += quo * rt;
             });
             if(n) {
                 A.fft();
@@ -65,21 +64,26 @@ namespace cp_algo::math::fft {
                 res = {};
                 return;
             }
-            for(size_t i = 0; i < n; i += flen) {
-                auto tmp = A.vget(i) * D.vget(i) + B.vget(i) * C.vget(i);
-                A.set(i, A.vget(i) * C.vget(i));
-                B.set(i, B.vget(i) * D.vget(i));
-                C.set(i, tmp);
+            for(size_t i = 0; i < n; i += ftvec::threshold) {
+                auto AC = ftvec::dot_block(i, A, C);
+                auto AD = ftvec::dot_block(i, A, D);
+                auto BC = ftvec::dot_block(i, B, C);
+                auto BD = ftvec::dot_block(i, B, D);
+                for(size_t j = 0; j < ftvec::threshold; j++) {
+                    A[i + j] = AC[j];
+                    C[i + j] = AD[j] + BC[j];
+                    B[i + j] = BD[j];
+                }
             }
             A.ifft();
             B.ifft();
             C.ifft();
             auto splitsplit = (base(split) * split).rem();
-            cvector::exec_on_roots(2 * n, std::min(n, k), [&](size_t i, point rt) {
+            ftvec::exec_on_roots(2 * n, std::min(n, k), [&](size_t i, point rt) {
                 rt = conj(rt);
-                auto Ai = A.get(i) * rt;
-                auto Bi = B.get(i) * rt;
-                auto Ci = C.get(i) * rt;
+                auto Ai = A[i] * rt;
+                auto Bi = B[i] * rt;
+                auto Ci = C[i] * rt;
                 int64_t A0 = llround(real(Ai));
                 int64_t A1 = llround(real(Ci));
                 int64_t A2 = llround(real(Bi));
@@ -97,7 +101,7 @@ namespace cp_algo::math::fft {
             mul(B.A, B.B, res, k);
         }
         void mul(auto const& B, auto& res, size_t k) {
-            mul(cvector(B.A), B.B, res, k);
+            mul(ftvec(B.A), B.B, res, k);
         }
         std::vector<base> operator *= (dft &B) {
             std::vector<base> res(2 * A.size());
@@ -112,8 +116,6 @@ namespace cp_algo::math::fft {
         auto operator * (dft const& B) const {
             return dft(*this) *= B;
         }
-        
-        point operator [](int i) const {return A.get(i);}
     };
     
     void mul_slow(auto &a, auto const& b, size_t k) {
@@ -135,17 +137,15 @@ namespace cp_algo::math::fft {
         if(!as || !bs) {
             return 0;
         }
-        return std::max(flen, std::bit_ceil(as + bs - 1) / 2);
+        return std::bit_ceil(as + bs - 1) / 2;
     }
     void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
-        if(std::min({k, size(a), size(b)}) < magic) {
+        if(std::min({k, size(a), size(b)}) < 1) {
             mul_slow(a, b, k);
             return;
         }
-        auto n = std::max(flen, std::bit_ceil(
-            std::min(k, size(a)) + std::min(k, size(b)) - 1
-        ) / 2);
+        auto n = std::bit_ceil(std::min(k, size(a)) + std::min(k, size(b)) - 1) / 2;
         a.resize(k);
         auto A = dft<base>(a, n);
         if(&a == &b) {

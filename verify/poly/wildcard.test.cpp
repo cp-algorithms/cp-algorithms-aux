@@ -8,9 +8,9 @@
 using namespace std;
 using namespace cp_algo::math;
 
-using fft::ftype;
-using fft::point;
-using fft::cvector;
+using ftype = double;
+using point = complex<ftype>;
+using cvector = fft::ftvec;
 
 void semicorr(auto &a, auto &b) {
     a.fft();
@@ -32,7 +32,7 @@ string matches(string const& A, string const& B, char wild = '*') {
     if(!init) {
         init = true;
         for(int i = 0; i < sigma; i++) {
-            project[0][i] = cp_algo::polar(1., (ftype)cp_algo::random::rng());
+            project[0][i] = polar(1., (ftype)cp_algo::random::rng());
             project[1][i] = conj(project[0][i]);
         }
     }
@@ -44,13 +44,13 @@ string matches(string const& A, string const& B, char wild = '*') {
             char c = ST[i]->at(k);
             size_t idx = i ? N - k - 1 : k;
             point val = c == wild ? 0 : project[i][c - 'a'];
-            P[i].set(idx, val);
+            P[i][idx] = val;
         }
     }
     semicorr(P[0], P[1]);
     string ans(size(A) - size(B) + 1, '0');
     for(size_t j = 0; j < size(ans); j++) {
-        ans[j] = '0' + is_integer(P[0].get(size(B) - 1 + j));
+        ans[j] = '0' + is_integer(P[0][size(B) - 1 + j]);
     }
     return ans;
 }

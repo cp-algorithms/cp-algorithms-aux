@@ -13,7 +13,7 @@ namespace cp_algo::math::fft {
             cvector::exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
                 size_t ti = std::min(i, i - n);
                 auto rem = std::remainder(a[i].rem(), split);
-                auto quo = (a[i].rem() - rem) / split;
+                auto quo = (ftype(a[i].rem()) - rem) / split;
                 A.set(ti, A.get(ti) + rem * rt);
                 B.set(ti, B.get(ti) + quo * rt);
     

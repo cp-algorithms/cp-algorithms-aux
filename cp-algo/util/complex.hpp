@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_UTIL_COMPLEX_HPP
 #define CP_ALGO_UTIL_COMPLEX_HPP
+#include <iostream>
 #include <cmath>
 namespace cp_algo {
     // Custom implementation, since std::complex is UB on non-floating types
@@ -43,5 +44,9 @@ namespace cp_algo {
     template<typename T> T real(complex<T> const& x) {return x.real();}
     template<typename T> T imag(complex<T> const& x) {return x.imag();}
     template<typename T> complex<T> polar(T r, T theta) {return complex<T>::polar(r, theta);}
+    template<typename T>
+    std::ostream& operator << (std::ostream &out, complex<T> x) {
+        return out << x.real() << ' ' << x.imag();
+    }
 }
 #endif // CP_ALGO_UTIL_COMPLEX_HPP

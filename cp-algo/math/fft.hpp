@@ -1,10 +1,13 @@
 #ifndef CP_ALGO_MATH_FFT_HPP
 #define CP_ALGO_MATH_FFT_HPP
 #include "../number_theory/modint.hpp"
+#include "../util/checkpoint.hpp"
 #include "cvector.hpp"
+#include <ranges>
+#include <iostream>
 namespace cp_algo::math::fft {
     template<modint_type base>
-    struct dft<base> {
+    struct dft {
         int split;
         cvector A, B;
         
@@ -18,6 +21,7 @@ namespace cp_algo::math::fft {
                 B.set(ti, B.get(ti) + quo * rt);
     
             });
+            checkpoint("dft init");
             if(n) {
                 A.fft();
                 B.fft();
@@ -31,12 +35,47 @@ namespace cp_algo::math::fft {
                 res = {};
                 return;
             }
-            for(size_t i = 0; i < n; i += flen) {
-                auto tmp = A.vget(i) * D.vget(i) + B.vget(i) * C.vget(i);
-                A.set(i, A.vget(i) * C.vget(i));
-                B.set(i, B.vget(i) * D.vget(i));
-                C.set(i, tmp);
+            for(size_t k = 0; k < n; k += flen) {
+                auto rt = cvector::eval_point(k / flen / 2);
+                if(k / flen % 2) {
+                    rt = -rt;
+                }
+                auto [Ax, Ay] = A.vget(k);
+                auto [Bx, By] = B.vget(k);
+                auto [Cvx, Cvy] = C.vget(k);
+                auto [Dvx, Dvy] = D.vget(k);
+                auto [Crvx, Crvy] = vpoint(Cvx, Cvy) * vpoint(real(rt), imag(rt));
+                auto [Drvx, Drvy] = vpoint(Dvx, Dvy) * vpoint(real(rt), imag(rt));
+                ftype Cx[2 * flen], Cy[2 * flen];
+                ftype Dx[2 * flen], Dy[2 * flen];
+                Cvx.copy_to(Cx + flen, std::experimental::vector_aligned);
+                Cvy.copy_to(Cy + flen, std::experimental::vector_aligned);
+                Dvx.copy_to(Dx + flen, std::experimental::vector_aligned);
+                Dvy.copy_to(Dy + flen, std::experimental::vector_aligned);
+                Crvx.copy_to(Cx, std::experimental::vector_aligned);
+                Crvy.copy_to(Cy, std::experimental::vector_aligned);
+                Drvx.copy_to(Dx, std::experimental::vector_aligned);
+                Drvy.copy_to(Dy, std::experimental::vector_aligned);
+                vpoint AC, AD, BC, BD;
+                AC = AD = BC = BD = {0, 0};
+                for(size_t i = 0; i < flen; i++) {
+                    vftype Csx, Csy, Dsx, Dsy;
+                    Csx.copy_from(Cx + flen - i, std::experimental::element_aligned);
+                    Csy.copy_from(Cy + flen - i, std::experimental::element_aligned);
+                    Dsx.copy_from(Dx + flen - i, std::experimental::element_aligned);
+                    Dsy.copy_from(Dy + flen - i, std::experimental::element_aligned);
+                    vpoint As = {Ax[i], Ay[i]}, Bs = {Bx[i], By[i]};
+                    vpoint Cs = {Csx, Csy}, Ds = {Dsx, Dsy};
+                    AC += As * Cs;
+                    AD += As * Ds;
+                    BC += Bs * Cs;
+                    BD += Bs * Ds;
+                }
+                A.set(k, AC);
+                C.set(k, AD + BC);
+                B.set(k, BD);
             }
+            checkpoint("dot");
             A.ifft();
             B.ifft();
             C.ifft();
@@ -58,6 +97,7 @@ namespace cp_algo::math::fft {
                 int64_t B2 = llround(imag(Bi));
                 res[n + i] = B0 + B1 * split + B2 * splitsplit;
             });
+            checkpoint("recover mod");
         }
         void mul_inplace(auto &&B, auto& res, size_t k) {
             mul(B.A, B.B, res, k);

@@ -32,12 +32,14 @@ string matches(string const& A, string const& B, char wild = '*') {
     if(!init) {
         init = true;
         for(int i = 0; i < sigma; i++) {
-            project[0][i] = std::polar(1., (ftype)cp_algo::random::rng());
+            project[0][i] = cp_algo::polar(1., (ftype)cp_algo::random::rng());
             project[1][i] = conj(project[0][i]);
         }
     }
     array ST = {&A, &B};
-    vector<cvector> P(2, size(A));
+    vector<cvector> P;
+    P.emplace_back(size(A));
+    P.emplace_back(size(A));
     for(int i: {0, 1}) {
         size_t N = ST[i]->size();
         for(size_t k = 0; k < N; k++) {

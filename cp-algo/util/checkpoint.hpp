@@ -4,6 +4,7 @@
 #include <chrono>
 #include <string>
 namespace cp_algo {
+    template<bool final = false>
     void checkpoint([[maybe_unused]] std::string const& msg = "") {
 #ifdef CP_ALGO_CHECKPOINT
         static double last = 0;
@@ -11,7 +12,7 @@ namespace cp_algo {
         double delta = now - last;
         last = now;
         if(msg.size()) {
-            std::cerr << msg << ": " << delta * 1000 << " ms\n";
+            std::cerr << msg << ": " << (final ? now : delta) * 1000 << " ms\n";
         }
 #endif
     }

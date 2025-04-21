@@ -58,7 +58,10 @@ string matches(string const& A, string const& B, char wild = '*') {
 void solve() {
     string a, b;
     cin >> a >> b;
+    cp_algo::checkpoint("input");
     cout << matches(a, b) << "\n";
+    cp_algo::checkpoint("output");
+    cp_algo::checkpoint<true>("done");
 }
 
 signed main() {

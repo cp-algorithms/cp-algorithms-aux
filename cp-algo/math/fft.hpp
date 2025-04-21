@@ -15,7 +15,7 @@ namespace cp_algo::math::fft {
             split = int(std::sqrt(base::mod())) + 1;
             cvector::exec_on_roots(2 * n, std::min(n, size(a)), [&](size_t i, auto rt) {
                 auto splt = [&](size_t i) {
-                    ftype ai = i < size(a) ? a[i].rem() : 0;
+                    auto ai = ftype(i < size(a) ? a[i].rem() : 0);
                     auto rem = std::remainder(ai, split);
                     auto quo = (ai - rem) / split;
                     return std::pair{rem, quo};

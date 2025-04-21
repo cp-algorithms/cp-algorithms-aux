@@ -158,7 +158,7 @@ namespace cp_algo::math::fft {
         auto n = std::max(flen, std::bit_ceil(
             std::min(k, size(a)) + std::min(k, size(b)) - 1
         ) / 2);
-        auto A = dft<base>(a, n);
+        auto A = dft<base>(a | std::views::take(k), n);
         a.resize(k);
         checkpoint("resize a");
         if(&a == &b) {

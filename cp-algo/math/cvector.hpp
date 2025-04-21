@@ -147,12 +147,12 @@ namespace cp_algo::math::fft {
             for(size_t i = flen; i <= n / 2; i *= 2) {
                 exec_on_evals(n / (2 * i), [&](size_t k, point rt) {
                     k *= 2 * i;
-                    vpoint vrt = {real(rt), imag(rt)};
+                    vpoint cvrt = {real(rt), -imag(rt)};
                     for(size_t j = k; j < k + i; j += flen) {
                         auto A = get<vpoint>(j) + get<vpoint>(j + i);
                         auto B = get<vpoint>(j) - get<vpoint>(j + i);
                         set(j, A);
-                        set(j + i, B * conj(vrt));
+                        set(j + i, B * cvrt);
                     }
                 });
             }

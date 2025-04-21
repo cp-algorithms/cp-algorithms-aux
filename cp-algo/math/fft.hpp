@@ -46,8 +46,10 @@ namespace cp_algo::math::fft {
                 auto [Dvx, Dvy] = D.vget(k);
                 auto [Crvx, Crvy] = vpoint(Cvx, Cvy) * vpoint(real(rt), imag(rt));
                 auto [Drvx, Drvy] = vpoint(Dvx, Dvy) * vpoint(real(rt), imag(rt));
-                ftype Cx[2 * flen], Cy[2 * flen];
-                ftype Dx[2 * flen], Dy[2 * flen];
+                alignas(32) ftype Cx[2 * flen];
+                alignas(32) ftype Cy[2 * flen];
+                alignas(32) ftype Dx[2 * flen];
+                alignas(32) ftype Dy[2 * flen];
                 Cvx.copy_to(Cx + flen, std::experimental::vector_aligned);
                 Cvy.copy_to(Cy + flen, std::experimental::vector_aligned);
                 Dvx.copy_to(Dx + flen, std::experimental::vector_aligned);

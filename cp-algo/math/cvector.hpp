@@ -55,7 +55,8 @@ namespace cp_algo::math::fft {
             auto [Bvx, Bvy] = B.vget(k);
             auto [Brvx, Brvy] = vpoint(Bvx, Bvy) * vpoint(real(rt), imag(rt));
             auto [Ax, Ay] = A.vget(k);
-            ftype Bx[2 * flen], By[2 * flen];
+            alignas(32) ftype Bx[2 * flen];
+            alignas(32) ftype By[2 * flen];
             Bvx.copy_to(Bx + flen, std::experimental::vector_aligned);
             Bvy.copy_to(By + flen, std::experimental::vector_aligned);
             Brvx.copy_to(Bx, std::experimental::vector_aligned);

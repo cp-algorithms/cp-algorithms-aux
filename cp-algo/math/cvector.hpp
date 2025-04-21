@@ -14,6 +14,39 @@ namespace cp_algo::math::fft {
     static constexpr size_t flen = vftype::size();
 
     struct cvector {
+        std::vector<vftype> x, y;
+        cvector(size_t n) {
+            n = std::max(flen, std::bit_ceil(n));
+            x.resize(n / flen);
+            y.resize(n / flen);
+            checkpoint("cvector create");
+        }
+        template<class pt = point>
+        void set(size_t k, pt t) {
+            if constexpr(std::is_same_v<pt, point>) {
+                x[k / flen][k % flen] = real(t);
+                y[k / flen][k % flen] = imag(t);
+            } else {
+                x[k / flen] = real(t);
+                y[k / flen] = imag(t);
+            }
+        }
+        template<class pt = point>
+        pt get(size_t k) const {
+            if constexpr(std::is_same_v<pt, point>) {
+                return {x[k / flen][k % flen], y[k / flen][k % flen]};
+            } else {
+                return {x[k / flen], y[k / flen]};
+            }
+        }
+        vpoint vget(size_t k) const {
+            return get<vpoint>(k);
+        }
+
+        size_t size() const {
+            return flen * std::size(x);
+        }
+
         static constexpr size_t pre_roots = 1 << 16;
         static constexpr std::array<point, pre_roots> roots = []() {
             std::array<point, pre_roots> res = {};
@@ -77,40 +110,6 @@ namespace cp_algo::math::fft {
                 callback(i, eval_point(i));
             }
         }
-        std::vector<vftype> x, y;
-        cvector(size_t n) {
-            n = std::max(flen, std::bit_ceil(n));
-            x.resize(n / flen);
-            y.resize(n / flen);
-            checkpoint("cvector create");
-        }
-        template<class pt = point>
-        void set(size_t k, pt t) {
-            if constexpr(std::is_same_v<pt, point>) {
-                x[k / flen][k % flen] = real(t);
-                y[k / flen][k % flen] = imag(t);
-            } else {
-                x[k / flen] = real(t);
-                y[k / flen] = imag(t);
-            }
-        }
-        template<class pt = point>
-        pt get(size_t k) const {
-            if constexpr(std::is_same_v<pt, point>) {
-                return {x[k / flen][k % flen], y[k / flen][k % flen]};
-            } else {
-                return {x[k / flen], y[k / flen]};
-            }
-        }
-        vpoint vget(size_t k) const {
-            return get<vpoint>(k);
-        }
-
-        size_t size() const {
-            return flen * std::size(x);
-        }
-
-
         static auto dot_block(size_t k, cvector const& A, cvector const& B) {
             auto rt = eval_point(k / flen / 2);
             if(k / flen % 2) {

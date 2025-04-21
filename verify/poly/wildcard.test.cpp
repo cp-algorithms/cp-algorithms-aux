@@ -52,6 +52,7 @@ string matches(string const& A, string const& B, char wild = '*') {
     for(size_t j = 0; j < size(ans); j++) {
         ans[j] = '0' + is_integer(P[0].get(size(B) - 1 + j));
     }
+    cp_algo::checkpoint("fill answer");
     return ans;
 }
 

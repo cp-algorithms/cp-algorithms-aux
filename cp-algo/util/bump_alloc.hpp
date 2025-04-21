@@ -5,8 +5,8 @@ namespace cp_algo {
     alignas(64) char buf[450 << 20];
     size_t buf_ind = sizeof buf;
     template<class T> struct bump_alloc {
-        typedef T value_type;
-        bump_alloc() {}
+        using value_type = T;
+        bump_alloc() = default;
         template<class U> bump_alloc(const U&) {}
         T* allocate(size_t n) {
             buf_ind -= n * sizeof(T);

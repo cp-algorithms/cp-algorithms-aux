@@ -10,7 +10,9 @@ namespace cp_algo {
         double delta = now - last;
         last = now;
         if(msg.size()) {
+#ifdef CP_ALGO_CHECKPOINT
             std::cerr << msg << ": " << delta * 1000 << " ms\n";
+#endif
         }
     }
 }

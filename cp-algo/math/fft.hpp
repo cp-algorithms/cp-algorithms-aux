@@ -13,13 +13,17 @@ namespace cp_algo::math::fft {
         
         dft(auto const& a, size_t n): A(n), B(n) {
             split = int(std::sqrt(base::mod())) + 1;
-            cvector::exec_on_roots(2 * n, size(a), [&](size_t i, point rt) {
-                size_t ti = std::min(i, i - n);
-                auto rem = std::remainder(a[i].rem(), split);
-                auto quo = (ftype(a[i].rem()) - rem) / split;
-                A.set(ti, A.get(ti) + rem * rt);
-                B.set(ti, B.get(ti) + quo * rt);
-    
+            cvector::exec_on_roots(2 * n, std::min(n, size(a)), [&](size_t i, auto rt) {
+                auto splt = [&](size_t i) {
+                    ftype ai = i < size(a) ? a[i].rem() : 0;
+                    auto rem = std::remainder(ai, split);
+                    auto quo = (ai - rem) / split;
+                    return std::pair{rem, quo};
+                };
+                auto [rai, qai] = splt(i);
+                auto [rani, qani] = splt(n + i);
+                A.set(i, point(rai, rani) * rt);
+                B.set(i, point(qai, qani) * rt);
             });
             checkpoint("dft init");
             if(n) {
@@ -154,8 +158,9 @@ namespace cp_algo::math::fft {
         auto n = std::max(flen, std::bit_ceil(
             std::min(k, size(a)) + std::min(k, size(b)) - 1
         ) / 2);
-        a.resize(k);
         auto A = dft<base>(a, n);
+        a.resize(k);
+        checkpoint("resize a");
         if(&a == &b) {
             A.mul(A, a, k);
         } else {

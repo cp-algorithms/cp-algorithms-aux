@@ -2,7 +2,7 @@
 #define CP_ALGO_UTIL_BUMP_ALLOC_HPP
 #include <cstddef>
 namespace cp_algo {
-    alignas(32) char buf[450 << 20];
+    alignas(64) char buf[450 << 20];
     size_t buf_ind = sizeof buf;
     template<class T> struct bump_alloc {
         typedef T value_type;

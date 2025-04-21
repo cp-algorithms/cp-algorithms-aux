@@ -4,10 +4,12 @@
 #include "../util/checkpoint.hpp"
 #include <experimental/simd>
 #include <ranges>
+
+namespace stdx = std::experimental;
 namespace cp_algo::math::fft {
     using ftype = double;
     using point = complex<ftype>;
-    using vftype = std::experimental::native_simd<ftype>;
+    using vftype = stdx::native_simd<ftype>;
     using vpoint = complex<vftype>;
     static constexpr size_t flen = vftype::size();
 
@@ -57,15 +59,15 @@ namespace cp_algo::math::fft {
             auto [Ax, Ay] = A.vget(k);
             alignas(32) ftype Bx[2 * flen];
             alignas(32) ftype By[2 * flen];
-            Bvx.copy_to(Bx + flen, std::experimental::vector_aligned);
-            Bvy.copy_to(By + flen, std::experimental::vector_aligned);
-            Brvx.copy_to(Bx, std::experimental::vector_aligned);
-            Brvy.copy_to(By, std::experimental::vector_aligned);
+            Bvx.copy_to(Bx + flen, stdx::vector_aligned);
+            Bvy.copy_to(By + flen, stdx::vector_aligned);
+            Brvx.copy_to(Bx, stdx::vector_aligned);
+            Brvy.copy_to(By, stdx::vector_aligned);
             vpoint res = {0, 0};
             for(size_t i = 0; i < flen; i++) {
                 vftype Bsx, Bsy;
-                Bsx.copy_from(Bx + flen - i, std::experimental::element_aligned);
-                Bsy.copy_from(By + flen - i, std::experimental::element_aligned);
+                Bsx.copy_from(Bx + flen - i, stdx::element_aligned);
+                Bsy.copy_from(By + flen - i, stdx::element_aligned);
                 res += vpoint(Ax[i], Ay[i]) * vpoint(Bsx, Bsy);
             }
             return res;

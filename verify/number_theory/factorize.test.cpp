@@ -27,4 +27,3 @@ signed main() {
         solve();
     }
 }
-

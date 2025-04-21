@@ -31,7 +31,7 @@ namespace cp_algo {
         T imag() const {return y;}
         T& real() {return x;}
         T& imag() {return y;}
-        static complex polar(T r, T theta) {return {r * cos(theta), r * sin(theta)};}
+        static constexpr complex polar(T r, T theta) {return {r * cos(theta), r * sin(theta)};}
         auto operator <=> (complex const& t) const = default;
     };
     template<typename T>
@@ -43,7 +43,10 @@ namespace cp_algo {
     template<typename T> T& imag(complex<T> &x) {return x.imag();}
     template<typename T> T real(complex<T> const& x) {return x.real();}
     template<typename T> T imag(complex<T> const& x) {return x.imag();}
-    template<typename T> complex<T> polar(T r, T theta) {return complex<T>::polar(r, theta);}
+    template<typename T>
+    constexpr complex<T> polar(T r, T theta) {
+        return complex<T>::polar(r, theta);
+    }
     template<typename T>
     std::ostream& operator << (std::ostream &out, complex<T> x) {
         return out << x.real() << ' ' << x.imag();

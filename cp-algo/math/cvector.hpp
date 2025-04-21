@@ -14,7 +14,69 @@ namespace cp_algo::math::fft {
     static constexpr size_t flen = vftype::size();
 
     struct cvector {
-        static constexpr size_t pre_roots = 1 << 15;
+        static constexpr size_t pre_roots = 1 << 16;
+        static constexpr std::array<point, pre_roots> roots = []() {
+            std::array<point, pre_roots> res = {};
+            for(size_t n = 1; n < res.size(); n *= 2) {
+                for(size_t k = 0; k < n; k++) {
+                    res[n + k] = polar(1., std::numbers::pi / ftype(n) * ftype(k));
+                }
+            }
+            return res;
+        }();
+        static constexpr std::array<size_t, pre_roots> eval_args = []() {
+            std::array<size_t, pre_roots> res = {};
+            for(size_t i = 1; i < pre_roots; i++) {
+                res[i] = res[i >> 1] | (i & 1) << (std::bit_width(i) - 1);
+            }
+            return res;
+        }();
+        static constexpr std::array<point, pre_roots> evalp = []() {
+            std::array<point, pre_roots> res = {};
+            res[0] = 1;
+            for(size_t n = 1; n < pre_roots; n++) {
+                res[n] = polar(1., std::numbers::pi * ftype(eval_args[n]) / ftype(2 * std::bit_floor(n)));
+            }
+            return res;
+        }();
+        static size_t eval_arg(size_t n) {
+            if(n < pre_roots) {
+                return eval_args[n];
+            } else {
+                return eval_arg(n / 2) | (n & 1) << (std::bit_width(n) - 1);
+            }
+        }
+        static auto root(size_t n, size_t k) {
+            if(n < pre_roots) {
+                return roots[n + k];
+            } else {
+                return polar(1., std::numbers::pi / (ftype)n * (ftype)k);
+            }
+        }
+        static point eval_point(size_t n) {
+            if(n < pre_roots) {
+                return evalp[n];
+            } else {
+                return root(2 * std::bit_floor(n), eval_arg(n));
+            }
+        }
+        static void exec_on_roots(size_t n, size_t m, auto &&callback) {
+            point cur;
+            point arg = root(n, 1);
+            for(size_t i = 0; i < m; i++) {
+                if(i % 32 == 0 || n < pre_roots) {
+                    cur = root(n, i);
+                } else {
+                    cur *= arg;
+                }
+                callback(i, cur);
+            }
+        }
+        static void exec_on_evals(size_t n, auto &&callback) {
+            for(size_t i = 0; i < n; i++) {
+                callback(i, eval_point(i));
+            }
+        }
         std::vector<vftype> x, y;
         cvector(size_t n) {
             n = std::max(flen, std::bit_ceil(n));
@@ -80,57 +142,6 @@ namespace cp_algo::math::fft {
             }
             checkpoint("dot");
         }
-        static const cvector roots, evalp;
-        static std::array<size_t, pre_roots> eval_args;
-        
-        template<bool precalc = false>
-        static size_t eval_arg(size_t n) {
-            if(n < pre_roots && !precalc) {
-                return eval_args[n];
-            } else if(n == 0) {
-                return 0;
-            } else {
-                return eval_arg(n / 2) | (n & 1) << (std::bit_width(n) - 1);
-            }
-        }
-        template< bool precalc = false>
-        static auto root(size_t n, size_t k) {
-            if(n < pre_roots && !precalc) {
-                return roots.get(n + k);
-            } else {
-                return polar(1., std::numbers::pi / (ftype)n * (ftype)k);
-            }
-        }
-        template< bool precalc = false>
-        static point eval_point(size_t n) {
-            if(n < pre_roots && !precalc) {
-                return evalp.get(n);
-            } else if(n == 0) {
-                return 1;
-            } else {
-                size_t N = std::bit_floor(n);
-                return root(2 * N, eval_arg(n));
-            }
-        }
-
-        template<bool precalc = false>
-        static void exec_on_roots(size_t n, size_t m, auto &&callback) {
-            point cur;
-            point arg = root<precalc>(n, 1);
-            for(size_t i = 0; i < m; i++) {
-                if(precalc || i % 32 == 0 || n < pre_roots) {
-                    cur = root<precalc>(n, i);
-                } else {
-                    cur *= arg;
-                }
-                callback(i, cur);
-            }
-        }
-        static void exec_on_evals(size_t n, auto &&callback) {
-            for(size_t i = 0; i < n; i++) {
-                callback(i, eval_point(i));
-            }
-        }
 
         void ifft() {
             size_t n = size();
@@ -167,28 +178,5 @@ namespace cp_algo::math::fft {
             checkpoint("fft");
         }
     };
-    std::array<size_t, cvector::pre_roots> cvector::eval_args = []() {
-        std::array<size_t, pre_roots> res = {};
-        for(size_t i = 1; i < pre_roots; i++) {
-            res[i] = res[i >> 1] | (i & 1) << (std::bit_width(i) - 1);
-        }
-        return res;
-    }();
-    const cvector cvector::roots = []() {
-        cvector res(pre_roots);
-        for(size_t n = 1; n < res.size(); n *= 2) {
-            cvector::exec_on_roots<true>(n, n, [&](size_t k, auto rt) {
-                res.set(n + k, rt);
-            });
-        }
-        return res;
-    }();
-    const cvector cvector::evalp = []() {
-        cvector res(pre_roots);
-        for(size_t n = 0; n < res.size(); n++) {
-            res.set(n, cvector::eval_point<true>(n));
-        }
-        return res;
-    }();
 }
 #endif // CP_ALGO_MATH_CVECTOR_HPP

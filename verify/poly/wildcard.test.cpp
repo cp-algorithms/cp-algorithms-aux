@@ -1,6 +1,7 @@
 // @brief Wildcard Pattern Matching
 #define PROBLEM "https://judge.yosupo.jp/problem/wildcard_pattern_matching"
 #pragma GCC optimize("Ofast,unroll-loops")
+#define CP_ALGO_CHECKPOINT
 #include "cp-algo/math/cvector.hpp"
 #include "cp-algo/random/rng.hpp"
 #include <bits/stdc++.h>
@@ -36,19 +37,16 @@ string matches(string const& A, string const& B, char wild = '*') {
             project[1][i] = conj(project[0][i]);
         }
     }
-    array ST = {&A, &B};
     vector<cvector> P;
     P.emplace_back(size(A));
     P.emplace_back(size(A));
-    for(int i: {0, 1}) {
-        size_t N = ST[i]->size();
-        for(size_t k = 0; k < N; k++) {
-            char c = ST[i]->at(k);
-            size_t idx = i ? N - k - 1 : k;
-            point val = c == wild ? 0 : project[i][c - 'a'];
-            P[i].set(idx, val);
-        }
+    for(auto [i, c]: A | views::enumerate) {
+        P[0].set(i, (c != wild) * project[0][c - 'a']);
     }
+    for(auto [i, c]: B | views::reverse | views::enumerate) {
+        P[1].set(i, (c != wild) * project[1][c - 'a']);
+    }
+    cp_algo::checkpoint("cvector fill");
     semicorr(P[0], P[1]);
     string ans(size(A) - size(B) + 1, '0');
     for(size_t j = 0; j < size(ans); j++) {

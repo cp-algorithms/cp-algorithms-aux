@@ -15,7 +15,7 @@ namespace cp_algo::math {
             base x, y;
             base g = 1;
             while(g == 1) {
-                for(int i = 0; i < 64; i++) {
+                for(int i = 1; i <= 64; i++) {
                     x = f(x);
                     y = f(f(y));
                     if(x == y) [[unlikely]] {

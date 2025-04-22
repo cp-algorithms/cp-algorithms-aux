@@ -48,20 +48,19 @@ namespace cp_algo::math::fft {
                 auto [Bx, By] = B.vget(k);
                 auto [Cvx, Cvy] = C.vget(k);
                 auto [Dvx, Dvy] = D.vget(k);
-                auto [Crvx, Crvy] = vpoint(Cvx, Cvy) * vpoint(real(rt), imag(rt));
-                auto [Drvx, Drvy] = vpoint(Dvx, Dvy) * vpoint(real(rt), imag(rt));
+                auto [Crvx, Crvy] = vpoint(Cvx, Cvy) * vpoint(fz + real(rt), fz + imag(rt));
+                auto [Drvx, Drvy] = vpoint(Dvx, Dvy) * vpoint(fz + real(rt), fz + imag(rt));
                 vftype Cx[2] = {Crvx, Cvx}, Cy[2] = {Crvy, Cvy};
                 vftype Dx[2] = {Drvx, Dvx}, Dy[2] = {Drvy, Dvy};
                 vpoint AC, AD, BC, BD;
-                AC = AD = BC = BD = {0, 0};
+                AC = AD = BC = BD = {fz, fz};
                 for(size_t i = 0; i < flen; i++) {
-                    vftype Csx, Csy, Dsx, Dsy;
-                    Csx.copy_from((ftype*)Cx + flen - i, stdx::element_aligned);
-                    Csy.copy_from((ftype*)Cy + flen - i, stdx::element_aligned);
-                    Dsx.copy_from((ftype*)Dx + flen - i, stdx::element_aligned);
-                    Dsy.copy_from((ftype*)Dy + flen - i, stdx::element_aligned);
-                    vpoint As = {Ax[i], Ay[i]}, Bs = {Bx[i], By[i]};
-                    vpoint Cs = {Csx, Csy}, Ds = {Dsx, Dsy};
+                    auto Csx = (vftype*)((ftype*)Cx + flen - i);
+                    auto Csy = (vftype*)((ftype*)Cy + flen - i);
+                    auto Dsx = (vftype*)((ftype*)Dx + flen - i);
+                    auto Dsy = (vftype*)((ftype*)Dy + flen - i);
+                    vpoint As = {fz + Ax[i], fz + Ay[i]}, Bs = {fz + Bx[i], fz + By[i]};
+                    vpoint Cs = {*Csx, *Csy}, Ds = {*Dsx, *Dsy};
                     AC += As * Cs; AD += As * Ds;
                     BC += Bs * Cs; BD += Bs * Ds;
                 }

@@ -8,10 +8,12 @@
 namespace stdx = std::experimental;
 namespace cp_algo::math::fft {
     using ftype = double;
+    static constexpr size_t bytes = 32;
+    static constexpr size_t flen = bytes / sizeof(ftype);
     using point = complex<ftype>;
-    using vftype = stdx::native_simd<ftype>;
+    using vftype [[gnu::vector_size(bytes)]] = ftype;
     using vpoint = complex<vftype>;
-    static constexpr size_t flen = vftype::size();
+    static constexpr vftype fz = {};
 
     struct cvector {
         std::vector<vftype> x, y;
@@ -117,15 +119,14 @@ namespace cp_algo::math::fft {
                 rt = -rt;
             }
             auto [Bvx, Bvy] = B.vget(k);
-            auto [Brvx, Brvy] = vpoint(Bvx, Bvy) * vpoint(real(rt), imag(rt));
+            auto [Brvx, Brvy] = vpoint(Bvx, Bvy) * vpoint(fz + real(rt), fz + imag(rt));
             auto [Ax, Ay] = A.vget(k);
             vftype Bx[2] = {Brvx, Bvx}, By[2] = {Brvy, Bvy};
-            vpoint res = {0, 0};
+            vpoint res = {fz, fz};
             for (size_t i = 0; i < flen; i++) {
-                vftype Bsx, Bsy;
-                Bsx.copy_from((ftype*)Bx + flen - i, stdx::element_aligned);
-                Bsy.copy_from((ftype*)By + flen - i, stdx::element_aligned);
-                res += vpoint(Ax[i], Ay[i]) * vpoint{Bsx, Bsy};
+                auto Bsx = (vftype*)((ftype*)Bx + flen - i);
+                auto Bsy = (vftype*)((ftype*)By + flen - i);
+                res += vpoint(fz + Ax[i], fz + Ay[i]) * vpoint{*Bsx, *Bsy};
             }
             return res;
         }
@@ -144,7 +145,7 @@ namespace cp_algo::math::fft {
                 if (4 * i <= n) { // radix-4
                     exec_on_evals<2>(n / (4 * i), [&](size_t k, point rt) {
                         k *= 4 * i;
-                        vpoint v1 = {real(rt), -imag(rt)};
+                        vpoint v1 = {fz + real(rt), fz - imag(rt)};
                         vpoint v2 = v1 * v1;
                         vpoint v3 = v1 * v2;
                         for(size_t j = k; j < k + i; j += flen) {
@@ -154,15 +155,15 @@ namespace cp_algo::math::fft {
                             auto D = get<vpoint>(j + 3 * i);
                             set(j        , (A + B + C + D));
                             set(j + 2 * i, (A + B - C - D) * v2);
-                            set(j +     i, (A - B - vpoint(0, 1) * (C - D)) * v1);
-                            set(j + 3 * i, (A - B + vpoint(0, 1) * (C - D)) * v3);
+                            set(j +     i, (A - B - vpoint(fz, fz + 1) * (C - D)) * v1);
+                            set(j + 3 * i, (A - B + vpoint(fz, fz + 1) * (C - D)) * v3);
                         }
                     });
                     i *= 2;
                 } else { // radix-2 fallback
                     exec_on_evals(n / (2 * i), [&](size_t k, point rt) {
                         k *= 2 * i;
-                        vpoint cvrt = {real(rt), -imag(rt)};
+                        vpoint cvrt = {fz + real(rt), fz - imag(rt)};
                         for(size_t j = k; j < k + i; j += flen) {
                             auto A = get<vpoint>(j) + get<vpoint>(j + i);
                             auto B = get<vpoint>(j) - get<vpoint>(j + i);
@@ -174,7 +175,7 @@ namespace cp_algo::math::fft {
             }
             checkpoint("ifft");
             for(size_t k = 0; k < n; k += flen) {
-                set(k, get<vpoint>(k) /= (ftype)(n / flen));
+                set(k, get<vpoint>(k) /= fz + (ftype)(n / flen));
             }
         }
         void fft() {
@@ -184,7 +185,7 @@ namespace cp_algo::math::fft {
                     i /= 2;
                     exec_on_evals<2>(n / (4 * i), [&](size_t k, point rt) {
                         k *= 4 * i;
-                        vpoint v1 = {real(rt), imag(rt)};
+                        vpoint v1 = {fz + real(rt), fz + imag(rt)};
                         vpoint v2 = v1 * v1;
                         vpoint v3 = v1 * v2;
                         for(size_t j = k; j < k + i; j += flen) {
@@ -194,14 +195,14 @@ namespace cp_algo::math::fft {
                             auto D = get<vpoint>(j + 3 * i) * v3;
                             set(j    , (A + C) + (B + D));
                             set(j + i, (A + C) - (B + D));
-                            set(j + 2 * i, (A - C) + vpoint(0, 1) * (B - D));
-                            set(j + 3 * i, (A - C) - vpoint(0, 1) * (B - D));
+                            set(j + 2 * i, (A - C) + vpoint(fz, fz + 1) * (B - D));
+                            set(j + 3 * i, (A - C) - vpoint(fz, fz + 1) * (B - D));
                         }
                     });
                 } else { // radix-2 fallback
                     exec_on_evals(n / (2 * i), [&](size_t k, point rt) {
                         k *= 2 * i;
-                        vpoint vrt = {real(rt), imag(rt)};
+                        vpoint vrt = {fz + real(rt), fz + imag(rt)};
                         for(size_t j = k; j < k + i; j += flen) {
                             auto t = get<vpoint>(j + i) * vrt;
                             set(j + i, get<vpoint>(j) - t);

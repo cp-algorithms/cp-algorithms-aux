@@ -9,6 +9,7 @@ namespace cp_algo {
             MAP_PRIVATE | MAP_ANONYMOUS,
             -1, 0);
         madvise(raw, len * sizeof(T), MADV_HUGEPAGE);
+        madvise(raw, len * sizeof(T), MADV_POPULATE_WRITE);
         return static_cast<T*>(raw);
     }
     template<typename T>

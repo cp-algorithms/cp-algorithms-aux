@@ -2,6 +2,7 @@
 #define CP_ALGO_MATH_CVECTOR_HPP
 #include "../util/complex.hpp"
 #include "../util/checkpoint.hpp"
+#include  "../util/new_big.hpp"
 #include <experimental/simd>
 #include <ranges>
 
@@ -17,11 +18,27 @@ namespace cp_algo::math::fft {
     static constexpr vpoint vi = {vz, vz + 1};
 
     struct cvector {
-        std::vector<vpoint> r;
+        vpoint *r;
+        size_t sz;
         cvector(size_t n) {
-            n = std::max(flen, std::bit_ceil(n));
-            r.resize(n / flen);
+            sz = std::max(flen, std::bit_ceil(n));
+            r = new_big<vpoint>(sz / flen);
             checkpoint("cvector create");
+        }
+        cvector(cvector const& t) {
+            sz = t.sz;
+            r = new_big<vpoint>(sz / flen);
+            memcpy(r, t.r, (sz / flen) * sizeof(vpoint));
+            checkpoint("cvector copy");
+        }
+        cvector(cvector&& t) noexcept {
+            sz = t.sz;
+            r = std::exchange(t.r, nullptr);
+        }
+        ~cvector() noexcept {
+            if(r) {
+                delete_big(r, sz / flen);
+            }
         }
 
         vpoint& at(size_t k) {return r[k / flen];}
@@ -45,7 +62,7 @@ namespace cp_algo::math::fft {
         }
 
         size_t size() const {
-            return flen * std::size(r);
+            return sz;
         }
         static size_t eval_arg(size_t n) {
             if(n < pre_roots) {
@@ -93,13 +110,12 @@ namespace cp_algo::math::fft {
             }
             auto [Ax, Ay] = A.at(k);
             auto Bv = B.at(k);
-            vpoint res = {vz, vz};
+            vpoint res = vz;
             for (size_t i = 0; i < flen; i++) {
                 res += vpoint(vz + Ax[i], vz + Ay[i]) * Bv;
                 real(Bv) = __builtin_shufflevector(real(Bv), real(Bv), 3, 0, 1, 2);
                 imag(Bv) = __builtin_shufflevector(imag(Bv), imag(Bv), 3, 0, 1, 2);
-                auto x = real(Bv)[0];
-                auto y = imag(Bv)[0];
+                auto x = real(Bv)[0], y = imag(Bv)[0];
                 real(Bv)[0] = x * real(rt) - y * imag(rt);
                 imag(Bv)[0] = x * imag(rt) + y * real(rt);
             }

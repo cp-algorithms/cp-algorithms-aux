@@ -47,6 +47,7 @@ namespace cp_algo::math::fft {
                 auto [Ax, Ay] = A.at(k);
                 auto [Bx, By] = B.at(k);
                 vpoint AC, AD, BC, BD;
+                AC = AD = BC = BD = vz;
                 auto Cv = C.at(k), Dv = D.at(k);
                 for (size_t i = 0; i < flen; i++) {
                     vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};

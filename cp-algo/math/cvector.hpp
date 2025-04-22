@@ -13,67 +13,40 @@ namespace cp_algo::math::fft {
     using point = complex<ftype>;
     using vftype [[gnu::vector_size(bytes)]] = ftype;
     using vpoint = complex<vftype>;
-    static constexpr vftype fz = {};
+    static constexpr vftype vz = {};
+    static constexpr vpoint vi = {vz, vz + 1};
 
     struct cvector {
-        std::vector<vftype> x, y;
+        std::vector<vpoint> r;
         cvector(size_t n) {
             n = std::max(flen, std::bit_ceil(n));
-            x.resize(n / flen);
-            y.resize(n / flen);
+            r.resize(n / flen);
             checkpoint("cvector create");
         }
+
+        vpoint& at(size_t k) {return r[k / flen];}
+        vpoint at(size_t k) const {return r[k / flen];}
         template<class pt = point>
         void set(size_t k, pt t) {
             if constexpr(std::is_same_v<pt, point>) {
-                x[k / flen][k % flen] = real(t);
-                y[k / flen][k % flen] = imag(t);
+                real(r[k / flen])[k % flen] = real(t);
+                imag(r[k / flen])[k % flen] = imag(t);
             } else {
-                x[k / flen] = real(t);
-                y[k / flen] = imag(t);
+                at(k) = t;
             }
         }
         template<class pt = point>
         pt get(size_t k) const {
             if constexpr(std::is_same_v<pt, point>) {
-                return {x[k / flen][k % flen], y[k / flen][k % flen]};
+                return {real(r[k / flen])[k % flen], imag(r[k / flen])[k % flen]};
             } else {
-                return {x[k / flen], y[k / flen]};
+                return at(k);
             }
-        }
-        vpoint vget(size_t k) const {
-            return get<vpoint>(k);
         }
 
         size_t size() const {
-            return flen * std::size(x);
+            return flen * std::size(r);
         }
-
-        static constexpr size_t pre_roots = 1 << 16;
-        static constexpr std::array<point, pre_roots> roots = []() {
-            std::array<point, pre_roots> res = {};
-            for(size_t n = 1; n < res.size(); n *= 2) {
-                for(size_t k = 0; k < n; k++) {
-                    res[n + k] = polar(1., std::numbers::pi / ftype(n) * ftype(k));
-                }
-            }
-            return res;
-        }();
-        static constexpr std::array<size_t, pre_roots> eval_args = []() {
-            std::array<size_t, pre_roots> res = {};
-            for(size_t i = 1; i < pre_roots; i++) {
-                res[i] = res[i >> 1] | (i & 1) << (std::bit_width(i) - 1);
-            }
-            return res;
-        }();
-        static constexpr std::array<point, pre_roots> evalp = []() {
-            std::array<point, pre_roots> res = {};
-            res[0] = 1;
-            for(size_t n = 1; n < pre_roots; n++) {
-                res[n] = polar(1., std::numbers::pi * ftype(eval_args[n]) / ftype(2 * std::bit_floor(n)));
-            }
-            return res;
-        }();
         static size_t eval_arg(size_t n) {
             if(n < pre_roots) {
                 return eval_args[n];
@@ -118,15 +91,17 @@ namespace cp_algo::math::fft {
             if(k / flen % 2) {
                 rt = -rt;
             }
-            auto [Bvx, Bvy] = B.vget(k);
-            auto [Brvx, Brvy] = vpoint(Bvx, Bvy) * vpoint(fz + real(rt), fz + imag(rt));
-            auto [Ax, Ay] = A.vget(k);
-            vftype Bx[2] = {Brvx, Bvx}, By[2] = {Brvy, Bvy};
-            vpoint res = {fz, fz};
+            auto [Ax, Ay] = A.at(k);
+            auto Bv = B.at(k);
+            vpoint res = {vz, vz};
             for (size_t i = 0; i < flen; i++) {
-                auto Bsx = (vftype*)((ftype*)Bx + flen - i);
-                auto Bsy = (vftype*)((ftype*)By + flen - i);
-                res += vpoint(fz + Ax[i], fz + Ay[i]) * vpoint{*Bsx, *Bsy};
+                res += vpoint(vz + Ax[i], vz + Ay[i]) * Bv;
+                real(Bv) = __builtin_shufflevector(real(Bv), real(Bv), 3, 0, 1, 2);
+                imag(Bv) = __builtin_shufflevector(imag(Bv), imag(Bv), 3, 0, 1, 2);
+                auto x = real(Bv)[0];
+                auto y = imag(Bv)[0];
+                real(Bv)[0] = x * real(rt) - y * imag(rt);
+                imag(Bv)[0] = x * imag(rt) + y * real(rt);
             }
             return res;
         }
@@ -145,37 +120,36 @@ namespace cp_algo::math::fft {
                 if (4 * i <= n) { // radix-4
                     exec_on_evals<2>(n / (4 * i), [&](size_t k, point rt) {
                         k *= 4 * i;
-                        vpoint v1 = {fz + real(rt), fz - imag(rt)};
+                        vpoint v1 = {vz + real(rt), vz - imag(rt)};
                         vpoint v2 = v1 * v1;
                         vpoint v3 = v1 * v2;
                         for(size_t j = k; j < k + i; j += flen) {
-                            auto A = get<vpoint>(j);
-                            auto B = get<vpoint>(j + i);
-                            auto C = get<vpoint>(j + 2 * i);
-                            auto D = get<vpoint>(j + 3 * i);
-                            set(j        , (A + B + C + D));
-                            set(j + 2 * i, (A + B - C - D) * v2);
-                            set(j +     i, (A - B - vpoint(fz, fz + 1) * (C - D)) * v1);
-                            set(j + 3 * i, (A - B + vpoint(fz, fz + 1) * (C - D)) * v3);
+                            auto A = at(j);
+                            auto B = at(j + i);
+                            auto C = at(j + 2 * i);
+                            auto D = at(j + 3 * i);
+                            at(j) = (A + B + C + D);
+                            at(j + 2 * i) = (A + B - C - D) * v2;
+                            at(j +     i) = (A - B - vi * (C - D)) * v1;
+                            at(j + 3 * i) = (A - B + vi * (C - D)) * v3;
                         }
                     });
                     i *= 2;
                 } else { // radix-2 fallback
                     exec_on_evals(n / (2 * i), [&](size_t k, point rt) {
                         k *= 2 * i;
-                        vpoint cvrt = {fz + real(rt), fz - imag(rt)};
+                        vpoint cvrt = {vz + real(rt), vz - imag(rt)};
                         for(size_t j = k; j < k + i; j += flen) {
-                            auto A = get<vpoint>(j) + get<vpoint>(j + i);
-                            auto B = get<vpoint>(j) - get<vpoint>(j + i);
-                            set(j, A);
-                            set(j + i, B * cvrt);
+                            auto B = at(j) - at(j + i);
+                            at(j) += at(j + i);
+                            at(j + i) = B * cvrt;
                         }
                     });
                 }
             }
             checkpoint("ifft");
             for(size_t k = 0; k < n; k += flen) {
-                set(k, get<vpoint>(k) /= fz + (ftype)(n / flen));
+                set(k, get<vpoint>(k) /= vz + (ftype)(n / flen));
             }
         }
         void fft() {
@@ -185,34 +159,59 @@ namespace cp_algo::math::fft {
                     i /= 2;
                     exec_on_evals<2>(n / (4 * i), [&](size_t k, point rt) {
                         k *= 4 * i;
-                        vpoint v1 = {fz + real(rt), fz + imag(rt)};
+                        vpoint v1 = {vz + real(rt), vz + imag(rt)};
                         vpoint v2 = v1 * v1;
                         vpoint v3 = v1 * v2;
                         for(size_t j = k; j < k + i; j += flen) {
-                            auto A = get<vpoint>(j);
-                            auto B = get<vpoint>(j + i) * v1;
-                            auto C = get<vpoint>(j + 2 * i) * v2;
-                            auto D = get<vpoint>(j + 3 * i) * v3;
-                            set(j    , (A + C) + (B + D));
-                            set(j + i, (A + C) - (B + D));
-                            set(j + 2 * i, (A - C) + vpoint(fz, fz + 1) * (B - D));
-                            set(j + 3 * i, (A - C) - vpoint(fz, fz + 1) * (B - D));
+                            auto A = at(j);
+                            auto B = at(j + i) * v1;
+                            auto C = at(j + 2 * i) * v2;
+                            auto D = at(j + 3 * i) * v3;
+                            at(j)         = (A + C) + (B + D);
+                            at(j + i)     = (A + C) - (B + D);
+                            at(j + 2 * i) = (A - C) + vi * (B - D);
+                            at(j + 3 * i) = (A - C) - vi * (B - D);
                         }
                     });
                 } else { // radix-2 fallback
                     exec_on_evals(n / (2 * i), [&](size_t k, point rt) {
                         k *= 2 * i;
-                        vpoint vrt = {fz + real(rt), fz + imag(rt)};
+                        vpoint vrt = {vz + real(rt), vz + imag(rt)};
                         for(size_t j = k; j < k + i; j += flen) {
-                            auto t = get<vpoint>(j + i) * vrt;
-                            set(j + i, get<vpoint>(j) - t);
-                            set(j, get<vpoint>(j) + t);
+                            auto t = at(j + i) * vrt;
+                            at(j + i) = at(j) - t;
+                            at(j) += t;
                         }
                     });
                 }
             }
             checkpoint("fft");
         }
+        static constexpr size_t pre_roots = 1 << 16;
+        static constexpr std::array<point, pre_roots> roots = []() {
+            std::array<point, pre_roots> res = {};
+            for(size_t n = 1; n < res.size(); n *= 2) {
+                for(size_t k = 0; k < n; k++) {
+                    res[n + k] = polar(1., std::numbers::pi / ftype(n) * ftype(k));
+                }
+            }
+            return res;
+        }();
+        static constexpr std::array<size_t, pre_roots> eval_args = []() {
+            std::array<size_t, pre_roots> res = {};
+            for(size_t i = 1; i < pre_roots; i++) {
+                res[i] = res[i >> 1] | (i & 1) << (std::bit_width(i) - 1);
+            }
+            return res;
+        }();
+        static constexpr std::array<point, pre_roots> evalp = []() {
+            std::array<point, pre_roots> res = {};
+            res[0] = 1;
+            for(size_t n = 1; n < pre_roots; n++) {
+                res[n] = polar(1., std::numbers::pi * ftype(eval_args[n]) / ftype(2 * std::bit_floor(n)));
+            }
+            return res;
+        }();
     };
 }
 #endif // CP_ALGO_MATH_CVECTOR_HPP

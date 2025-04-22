@@ -44,29 +44,28 @@ namespace cp_algo::math::fft {
                 if(k / flen % 2) {
                     rt = -rt;
                 }
-                auto [Ax, Ay] = A.vget(k);
-                auto [Bx, By] = B.vget(k);
-                auto [Cvx, Cvy] = C.vget(k);
-                auto [Dvx, Dvy] = D.vget(k);
-                auto [Crvx, Crvy] = vpoint(Cvx, Cvy) * vpoint(fz + real(rt), fz + imag(rt));
-                auto [Drvx, Drvy] = vpoint(Dvx, Dvy) * vpoint(fz + real(rt), fz + imag(rt));
-                vftype Cx[2] = {Crvx, Cvx}, Cy[2] = {Crvy, Cvy};
-                vftype Dx[2] = {Drvx, Dvx}, Dy[2] = {Drvy, Dvy};
+                auto [Ax, Ay] = A.at(k);
+                auto [Bx, By] = B.at(k);
                 vpoint AC, AD, BC, BD;
-                AC = AD = BC = BD = {fz, fz};
-                for(size_t i = 0; i < flen; i++) {
-                    auto Csx = (vftype*)((ftype*)Cx + flen - i);
-                    auto Csy = (vftype*)((ftype*)Cy + flen - i);
-                    auto Dsx = (vftype*)((ftype*)Dx + flen - i);
-                    auto Dsy = (vftype*)((ftype*)Dy + flen - i);
-                    vpoint As = {fz + Ax[i], fz + Ay[i]}, Bs = {fz + Bx[i], fz + By[i]};
-                    vpoint Cs = {*Csx, *Csy}, Ds = {*Dsx, *Dsy};
-                    AC += As * Cs; AD += As * Ds;
-                    BC += Bs * Cs; BD += Bs * Ds;
+                auto Cv = C.at(k), Dv = D.at(k);
+                for (size_t i = 0; i < flen; i++) {
+                    vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};
+                    AC += Av * Cv; AD += Av * Dv;
+                    BC += Bv * Cv; BD += Bv * Dv;
+                    real(Cv) = __builtin_shufflevector(real(Cv), real(Cv), 3, 0, 1, 2);
+                    imag(Cv) = __builtin_shufflevector(imag(Cv), imag(Cv), 3, 0, 1, 2);
+                    real(Dv) = __builtin_shufflevector(real(Dv), real(Dv), 3, 0, 1, 2);
+                    imag(Dv) = __builtin_shufflevector(imag(Dv), imag(Dv), 3, 0, 1, 2);
+                    auto cx = real(Cv)[0], cy = imag(Cv)[0];
+                    auto dx = real(Dv)[0], dy = imag(Dv)[0];
+                    real(Cv)[0] = cx * real(rt) - cy * imag(rt);
+                    imag(Cv)[0] = cx * imag(rt) + cy * real(rt);
+                    real(Dv)[0] = dx * real(rt) - dy * imag(rt);
+                    imag(Dv)[0] = dx * imag(rt) + dy * real(rt);
                 }
-                A.set(k, AC);
-                C.set(k, AD + BC);
-                B.set(k, BD);
+                A.at(k) = AC;
+                C.at(k) = AD + BC;
+                B.at(k) = BD;
             }
             checkpoint("dot");
             A.ifft();

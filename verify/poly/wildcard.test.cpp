@@ -45,24 +45,24 @@ auto is_integer(auto a) {
 }
 
 string matches(string const& A, string const& B, char wild = '*') {
-    static const int sigma = 26;
-    static point project[2][sigma];
+    static point project[2][128];
     static bool init = false;
     if(!init) {
         init = true;
-        for(int i = 0; i < sigma; i++) {
+        for(int i = 0; i < 128; i++) {
             project[0][i] = cp_algo::polar(1., (ftype)cp_algo::random::rng());
             project[1][i] = conj(project[0][i]);
         }
     }
+    project[0][wild] = project[1][wild] = 0;
     vector<cvector> P;
     P.emplace_back(size(A));
     P.emplace_back(size(A));
     for(auto [i, c]: A | views::enumerate) {
-        P[0].set(i, (c != wild) * project[0][c - 'a']);
+        P[0].set(i, project[0][c]);
     }
     for(auto [i, c]: B | views::reverse | views::enumerate) {
-        P[1].set(i, (c != wild) * project[1][c - 'a']);
+        P[1].set(i, project[1][c]);
     }
     cp_algo::checkpoint("cvector fill");
     semicorr(P[0], P[1]);

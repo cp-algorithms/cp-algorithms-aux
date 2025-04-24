@@ -2,20 +2,34 @@
 #define CP_ALGO_MATH_FFT_HPP
 #include "../number_theory/modint.hpp"
 #include "../util/checkpoint.hpp"
+#include "../random/rng.hpp"
 #include "cvector.hpp"
-#include <ranges>
 #include <iostream>
+#include <ranges>
 namespace cp_algo::math::fft {
     template<modint_type base>
     struct dft {
         int split;
         cvector A, B;
-        
+        static base factor, ifactor;
+        static bool init;
+
         dft(auto const& a, size_t n): A(n), B(n) {
+            if(!init) {
+                factor = 1 + random::rng() % (base::mod() - 1);
+                ifactor = base(1) / factor;
+                init = true;
+            }
             split = int(std::sqrt(base::mod())) + 1;
+            base cur = 1;
             cvector::exec_on_roots(2 * n, std::min(n, size(a)), [&](size_t i, auto rt) {
                 auto splt = [&](size_t i) {
+#ifdef CP_ALGO_FFT_RANDOMIZER
+                    auto ai = ftype(i < size(a) ? (a[i] * cur).rem() : 0);
+                    cur *= factor;
+#else
                     auto ai = ftype(i < size(a) ? a[i].rem() : 0);
+#endif
                     auto rem = std::remainder(ai, split);
                     auto quo = (ai - rem) / split;
                     return std::pair{rem, quo};
@@ -32,7 +46,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        void mul(auto &&C, auto const& D, auto &res, size_t k) {
+        void mul(auto &&C, auto const& D, auto &res, size_t k, [[maybe_unused]] base ifactor) {
             assert(A.size() == C.size());
             size_t n = A.size();
             if(!n) {
@@ -73,6 +87,8 @@ namespace cp_algo::math::fft {
             B.ifft();
             C.ifft();
             auto splitsplit = (base(split) * split).rem();
+            base cur = 1;
+            base step = bpow(ifactor, n);
             cvector::exec_on_roots(2 * n, std::min(n, k), [&](size_t i, point rt) {
                 rt = conj(rt);
                 auto Ai = A.get(i) * rt;
@@ -82,6 +98,9 @@ namespace cp_algo::math::fft {
                 int64_t A1 = llround(real(Ci));
                 int64_t A2 = llround(real(Bi));
                 res[i] = A0 + A1 * split + A2 * splitsplit;
+#ifdef CP_ALGO_FFT_RANDOMIZER
+                res[i] *= cur;
+#endif
                 if(n + i >= k) {
                     return;
                 }
@@ -89,14 +108,18 @@ namespace cp_algo::math::fft {
                 int64_t B1 = llround(imag(Ci));
                 int64_t B2 = llround(imag(Bi));
                 res[n + i] = B0 + B1 * split + B2 * splitsplit;
+#ifdef CP_ALGO_FFT_RANDOMIZER
+                res[n + i] *= cur * step;
+                cur *= ifactor;
+#endif
             });
             checkpoint("recover mod");
         }
         void mul_inplace(auto &&B, auto& res, size_t k) {
-            mul(B.A, B.B, res, k);
+            mul(B.A, B.B, res, k, ifactor * B.ifactor);
         }
         void mul(auto const& B, auto& res, size_t k) {
-            mul(cvector(B.A), B.B, res, k);
+            mul(cvector(B.A), B.B, res, k, ifactor * B.ifactor);
         }
         std::vector<base> operator *= (dft &B) {
             std::vector<base> res(2 * A.size());
@@ -111,9 +134,12 @@ namespace cp_algo::math::fft {
         auto operator * (dft const& B) const {
             return dft(*this) *= B;
         }
-        
+
         point operator [](int i) const {return A.get(i);}
     };
+    template<modint_type base> base dft<base>::factor = 1;
+    template<modint_type base> base dft<base>::ifactor = 1;
+    template<modint_type base> bool dft<base>::init = false;
     
     void mul_slow(auto &a, auto const& b, size_t k) {
         if(empty(a) || empty(b)) {
@@ -155,8 +181,36 @@ namespace cp_algo::math::fft {
         }
     }
     void mul(auto &a, auto const& b) {
-        if(size(a)) {
-            mul_truncate(a, b, size(a) + size(b) - 1);
+        size_t N = size(a) + size(b) - 1;
+        if(std::max(size(a), size(b)) > (1 << 23)) {
+            // do karatsuba to save memory
+            auto n = (std::max(size(a), size(b)) + 1) / 2;
+            auto a0 = to<std::vector>(a | std::views::take(n));
+            auto a1 = to<std::vector>(a | std::views::drop(n));
+            auto b0 = to<std::vector>(b | std::views::take(n));
+            auto b1 = to<std::vector>(b | std::views::drop(n));
+            a0.resize(n); a1.resize(n);
+            b0.resize(n); b1.resize(n);
+            auto a01 = to<std::vector>(std::views::zip_transform(std::plus{}, a0, a1));
+            auto b01 = to<std::vector>(std::views::zip_transform(std::plus{}, b0, b1));
+            mul(a0, b0);
+            mul(a1, b1);
+            mul(a01, b01);
+            a.assign(4 * n, 0);
+            for(auto [i, ai]: a0 | std::views::enumerate) {
+                a[i] += ai;
+                a[i + n] -= ai;
+            }
+            for(auto [i, ai]: a1 | std::views::enumerate) {
+                a[i + n] -= ai;
+                a[i + 2 * n] += ai;
+            }
+            for(auto [i, ai]: a01 | std::views::enumerate) {
+                a[i + n] += ai;
+            }
+            a.resize(N);
+        } else if(size(a)) {
+            mul_truncate(a, b, N);
         }
     }
 }

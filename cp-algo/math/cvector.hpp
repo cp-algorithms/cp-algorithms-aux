@@ -9,8 +9,8 @@
 namespace stdx = std::experimental;
 namespace cp_algo::math::fft {
     using ftype = double;
-    static constexpr size_t bytes = 32;
-    static constexpr size_t flen = bytes / sizeof(ftype);
+    static constexpr size_t flen = 4;
+    static constexpr size_t bytes = flen * sizeof(ftype);
     using point = complex<ftype>;
     using vftype [[gnu::vector_size(bytes)]] = ftype;
     using vpoint = complex<vftype>;
@@ -65,7 +65,7 @@ namespace cp_algo::math::fft {
             return sz;
         }
         static size_t eval_arg(size_t n) {
-            if(n < pre_roots) {
+            if(n < pre_evals) {
                 return eval_args[n];
             } else {
                 return eval_arg(n / 2) | (n & 1) << (std::bit_width(n) - 1);
@@ -74,13 +74,17 @@ namespace cp_algo::math::fft {
         static auto root(size_t n, size_t k) {
             if(n < pre_roots) {
                 return roots[n + k];
+            } else if (k % 2 == 0) {
+                return root(n / 2, k / 2);
             } else {
                 return polar(1., std::numbers::pi / (ftype)n * (ftype)k);
             }
         }
         static point eval_point(size_t n) {
-            if(n < pre_roots) {
-                return evalp[n];
+            if(n % 2) {
+                return eval_point(n - 1) * point(0, 1);
+            } else if(n / 2 < pre_evals) {
+                return evalp[n / 2];
             } else {
                 return root(2 * std::bit_floor(n), eval_arg(n));
             }
@@ -203,7 +207,8 @@ namespace cp_algo::math::fft {
             }
             checkpoint("fft");
         }
-        static constexpr size_t pre_roots = 1 << 16;
+        static constexpr size_t pre_roots = 1 << 14;
+        static constexpr size_t pre_evals = 1 << 16;
         static constexpr std::array<point, pre_roots> roots = []() {
             std::array<point, pre_roots> res = {};
             for(size_t n = 1; n < res.size(); n *= 2) {
@@ -213,18 +218,18 @@ namespace cp_algo::math::fft {
             }
             return res;
         }();
-        static constexpr std::array<size_t, pre_roots> eval_args = []() {
-            std::array<size_t, pre_roots> res = {};
-            for(size_t i = 1; i < pre_roots; i++) {
+        static constexpr std::array<size_t, pre_evals> eval_args = []() {
+            std::array<size_t, pre_evals> res = {};
+            for(size_t i = 1; i < pre_evals; i++) {
                 res[i] = res[i >> 1] | (i & 1) << (std::bit_width(i) - 1);
             }
             return res;
         }();
-        static constexpr std::array<point, pre_roots> evalp = []() {
-            std::array<point, pre_roots> res = {};
+        static constexpr std::array<point, pre_evals> evalp = []() {
+            std::array<point, pre_evals> res = {};
             res[0] = 1;
-            for(size_t n = 1; n < pre_roots; n++) {
-                res[n] = polar(1., std::numbers::pi * ftype(eval_args[n]) / ftype(2 * std::bit_floor(n)));
+            for(size_t n = 1; n < pre_evals; n++) {
+                res[n] = polar(1., std::numbers::pi * ftype(eval_args[n]) / ftype(4 * std::bit_floor(n)));
             }
             return res;
         }();

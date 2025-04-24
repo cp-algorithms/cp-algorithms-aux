@@ -93,8 +93,8 @@ namespace cp_algo::math::fft {
             point cur;
             point arg = root(n, 1);
             for(size_t i = 0; i < m; i++) {
-                if(i % 32 == 0 || n < pre_roots) {
-                    cur = root(n, i);
+                if(i % 32 == 0) {
+                    cur = root(n / 32, i / 32);
                 } else {
                     cur *= arg;
                 }
@@ -207,7 +207,7 @@ namespace cp_algo::math::fft {
             }
             checkpoint("fft");
         }
-        static constexpr size_t pre_roots = 1 << 14;
+        static constexpr size_t pre_roots = 1 << 15;
         static constexpr size_t pre_evals = 1 << 16;
         static constexpr std::array<point, pre_roots> roots = []() {
             std::array<point, pre_roots> res = {};

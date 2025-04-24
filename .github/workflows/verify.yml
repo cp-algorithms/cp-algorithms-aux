@@ -97,10 +97,10 @@ jobs:
         with:
           cache-pip: true
       - name: Use GCC 14.2
-          run: |
-            sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
-            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
-            g++ --version
+        run: |
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
+          g++ --version
       - name: Verify
         uses: competitive-verifier/actions/verify@v2
         with:

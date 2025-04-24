@@ -24,12 +24,7 @@ namespace cp_algo::math::fft {
             base cur = 1;
             cvector::exec_on_roots(2 * n, std::min(n, size(a)), [&](size_t i, auto rt) {
                 auto splt = [&](size_t i) {
-#ifdef CP_ALGO_FFT_RANDOMIZER
                     auto ai = ftype(i < size(a) ? (a[i] * cur).rem() : 0);
-                    cur *= factor;
-#else
-                    auto ai = ftype(i < size(a) ? a[i].rem() : 0);
-#endif
                     auto rem = std::remainder(ai, split);
                     auto quo = (ai - rem) / split;
                     return std::pair{rem, quo};
@@ -38,6 +33,7 @@ namespace cp_algo::math::fft {
                 auto [rani, qani] = splt(n + i);
                 A.set(i, point(rai, rani) * rt);
                 B.set(i, point(qai, qani) * rt);
+                cur *= factor;
             });
             checkpoint("dft init");
             if(n) {
@@ -98,9 +94,7 @@ namespace cp_algo::math::fft {
                 int64_t A1 = llround(real(Ci));
                 int64_t A2 = llround(real(Bi));
                 res[i] = A0 + A1 * split + A2 * splitsplit;
-#ifdef CP_ALGO_FFT_RANDOMIZER
                 res[i] *= cur;
-#endif
                 if(n + i >= k) {
                     return;
                 }
@@ -108,10 +102,8 @@ namespace cp_algo::math::fft {
                 int64_t B1 = llround(imag(Ci));
                 int64_t B2 = llround(imag(Bi));
                 res[n + i] = B0 + B1 * split + B2 * splitsplit;
-#ifdef CP_ALGO_FFT_RANDOMIZER
                 res[n + i] *= cur * step;
                 cur *= ifactor;
-#endif
             });
             checkpoint("recover mod");
         }

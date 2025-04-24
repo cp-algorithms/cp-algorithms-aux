@@ -9,28 +9,29 @@
 namespace cp_algo::math::fft {
     template<modint_type base>
     struct dft {
-        int split;
         cvector A, B;
         static base factor, ifactor;
         static bool init;
+        static int split;
 
         dft(auto const& a, size_t n): A(n), B(n) {
             if(!init) {
                 factor = 1 + random::rng() % (base::mod() - 1);
+                split = int(std::sqrt(base::mod())) + 1;
                 ifactor = base(1) / factor;
                 init = true;
             }
-            split = int(std::sqrt(base::mod())) + 1;
-            base cur = 1;
+            base cur = factor;
+            base step = bpow(factor, n);
             cvector::exec_on_roots(2 * n, std::min(n, size(a)), [&](size_t i, auto rt) {
-                auto splt = [&](size_t i) {
-                    auto ai = ftype(i < size(a) ? (a[i] * cur).rem() : 0);
+                auto splt = [&](size_t i, auto mul) {
+                    auto ai = ftype(i < size(a) ? (a[i] * mul).rem() : 0);
                     auto rem = std::remainder(ai, split);
                     auto quo = (ai - rem) / split;
                     return std::pair{rem, quo};
                 };
-                auto [rai, qai] = splt(i);
-                auto [rani, qani] = splt(n + i);
+                auto [rai, qai] = splt(i, cur);
+                auto [rani, qani] = splt(n + i, cur * step);
                 A.set(i, point(rai, rani) * rt);
                 B.set(i, point(qai, qani) * rt);
                 cur *= factor;
@@ -42,7 +43,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        void mul(auto &&C, auto const& D, auto &res, size_t k, [[maybe_unused]] base ifactor) {
+        void mul(auto &&C, auto const& D, auto &res, size_t k) {
             assert(A.size() == C.size());
             size_t n = A.size();
             if(!n) {
@@ -83,7 +84,7 @@ namespace cp_algo::math::fft {
             B.ifft();
             C.ifft();
             auto splitsplit = (base(split) * split).rem();
-            base cur = 1;
+            base cur = ifactor * ifactor;
             base step = bpow(ifactor, n);
             cvector::exec_on_roots(2 * n, std::min(n, k), [&](size_t i, point rt) {
                 rt = conj(rt);
@@ -95,23 +96,22 @@ namespace cp_algo::math::fft {
                 int64_t A2 = llround(real(Bi));
                 res[i] = A0 + A1 * split + A2 * splitsplit;
                 res[i] *= cur;
-                if(n + i >= k) {
-                    return;
+                if(n + i < k) {
+                    int64_t B0 = llround(imag(Ai));
+                    int64_t B1 = llround(imag(Ci));
+                    int64_t B2 = llround(imag(Bi));
+                    res[n + i] = B0 + B1 * split + B2 * splitsplit;
+                    res[n + i] *= cur * step;
                 }
-                int64_t B0 = llround(imag(Ai));
-                int64_t B1 = llround(imag(Ci));
-                int64_t B2 = llround(imag(Bi));
-                res[n + i] = B0 + B1 * split + B2 * splitsplit;
-                res[n + i] *= cur * step;
                 cur *= ifactor;
             });
             checkpoint("recover mod");
         }
         void mul_inplace(auto &&B, auto& res, size_t k) {
-            mul(B.A, B.B, res, k, ifactor * B.ifactor);
+            mul(B.A, B.B, res, k);
         }
         void mul(auto const& B, auto& res, size_t k) {
-            mul(cvector(B.A), B.B, res, k, ifactor * B.ifactor);
+            mul(cvector(B.A), B.B, res, k);
         }
         std::vector<base> operator *= (dft &B) {
             std::vector<base> res(2 * A.size());
@@ -132,6 +132,7 @@ namespace cp_algo::math::fft {
     template<modint_type base> base dft<base>::factor = 1;
     template<modint_type base> base dft<base>::ifactor = 1;
     template<modint_type base> bool dft<base>::init = false;
+    template<modint_type base> int dft<base>::split = 1;
     
     void mul_slow(auto &a, auto const& b, size_t k) {
         if(empty(a) || empty(b)) {

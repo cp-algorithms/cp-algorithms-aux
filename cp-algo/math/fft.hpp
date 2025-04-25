@@ -25,8 +25,8 @@ namespace cp_algo::math::fft {
             base step = bpow(factor, n);
             cvector::exec_on_roots(2 * n, std::min(n, size(a)), [&](size_t i, auto rt) {
                 auto splt = [&](size_t i, auto mul) {
-                    auto ai = ftype(i < size(a) ? (a[i] * mul).rem() : 0);
-                    auto rem = std::remainder(ai, split);
+                    auto ai = i < size(a) ? (a[i] * mul).rem_direct() : 0;
+                    auto rem = ai % split;
                     auto quo = (ai - rem) / split;
                     return std::pair{rem, quo};
                 };
@@ -94,13 +94,13 @@ namespace cp_algo::math::fft {
                 int64_t A0 = llround(real(Ai));
                 int64_t A1 = llround(real(Ci));
                 int64_t A2 = llround(real(Bi));
-                res[i] = A0 + A1 * split + A2 * splitsplit;
+                res[i].setr_direct(base::m_reduce(A0 + A1 * split + A2 * splitsplit));
                 res[i] *= cur;
                 if(n + i < k) {
                     int64_t B0 = llround(imag(Ai));
                     int64_t B1 = llround(imag(Ci));
                     int64_t B2 = llround(imag(Bi));
-                    res[n + i] = B0 + B1 * split + B2 * splitsplit;
+                    res[n + i].setr_direct(base::m_reduce(B0 + B1 * split + B2 * splitsplit));
                     res[n + i] *= cur * step;
                 }
                 cur *= ifactor;

@@ -37,6 +37,9 @@ namespace cp_algo::math {
                 return UInt((ab + m * mod()) >> bits);
             }
         }
+        static UInt m_reduce(Int2 ab) {
+            return m_reduce(UInt2(ab + UInt2(ab < 0) * mod() * mod()));
+        }
         static UInt m_transform(UInt a) {
             if(mod() % 2 == 0) [[unlikely]] {
                 return a;
@@ -89,7 +92,7 @@ namespace cp_algo::math {
         }
 
         // Only use if you really know what you're doing!
-        UInt modmod() const {return (UInt)8 * mod() * mod();};
+        static UInt modmod() {return (UInt)8 * mod() * mod();};
         void add_unsafe(UInt t) {r += t;}
         void pseudonormalize() {r = std::min(r, r - modmod());}
         modint const& normalize() {
@@ -100,11 +103,15 @@ namespace cp_algo::math {
         }
         void setr(UInt rr) {r = m_transform(rr);}
         UInt getr() const {
-            UInt res = m_reduce(r);
+            UInt res = m_reduce(UInt2(r));
             return std::min(res, res - mod());
         }
         void setr_direct(UInt rr) {r = rr;}
         UInt getr_direct() const {return r;}
+        Int rem_direct() const {
+            UInt R = std::min(r, r - mod());
+            return 2 * R > (UInt)mod() ? R - mod() : R;
+        }
     private:
         UInt r;
         modint& to_modint() {return static_cast<modint&>(*this);}

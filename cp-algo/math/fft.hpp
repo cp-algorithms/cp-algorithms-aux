@@ -28,7 +28,7 @@ namespace cp_algo::math::fft {
                 auto splt = [&](size_t i, auto mul) {
                     auto ai = i < size(a) ? (a[i] * mul).rem_direct() : 0;
                     auto rem = ai % split;
-                    auto quo = (ai - rem) / split;
+                    auto quo = ai / split;
                     return std::pair{(ftype)rem, (ftype)quo};
                 };
                 auto [rai, qai] = splt(i, cur);
@@ -44,15 +44,8 @@ namespace cp_algo::math::fft {
             }
         }
 
-        void mul(auto &&C, auto const& D, auto &res, size_t k) {
-            assert(A.size() == C.size());
-            size_t n = A.size();
-            if(!n) {
-                res = {};
-                return;
-            }
-
-            cvector::exec_on_evals<1>(n / flen, [&](size_t k, point rt) {
+        void dot(auto &&C, auto const& D) {
+            cvector::exec_on_evals<1>(A.size() / flen, [&](size_t k, point rt) {
                 k *= flen;
                 auto [Ax, Ay] = A.at(k);
                 auto [Bx, By] = B.at(k);
@@ -79,6 +72,16 @@ namespace cp_algo::math::fft {
                 B.at(k) = BD;
             });
             checkpoint("dot");
+        }
+
+        void mul(auto &&C, auto const& D, auto &res, size_t k) {
+            assert(A.size() == C.size());
+            size_t n = A.size();
+            if(!n) {
+                res = {};
+                return;
+            }
+            dot(C, D);
             A.ifft();
             B.ifft();
             C.ifft();

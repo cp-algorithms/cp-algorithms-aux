@@ -13,7 +13,7 @@ using polyn = poly_t<base>;
 void solve() {
     int n;
     cin >> n;
-    vector<base> a(n);
+    polyn::Vector a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     auto Q = polyn(a).min_rec(n);
     int d = Q.deg();

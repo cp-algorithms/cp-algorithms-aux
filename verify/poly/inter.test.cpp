@@ -13,7 +13,7 @@ using polyn = poly_t<base>;
 void solve() {
     int n;
     cin >> n;
-    vector<base> x(n), y(n);
+    polyn::Vector x(n), y(n);
     copy_n(istream_iterator<base>(cin), n, begin(x));
     copy_n(istream_iterator<base>(cin), n, begin(y));
     polyn::inter(x, y).print(n);

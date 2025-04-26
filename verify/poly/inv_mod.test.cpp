@@ -13,7 +13,7 @@ using polyn = poly_t<base>;
 void solve() {
     int n, m;
     cin >> n >> m;
-    vector<base> a(n), b(m);
+    polyn::Vector a(n), b(m);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     copy_n(istream_iterator<base>(cin), m, begin(b));
     auto res = polyn(a).inv_mod(polyn(b));

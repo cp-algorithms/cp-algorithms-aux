@@ -14,7 +14,7 @@ using polyn = poly_t<base>;
 void solve() {
     int64_t d, k;
     cin >> d >> k;
-    vector<base> a(d), c(d);
+    polyn::Vector a(d), c(d);
     copy_n(istream_iterator<base>(cin), d, begin(a));
     copy_n(istream_iterator<base>(cin), d, begin(c));
     polyn Q = polyn(1) - polyn(c).mul_xk_inplace(1);

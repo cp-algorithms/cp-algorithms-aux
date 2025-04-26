@@ -11,18 +11,18 @@ const int mod = 998244353;
 using base = modint<mod>;
 using polyn = poly_t<base>;
 
-void find_roots_impl(polyn const& p, vector<base> &res) {
+void find_roots_impl(polyn const& p, polyn::Vector &res) {
     if(p.deg() == 1) {
         res.push_back(-p[0] / p[1]);
     } else if(p.deg() > 1) {
-        auto A = polyn::gcd(polyn(vector<base>{(base)rng(), 1}).powmod((mod - 1) / 2, p) - base(1), polyn(p));
+        auto A = polyn::gcd(polyn(polyn::Vector{(base)rng(), 1}).powmod((mod - 1) / 2, p) - base(1), polyn(p));
         find_roots_impl(A, res);
         find_roots_impl(p / A, res);
     }
 }
 
 auto find_roots(polyn const& p) {
-    vector<base> res;
+    polyn::Vector res;
     if(p[0] == 0) {
         res.push_back(0);
     }
@@ -34,7 +34,7 @@ auto find_roots(polyn const& p) {
 void solve() {
     int n;
     cin >> n;
-    vector<base> f(n+1);
+    polyn::Vector f(n+1);
     copy_n(istream_iterator<base>(cin), n+1, begin(f));
     polyn res = find_roots(f);
     cout << res.deg() + 1 << "\n";

@@ -13,7 +13,7 @@ using base = modint<mod>;
 void solve() {
     int n, m;
     cin >> n >> m;
-    vector<base> a(n), b(m);
+    vector<base, cp_algo::big_alloc<base>> a(n), b(m);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     copy_n(istream_iterator<base>(cin), m, begin(b));
     fft::mul(a, b);

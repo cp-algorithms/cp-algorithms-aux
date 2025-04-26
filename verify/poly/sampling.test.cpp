@@ -16,7 +16,7 @@ using polyn = poly_t<base>;
 void solve() {
     int n, m, c;
     cin >> n >> m >> c;
-    vector<base> a(n);
+    polyn::Vector a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     polyn A = polyn(a);
     polyn Q = polyn({1, -1}).pow(n, n + 1);

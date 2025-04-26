@@ -15,7 +15,7 @@ void solve() {
     int n;
     int64_t m;
     cin >> n >> m;
-    vector<base> a(n);
+    polyn::Vector a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     polyn(a).pow(m, n).print(n);
 }

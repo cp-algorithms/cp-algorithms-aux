@@ -14,7 +14,7 @@ using polyn = poly_t<base>;
 void solve() {
     int n;
     cin >> n;
-    vector<base> a(n);
+    polyn::Vector a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     auto res = polyn(a).sqrt(n);
     if(res) {

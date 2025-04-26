@@ -23,7 +23,7 @@ void solve() {
         int d;
         cin >> d;
         D += d;
-        vector<base> a(d + 1);
+        polyn::Vector a(d + 1);
         copy_n(istream_iterator<base>(cin), d + 1, begin(a));
         que.insert(polyn(a));
     }

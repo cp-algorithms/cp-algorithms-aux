@@ -14,7 +14,7 @@ using polyn = poly_t<base>;
 void solve() {
     int n, m, a, r;
     cin >> n >> m >> a >> r;
-    vector<base> f(n);
+    polyn::Vector f(n);
     copy_n(istream_iterator<base>(cin), n, begin(f));
     polyn(f).mulx(a).chirpz(r, m).print(m);
 }

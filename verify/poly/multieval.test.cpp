@@ -14,7 +14,7 @@ using polyn = poly_t<base>;
 void solve() {
     int n, m;
     cin >> n >> m;
-    vector<base> f(n), x(m);
+    polyn::Vector f(n), x(m);
     copy_n(istream_iterator<base>(cin), n, begin(f));
     copy_n(istream_iterator<base>(cin), m, begin(x));
     polyn(polyn(f).eval(x)).print(m);

@@ -26,28 +26,18 @@ namespace cp_algo {
 
 #if CP_ALGO_USE_MMAP
         [[nodiscard]] T* allocate(std::size_t n) {
-            if(n * sizeof(T) < 4 * 1024 * 1024) {
-                return base::allocate(n);
+            auto *raw = base::allocate(n);
+            if(n * sizeof(T) >= (1 << 20)) {
+                madvise(raw, n, MADV_HUGEPAGE);
+                madvise(raw, n, MADV_POPULATE_WRITE);
             }
-            n *= sizeof(T);
-            void* raw = mmap(nullptr, n,
-                            PROT_READ | PROT_WRITE,
-                            MAP_PRIVATE | MAP_ANONYMOUS,
-                            -1, 0);
-            madvise(raw, n, MADV_HUGEPAGE);
-            madvise(raw, n, MADV_POPULATE_WRITE);
-            return static_cast<T*>(raw);
+            return raw;
         }
 #endif
 
 #if CP_ALGO_USE_MMAP
         void deallocate(T* p, std::size_t n) noexcept {
-            if(n * sizeof(T) < 4 * 1024 * 1024) {
-                return base::deallocate(p, n);
-            }
-            if(p) {
-                munmap(p, n * sizeof(T));
-            }
+            return base::deallocate(p, n);
         }
 #endif
     };

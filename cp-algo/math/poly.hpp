@@ -441,7 +441,7 @@ namespace cp_algo::math {
                 if(n == 1) {
                     return *this;
                 } else {
-                    return std::vector{(*this)[1], (*this)[0] - (*this)[1]};
+                    return Vector{(*this)[1], (*this)[0] - (*this)[1]};
                 }
             }
             Vector y(n);

@@ -25,7 +25,7 @@ namespace cp_algo::linalg {
                     }
                     y.normalize();
                     if(vec<base>(y[std::slice(0, n, 1)]) == vec<base>(n)) {
-                        return polyn(polyn::Vector(begin(y) + n, end(y)));
+                        return polyn(typename polyn::Vector(begin(y) + n, end(y)));
                     } else {
                         basis_init.push_back(x);
                         basis.push_back(y);

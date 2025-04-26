@@ -11,6 +11,7 @@ namespace cp_algo::math::fft {
     struct dft {
         cvector A, B;
         static base factor, ifactor;
+        using Int2 = base::Int2;
         static bool init;
         static int split;
 
@@ -28,7 +29,7 @@ namespace cp_algo::math::fft {
                     auto ai = i < size(a) ? (a[i] * mul).rem_direct() : 0;
                     auto rem = ai % split;
                     auto quo = (ai - rem) / split;
-                    return std::pair{rem, quo};
+                    return std::pair{(ftype)rem, (ftype)quo};
                 };
                 auto [rai, qai] = splt(i, cur);
                 auto [rani, qani] = splt(n + i, cur * step);
@@ -91,15 +92,15 @@ namespace cp_algo::math::fft {
                 auto Ai = A.get(i) * rt;
                 auto Bi = B.get(i) * rt;
                 auto Ci = C.get(i) * rt;
-                int64_t A0 = llround(real(Ai));
-                int64_t A1 = llround(real(Ci));
-                int64_t A2 = llround(real(Bi));
+                Int2 A0 = llround(real(Ai));
+                Int2 A1 = llround(real(Ci));
+                Int2 A2 = llround(real(Bi));
                 res[i].setr_direct(base::m_reduce(A0 + A1 * split + A2 * splitsplit));
                 res[i] *= cur;
                 if(n + i < k) {
-                    int64_t B0 = llround(imag(Ai));
-                    int64_t B1 = llround(imag(Ci));
-                    int64_t B2 = llround(imag(Bi));
+                    Int2 B0 = llround(imag(Ai));
+                    Int2 B1 = llround(imag(Ci));
+                    Int2 B2 = llround(imag(Bi));
                     res[n + i].setr_direct(base::m_reduce(B0 + B1 * split + B2 * splitsplit));
                     res[n + i] *= cur * step;
                 }

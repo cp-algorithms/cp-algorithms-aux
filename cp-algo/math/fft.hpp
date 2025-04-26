@@ -24,7 +24,7 @@ namespace cp_algo::math::fft {
             }
             base cur = factor;
             base step = bpow(factor, n);
-            cvector::exec_on_roots(2 * n, std::min(n, size(a)), [&](size_t i, auto rt) {
+            for(size_t i = 0; i < std::min(n, size(a)); i++) {
                 auto splt = [&](size_t i, auto mul) {
                     auto ai = i < size(a) ? (a[i] * mul).rem_direct() : 0;
                     auto rem = ai % split;
@@ -33,10 +33,10 @@ namespace cp_algo::math::fft {
                 };
                 auto [rai, qai] = splt(i, cur);
                 auto [rani, qani] = splt(n + i, cur * step);
-                A.set(i, point(rai, rani) * rt);
-                B.set(i, point(qai, qani) * rt);
+                A.set(i, point(rai, rani));
+                B.set(i, point(qai, qani));
                 cur *= factor;
-            });
+            }
             checkpoint("dft init");
             if(n) {
                 A.fft();
@@ -51,11 +51,9 @@ namespace cp_algo::math::fft {
                 res = {};
                 return;
             }
-            for(size_t k = 0; k < n; k += flen) {
-                auto rt = cvector::eval_point(k / flen / 2);
-                if(k / flen % 2) {
-                    rt = -rt;
-                }
+
+            cvector::exec_on_evals<1>(n / flen, [&](size_t k, point rt) {
+                k *= flen;
                 auto [Ax, Ay] = A.at(k);
                 auto [Bx, By] = B.at(k);
                 vpoint AC, AD, BC, BD;
@@ -79,7 +77,7 @@ namespace cp_algo::math::fft {
                 A.at(k) = AC;
                 C.at(k) = AD + BC;
                 B.at(k) = BD;
-            }
+            });
             checkpoint("dot");
             A.ifft();
             B.ifft();
@@ -87,25 +85,24 @@ namespace cp_algo::math::fft {
             auto splitsplit = (base(split) * split).rem();
             base cur = ifactor * ifactor;
             base step = bpow(ifactor, n);
-            cvector::exec_on_roots(2 * n, std::min(n, k), [&](size_t i, point rt) {
-                rt = conj(rt);
-                auto Ai = A.get(i) * rt;
-                auto Bi = B.get(i) * rt;
-                auto Ci = C.get(i) * rt;
-                Int2 A0 = llround(real(Ai));
-                Int2 A1 = llround(real(Ci));
-                Int2 A2 = llround(real(Bi));
+            for(size_t i = 0; i < std::min(n, k); i++) {
+                auto [Ax, Ay] = A.get(i);
+                auto [Bx, By] = B.get(i);
+                auto [Cx, Cy] = C.get(i);
+                Int2 A0 = llround(Ax);
+                Int2 A1 = llround(Cx);
+                Int2 A2 = llround(Bx);
                 res[i].setr_direct(base::m_reduce(A0 + A1 * split + A2 * splitsplit));
                 res[i] *= cur;
                 if(n + i < k) {
-                    Int2 B0 = llround(imag(Ai));
-                    Int2 B1 = llround(imag(Ci));
-                    Int2 B2 = llround(imag(Bi));
+                    Int2 B0 = llround(Ay);
+                    Int2 B1 = llround(Cy);
+                    Int2 B2 = llround(By);
                     res[n + i].setr_direct(base::m_reduce(B0 + B1 * split + B2 * splitsplit));
                     res[n + i] *= cur * step;
                 }
                 cur *= ifactor;
-            });
+            }
             checkpoint("recover mod");
         }
         void mul_inplace(auto &&B, auto& res, size_t k) {

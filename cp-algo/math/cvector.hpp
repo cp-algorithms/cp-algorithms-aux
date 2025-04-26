@@ -24,14 +24,6 @@ namespace cp_algo::math::fft {
             r.resize(n / flen);
             checkpoint("cvector create");
         }
-        cvector(cvector const& t) {
-            r.resize(t.r.size());
-            for(size_t i = 0; i < r.size(); i++) {
-                r[i] = {vftype(t.r[i].real()), vftype(t.r[i].imag())};
-            }
-            checkpoint("cvector copy");
-        }
-        cvector(cvector&& t) = delete;
 
         vpoint& at(size_t k) {return r[k / flen];}
         vpoint at(size_t k) const {return r[k / flen];}
@@ -63,66 +55,45 @@ namespace cp_algo::math::fft {
                 return eval_arg(n / 2) | (n & 1) << (std::bit_width(n) - 1);
             }
         }
-        static auto root(size_t n, size_t k) {
-            if(n < pre_roots) {
-                return roots[n + k];
-            } else if (k % 2 == 0) {
-                return root(n / 2, k / 2);
-            } else {
-                return polar(1., std::numbers::pi / (ftype)n * (ftype)k);
-            }
-        }
         static point eval_point(size_t n) {
             if(n % 2) {
-                return eval_point(n - 1) * point(0, 1);
-            } else if(n / 2 < pre_evals) {
-                return evalp[n / 2];
+                return -eval_point(n - 1);
+            } else if(n % 4) {
+                return eval_point(n - 2) * point(0, 1);
+            } else if(n / 4 < pre_evals) {
+                return evalp[n / 4];
             } else {
-                return root(2 * std::bit_floor(n), eval_arg(n));
+                return polar(1., std::numbers::pi / (ftype)std::bit_floor(n) * (ftype)eval_arg(n));
             }
         }
-        static void exec_on_roots(size_t n, size_t m, auto &&callback) {
-            point cur = {1, 0};
-            point arg = root(n, 1);
-            for(size_t i = 0; i < m; i++) {
-                callback(i, cur);
-                if(i % 64 == 63) {
-                    cur = root(n / 64, i / 64 + 1);
-                } else {
-                    cur *= arg;
-                }
-            }
+        static point root(size_t n) {
+            return polar(1., 2. * std::numbers::pi / (ftype)n);
         }
-        template<int step = 1>
+        template<int step>
         static void exec_on_evals(size_t n, auto &&callback) {
+            point factor = root(4 * step * n);
             for(size_t i = 0; i < n; i++) {
-                callback(i, eval_point(step * i));
+                callback(i, factor * eval_point(step * i));
             }
-        }
-        static auto dot_block(size_t k, cvector const& A, cvector const& B) {
-            auto rt = eval_point(k / flen / 2);
-            if(k / flen % 2) {
-                rt = -rt;
-            }
-            auto [Ax, Ay] = A.at(k);
-            auto Bv = B.at(k);
-            vpoint res = vz;
-            for (size_t i = 0; i < flen; i++) {
-                res += vpoint(vz + Ax[i], vz + Ay[i]) * Bv;
-                real(Bv) = __builtin_shufflevector(real(Bv), real(Bv), 3, 0, 1, 2);
-                imag(Bv) = __builtin_shufflevector(imag(Bv), imag(Bv), 3, 0, 1, 2);
-                auto x = real(Bv)[0], y = imag(Bv)[0];
-                real(Bv)[0] = x * real(rt) - y * imag(rt);
-                imag(Bv)[0] = x * imag(rt) + y * real(rt);
-            }
-            return res;
         }
 
         void dot(cvector const& t) {
             size_t n = this->size();
-            for(size_t k = 0; k < n; k += flen) {
-                set(k, dot_block(k, *this, t));
-            }
+            exec_on_evals<1>(n / flen, [&](size_t k, point rt) {
+                k *= flen;
+                auto [Ax, Ay] = at(k);
+                auto Bv = t.at(k);
+                vpoint res = vz;
+                for (size_t i = 0; i < flen; i++) {
+                    res += vpoint(vz + Ax[i], vz + Ay[i]) * Bv;
+                    real(Bv) = __builtin_shufflevector(real(Bv), real(Bv), 3, 0, 1, 2);
+                    imag(Bv) = __builtin_shufflevector(imag(Bv), imag(Bv), 3, 0, 1, 2);
+                    auto x = real(Bv)[0], y = imag(Bv)[0];
+                    real(Bv)[0] = x * real(rt) - y * imag(rt);
+                    imag(Bv)[0] = x * imag(rt) + y * real(rt);
+                }
+                set(k, res);
+            });
             checkpoint("dot");
         }
 
@@ -130,7 +101,7 @@ namespace cp_algo::math::fft {
             size_t n = size();
             for(size_t i = flen; i <= n / 2; i *= 2) {
                 if (4 * i <= n) { // radix-4
-                    exec_on_evals<2>(n / (4 * i), [&](size_t k, point rt) {
+                    exec_on_evals<4>(n / (4 * i), [&](size_t k, point rt) {
                         k *= 4 * i;
                         vpoint v1 = {vz + real(rt), vz - imag(rt)};
                         vpoint v2 = v1 * v1;
@@ -148,7 +119,7 @@ namespace cp_algo::math::fft {
                     });
                     i *= 2;
                 } else { // radix-2 fallback
-                    exec_on_evals(n / (2 * i), [&](size_t k, point rt) {
+                    exec_on_evals<2>(n / (2 * i), [&](size_t k, point rt) {
                         k *= 2 * i;
                         vpoint cvrt = {vz + real(rt), vz - imag(rt)};
                         for(size_t j = k; j < k + i; j += flen) {
@@ -169,7 +140,7 @@ namespace cp_algo::math::fft {
             for(size_t i = n / 2; i >= flen; i /= 2) {
                 if (i / 2 >= flen) { // radix-4
                     i /= 2;
-                    exec_on_evals<2>(n / (4 * i), [&](size_t k, point rt) {
+                    exec_on_evals<4>(n / (4 * i), [&](size_t k, point rt) {
                         k *= 4 * i;
                         vpoint v1 = {vz + real(rt), vz + imag(rt)};
                         vpoint v2 = v1 * v1;
@@ -186,7 +157,7 @@ namespace cp_algo::math::fft {
                         }
                     });
                 } else { // radix-2 fallback
-                    exec_on_evals(n / (2 * i), [&](size_t k, point rt) {
+                    exec_on_evals<2>(n / (2 * i), [&](size_t k, point rt) {
                         k *= 2 * i;
                         vpoint vrt = {vz + real(rt), vz + imag(rt)};
                         for(size_t j = k; j < k + i; j += flen) {
@@ -199,17 +170,7 @@ namespace cp_algo::math::fft {
             }
             checkpoint("fft");
         }
-        static constexpr size_t pre_roots = 1 << 14;
         static constexpr size_t pre_evals = 1 << 16;
-        static constexpr std::array<point, pre_roots> roots = []() {
-            std::array<point, pre_roots> res = {};
-            for(size_t n = 1; n < res.size(); n *= 2) {
-                for(size_t k = 0; k < n; k++) {
-                    res[n + k] = polar(1., std::numbers::pi / ftype(n) * ftype(k));
-                }
-            }
-            return res;
-        }();
         static constexpr std::array<size_t, pre_evals> eval_args = []() {
             std::array<size_t, pre_evals> res = {};
             for(size_t i = 1; i < pre_evals; i++) {

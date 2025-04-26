@@ -31,13 +31,6 @@ auto round(vftype a) {
     return __builtin_convertvector(__builtin_convertvector(a < 0 ? a - 0.5 : a + 0.5, v4di), vftype);
 }
 
-void print(auto r) {
-    for(int z = 0; z < 4; z++) {
-        cout << r[z] << ' ';
-    }
-    cout << endl;
-}
-
 auto is_integer(auto a) {
     static const double eps = 1e-8;
     return abs(imag(a)) < eps

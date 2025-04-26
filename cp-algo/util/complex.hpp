@@ -8,7 +8,7 @@ namespace cp_algo {
     struct complex {
         using value_type = T;
         T x, y;
-        constexpr complex() {}
+        constexpr complex(): x(), y() {}
         constexpr complex(T x): x(x), y() {}
         constexpr complex(T x, T y): x(x), y(y) {}
         complex& operator *= (T t) {x *= t; y *= t; return *this;}

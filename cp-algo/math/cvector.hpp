@@ -2,7 +2,7 @@
 #define CP_ALGO_MATH_CVECTOR_HPP
 #include "../util/complex.hpp"
 #include "../util/checkpoint.hpp"
-#include  "../util/new_big.hpp"
+#include "../util/big_alloc.hpp"
 #include <experimental/simd>
 #include <ranges>
 
@@ -18,28 +18,20 @@ namespace cp_algo::math::fft {
     static constexpr vpoint vi = {vz, vz + 1};
 
     struct cvector {
-        vpoint *r;
-        size_t sz;
+        std::vector<vpoint, big_alloc<vpoint>> r;
         cvector(size_t n) {
-            sz = std::max(flen, std::bit_ceil(n));
-            r = new_big<vpoint>(sz / flen);
+            n = std::max(flen, std::bit_ceil(n));
+            r.resize(n / flen);
             checkpoint("cvector create");
         }
         cvector(cvector const& t) {
-            sz = t.sz;
-            r = new_big<vpoint>(sz / flen);
-            memcpy(r, t.r, (sz / flen) * sizeof(vpoint));
+            r.resize(t.r.size());
+            for(size_t i = 0; i < r.size(); i++) {
+                r[i] = {vftype(t.r[i].real()), vftype(t.r[i].imag())};
+            }
             checkpoint("cvector copy");
         }
-        cvector(cvector&& t) noexcept {
-            sz = t.sz;
-            r = std::exchange(t.r, nullptr);
-        }
-        ~cvector() noexcept {
-            if(r) {
-                delete_big(r, sz / flen);
-            }
-        }
+        cvector(cvector&& t) = delete;
 
         vpoint& at(size_t k) {return r[k / flen];}
         vpoint at(size_t k) const {return r[k / flen];}
@@ -62,7 +54,7 @@ namespace cp_algo::math::fft {
         }
 
         size_t size() const {
-            return sz;
+            return flen * r.size();
         }
         static size_t eval_arg(size_t n) {
             if(n < pre_evals) {
@@ -90,15 +82,15 @@ namespace cp_algo::math::fft {
             }
         }
         static void exec_on_roots(size_t n, size_t m, auto &&callback) {
-            point cur;
+            point cur = {1, 0};
             point arg = root(n, 1);
             for(size_t i = 0; i < m; i++) {
-                if(i % 32 == 0) {
-                    cur = root(n / 32, i / 32);
+                callback(i, cur);
+                if(i % 64 == 63) {
+                    cur = root(n / 64, i / 64 + 1);
                 } else {
                     cur *= arg;
                 }
-                callback(i, cur);
             }
         }
         template<int step = 1>
@@ -207,7 +199,7 @@ namespace cp_algo::math::fft {
             }
             checkpoint("fft");
         }
-        static constexpr size_t pre_roots = 1 << 15;
+        static constexpr size_t pre_roots = 1 << 14;
         static constexpr size_t pre_evals = 1 << 16;
         static constexpr std::array<point, pre_roots> roots = []() {
             std::array<point, pre_roots> res = {};

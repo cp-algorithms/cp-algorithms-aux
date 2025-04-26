@@ -13,10 +13,10 @@
 #include <vector>
 #include <list>
 namespace cp_algo::math {
-    template<typename T>
+    template<typename T, class Alloc = big_alloc<T>>
     struct poly_t {
         using base = T;
-        std::vector<T> a;
+        std::vector<T, Alloc> a;
         
         poly_t& normalize() {
             while(deg() >= 0 && lead() == base(0)) {
@@ -27,8 +27,8 @@ namespace cp_algo::math {
         
         poly_t(){}
         poly_t(T a0): a{a0} {normalize();}
-        poly_t(std::vector<T> const& t): a(t) {normalize();}
-        poly_t(std::vector<T>&& t): a(std::move(t)) {normalize();}
+        poly_t(auto const& t): a(t.begin(), t.end()) {normalize();}
+        poly_t(std::vector<T, Alloc> &&t): a(std::move(t)) {normalize();}
         
         poly_t& negate_inplace() {
             std::ranges::transform(a, begin(a), std::negate{});

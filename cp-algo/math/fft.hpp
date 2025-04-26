@@ -165,8 +165,8 @@ namespace cp_algo::math::fft {
             std::min(k, size(a)) + std::min(k, size(b)) - 1
         ) / 2);
         auto A = dft<base>(a | std::views::take(k), n);
-        a.resize(k);
-        checkpoint("resize a");
+        a.assign(k, 0);
+        checkpoint("reset a");
         if(&a == &b) {
             A.mul(A, a, k);
         } else {

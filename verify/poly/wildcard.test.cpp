@@ -54,15 +54,15 @@ string matches(string const& A, string const& B, char wild = '*') {
             project[1][i] = conj(project[0][i]);
         }
     }
-    project[0][wild] = project[1][wild] = 0;
+    project[0][(int)wild] = project[1][(int)wild] = 0;
     vector<cvector> P;
     P.emplace_back(size(A));
     P.emplace_back(size(A));
     for(auto [i, c]: A | views::enumerate) {
-        P[0].set(i, project[0][c]);
+        P[0].set(i, project[0][(int)c]);
     }
     for(auto [i, c]: B | views::reverse | views::enumerate) {
-        P[1].set(i, project[1][c]);
+        P[1].set(i, project[1][(int)c]);
     }
     cp_algo::checkpoint("cvector fill");
     semicorr(P[0], P[1]);

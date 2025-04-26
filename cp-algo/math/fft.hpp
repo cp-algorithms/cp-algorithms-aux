@@ -113,13 +113,13 @@ namespace cp_algo::math::fft {
         void mul(auto const& B, auto& res, size_t k) {
             mul(cvector(B.A), B.B, res, k);
         }
-        std::vector<base> operator *= (dft &B) {
-            std::vector<base> res(2 * A.size());
+        std::vector<base, big_alloc<base>> operator *= (dft &B) {
+            std::vector<base, big_alloc<base>> res(2 * A.size());
             mul_inplace(B, res, size(res));
             return res;
         }
-        std::vector<base> operator *= (dft const& B) {
-            std::vector<base> res(2 * A.size());
+        std::vector<base, big_alloc<base>> operator *= (dft const& B) {
+            std::vector<base, big_alloc<base>> res(2 * A.size());
             mul(B, res, size(res));
             return res;
         }

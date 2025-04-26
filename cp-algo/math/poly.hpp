@@ -15,8 +15,9 @@
 namespace cp_algo::math {
     template<typename T, class Alloc = big_alloc<T>>
     struct poly_t {
+        using Vector = std::vector<T, Alloc>;
         using base = T;
-        std::vector<T, Alloc> a;
+        Vector a;
         
         poly_t& normalize() {
             while(deg() >= 0 && lead() == base(0)) {
@@ -27,8 +28,8 @@ namespace cp_algo::math {
         
         poly_t(){}
         poly_t(T a0): a{a0} {normalize();}
-        poly_t(auto const& t): a(t.begin(), t.end()) {normalize();}
-        poly_t(std::vector<T, Alloc> &&t): a(std::move(t)) {normalize();}
+        poly_t(Vector const& t): a(t) {normalize();}
+        poly_t(Vector &&t): a(std::move(t)) {normalize();}
         
         poly_t& negate_inplace() {
             std::ranges::transform(a, begin(a), std::negate{});
@@ -204,7 +205,7 @@ namespace cp_algo::math {
             return *this;
         }
         poly_t integr() const { // calculate integral with C = 0
-            std::vector<T> res(deg() + 2);
+            Vector res(deg() + 2);
             for(int i = 0; i <= deg(); i++) {
                 res[i + 1] = a[i] * small_inv<T>(i + 1);
             }
@@ -306,7 +307,7 @@ namespace cp_algo::math {
                 return poly_t(T(0));
             }
             assert((*this)[0] != T(0));
-            std::vector<T> Q(n);
+            Vector Q(n);
             Q[0] = bpow(a[0], k);
             auto a0inv = a[0].inv();
             for(int i = 1; i < (int)n; i++) {
@@ -389,10 +390,10 @@ namespace cp_algo::math {
         // requires multiplying polynomials of size deg() and n+deg()!
         poly_t chirpz(T z, int n) const { // P(1), P(z), P(z^2), ..., P(z^(n-1))
             if(is_zero()) {
-                return std::vector<T>(n, 0);
+                return Vector(n, 0);
             }
             if(z == T(0)) {
-                std::vector<T> ans(n, (*this)[0]);
+                Vector ans(n, (*this)[0]);
                 if(n > 0) {
                     ans[0] = accumulate(begin(a), end(a), T(0));
                 }
@@ -405,7 +406,7 @@ namespace cp_algo::math {
 
         // res[i] = prod_{1 <= j <= i} 1/(1 - z^j)
         static auto _1mzk_prod_inv(T z, int n) {
-            std::vector<T> res(n, 1), zk(n);
+            Vector res(n, 1), zk(n);
             zk[0] = 1;
             for(int i = 1; i < n; i++) {
                 zk[i] = zk[i - 1] * z;
@@ -421,12 +422,12 @@ namespace cp_algo::math {
         // prod_{0 <= j < n} (1 - z^j x)
         static auto _1mzkx_prod(T z, int n) {
             if(n == 1) {
-                return poly_t(std::vector<T>{1, -1});
+                return poly_t(Vector{1, -1});
             } else {
                 auto t = _1mzkx_prod(z, n / 2);
                 t *= t.mulx(bpow(z, n / 2));
                 if(n % 2) {
-                    t *= poly_t(std::vector<T>{1, -bpow(z, n - 1)});
+                    t *= poly_t(Vector{1, -bpow(z, n - 1)});
                 }
                 return t;
             }
@@ -443,7 +444,7 @@ namespace cp_algo::math {
                     return std::vector{(*this)[1], (*this)[0] - (*this)[1]};
                 }
             }
-            std::vector<T> y(n);
+            Vector y(n);
             for(int i = 0; i < n; i++) {
                 y[i] = (*this)[i];
             }
@@ -465,7 +466,7 @@ namespace cp_algo::math {
 
         static poly_t build(std::vector<poly_t> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
             if(R - L == 1) {
-                return res[v] = std::vector<T>{-*L, 1};
+                return res[v] = Vector{-*L, 1};
             } else {
                 auto M = L + (R - L) / 2;
                 return res[v] = build(res, 2 * v, L, M) * build(res, 2 * v + 1, M, R);
@@ -483,7 +484,7 @@ namespace cp_algo::math {
             }
         }
 
-        poly_t to_newton(std::vector<T> p) {
+        poly_t to_newton(Vector p) {
             if(is_zero()) {
                 return *this;
             }
@@ -493,7 +494,7 @@ namespace cp_algo::math {
             return to_newton(tree, 1, begin(p), end(p));
         }
 
-        std::vector<T> eval(std::vector<poly_t> &tree, int v, auto l, auto r) { // auxiliary evaluation function
+        Vector eval(std::vector<poly_t> &tree, int v, auto l, auto r) { // auxiliary evaluation function
             if(r - l == 1) {
                 return {eval(*l)};
             } else {
@@ -505,10 +506,10 @@ namespace cp_algo::math {
             }
         }
         
-        std::vector<T> eval(std::vector<T> x) { // evaluate polynomial in (x1, ..., xn)
+        Vector eval(Vector x) { // evaluate polynomial in (x1, ..., xn)
             size_t n = x.size();
             if(is_zero()) {
-                return std::vector<T>(n, T(0));
+                return Vector(n, T(0));
             }
             std::vector<poly_t> tree(4 * n);
             build(tree, 1, begin(x), end(x));
@@ -526,7 +527,7 @@ namespace cp_algo::math {
             }
         }
         
-        static auto inter(std::vector<T> x, std::vector<T> y) { // interpolates minimum polynomial from (xi, yi) pairs
+        static auto inter(Vector x, Vector y) { // interpolates minimum polynomial from (xi, yi) pairs
             size_t n = x.size();
             std::vector<poly_t> tree(4 * n);
             return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(y), end(y));
@@ -552,7 +553,7 @@ namespace cp_algo::math {
         }
         
         static poly_t ones(size_t n) { // P(x) = 1 + x + ... + x^{n-1} 
-            return std::vector<T>(n, 1);
+            return Vector(n, 1);
         }
         
         static poly_t expx(size_t n) { // P(x) = e^x (mod x^n)
@@ -560,7 +561,7 @@ namespace cp_algo::math {
         }
 
         static poly_t log1px(size_t n) { // P(x) = log(1+x) (mod x^n)
-            std::vector<T> coeffs(n, 0);
+            Vector coeffs(n, 0);
             for(size_t i = 1; i < n; i++) {
                 coeffs[i] = (i & 1 ? T(i).inv() : -T(i).inv());
             }
@@ -602,7 +603,7 @@ namespace cp_algo::math {
         }
         
         poly_t x2() { // P(x) -> P(x^2)
-            std::vector<T> res(2 * a.size());
+            Vector res(2 * a.size());
             for(size_t i = 0; i < a.size(); i++) {
                 res[2 * i] = a[i];
             }
@@ -612,7 +613,7 @@ namespace cp_algo::math {
         // Return {P0, P1}, where P(x) = P0(x) + xP1(x)
         std::array<poly_t, 2> bisect(size_t n) const {
             n = std::min(n, size(a));
-            std::vector<T> res[2];
+            Vector res[2];
             for(size_t i = 0; i < n; i++) {
                 res[i % 2].push_back(a[i]);
             }

@@ -33,7 +33,7 @@ namespace cp_algo::math::fft {
             base step = bpow(factor, n);
             for(size_t i = 0; i < std::min(n, size(a)); i++) {
                 auto splt = [&](size_t i, auto mul) {
-                    auto ai = i < size(a) ? (a[i] * mul).getr() : 0;
+                    auto ai = i < size(a) ? (a[i] * mul).rem() : 0;
                     auto quo = ai / split;
                     auto rem = ai % split;
                     return std::pair{(ftype)rem, (ftype)quo};
@@ -212,6 +212,7 @@ namespace cp_algo::math::fft {
             b0.resize(n); b1.resize(n);
             auto a01 = to<std::vector>(std::views::zip_transform(std::plus{}, a0, a1));
             auto b01 = to<std::vector>(std::views::zip_transform(std::plus{}, b0, b1));
+            checkpoint("karatsuba split");
             mul(a0, b0);
             mul(a1, b1);
             mul(a01, b01);

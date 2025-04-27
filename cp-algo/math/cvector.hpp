@@ -19,12 +19,21 @@ namespace cp_algo::math::fft {
     vftype abs(vftype a) {
         return a < 0 ? -a : a;
     }
-    using vint [[gnu::vector_size(flen * sizeof(int64_t))]] = int64_t;
+    using i64x4 [[gnu::vector_size(bytes)]] = int64_t;
+    using u64x4 [[gnu::vector_size(bytes)]] = uint64_t;
     auto lround(vftype a) {
-        return __builtin_convertvector(a < 0 ? a - 0.5 : a + 0.5, vint);
+        return __builtin_convertvector(a < 0 ? a - 0.5 : a + 0.5, i64x4);
     }
     auto round(vftype a) {
         return __builtin_convertvector(lround(a), vftype);
+    }
+    u64x4 montgomery_reduce(u64x4 x, u64x4 mod, u64x4 imod) {
+        auto x_ninv = _mm256_mul_epu32(__m256i(x), __m256i(imod));
+        auto x_res = _mm256_add_epi64(__m256i(x), _mm256_mul_epu32(x_ninv, __m256i(mod)));
+        return u64x4(_mm256_bsrli_epi128(x_res, 4));
+    }
+    u64x4 montgomery_mul(u64x4 x, u64x4 y, u64x4 mod, u64x4 imod) {
+        return montgomery_reduce(u64x4(_mm256_mul_epu32(__m256i(x), __m256i(y))), mod, imod);
     }
 
     struct cvector {

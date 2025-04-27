@@ -61,7 +61,7 @@ namespace cp_algo::math {
         auto operator > (const modint &t) const {return to_modint().getr() > t.getr();}
         Int rem() const {
             UInt R = to_modint().getr();
-            return 2 * R > (UInt)mod() ? R - mod() : R;
+            return R - (R > (UInt)mod() / 2) * mod();
         }
         void setr(UInt rr) {
             r = rr;

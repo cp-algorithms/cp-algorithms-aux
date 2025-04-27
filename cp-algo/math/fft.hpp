@@ -14,12 +14,15 @@ namespace cp_algo::math::fft {
         using Int2 = base::Int2;
         static bool _init;
         static int split;
+        static u64x4 mod, imod;
 
         void init() {
             if(!_init) {
                 factor = 1 + random::rng() % (base::mod() - 1);
                 split = int(std::sqrt(base::mod())) + 1;
                 ifactor = base(1) / factor;
+                mod = u64x4() + base::mod();
+                imod = u64x4() + inv2(-base::mod());
                 _init = true;
             }
         }
@@ -79,28 +82,38 @@ namespace cp_algo::math::fft {
         }
 
         void recover_mod(auto &&C, auto &res, size_t k) {
+            assert(size(res) % flen == 0);
             size_t n = A.size();
             auto splitsplit = base(split * split).getr();
-            base stepn = bpow(ifactor, n);
-            base cur[] = {bpow(ifactor, 2), bpow(ifactor, 3), bpow(ifactor, 4), bpow(ifactor, 5)};
-            base step4 = cur[2];
+            base b2x32 = bpow(base(2), 32);
+            base b2x64 = bpow(base(2), 64);
+            u64x4 cur = {
+                (bpow(ifactor, 2) * b2x64).getr(),
+                (bpow(ifactor, 3) * b2x64).getr(),
+                (bpow(ifactor, 4) * b2x64).getr(),
+                (bpow(ifactor, 5) * b2x64).getr()
+            };
+            u64x4 step4 = u64x4{} + (bpow(ifactor, 4) * b2x32).getr();
+            u64x4 stepn = u64x4{} + (bpow(ifactor, n) * b2x32).getr();
             for(size_t i = 0; i < std::min(n, k); i += flen) {
                 auto [Ax, Ay] = A.at(i);
                 auto [Bx, By] = B.at(i);
                 auto [Cx, Cy] = C.at(i);
-                auto A0 = lround(Ax), A1 = lround(Cx), A2 = lround(Bx);
-                auto B0 = lround(Ay), B1 = lround(Cy), B2 = lround(By);
-                for(size_t j = 0; j < flen; j++) {
-                    if(i + j < k) {
-                        res[i + j] = A0[j] + A1[j] * split + A2[j] * splitsplit;
-                        res[i + j] *= cur[j];
+                auto set_i = [&](size_t i, auto A, auto B, auto C, auto mul) {
+                    auto A0 = lround(A), A1 = lround(C), A2 = lround(B);
+                    auto Ai = A0 + A1 * split + A2 * splitsplit + base::modmod();
+                    auto Au = montgomery_reduce(u64x4(Ai), mod, imod);
+                    Au = montgomery_mul(Au, mul, mod, imod);
+                    Au = Au >= base::mod() ? Au - base::mod() : Au;
+                    for(size_t j = 0; j < flen; j++) {
+                        res[i + j].setr(Au[j]);
                     }
-                    if(i + j + n < k) {
-                        res[i + j + n] = B0[j] + B1[j] * split + B2[j] * splitsplit;
-                        res[i + j + n] *= cur[j] * stepn;
-                    }
-                    cur[j] *= step4;
+                };
+                set_i(i, Ax, Bx, Cx, cur);
+                if(i + n < k) {
+                    set_i(i + n, Ay, By, Cy, montgomery_mul(cur, stepn, mod, imod));
                 }
+                cur = montgomery_mul(cur, step4, mod, imod);
             }
             checkpoint("recover mod");
         }
@@ -144,6 +157,8 @@ namespace cp_algo::math::fft {
     template<modint_type base> base dft<base>::ifactor = 1;
     template<modint_type base> bool dft<base>::_init = false;
     template<modint_type base> int dft<base>::split = 1;
+    template<modint_type base> u64x4 dft<base>::mod = {};
+    template<modint_type base> u64x4 dft<base>::imod = {};
     
     void mul_slow(auto &a, auto const& b, size_t k) {
         if(empty(a) || empty(b)) {
@@ -176,13 +191,13 @@ namespace cp_algo::math::fft {
             std::min(k, size(a)) + std::min(k, size(b)) - 1
         ) / 2);
         auto A = dft<base>(a | std::views::take(k), n);
-        a.assign(k, 0);
-        checkpoint("reset a");
+        a.assign((k / flen + 1) * flen, 0);
         if(&a == &b) {
             A.mul(A, a, k);
         } else {
             A.mul_inplace(dft<base>(b | std::views::take(k), n), a, k);
         }
+        a.resize(k);
     }
     void mul(auto &a, auto const& b) {
         size_t N = size(a) + size(b) - 1;
@@ -213,6 +228,7 @@ namespace cp_algo::math::fft {
                 a[i + n] += ai;
             }
             a.resize(N);
+            checkpoint("karatsuba join");
         } else if(size(a)) {
             mul_truncate(a, b, N);
         }

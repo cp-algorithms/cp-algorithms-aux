@@ -82,7 +82,7 @@ namespace cp_algo::math::fft {
         }
 
         void recover_mod(auto &&C, auto &res, size_t k) {
-            assert(size(res) % flen == 0);
+            res.assign((k / flen + 1) * flen, base(0));
             size_t n = A.size();
             auto splitsplit = base(split * split).getr();
             base b2x32 = bpow(base(2), 32);
@@ -106,7 +106,7 @@ namespace cp_algo::math::fft {
                     Au = montgomery_mul(Au, mul, mod, imod);
                     Au = Au >= base::mod() ? Au - base::mod() : Au;
                     for(size_t j = 0; j < flen; j++) {
-                        res[i + j].setr(Au[j]);
+                        res[i + j].setr(typename base::UInt(Au[j]));
                     }
                 };
                 set_i(i, Ax, Bx, Cx, cur);
@@ -115,6 +115,7 @@ namespace cp_algo::math::fft {
                 }
                 cur = montgomery_mul(cur, step4, mod, imod);
             }
+            res.resize(k);
             checkpoint("recover mod");
         }
 
@@ -138,13 +139,13 @@ namespace cp_algo::math::fft {
             mul(cvector(B.A), B.B, res, k);
         }
         std::vector<base, big_alloc<base>> operator *= (dft &B) {
-            std::vector<base, big_alloc<base>> res(2 * A.size());
-            mul_inplace(B, res, size(res));
+            std::vector<base, big_alloc<base>> res;
+            mul_inplace(B, res, 2 * A.size());
             return res;
         }
         std::vector<base, big_alloc<base>> operator *= (dft const& B) {
-            std::vector<base, big_alloc<base>> res(2 * A.size());
-            mul(B, res, size(res));
+            std::vector<base, big_alloc<base>> res;
+            mul(B, res, 2 * A.size());
             return res;
         }
         auto operator * (dft const& B) const {
@@ -191,13 +192,11 @@ namespace cp_algo::math::fft {
             std::min(k, size(a)) + std::min(k, size(b)) - 1
         ) / 2);
         auto A = dft<base>(a | std::views::take(k), n);
-        a.assign((k / flen + 1) * flen, 0);
         if(&a == &b) {
             A.mul(A, a, k);
         } else {
             A.mul_inplace(dft<base>(b | std::views::take(k), n), a, k);
         }
-        a.resize(k);
     }
     void mul(auto &a, auto const& b) {
         size_t N = size(a) + size(b) - 1;

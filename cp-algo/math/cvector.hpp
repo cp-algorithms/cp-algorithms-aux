@@ -15,7 +15,9 @@ namespace cp_algo::math::fft {
     using vftype [[gnu::vector_size(bytes)]] = ftype;
     using vpoint = complex<vftype>;
     static constexpr vftype vz = {};
-    static constexpr vpoint vi = {vz, vz + 1};
+    vpoint vi(vpoint const& r) {
+        return {-imag(r), real(r)};
+    }
     vftype abs(vftype a) {
         return a < 0 ? -a : a;
     }
@@ -132,8 +134,8 @@ namespace cp_algo::math::fft {
                             auto D = at(j + 3 * i);
                             at(j) = (A + B + C + D);
                             at(j + 2 * i) = (A + B - C - D) * v2;
-                            at(j +     i) = (A - B - vi * (C - D)) * v1;
-                            at(j + 3 * i) = (A - B + vi * (C - D)) * v3;
+                            at(j +     i) = (A - B - vi(C - D)) * v1;
+                            at(j + 3 * i) = (A - B + vi(C - D)) * v3;
                         }
                     });
                     i *= 2;
@@ -171,8 +173,8 @@ namespace cp_algo::math::fft {
                             auto D = at(j + 3 * i) * v3;
                             at(j)         = (A + C) + (B + D);
                             at(j + i)     = (A + C) - (B + D);
-                            at(j + 2 * i) = (A - C) + vi * (B - D);
-                            at(j + 3 * i) = (A - C) - vi * (B - D);
+                            at(j + 2 * i) = (A - C) + vi(B - D);
+                            at(j + 3 * i) = (A - C) - vi(B - D);
                         }
                     });
                 } else { // radix-2 fallback

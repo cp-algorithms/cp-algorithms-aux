@@ -91,14 +91,14 @@ namespace cp_algo::math {
     template<typename modint>
     concept modint_type = std::is_base_of_v<modint_base<modint, typename modint::Int>, modint>;
     template<modint_type modint>
-    std::istream& operator >> (std::istream &in, modint &x) {
+    decltype(std::cin)& operator >> (decltype(std::cin) &in, modint &x) {
         typename modint::UInt r;
         auto &res = in >> r;
         x.setr(r);
         return res;
     }
     template<modint_type modint>
-    std::ostream& operator << (std::ostream &out, modint const& x) {
+    decltype(std::cout)& operator << (decltype(std::cout) &out, modint const& x) {
         return out << x.getr();
     }
 

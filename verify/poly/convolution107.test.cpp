@@ -1,8 +1,10 @@
 // @brief Convolution mod $10^9+7$
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_1000000007"
 #pragma GCC optimize("Ofast,unroll-loops")
-#include "cp-algo/math/fft.hpp"
+#define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/fft.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -14,10 +16,12 @@ void solve() {
     int n, m;
     cin >> n >> m;
     vector<base, cp_algo::big_alloc<base>> a(n), b(m);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
-    copy_n(istream_iterator<base>(cin), m, begin(b));
+    for(auto &x: a) {cin >> x;}
+    for(auto &x: b) {cin >> x;}
+    cp_algo::checkpoint("read");
     fft::mul(a, b);
-    ranges::copy(a, ostream_iterator<base>(cout, " "));
+    for(auto x: a) {cout << x << " ";}
+    cp_algo::checkpoint("write");
 }
 
 signed main() {

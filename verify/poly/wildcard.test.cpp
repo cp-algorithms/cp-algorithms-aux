@@ -21,20 +21,10 @@ void semicorr(auto &a, auto &b) {
     a.ifft();
 }
 
-vftype abs(vftype a) {
-    return a < 0 ? -a : a;
-}
-
-using v4di [[gnu::vector_size(32)]] = long;
-
-auto round(vftype a) {
-    return __builtin_convertvector(__builtin_convertvector(a < 0 ? a - 0.5 : a + 0.5, v4di), vftype);
-}
-
 auto is_integer(auto a) {
     static const double eps = 1e-8;
-    return abs(imag(a)) < eps
-        && abs(real(a) - round(real(a))) < eps;
+    return fft::abs(imag(a)) < eps
+        && fft::abs(real(a) - fft::round(real(a))) < eps;
 }
 
 string matches(string const& A, string const& B, char wild = '*') {

@@ -12,23 +12,27 @@ namespace cp_algo::math::fft {
         cvector A, B;
         static base factor, ifactor;
         using Int2 = base::Int2;
-        static bool init;
+        static bool _init;
         static int split;
 
-        dft(auto const& a, size_t n): A(n), B(n) {
-            if(!init) {
+        void init() {
+            if(!_init) {
                 factor = 1 + random::rng() % (base::mod() - 1);
                 split = int(std::sqrt(base::mod())) + 1;
                 ifactor = base(1) / factor;
-                init = true;
+                _init = true;
             }
+        }
+
+        dft(auto const& a, size_t n): A(n), B(n) {
+            init();
             base cur = factor;
             base step = bpow(factor, n);
             for(size_t i = 0; i < std::min(n, size(a)); i++) {
                 auto splt = [&](size_t i, auto mul) {
-                    auto ai = i < size(a) ? (a[i] * mul).rem() : 0;
-                    auto rem = ai % split;
+                    auto ai = i < size(a) ? (a[i] * mul).getr() : 0;
                     auto quo = ai / split;
+                    auto rem = ai % split;
                     return std::pair{(ftype)rem, (ftype)quo};
                 };
                 auto [rai, qai] = splt(i, cur);
@@ -74,6 +78,33 @@ namespace cp_algo::math::fft {
             checkpoint("dot");
         }
 
+        void recover_mod(auto &&C, auto &res, size_t k) {
+            size_t n = A.size();
+            auto splitsplit = base(split * split).getr();
+            base stepn = bpow(ifactor, n);
+            base cur[] = {bpow(ifactor, 2), bpow(ifactor, 3), bpow(ifactor, 4), bpow(ifactor, 5)};
+            base step4 = cur[2];
+            for(size_t i = 0; i < std::min(n, k); i += flen) {
+                auto [Ax, Ay] = A.at(i);
+                auto [Bx, By] = B.at(i);
+                auto [Cx, Cy] = C.at(i);
+                auto A0 = lround(Ax), A1 = lround(Cx), A2 = lround(Bx);
+                auto B0 = lround(Ay), B1 = lround(Cy), B2 = lround(By);
+                for(size_t j = 0; j < flen; j++) {
+                    if(i + j < k) {
+                        res[i + j] = A0[j] + A1[j] * split + A2[j] * splitsplit;
+                        res[i + j] *= cur[j];
+                    }
+                    if(i + j + n < k) {
+                        res[i + j + n] = B0[j] + B1[j] * split + B2[j] * splitsplit;
+                        res[i + j + n] *= cur[j] * stepn;
+                    }
+                    cur[j] *= step4;
+                }
+            }
+            checkpoint("recover mod");
+        }
+
         void mul(auto &&C, auto const& D, auto &res, size_t k) {
             assert(A.size() == C.size());
             size_t n = A.size();
@@ -85,28 +116,7 @@ namespace cp_algo::math::fft {
             A.ifft();
             B.ifft();
             C.ifft();
-            auto splitsplit = (base(split) * split).rem();
-            base cur = ifactor * ifactor;
-            base step = bpow(ifactor, n);
-            for(size_t i = 0; i < std::min(n, k); i++) {
-                auto [Ax, Ay] = A.get(i);
-                auto [Bx, By] = B.get(i);
-                auto [Cx, Cy] = C.get(i);
-                Int2 A0 = llround(Ax);
-                Int2 A1 = llround(Cx);
-                Int2 A2 = llround(Bx);
-                res[i] = A0 + A1 * split + A2 * splitsplit;
-                res[i] *= cur;
-                if(n + i < k) {
-                    Int2 B0 = llround(Ay);
-                    Int2 B1 = llround(Cy);
-                    Int2 B2 = llround(By);
-                    res[n + i] = B0 + B1 * split + B2 * splitsplit;
-                    res[n + i] *= cur * step;
-                }
-                cur *= ifactor;
-            }
-            checkpoint("recover mod");
+            recover_mod(C, res, k);
         }
         void mul_inplace(auto &&B, auto& res, size_t k) {
             mul(B.A, B.B, res, k);
@@ -132,7 +142,7 @@ namespace cp_algo::math::fft {
     };
     template<modint_type base> base dft<base>::factor = 1;
     template<modint_type base> base dft<base>::ifactor = 1;
-    template<modint_type base> bool dft<base>::init = false;
+    template<modint_type base> bool dft<base>::_init = false;
     template<modint_type base> int dft<base>::split = 1;
     
     void mul_slow(auto &a, auto const& b, size_t k) {

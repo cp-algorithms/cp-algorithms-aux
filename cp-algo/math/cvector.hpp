@@ -16,6 +16,16 @@ namespace cp_algo::math::fft {
     using vpoint = complex<vftype>;
     static constexpr vftype vz = {};
     static constexpr vpoint vi = {vz, vz + 1};
+    vftype abs(vftype a) {
+        return a < 0 ? -a : a;
+    }
+    using vint [[gnu::vector_size(flen * sizeof(int64_t))]] = int64_t;
+    auto lround(vftype a) {
+        return __builtin_convertvector(a < 0 ? a - 0.5 : a + 0.5, vint);
+    }
+    auto round(vftype a) {
+        return __builtin_convertvector(lround(a), vftype);
+    }
 
     struct cvector {
         std::vector<vpoint, big_alloc<vpoint>> r;

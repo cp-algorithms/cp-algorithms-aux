@@ -4,14 +4,6 @@
 #include <iostream>
 #include <cassert>
 namespace cp_algo::math {
-    inline constexpr auto inv2(auto x) {
-        assert(x % 2);
-        std::make_unsigned_t<decltype(x)> y = 1;
-        while(y * x != 1) {
-            y *= 2 - x * y;
-        }
-        return y;
-    }
 
     template<typename modint, typename _Int>
     struct modint_base {
@@ -23,56 +15,37 @@ namespace cp_algo::math {
         static Int mod() {
             return modint::mod();
         }
-        static UInt imod() {
-            return modint::imod();
+        static Int remod() {
+            return modint::remod();
         }
-        static UInt2 pw128() {
-            return modint::pw128();
-        }
-        static UInt m_reduce(UInt2 ab) {
-            if(mod() % 2 == 0) [[unlikely]] {
-                return UInt(ab % mod());
-            } else {
-                UInt2 m = (UInt)ab * imod();
-                return UInt((ab + m * mod()) >> bits);
-            }
-        }
-        static UInt m_reduce(Int2 ab) {
-            return m_reduce(UInt2(ab + UInt2(ab < 0) * mod() * mod()));
-        }
-        static UInt m_transform(UInt a) {
-            if(mod() % 2 == 0) [[unlikely]] {
-                return a;
-            } else {
-                return m_reduce(a * pw128());
-            }
+        static UInt2 modmod() {
+            return UInt2(mod()) * mod();
         }
         modint_base(): r(0) {}
-        modint_base(Int2 rr): r(UInt(rr % mod())) {
-            r = std::min(r, r + mod());
-            r = m_transform(r);
+        modint_base(Int2 rr) {
+            to_modint().setr(UInt((rr + modmod()) % mod()));
         }
         modint inv() const {
             return bpow(to_modint(), mod() - 2);
         }
         modint operator - () const {
             modint neg;
-            neg.r = std::min(-r, 2 * mod() - r);
+            neg.r = std::min(-r, remod() - r);
             return neg;
         }
         modint& operator /= (const modint &t) {
             return to_modint() *= t.inv();
         }
         modint& operator *= (const modint &t) {
-            r = m_reduce((UInt2)r * t.r);
+            r = UInt(UInt2(r) * t.r % mod());
             return to_modint();
         }
         modint& operator += (const modint &t) {
-            r += t.r; r = std::min(r, r - 2 * mod());
+            r += t.r; r = std::min(r, r - remod());
             return to_modint();
         }
         modint& operator -= (const modint &t) {
-            r -= t.r; r = std::min(r, r + 2 * mod());
+            r -= t.r; r = std::min(r, r + remod());
             return to_modint();
         }
         modint operator + (const modint &t) const {return modint(to_modint()) += t;}
@@ -80,40 +53,38 @@ namespace cp_algo::math {
         modint operator * (const modint &t) const {return modint(to_modint()) *= t;}
         modint operator / (const modint &t) const {return modint(to_modint()) /= t;}
         // Why <=> doesn't work?..
-        auto operator == (const modint_base &t) const {return getr() == t.getr();}
-        auto operator != (const modint_base &t) const {return getr() != t.getr();}
-        auto operator <= (const modint_base &t) const {return getr() <= t.getr();}
-        auto operator >= (const modint_base &t) const {return getr() >= t.getr();}
-        auto operator < (const modint_base &t) const {return getr() < t.getr();}
-        auto operator > (const modint_base &t) const {return getr() > t.getr();}
+        auto operator == (const modint &t) const {return to_modint().getr() == t.getr();}
+        auto operator != (const modint &t) const {return to_modint().getr() != t.getr();}
+        auto operator <= (const modint &t) const {return to_modint().getr() <= t.getr();}
+        auto operator >= (const modint &t) const {return to_modint().getr() >= t.getr();}
+        auto operator < (const modint &t) const {return to_modint().getr() < t.getr();}
+        auto operator > (const modint &t) const {return to_modint().getr() > t.getr();}
         Int rem() const {
-            UInt R = getr();
+            UInt R = to_modint().getr();
             return 2 * R > (UInt)mod() ? R - mod() : R;
         }
+        void setr(UInt rr) {
+            r = rr;
+        }
+        UInt getr() const {
+            return r;
+        }
 
-        // Only use if you really know what you're doing!
-        static UInt modmod() {return (UInt)8 * mod() * mod();};
+        // Only use these if you really know what you're doing!
+        static UInt modmod8() {return UInt(8 * modmod());}
         void add_unsafe(UInt t) {r += t;}
-        void pseudonormalize() {r = std::min(r, r - modmod());}
+        void pseudonormalize() {r = std::min(r, r - modmod8());}
         modint const& normalize() {
             if(r >= (UInt)mod()) {
                 r %= mod();
             }
             return to_modint();
         }
-        void setr(UInt rr) {r = m_transform(rr);}
-        UInt getr() const {
-            UInt res = m_reduce(UInt2(r));
-            return std::min(res, res - mod());
-        }
         void setr_direct(UInt rr) {r = rr;}
         UInt getr_direct() const {return r;}
-        Int rem_direct() const {
-            UInt R = std::min(r, r - mod());
-            return 2 * R > (UInt)mod() ? R - mod() : R;
-        }
-    private:
+    protected:
         UInt r;
+    private:
         modint& to_modint() {return static_cast<modint&>(*this);}
         modint const& to_modint() const {return static_cast<modint const&>(*this);}
     };
@@ -135,18 +106,53 @@ namespace cp_algo::math {
     struct modint: modint_base<modint<m>, decltype(m)> {
         using Base = modint_base<modint<m>, decltype(m)>;
         using Base::Base;
-        static constexpr Base::UInt im = m % 2 ? inv2(-m) : 0;
-        static constexpr Base::UInt r2 = (typename Base::UInt2)(-1) % m + 1;
         static constexpr Base::Int mod() {return m;}
-        static constexpr Base::UInt imod() {return im;}
-        static constexpr Base::UInt2 pw128() {return r2;}
+        static constexpr Base::UInt remod() {return m;}
+        auto getr() const {return Base::r;}
     };
+
+    inline constexpr auto inv2(auto x) {
+        assert(x % 2);
+        std::make_unsigned_t<decltype(x)> y = 1;
+        while(y * x != 1) {
+            y *= 2 - x * y;
+        }
+        return y;
+    }
 
     template<typename Int = int64_t>
     struct dynamic_modint: modint_base<dynamic_modint<Int>, Int> {
         using Base = modint_base<dynamic_modint<Int>, Int>;
         using Base::Base;
+
+        static Base::UInt m_reduce(Base::UInt2 ab) {
+            if(mod() % 2 == 0) [[unlikely]] {
+                return typename Base::UInt(ab % mod());
+            } else {
+                typename Base::UInt2 m = typename Base::UInt(ab) * imod();
+                return typename Base::UInt((ab + m * mod()) >> Base::bits);
+            }
+        }
+        static Base::UInt m_transform(Base::UInt a) {
+            if(mod() % 2 == 0) [[unlikely]] {
+                return a;
+            } else {
+                return m_reduce(a * pw128());
+            }
+        }
+        dynamic_modint& operator *= (const dynamic_modint &t) {
+            Base::r = m_reduce(typename Base::UInt2(Base::r) * t.r);
+            return *this;
+        }
+        void setr(Base::UInt rr) {
+            Base::r = m_transform(rr);
+        }
+        Base::UInt getr() const {
+            typename Base::UInt res = m_reduce(Base::r);
+            return std::min(res, res - mod());
+        }
         static Int mod() {return m;}
+        static Int remod() {return 2 * m;}
         static Base::UInt imod() {return im;}
         static Base::UInt2 pw128() {return r2;}
         static void switch_mod(Int nm) {

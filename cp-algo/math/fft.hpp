@@ -101,7 +101,7 @@ namespace cp_algo::math::fft {
                 auto [Cx, Cy] = C.at(i);
                 auto set_i = [&](size_t i, auto A, auto B, auto C, auto mul) {
                     auto A0 = lround(A), A1 = lround(C), A2 = lround(B);
-                    auto Ai = A0 + A1 * split + A2 * splitsplit + base::modmod();
+                    auto Ai = A0 + A1 * split + A2 * splitsplit + uint64_t(base::modmod());
                     auto Au = montgomery_reduce(u64x4(Ai), mod, imod);
                     Au = montgomery_mul(Au, mul, mod, imod);
                     Au = Au >= base::mod() ? Au - base::mod() : Au;

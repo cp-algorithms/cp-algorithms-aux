@@ -69,14 +69,14 @@ namespace cp_algo::math::fft {
         size_t size() const {
             return flen * r.size();
         }
-        static size_t eval_arg(size_t n) {
+        static constexpr size_t eval_arg(size_t n) {
             if(n < pre_evals) {
                 return eval_args[n];
             } else {
                 return eval_arg(n / 2) | (n & 1) << (std::bit_width(n) - 1);
             }
         }
-        static point eval_point(size_t n) {
+        static constexpr point eval_point(size_t n) {
             if(n % 2) {
                 return -eval_point(n - 1);
             } else if(n % 4) {
@@ -87,8 +87,8 @@ namespace cp_algo::math::fft {
                 return polar(1., std::numbers::pi / (ftype)std::bit_floor(n) * (ftype)eval_arg(n));
             }
         }
-        static point root(size_t n) {
-            return polar(1., 2. * std::numbers::pi / (ftype)n);
+        static constexpr point root(size_t n) {
+            return eval_point(n / 2);
         }
         template<int step>
         static void exec_on_evals(size_t n, auto &&callback) {
@@ -96,6 +96,11 @@ namespace cp_algo::math::fft {
             for(size_t i = 0; i < n; i++) {
                 callback(i, factor * eval_point(step * i));
             }
+        }
+        template<int step>
+        static void exec_on_eval(size_t n, size_t k, auto &&callback) {
+            point factor = root(4 * step * n);
+            callback(factor * eval_point(step * k));
         }
 
         void dot(cvector const& t) {

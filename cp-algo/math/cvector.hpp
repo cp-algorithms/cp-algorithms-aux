@@ -5,6 +5,7 @@
 #include "../util/checkpoint.hpp"
 #include "../util/big_alloc.hpp"
 #include <ranges>
+#include <bit>
 
 namespace stdx = std::experimental;
 namespace cp_algo::math::fft {
@@ -67,8 +68,19 @@ namespace cp_algo::math::fft {
                 return polar(1., std::numbers::pi / (ftype)std::bit_floor(n) * (ftype)eval_arg(n));
             }
         }
+        static constexpr std::array<point, 32> roots = []() {
+            std::array<point, 32> res;
+            for(size_t i = 2; i < 32; i++) {
+                res[i] = polar(1., std::numbers::pi / (1ull << (i - 2)));
+            }
+            return res;
+        }();
         static constexpr point root(size_t n) {
-            return eval_point(n / 2);
+            return roots[std::bit_width(n)];
+        }
+        template<int step>
+        static void exec_on_eval(size_t n, size_t k, auto &&callback) {
+            callback(k, root(4 * step * n) * eval_point(step * k));
         }
         template<int step>
         static void exec_on_evals(size_t n, auto &&callback) {
@@ -76,10 +88,6 @@ namespace cp_algo::math::fft {
             for(size_t i = 0; i < n; i++) {
                 callback(i, factor * eval_point(step * i));
             }
-        }
-        template<int step>
-        static void exec_on_eval(size_t n, size_t k, auto &&callback) {
-            callback(root(4 * step * n) * eval_point(step * k));
         }
 
         void dot(cvector const& t) {

@@ -16,10 +16,14 @@ namespace cp_algo {
     return a < 0 ? -a : a;
     }
 
+    // https://stackoverflow.com/a/77376595
+    // works for ints in (-2^51, 2^51)
+    static constexpr dx4 magic = dx4() + (3ULL << 51);
     [[gnu::always_inline]] inline i64x4 lround(dx4 x) {
-        // https://stackoverflow.com/a/77376595
-        static constexpr dx4 magic = dx4() + double(3ULL << 51);
         return i64x4(x + magic) - i64x4(magic);
+    }
+    [[gnu::always_inline]] inline dx4 to_double(i64x4 x) {
+        return dx4(x + i64x4(magic)) - magic;
     }
 
     [[gnu::always_inline]] inline dx4 round(dx4 a) {

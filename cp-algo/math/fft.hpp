@@ -29,20 +29,37 @@ namespace cp_algo::math::fft {
 
         dft(auto const& a, size_t n): A(n), B(n) {
             init();
-            base cur = factor;
-            base step = bpow(factor, n);
-            for(size_t i = 0; i < std::min(n, size(a)); i++) {
+            base b2x32 = bpow(base(2), 32);
+            u64x4 cur = {
+                (bpow(factor, 1) * b2x32).getr(),
+                (bpow(factor, 2) * b2x32).getr(),
+                (bpow(factor, 3) * b2x32).getr(),
+                (bpow(factor, 4) * b2x32).getr()
+            };
+            u64x4 step4 = u64x4{} + (bpow(factor, 4) * b2x32).getr();
+            u64x4 stepn = u64x4{} + (bpow(factor, n) * b2x32).getr();
+            for(size_t i = 0; i < std::min(n, size(a)); i += flen) {
                 auto splt = [&](size_t i, auto mul) {
-                    auto ai = i < size(a) ? (a[i] * mul).rem() : 0;
-                    auto quo = ai / split;
-                    auto rem = ai % split;
-                    return std::pair{(ftype)rem, (ftype)quo};
+                    if(i >= size(a)) {
+                        return std::pair{vftype(), vftype()};
+                    }
+                    u64x4 au = {
+                        i < size(a) ? a[i].getr() : 0,
+                        i + 1 < size(a) ? a[i + 1].getr() : 0,
+                        i + 2 < size(a) ? a[i + 2].getr() : 0,
+                        i + 3 < size(a) ? a[i + 3].getr() : 0
+                    };
+                    au = montgomery_mul(au, mul, mod, imod);
+                    au = au >= base::mod() ? au - base::mod() : au;
+                    auto ai = i64x4(au);
+                    ai = ai >= base::mod() / 2 ? ai - base::mod() : ai;
+                    return std::pair{to_double(ai % split), to_double(ai / split)};
                 };
                 auto [rai, qai] = splt(i, cur);
-                auto [rani, qani] = splt(n + i, cur * step);
-                A.set(i, point(rai, rani));
-                B.set(i, point(qai, qani));
-                cur *= factor;
+                auto [rani, qani] = splt(n + i, montgomery_mul(cur, stepn, mod, imod));
+                A.at(i) = vpoint(rai, rani);
+                B.at(i) = vpoint(qai, qani);
+                cur = montgomery_mul(cur, step4, mod, imod);
             }
             checkpoint("dft init");
             if(n) {

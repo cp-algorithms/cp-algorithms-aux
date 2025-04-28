@@ -23,8 +23,8 @@ void semicorr(auto &a, auto &b) {
 
 auto is_integer(auto a) {
     static const double eps = 1e-8;
-    return fft::abs(imag(a)) < eps
-        && fft::abs(real(a) - fft::round(real(a))) < eps;
+    return cp_algo::abs(imag(a)) < eps
+        && cp_algo::abs(real(a) - cp_algo::round(real(a))) < eps;
 }
 
 string matches(string const& A, string const& B, char wild = '*') {

@@ -1,41 +1,21 @@
 #ifndef CP_ALGO_MATH_CVECTOR_HPP
 #define CP_ALGO_MATH_CVECTOR_HPP
+#include "../util/simd.hpp"
 #include "../util/complex.hpp"
 #include "../util/checkpoint.hpp"
 #include "../util/big_alloc.hpp"
-#include <experimental/simd>
 #include <ranges>
 
 namespace stdx = std::experimental;
 namespace cp_algo::math::fft {
-    using ftype = double;
     static constexpr size_t flen = 4;
-    static constexpr size_t bytes = flen * sizeof(ftype);
+    using ftype = double;
+    using vftype = simd<ftype, flen>;
     using point = complex<ftype>;
-    using vftype [[gnu::vector_size(bytes)]] = ftype;
     using vpoint = complex<vftype>;
     static constexpr vftype vz = {};
     vpoint vi(vpoint const& r) {
         return {-imag(r), real(r)};
-    }
-    vftype abs(vftype a) {
-        return a < 0 ? -a : a;
-    }
-    using i64x4 [[gnu::vector_size(bytes)]] = int64_t;
-    using u64x4 [[gnu::vector_size(bytes)]] = uint64_t;
-    auto lround(vftype a) {
-        return __builtin_convertvector(a < 0 ? a - 0.5 : a + 0.5, i64x4);
-    }
-    auto round(vftype a) {
-        return __builtin_convertvector(lround(a), vftype);
-    }
-    u64x4 montgomery_reduce(u64x4 x, u64x4 mod, u64x4 imod) {
-        auto x_ninv = _mm256_mul_epu32(__m256i(x), __m256i(imod));
-        auto x_res = _mm256_add_epi64(__m256i(x), _mm256_mul_epu32(x_ninv, __m256i(mod)));
-        return u64x4(_mm256_bsrli_epi128(x_res, 4));
-    }
-    u64x4 montgomery_mul(u64x4 x, u64x4 y, u64x4 mod, u64x4 imod) {
-        return montgomery_reduce(u64x4(_mm256_mul_epu32(__m256i(x), __m256i(y))), mod, imod);
     }
 
     struct cvector {
@@ -99,8 +79,7 @@ namespace cp_algo::math::fft {
         }
         template<int step>
         static void exec_on_eval(size_t n, size_t k, auto &&callback) {
-            point factor = root(4 * step * n);
-            callback(factor * eval_point(step * k));
+            callback(root(4 * step * n) * eval_point(step * k));
         }
 
         void dot(cvector const& t) {

@@ -12,21 +12,17 @@ namespace cp_algo {
     using u32x4 = simd<uint32_t, 4>;
     using dx4 = simd<double, 4>;
 
-    dx4 abs(dx4 a) {
-#ifdef __AVX2__
-    return _mm256_and_pd(a, dx4{} + 1/0.);
-#else
+    [[gnu::always_inline]] inline dx4 abs(dx4 a) {
     return a < 0 ? -a : a;
-#endif
     }
 
-    i64x4 lround(dx4 x) {
+    [[gnu::always_inline]] inline i64x4 lround(dx4 x) {
         // https://stackoverflow.com/a/77376595
         static constexpr dx4 magic = dx4() + double(3ULL << 51);
         return i64x4(x + magic) - i64x4(magic);
     }
 
-    dx4 round(dx4 a) {
+    [[gnu::always_inline]] inline dx4 round(dx4 a) {
 #ifdef __AVX2__
         return _mm256_round_pd(a, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
 #else
@@ -34,19 +30,17 @@ namespace cp_algo {
 #endif
     }
 
-    u64x4 montgomery_reduce(u64x4 x, u64x4 mod, u64x4 imod) {
-#ifndef __AVX2__
-        auto x_ninv = _mm256_mul_epu32(__m256i(x), __m256i(imod));
-        auto x_res = _mm256_add_epi64(__m256i(x), _mm256_mul_epu32(x_ninv, __m256i(mod)));
-        return u64x4(_mm256_bsrli_epi128(x_res, 4));
-#else
-
+    [[gnu::always_inline]] inline u64x4 montgomery_reduce(u64x4 x, u64x4 mod, u64x4 imod) {
         auto x_ninv = u64x4(u32x8(x) * u32x8(imod));
-        return (x + x_ninv * mod) >> 32;
+#ifdef __AVX2__
+        auto x_res = __m256i(x) + _mm256_mul_epu32(__m256i(x_ninv), __m256i(mod));
+#else
+        auto x_res = x + x_ninv * mod;
 #endif
+        return u64x4(x_res) >> 32;
     }
 
-    u64x4 montgomery_mul(u64x4 x, u64x4 y, u64x4 mod, u64x4 imod) {
+    [[gnu::always_inline]] inline u64x4 montgomery_mul(u64x4 x, u64x4 y, u64x4 mod, u64x4 imod) {
 #ifdef __AVX2__
         return montgomery_reduce(u64x4(_mm256_mul_epu32(__m256i(x), __m256i(y))), mod, imod);
 #else
@@ -54,12 +48,9 @@ namespace cp_algo {
 #endif
     }
 
-    dx4 rotate_right(dx4 x) {
-#ifdef __AVX2__
-        return _mm256_permute4x64_pd(x, _MM_SHUFFLE(2, 1, 0, 3));
-#else
-        return __builtin_shufflevector(x, x, 3, 0, 1, 2);
-#endif
+    [[gnu::always_inline]] inline dx4 rotate_right(dx4 x) {
+        static constexpr u64x4 shuffler = {3, 0, 1, 2};
+        return __builtin_shuffle(x, shuffler);
     }
 }
 #endif // CP_ALGO_UTIL_SIMD_HPP

@@ -201,16 +201,17 @@ namespace cp_algo::math::fft {
     void mul(auto &a, auto const& b) {
         size_t N = size(a) + size(b) - 1;
         if(std::max(size(a), size(b)) > (1 << 23)) {
+            using T = std::decay_t<decltype(a[0])>;
             // do karatsuba to save memory
             auto n = (std::max(size(a), size(b)) + 1) / 2;
-            auto a0 = to<std::vector>(a | std::views::take(n));
-            auto a1 = to<std::vector>(a | std::views::drop(n));
-            auto b0 = to<std::vector>(b | std::views::take(n));
-            auto b1 = to<std::vector>(b | std::views::drop(n));
+            auto a0 = to<std::vector<T, big_alloc<T>>>(a | std::views::take(n));
+            auto a1 = to<std::vector<T, big_alloc<T>>>(a | std::views::drop(n));
+            auto b0 = to<std::vector<T, big_alloc<T>>>(b | std::views::take(n));
+            auto b1 = to<std::vector<T, big_alloc<T>>>(b | std::views::drop(n));
             a0.resize(n); a1.resize(n);
             b0.resize(n); b1.resize(n);
-            auto a01 = to<std::vector>(std::views::zip_transform(std::plus{}, a0, a1));
-            auto b01 = to<std::vector>(std::views::zip_transform(std::plus{}, b0, b1));
+            auto a01 = to<std::vector<T, big_alloc<T>>>(std::views::zip_transform(std::plus{}, a0, a1));
+            auto b01 = to<std::vector<T, big_alloc<T>>>(std::views::zip_transform(std::plus{}, b0, b1));
             checkpoint("karatsuba split");
             mul(a0, b0);
             mul(a1, b1);

@@ -33,11 +33,11 @@ namespace cp_algo {
     [[gnu::always_inline]] inline u64x4 montgomery_reduce(u64x4 x, u64x4 mod, u64x4 imod) {
         auto x_ninv = u64x4(u32x8(x) * u32x8(imod));
 #ifdef __AVX2__
-        auto x_res = __m256i(x) + _mm256_mul_epu32(__m256i(x_ninv), __m256i(mod));
+        x += u64x4(_mm256_mul_epu32(__m256i(x_ninv), __m256i(mod)));
 #else
-        auto x_res = x + x_ninv * mod;
+        x += x_ninv * mod;
 #endif
-        return u64x4(x_res) >> 32;
+        return x >> 32;
     }
 
     [[gnu::always_inline]] inline u64x4 montgomery_mul(u64x4 x, u64x4 y, u64x4 mod, u64x4 imod) {

@@ -63,10 +63,10 @@ namespace cp_algo::math::fft {
                     vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};
                     AC += Av * Cv; AD += Av * Dv;
                     BC += Bv * Cv; BD += Bv * Dv;
-                    real(Cv) = __builtin_shufflevector(real(Cv), real(Cv), 3, 0, 1, 2);
-                    imag(Cv) = __builtin_shufflevector(imag(Cv), imag(Cv), 3, 0, 1, 2);
-                    real(Dv) = __builtin_shufflevector(real(Dv), real(Dv), 3, 0, 1, 2);
-                    imag(Dv) = __builtin_shufflevector(imag(Dv), imag(Dv), 3, 0, 1, 2);
+                    real(Cv) = rotate_right(real(Cv));
+                    imag(Cv) = rotate_right(imag(Cv));
+                    real(Dv) = rotate_right(real(Dv));
+                    imag(Dv) = rotate_right(imag(Dv));
                     auto cx = real(Cv)[0], cy = imag(Cv)[0];
                     auto dx = real(Dv)[0], dy = imag(Dv)[0];
                     real(Cv)[0] = cx * real(rt) - cy * imag(rt);

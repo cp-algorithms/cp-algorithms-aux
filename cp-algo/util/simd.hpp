@@ -10,18 +10,17 @@ namespace cp_algo {
     using u64x4 = simd<uint64_t, 4>;
     using u32x8 = simd<uint32_t, 8>;
     using u32x4 = simd<uint32_t, 4>;
+    using dx4 = simd<double, 4>;
 
-    template<typename Simd>
-    Simd abs(Simd a) {
+    dx4 abs(dx4 a) {
 #ifdef __AVX2__
-    return _mm256_and_pd(a, Simd{} + 1/0.);
+    return _mm256_and_pd(a, dx4{} + 1/0.);
 #else
     return a < 0 ? -a : a;
 #endif
     }
 
-    template<typename Simd>
-    i64x4 lround(Simd a) {
+    i64x4 lround(dx4 a) {
 #ifdef __AVX2__
         return __builtin_convertvector(_mm256_round_pd(a, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC), i64x4);
 #else
@@ -29,8 +28,7 @@ namespace cp_algo {
 #endif
     }
 
-    template<typename Simd>
-    Simd round(Simd a) {
+    dx4 round(dx4 a) {
 #ifdef __AVX2__
         return _mm256_round_pd(a, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
 #else
@@ -55,6 +53,14 @@ namespace cp_algo {
         return montgomery_reduce(u64x4(_mm256_mul_epu32(__m256i(x), __m256i(y))), mod, imod);
 #else
         return montgomery_reduce(x * y, mod, imod);
+#endif
+    }
+
+    dx4 rotate_right(dx4 x) {
+#ifdef __AVX2__
+        return _mm256_permute4x64_pd(x, _MM_SHUFFLE(2, 1, 0, 3));
+#else
+        return __builtin_shufflevector(x, x, 3, 0, 1, 2);
 #endif
     }
 }

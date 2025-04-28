@@ -10,7 +10,7 @@ namespace stdx = std::experimental;
 namespace cp_algo::math::fft {
     static constexpr size_t flen = 4;
     using ftype = double;
-    using vftype = simd<ftype, flen>;
+    using vftype = dx4;
     using point = complex<ftype>;
     using vpoint = complex<vftype>;
     static constexpr vftype vz = {};
@@ -91,8 +91,8 @@ namespace cp_algo::math::fft {
                 vpoint res = vz;
                 for (size_t i = 0; i < flen; i++) {
                     res += vpoint(vz + Ax[i], vz + Ay[i]) * Bv;
-                    real(Bv) = __builtin_shufflevector(real(Bv), real(Bv), 3, 0, 1, 2);
-                    imag(Bv) = __builtin_shufflevector(imag(Bv), imag(Bv), 3, 0, 1, 2);
+                    real(Bv) = rotate_right(real(Bv));
+                    imag(Bv) = rotate_right(imag(Bv));
                     auto x = real(Bv)[0], y = imag(Bv)[0];
                     real(Bv)[0] = x * real(rt) - y * imag(rt);
                     imag(Bv)[0] = x * imag(rt) + y * real(rt);

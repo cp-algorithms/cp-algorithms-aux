@@ -20,31 +20,29 @@ namespace cp_algo {
 #endif
     }
 
-    i64x4 lround(dx4 a) {
-#ifdef __AVX2__
-        return __builtin_convertvector(_mm256_round_pd(a, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC), i64x4);
-#else
-        return __builtin_convertvector(a < 0 ? a - 0.5 : a + 0.5, i64x4);
-#endif
+    i64x4 lround(dx4 x) {
+        // https://stackoverflow.com/a/77376595
+        static constexpr dx4 magic = dx4() + double(3ULL << 51);
+        return i64x4(x + magic) - i64x4(magic);
     }
 
     dx4 round(dx4 a) {
 #ifdef __AVX2__
         return _mm256_round_pd(a, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
 #else
-        return __builtin_convertvector(lround(a), Simd);
+        return __builtin_convertvector(lround(a), dx4);
 #endif
     }
 
     u64x4 montgomery_reduce(u64x4 x, u64x4 mod, u64x4 imod) {
-#ifdef __AVX2__
+#ifndef __AVX2__
         auto x_ninv = _mm256_mul_epu32(__m256i(x), __m256i(imod));
         auto x_res = _mm256_add_epi64(__m256i(x), _mm256_mul_epu32(x_ninv, __m256i(mod)));
         return u64x4(_mm256_bsrli_epi128(x_res, 4));
 #else
-        auto x_ninv = x * imod;
-        auto x_res = x + ((x_ninv << 32) >> 32) * mod;
-        return u64x4(x_res >> 32);
+
+        auto x_ninv = u64x4(u32x8(x) * u32x8(imod));
+        return (x + x_ninv * mod) >> 32;
 #endif
     }
 

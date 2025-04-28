@@ -13,13 +13,15 @@ namespace cp_algo::math::fft {
         static base factor, ifactor;
         using Int2 = base::Int2;
         static bool _init;
-        static int split;
+        static int split() {
+            static const int splt = int(std::sqrt(base::mod())) + 1;
+            return splt;
+        }
         static u64x4 mod, imod;
 
         void init() {
             if(!_init) {
                 factor = 1 + random::rng() % (base::mod() - 1);
-                split = int(std::sqrt(base::mod())) + 1;
                 ifactor = base(1) / factor;
                 mod = u64x4() + base::mod();
                 imod = u64x4() + inv2(-base::mod());
@@ -51,9 +53,9 @@ namespace cp_algo::math::fft {
                     };
                     au = montgomery_mul(au, mul, mod, imod);
                     au = au >= base::mod() ? au - base::mod() : au;
-                    auto ai = i64x4(au);
-                    ai = ai >= base::mod() / 2 ? ai - base::mod() : ai;
-                    return std::pair{to_double(ai % split), to_double(ai / split)};
+                    auto ai = to_double(i64x4(au >= base::mod() / 2 ? au - base::mod() : au));
+                    auto quo = round(ai / split());
+                    return std::pair{ai - quo * split(), quo};
                 };
                 auto [rai, qai] = splt(i, cur);
                 auto [rani, qani] = splt(n + i, montgomery_mul(cur, stepn, mod, imod));
@@ -101,7 +103,7 @@ namespace cp_algo::math::fft {
         void recover_mod(auto &&C, auto &res, size_t k) {
             res.assign((k / flen + 1) * flen, base(0));
             size_t n = A.size();
-            auto splitsplit = base(split * split).getr();
+            auto const splitsplit = base(split() * split()).getr();
             base b2x32 = bpow(base(2), 32);
             base b2x64 = bpow(base(2), 64);
             u64x4 cur = {
@@ -118,7 +120,7 @@ namespace cp_algo::math::fft {
                 auto [Cx, Cy] = C.at(i);
                 auto set_i = [&](size_t i, auto A, auto B, auto C, auto mul) {
                     auto A0 = lround(A), A1 = lround(C), A2 = lround(B);
-                    auto Ai = A0 + A1 * split + A2 * splitsplit + uint64_t(base::modmod());
+                    auto Ai = A0 + A1 * split() + A2 * splitsplit + uint64_t(base::modmod());
                     auto Au = montgomery_reduce(u64x4(Ai), mod, imod);
                     Au = montgomery_mul(Au, mul, mod, imod);
                     Au = Au >= base::mod() ? Au - base::mod() : Au;
@@ -174,7 +176,6 @@ namespace cp_algo::math::fft {
     template<modint_type base> base dft<base>::factor = 1;
     template<modint_type base> base dft<base>::ifactor = 1;
     template<modint_type base> bool dft<base>::_init = false;
-    template<modint_type base> int dft<base>::split = 1;
     template<modint_type base> u64x4 dft<base>::mod = {};
     template<modint_type base> u64x4 dft<base>::imod = {};
     

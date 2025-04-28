@@ -112,10 +112,23 @@ namespace cp_algo::math::fft {
 
         void ifft() {
             size_t n = size();
-            for(size_t i = flen; i <= n / 2; i *= 2) {
-                if (4 * i <= n) { // radix-4
-                    exec_on_evals<4>(n / (4 * i), [&](size_t k, point rt) {
-                        k *= 4 * i;
+            bool parity = std::countr_zero(n) % 2;
+            if(parity) {
+                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) {
+                    k *= 2 * flen;
+                    vpoint cvrt = {vz + real(rt), vz - imag(rt)};
+                    auto B = at(k) - at(k + flen);
+                    at(k) += at(k + flen);
+                    at(k + flen) = B * cvrt;
+                });
+            }
+
+            for(size_t leaf = 3 * flen; leaf < n; leaf += 4 * flen) {
+                size_t level = std::countr_one(leaf + 3);
+                for(size_t lvl = 4 + parity; lvl <= level; lvl += 2) {
+                    size_t i = (1 << lvl) / 4;
+                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) {
+                        k <<= lvl;
                         vpoint v1 = {vz + real(rt), vz - imag(rt)};
                         vpoint v2 = v1 * v1;
                         vpoint v3 = v1 * v2;
@@ -124,21 +137,10 @@ namespace cp_algo::math::fft {
                             auto B = at(j + i);
                             auto C = at(j + 2 * i);
                             auto D = at(j + 3 * i);
-                            at(j) = (A + B + C + D);
-                            at(j + 2 * i) = (A + B - C - D) * v2;
-                            at(j +     i) = (A - B - vi(C - D)) * v1;
-                            at(j + 3 * i) = (A - B + vi(C - D)) * v3;
-                        }
-                    });
-                    i *= 2;
-                } else { // radix-2 fallback
-                    exec_on_evals<2>(n / (2 * i), [&](size_t k, point rt) {
-                        k *= 2 * i;
-                        vpoint cvrt = {vz + real(rt), vz - imag(rt)};
-                        for(size_t j = k; j < k + i; j += flen) {
-                            auto B = at(j) - at(j + i);
-                            at(j) += at(j + i);
-                            at(j + i) = B * cvrt;
+                            at(j) = ((A + B) + (C + D));
+                            at(j + 2 * i) = ((A + B) - (C + D)) * v2;
+                            at(j +     i) = ((A - B) - vi(C - D)) * v1;
+                            at(j + 3 * i) = ((A - B) + vi(C - D)) * v3;
                         }
                     });
                 }
@@ -150,11 +152,14 @@ namespace cp_algo::math::fft {
         }
         void fft() {
             size_t n = size();
-            for(size_t i = n / 2; i >= flen; i /= 2) {
-                if (i / 2 >= flen) { // radix-4
-                    i /= 2;
-                    exec_on_evals<4>(n / (4 * i), [&](size_t k, point rt) {
-                        k *= 4 * i;
+            bool parity = std::countr_zero(n) % 2;
+            for(size_t leaf = 0; leaf < n; leaf += 4 * flen) {
+                size_t level = std::countr_zero(n + leaf);
+                level -= level % 2 != parity;
+                for(size_t lvl = level; lvl >= 4; lvl -= 2) {
+                    size_t i = (1 << lvl) / 4;
+                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) {
+                        k <<= lvl;
                         vpoint v1 = {vz + real(rt), vz + imag(rt)};
                         vpoint v2 = v1 * v1;
                         vpoint v3 = v1 * v2;
@@ -169,17 +174,16 @@ namespace cp_algo::math::fft {
                             at(j + 3 * i) = (A - C) - vi(B - D);
                         }
                     });
-                } else { // radix-2 fallback
-                    exec_on_evals<2>(n / (2 * i), [&](size_t k, point rt) {
-                        k *= 2 * i;
-                        vpoint vrt = {vz + real(rt), vz + imag(rt)};
-                        for(size_t j = k; j < k + i; j += flen) {
-                            auto t = at(j + i) * vrt;
-                            at(j + i) = at(j) - t;
-                            at(j) += t;
-                        }
-                    });
                 }
+            }
+            if(parity) {
+                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) {
+                    k *= 2 * flen;
+                    vpoint vrt = {vz + real(rt), vz + imag(rt)};
+                    auto t = at(k + flen) * vrt;
+                    at(k + flen) = at(k) - t;
+                    at(k) += t;
+                });
             }
             checkpoint("fft");
         }

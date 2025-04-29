@@ -17,22 +17,13 @@ namespace cp_algo {
     return a < 0 ? -a : a;
     }
 
-    // https://stackoverflow.com/a/77376595
-    // works for ints in (-2^51, 2^51)
-    static constexpr dx4 magic = dx4() + (3ULL << 51);
-    [[gnu::always_inline]] inline i64x4 lround(dx4 x) {
-        return i64x4(x + magic) - i64x4(magic);
-    }
-    [[gnu::always_inline]] inline dx4 to_double(i64x4 x) {
-        return dx4(x + i64x4(magic)) - magic;
-    }
-
     [[gnu::always_inline]] inline dx4 round(dx4 a) {
-#ifdef __AVX2__
-        return _mm256_round_pd(a, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-#else
-        return __builtin_convertvector(lround(a), dx4);
-#endif
+        return dx4{
+            std::nearbyint(a[0]),
+            std::nearbyint(a[1]),
+            std::nearbyint(a[2]),
+            std::nearbyint(a[3])
+        };
     }
 
     [[gnu::always_inline]] inline u64x4 montgomery_reduce(u64x4 x, u64x4 mod, u64x4 imod) {

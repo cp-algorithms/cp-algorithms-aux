@@ -22,7 +22,7 @@ void semicorr(auto &a, auto &b) {
 }
 
 auto is_integer(auto a) {
-    static const double eps = 1e-8;
+    static const ftype eps = 1e-8;
     return cp_algo::abs(imag(a)) < eps
         && cp_algo::abs(real(a) - cp_algo::round(real(a))) < eps;
 }
@@ -33,7 +33,7 @@ string matches(string const& A, string const& B, char wild = '*') {
     if(!init) {
         init = true;
         for(int i = 0; i < 128; i++) {
-            project[0][i] = cp_algo::polar(1., (ftype)cp_algo::random::rng());
+            project[0][i] = cp_algo::polar<ftype>(1., (ftype)cp_algo::random::rng());
             project[1][i] = conj(project[0][i]);
         }
     }

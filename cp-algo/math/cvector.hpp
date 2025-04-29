@@ -65,13 +65,13 @@ namespace cp_algo::math::fft {
             } else if(n / 4 < pre_evals) {
                 return evalp[n / 4];
             } else {
-                return polar(1., std::numbers::pi / (ftype)std::bit_floor(n) * (ftype)eval_arg(n));
+                return polar<ftype>(1., std::numbers::pi / (ftype)std::bit_floor(n) * (ftype)eval_arg(n));
             }
         }
         static constexpr std::array<point, 32> roots = []() {
             std::array<point, 32> res;
             for(size_t i = 2; i < 32; i++) {
-                res[i] = polar(1., std::numbers::pi / (1ull << (i - 2)));
+                res[i] = polar<ftype>(1., std::numbers::pi / (1ull << (i - 2)));
             }
             return res;
         }();
@@ -203,7 +203,7 @@ namespace cp_algo::math::fft {
         std::array<point, pre_evals> res = {};
         res[0] = 1;
         for(size_t n = 1; n < pre_evals; n++) {
-            res[n] = polar(1., std::numbers::pi * ftype(eval_args[n]) / ftype(4 * std::bit_floor(n)));
+            res[n] = polar<ftype>(1., std::numbers::pi * ftype(eval_args[n]) / ftype(4 * std::bit_floor(n)));
         }
         return res;
     }();

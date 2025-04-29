@@ -9,6 +9,7 @@ namespace cp_algo {
     using i64x4 = simd<int64_t, 4>;
     using u64x4 = simd<uint64_t, 4>;
     using u32x8 = simd<uint32_t, 8>;
+    using i32x4 = simd<int32_t, 4>;
     using u32x4 = simd<uint32_t, 4>;
     using dx4 = simd<double, 4>;
 

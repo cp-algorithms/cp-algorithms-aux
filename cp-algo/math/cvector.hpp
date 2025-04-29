@@ -188,21 +188,24 @@ namespace cp_algo::math::fft {
             checkpoint("fft");
         }
         static constexpr size_t pre_evals = 1 << 16;
-        static constexpr std::array<size_t, pre_evals> eval_args = []() {
-            std::array<size_t, pre_evals> res = {};
-            for(size_t i = 1; i < pre_evals; i++) {
-                res[i] = res[i >> 1] | (i & 1) << (std::bit_width(i) - 1);
-            }
-            return res;
-        }();
-        static constexpr std::array<point, pre_evals> evalp = []() {
-            std::array<point, pre_evals> res = {};
-            res[0] = 1;
-            for(size_t n = 1; n < pre_evals; n++) {
-                res[n] = polar(1., std::numbers::pi * ftype(eval_args[n]) / ftype(4 * std::bit_floor(n)));
-            }
-            return res;
-        }();
+        static const std::array<size_t, pre_evals> eval_args;
+        static const std::array<point, pre_evals> evalp;
     };
+
+    const std::array<size_t, cvector::pre_evals> cvector::eval_args = []() {
+        std::array<size_t, pre_evals> res = {};
+        for(size_t i = 1; i < pre_evals; i++) {
+            res[i] = res[i >> 1] | (i & 1) << (std::bit_width(i) - 1);
+        }
+        return res;
+    }();
+    const std::array<point, cvector::pre_evals> cvector::evalp = []() {
+        std::array<point, pre_evals> res = {};
+        res[0] = 1;
+        for(size_t n = 1; n < pre_evals; n++) {
+            res[n] = polar(1., std::numbers::pi * ftype(eval_args[n]) / ftype(4 * std::bit_floor(n)));
+        }
+        return res;
+    }();
 }
 #endif // CP_ALGO_MATH_CVECTOR_HPP

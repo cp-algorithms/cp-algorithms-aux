@@ -44,11 +44,11 @@ string matches(string const& A, string const& B, char wild = '*') {
     vector<cvector> P;
     P.emplace_back((size(A) + 1) / 2);
     P.emplace_back((size(A) + 1) / 2);
-    int N = P[0].size();
+    auto N = P[0].size();
     auto assign = [&](int z) {
         return [&, z](auto ic) {
             auto [i, c] = ic;
-            if(i < N) {
+            if(i < (int)N) {
                 real(P[z].r[i / fft::flen])[i % fft::flen] = project[z][(int)c];
             } else {
                 i -= N;
@@ -61,8 +61,8 @@ string matches(string const& A, string const& B, char wild = '*') {
     cp_algo::checkpoint("cvector fill");
     semicorr(P[0], P[1]);
     string ans(2 * size(P[0]), '0');
-    int start = (ssize(B) - 1) / fft::flen * fft::flen;
-    for(int j = start; j < ssize(ans); j += fft::flen) {
+    auto start = (ssize(B) - 1) / fft::flen * fft::flen;
+    for(auto j = start; j < size(ans); j += fft::flen) {
         decltype(is_integer(real(P[0].at(j)))) check;
         if(j < N) {
             check = is_integer(real(P[0].at(j)));

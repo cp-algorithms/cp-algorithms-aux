@@ -22,38 +22,53 @@ void semicorr(auto &a, auto &b) {
 }
 
 auto is_integer(auto a) {
-    static const ftype eps = 1e-8;
-    return cp_algo::abs(imag(a)) < eps
-        && cp_algo::abs(real(a) - cp_algo::round(real(a))) < eps;
+    static const ftype eps = 1e-9;
+    return cp_algo::abs(a - cp_algo::round(a)) < eps;
 }
 
 string matches(string const& A, string const& B, char wild = '*') {
-    static point project[2][128];
+    static ftype project[2][128];
     static bool init = false;
     if(!init) {
         init = true;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(.5, 2.);
         for(int i = 0; i < 128; i++) {
-            project[0][i] = cp_algo::polar<ftype>(1., (ftype)cp_algo::random::rng());
-            project[1][i] = conj(project[0][i]);
+            ftype x = dis(gen);
+            project[0][i] = x;
+            project[1][i] = 1. / x;
         }
     }
     project[0][(int)wild] = project[1][(int)wild] = 0;
     vector<cvector> P;
-    P.emplace_back(size(A));
-    P.emplace_back(size(A));
-    for(auto [i, c]: A | views::enumerate) {
-        P[0].set(i, project[0][(int)c]);
-    }
-    for(auto [i, c]: B | views::reverse | views::enumerate) {
-        P[1].set(i, project[1][(int)c]);
-    }
+    P.emplace_back((size(A) + 1) / 2);
+    P.emplace_back((size(A) + 1) / 2);
+    int N = P[0].size();
+    auto assign = [&](int z) {
+        return [&, z](auto ic) {
+            auto [i, c] = ic;
+            if(i < N) {
+                real(P[z].r[i / fft::flen])[i % fft::flen] = project[z][(int)c];
+            } else {
+                i -= N;
+                imag(P[z].r[i / fft::flen])[i % fft::flen] = project[z][(int)c];
+            }
+        };
+    };
+    ranges::for_each(A | views::enumerate, assign(0));
+    ranges::for_each(B | views::reverse | views::enumerate, assign(1));
     cp_algo::checkpoint("cvector fill");
     semicorr(P[0], P[1]);
-    string ans(size(P[0]), '0');
-    auto start = (size(B) - 1) / fft::flen * fft::flen;
-    for(size_t j = start; j < size(ans); j += fft::flen) {
-        auto r = P[0].at(j);
-        auto check = is_integer(r);
+    string ans(2 * size(P[0]), '0');
+    int start = (ssize(B) - 1) / fft::flen * fft::flen;
+    for(int j = start; j < ssize(ans); j += fft::flen) {
+        decltype(is_integer(real(P[0].at(j)))) check;
+        if(j < N) {
+            check = is_integer(real(P[0].at(j)));
+        } else {
+            check = is_integer(imag(P[0].at(j - N)));
+        }
         for(int z = 0; z < 4; z++) {
             ans[j + z] ^= (bool)check[z];
         }

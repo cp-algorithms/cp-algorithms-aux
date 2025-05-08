@@ -1,5 +1,5 @@
 // @brief Point Add Range Sum
-#define PROBLEM "https://judge.yosupo.jp/problem/point_add_range_sum"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/point_add_range_sum
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/structures/fenwick.hpp"
 #include <bits/stdc++.h>

@@ -1,5 +1,5 @@
 // @brief Rank of Matrix
-#define PROBLEM "https://judge.yosupo.jp/problem/matrix_rank"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/matrix_rank
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/linalg/matrix.hpp"

@@ -1,5 +1,5 @@
 // @brief Binomial Coefficient (Prime Mod)
-#define PROBLEM "https://judge.yosupo.jp/problem/binomial_coefficient_prime_mod"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/binomial_coefficient_prime_mod
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_MAXN 1e7
 #include "cp-algo/number_theory/modint.hpp"

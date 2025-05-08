@@ -1,6 +1,6 @@
 
 // @brief Matrix Product (Mod 2)
-#define PROBLEM "https://judge.yosupo.jp/problem/matrix_product_mod_2"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/matrix_product_mod_2
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/structures/bitpack.hpp"

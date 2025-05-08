@@ -1,5 +1,5 @@
 // @brief Ordered Set
-#define PROBLEM "https://judge.yosupo.jp/problem/ordered_set"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/ordered_set
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/structures/fenwick_set.hpp"
 #include "cp-algo/util/compress_coords.hpp"

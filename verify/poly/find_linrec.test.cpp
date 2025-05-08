@@ -1,5 +1,5 @@
 // @brief Find Linear Recurrence
-#define PROBLEM "https://judge.yosupo.jp/problem/find_linear_recurrence"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/find_linear_recurrence
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

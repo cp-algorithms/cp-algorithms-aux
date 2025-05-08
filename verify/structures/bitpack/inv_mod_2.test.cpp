@@ -1,5 +1,5 @@
 // @brief Inverse Matrix (Mod 2)
-#define PROBLEM "https://judge.yosupo.jp/problem/inverse_matrix_mod_2"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/inverse_matrix_mod_2
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/structures/bitpack.hpp"
 #include <bits/stdc++.h>

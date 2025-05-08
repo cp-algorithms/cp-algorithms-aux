@@ -1,5 +1,5 @@
 // @brief Inverse Matrix
-#define PROBLEM "https://judge.yosupo.jp/problem/inverse_matrix"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/inverse_matrix
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>

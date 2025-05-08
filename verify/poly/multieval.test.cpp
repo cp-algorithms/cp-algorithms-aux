@@ -1,5 +1,5 @@
 // @brief Multipoint Evaluation
-#define PROBLEM "https://judge.yosupo.jp/problem/multipoint_evaluation"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/multipoint_evaluation
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>

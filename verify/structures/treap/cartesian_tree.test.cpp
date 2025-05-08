@@ -1,5 +1,5 @@
 // @brief Build Cartesian Tree
-#define PROBLEM "https://judge.yosupo.jp/problem/cartesian_tree"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/cartesian_tree
 #include "cp-algo/structures/treap/metas/base.hpp"
 #include "cp-algo/structures/treap.hpp"
 #include <bits/stdc++.h>

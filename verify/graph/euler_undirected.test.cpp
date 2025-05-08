@@ -1,5 +1,5 @@
 // @brief Eulerian Trail (Undirected)
-#define PROBLEM "https://judge.yosupo.jp/problem/eulerian_trail_undirected"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/eulerian_trail_undirected
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/graph/euler.hpp"

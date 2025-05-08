@@ -1,5 +1,5 @@
 // @brief Matrix Product
-#define PROBLEM "https://judge.yosupo.jp/problem/matrix_product"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/matrix_product
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>

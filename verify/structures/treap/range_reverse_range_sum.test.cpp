@@ -1,5 +1,5 @@
 // @brief Range Reverse Range Sum
-#define PROBLEM "https://judge.yosupo.jp/problem/range_reverse_range_sum"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/range_reverse_range_sum
 #include "cp-algo/structures/treap/metas/reverse.hpp"
 #include "cp-algo/structures/treap.hpp"
 #include <bits/stdc++.h>

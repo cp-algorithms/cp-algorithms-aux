@@ -1,5 +1,5 @@
 // @brief Closest Pair of Points
-#define PROBLEM "https://judge.yosupo.jp/problem/closest_pair"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/closest_pair
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/geometry/closest_pair.hpp"
 #include <bits/stdc++.h>

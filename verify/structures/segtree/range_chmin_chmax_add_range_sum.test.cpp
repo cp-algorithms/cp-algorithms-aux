@@ -1,5 +1,5 @@
 // @brief Range Chmin Chmax Add Range Sum
-#define PROBLEM "https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum
 #include "cp-algo/structures/segtree/metas/chmin_chmax_add.hpp"
 #include "cp-algo/structures/segtree.hpp"
 #include <bits/stdc++.h>

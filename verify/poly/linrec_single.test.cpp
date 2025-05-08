@@ -1,5 +1,5 @@
 // @brief Kth term of Linearly Recurrent Sequence
-#define PROBLEM "https://judge.yosupo.jp/problem/kth_term_of_linearly_recurrent_sequence"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/kth_term_of_linearly_recurrent_sequence
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>

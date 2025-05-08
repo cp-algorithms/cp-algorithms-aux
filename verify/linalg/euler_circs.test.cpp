@@ -1,5 +1,5 @@
 // @brief Counting Eulerian Circuits
-#define PROBLEM "https://judge.yosupo.jp/problem/counting_eulerian_circuits"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/counting_eulerian_circuits
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/math/combinatorics.hpp"

@@ -1,5 +1,5 @@
 // @brief Polynomial Root Finding
-#define PROBLEM "https://judge.yosupo.jp/problem/polynomial_root_finding"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/polynomial_root_finding
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

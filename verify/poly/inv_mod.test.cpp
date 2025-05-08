@@ -1,5 +1,5 @@
 // @brief Inv of Polynomials
-#define PROBLEM "https://judge.yosupo.jp/problem/inv_of_polynomials"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/inv_of_polynomials
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

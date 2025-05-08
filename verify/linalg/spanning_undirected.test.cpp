@@ -1,5 +1,5 @@
 // @brief Counting Spanning Trees (Undirected)
-#define PROBLEM "https://judge.yosupo.jp/problem/counting_spanning_tree_undirected"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/counting_spanning_tree_undirected
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/linalg/matrix.hpp"

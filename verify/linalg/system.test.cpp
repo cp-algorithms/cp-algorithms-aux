@@ -1,5 +1,5 @@
 // @brief System of Linear Equations
-#define PROBLEM "https://judge.yosupo.jp/problem/system_of_linear_equations"
+// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/system_of_linear_equations
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/linalg/matrix.hpp"

@@ -1,1 +1,3 @@
 main.test.cpp
+.competitive-verifier/*
+verify_files.json

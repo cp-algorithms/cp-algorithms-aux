@@ -19,7 +19,7 @@ namespace cp_algo::math::fft {
         }
         static u64x4 mod, imod;
 
-        void init() {
+        static void init() {
             if(!_init) {
                 factor = 1 + random::rng() % (base::mod() - 1);
                 ifactor = base(1) / factor;
@@ -40,16 +40,16 @@ namespace cp_algo::math::fft {
             };
             u64x4 step4 = u64x4{} + (bpow(factor, 4) * b2x32).getr();
             u64x4 stepn = u64x4{} + (bpow(factor, n) * b2x32).getr();
-            for(size_t i = 0; i < std::min(n, size(a)); i += flen) {
+            for(size_t i = 0; i < std::min(n, std::size(a)); i += flen) {
                 auto splt = [&](size_t i, auto mul) {
-                    if(i >= size(a)) {
+                    if(i >= std::size(a)) {
                         return std::pair{vftype(), vftype()};
                     }
                     u64x4 au = {
-                        i < size(a) ? a[i].getr() : 0,
-                        i + 1 < size(a) ? a[i + 1].getr() : 0,
-                        i + 2 < size(a) ? a[i + 2].getr() : 0,
-                        i + 3 < size(a) ? a[i + 3].getr() : 0
+                        i < std::size(a) ? a[i].getr() : 0,
+                        i + 1 < std::size(a) ? a[i + 1].getr() : 0,
+                        i + 2 < std::size(a) ? a[i + 2].getr() : 0,
+                        i + 3 < std::size(a) ? a[i + 3].getr() : 0
                     };
                     au = montgomery_mul(au, mul, mod, imod);
                     au = au >= base::mod() ? au - base::mod() : au;
@@ -101,7 +101,8 @@ namespace cp_algo::math::fft {
         }
 
         void recover_mod(auto &&C, auto &res, size_t k) {
-            res.assign((k / flen + 1) * flen, base(0));
+            size_t check = (k + flen - 1) / flen * flen;
+            assert(res.size() >= check);
             size_t n = A.size();
             auto const splitsplit = base(split() * split()).getr();
             base b2x32 = bpow(base(2), 32);
@@ -134,7 +135,6 @@ namespace cp_algo::math::fft {
                 }
                 cur = montgomery_mul(cur, step4, mod, imod);
             }
-            res.resize(k);
             checkpoint("recover mod");
         }
 
@@ -158,12 +158,12 @@ namespace cp_algo::math::fft {
             mul(cvector(B.A), B.B, res, k);
         }
         std::vector<base, big_alloc<base>> operator *= (dft &B) {
-            std::vector<base, big_alloc<base>> res;
+            std::vector<base, big_alloc<base>> res(2 * A.size());
             mul_inplace(B, res, 2 * A.size());
             return res;
         }
         std::vector<base, big_alloc<base>> operator *= (dft const& B) {
-            std::vector<base, big_alloc<base>> res;
+            std::vector<base, big_alloc<base>> res(2 * A.size());
             mul(B, res, 2 * A.size());
             return res;
         }
@@ -180,11 +180,11 @@ namespace cp_algo::math::fft {
     template<modint_type base> u64x4 dft<base>::imod = {};
     
     void mul_slow(auto &a, auto const& b, size_t k) {
-        if(empty(a) || empty(b)) {
+        if(std::empty(a) || std::empty(b)) {
             a.clear();
         } else {
-            size_t n = std::min(k, size(a));
-            size_t m = std::min(k, size(b));
+            size_t n = std::min(k, std::size(a));
+            size_t m = std::min(k, std::size(b));
             a.resize(k);
             for(int j = int(k - 1); j >= 0; j--) {
                 a[j] *= b[0];
@@ -202,55 +202,103 @@ namespace cp_algo::math::fft {
     }
     void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
-        if(std::min({k, size(a), size(b)}) < magic) {
+        if(std::min({k, std::size(a), std::size(b)}) < magic) {
             mul_slow(a, b, k);
             return;
         }
         auto n = std::max(flen, std::bit_ceil(
-            std::min(k, size(a)) + std::min(k, size(b)) - 1
+            std::min(k, std::size(a)) + std::min(k, std::size(b)) - 1
         ) / 2);
         auto A = dft<base>(a | std::views::take(k), n);
-        if(&a == &b) {
-            A.mul(A, a, k);
+        auto B = dft<base>(b | std::views::take(k), n);
+        a.resize((k + flen - 1) / flen * flen);
+        A.mul_inplace(B, a, k);
+        a.resize(k);
+    }
+
+    // store mod x^n-k in first half, x^n+k in second half
+    void mod_split(auto &&x, size_t n, auto k) {
+        using base = std::decay_t<decltype(k)>;
+        dft<base>::init();
+        assert(std::size(x) == 2 * n);
+        u64x4 cur = u64x4{} + (k * bpow(base(2), 32)).getr();
+        for(size_t i = 0; i < n; i += flen) {
+            u64x4 xl = {
+                x[i].getr(),
+                x[i + 1].getr(),
+                x[i + 2].getr(),
+                x[i + 3].getr()
+            };
+            u64x4 xr = {
+                x[n + i].getr(),
+                x[n + i + 1].getr(),
+                x[n + i + 2].getr(),
+                x[n + i + 3].getr()
+            };
+            xr = montgomery_mul(xr, cur, dft<base>::mod, dft<base>::imod);
+            xr = xr >= base::mod() ? xr - base::mod() : xr;
+            auto t = xr;
+            xr = xl - t;
+            xl += t;
+            xl = xl >= base::mod() ? xl - base::mod() : xl;
+            xr = xr >= base::mod() ? xr + base::mod() : xr;
+            for(size_t k = 0; k < flen; k++) {
+                x[i + k].setr(typename base::UInt(xl[k]));
+                x[n + i + k].setr(typename base::UInt(xr[k]));
+            }
+        }
+        cp_algo::checkpoint("mod split");
+    }
+    void cyclic_mul(auto &a, auto &&b, size_t k) {
+        assert(std::popcount(k) == 1);
+        assert(std::size(a) == std::size(b) && std::size(a) == k);
+        using base = std::decay_t<decltype(a[0])>;
+        dft<base>::init();
+        if(k <= (1 << 16)) {
+            auto ap = std::ranges::to<std::vector<base, big_alloc<base>>>(a);
+            mul_truncate(ap, b, 2 * k);
+            mod_split(ap, k, bpow(dft<base>::factor, k));
+            std::ranges::copy(ap | std::views::take(k), begin(a));
+            return;
+        }
+        k /= 2;
+        auto factor = bpow(dft<base>::factor, k);
+        mod_split(a, k, factor);
+        mod_split(b, k, factor);
+        auto la = std::span(a).first(k);
+        auto lb = std::span(b).first(k);
+        auto ra = std::span(a).last(k);
+        auto rb = std::span(b).last(k);
+        cyclic_mul(la, lb, k);
+        auto A = dft<base>(ra, k / 2);
+        auto B = dft<base>(rb, k / 2);
+        A.mul_inplace(B, ra, k);
+        base i2 = base(2).inv();
+        factor = factor.inv() * i2;
+        for(size_t i = 0; i < k; i++) {
+            auto t = (a[i] + a[i + k]) * i2;
+            a[i + k] = (a[i] - a[i + k]) * factor;
+            a[i] = t;
+        }
+        cp_algo::checkpoint("mod join");
+    }
+    void cyclic_mul(auto &a, auto const& b, size_t k) {
+        return cyclic_mul(a, make_copy(b), k);
+    }
+    void mul(auto &a, auto &&b) {
+        size_t N = size(a) + size(b) - 1;
+    if(N > (1 << 19)) {
+            size_t NN = std::bit_ceil(N);
+            a.resize(NN);
+            b.resize(NN);
+            cyclic_mul(a, b, NN);
+            a.resize(N);
         } else {
-            A.mul_inplace(dft<base>(b | std::views::take(k), n), a, k);
+            mul_truncate(a, b, N);
         }
     }
     void mul(auto &a, auto const& b) {
-        size_t N = size(a) + size(b) - 1;
-        if(std::max(size(a), size(b)) > (1 << 23)) {
-            using T = std::decay_t<decltype(a[0])>;
-            // do karatsuba to save memory
-            auto n = (std::max(size(a), size(b)) + 1) / 2;
-            auto a0 = to<std::vector<T, big_alloc<T>>>(a | std::views::take(n));
-            auto a1 = to<std::vector<T, big_alloc<T>>>(a | std::views::drop(n));
-            auto b0 = to<std::vector<T, big_alloc<T>>>(b | std::views::take(n));
-            auto b1 = to<std::vector<T, big_alloc<T>>>(b | std::views::drop(n));
-            a0.resize(n); a1.resize(n);
-            b0.resize(n); b1.resize(n);
-            auto a01 = to<std::vector<T, big_alloc<T>>>(std::views::zip_transform(std::plus{}, a0, a1));
-            auto b01 = to<std::vector<T, big_alloc<T>>>(std::views::zip_transform(std::plus{}, b0, b1));
-            checkpoint("karatsuba split");
-            mul(a0, b0);
-            mul(a1, b1);
-            mul(a01, b01);
-            a.assign(4 * n, 0);
-            for(auto [i, ai]: a0 | std::views::enumerate) {
-                a[i] += ai;
-                a[i + n] -= ai;
-            }
-            for(auto [i, ai]: a1 | std::views::enumerate) {
-                a[i + n] -= ai;
-                a[i + 2 * n] += ai;
-            }
-            for(auto [i, ai]: a01 | std::views::enumerate) {
-                a[i + n] += ai;
-            }
-            a.resize(N);
-            checkpoint("karatsuba join");
-        } else if(size(a)) {
-            mul_truncate(a, b, N);
-        }
+        mul(a, make_copy(b));
     }
 }
 #endif // CP_ALGO_MATH_FFT_HPP

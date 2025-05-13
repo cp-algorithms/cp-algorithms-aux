@@ -31,7 +31,7 @@ namespace cp_algo {
         T const imag() const {return y;}
         T& real() {return x;}
         T& imag() {return y;}
-        static constexpr complex polar(T r, T theta) {return {r * cos(theta), r * sin(theta)};}
+        static constexpr complex polar(T r, T theta) {return {T(r * cos(theta)), T(r * sin(theta))};}
         auto operator <=> (complex const& t) const = default;
     };
     template<typename T>

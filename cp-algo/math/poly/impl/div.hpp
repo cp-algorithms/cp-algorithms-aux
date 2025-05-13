@@ -88,6 +88,8 @@ namespace cp_algo::math::poly::impl {
         auto qqf = fft::dft<base>(qq.a, N);
         size_t M = q0.deg() + (n + 1) / 2;
         typename poly::Vector A, B;
+        A.resize((M + fft::flen - 1) / fft::flen * fft::flen);
+        B.resize((M + fft::flen - 1) / fft::flen * fft::flen);
         q0f.mul(qqf, A, M);
         q1f.mul_inplace(qqf, B, M);
         q.a.resize(n + 1);
@@ -121,6 +123,8 @@ namespace cp_algo::math::poly::impl {
         auto qqf = fft::dft<base>(qq.a, N);
         
         typename poly::Vector A, B;
+        A.resize(((n + 1) / 2 + fft::flen - 1) / fft::flen * fft::flen);
+        B.resize(((n + 1) / 2 + fft::flen - 1) / fft::flen * fft::flen);
         q0f.mul(qqf, A, (n + 1) / 2);
         q1f.mul_inplace(qqf, B, (n + 1) / 2);
         p.a.resize(n + 1);

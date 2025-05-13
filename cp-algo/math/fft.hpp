@@ -282,12 +282,15 @@ namespace cp_algo::math::fft {
         }
         cp_algo::checkpoint("mod join");
     }
+    auto make_copy(auto &&x) {
+        return x;
+    }
     void cyclic_mul(auto &a, auto const& b, size_t k) {
         return cyclic_mul(a, make_copy(b), k);
     }
     void mul(auto &a, auto &&b) {
         size_t N = size(a) + size(b) - 1;
-    if(N > (1 << 19)) {
+        if(N > (1 << 19)) {
             size_t NN = std::bit_ceil(N);
             a.resize(NN);
             b.resize(NN);
@@ -298,7 +301,12 @@ namespace cp_algo::math::fft {
         }
     }
     void mul(auto &a, auto const& b) {
-        mul(a, make_copy(b));
+        size_t N = size(a) + size(b) - 1;
+        if(N > (1 << 19)) {
+            mul(a, make_copy(b));
+        } else {
+            mul_truncate(a, b, N);
+        }
     }
 }
 #endif // CP_ALGO_MATH_FFT_HPP

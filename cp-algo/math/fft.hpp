@@ -289,23 +289,24 @@ namespace cp_algo::math::fft {
         return cyclic_mul(a, make_copy(b), k);
     }
     void mul(auto &a, auto &&b) {
-        size_t N = size(a) + size(b) - 1;
-        if(N > (1 << 19)) {
+        size_t N = size(a) + size(b);
+        if(N > (1 << 20)) {
+            N--;
             size_t NN = std::bit_ceil(N);
             a.resize(NN);
             b.resize(NN);
             cyclic_mul(a, b, NN);
             a.resize(N);
         } else {
-            mul_truncate(a, b, N);
+            mul_truncate(a, b, N - 1);
         }
     }
     void mul(auto &a, auto const& b) {
-        size_t N = size(a) + size(b) - 1;
-        if(N > (1 << 19)) {
+        size_t N = size(a) + size(b);
+        if(N > (1 << 20)) {
             mul(a, make_copy(b));
         } else {
-            mul_truncate(a, b, N);
+            mul_truncate(a, b, N - 1);
         }
     }
 }

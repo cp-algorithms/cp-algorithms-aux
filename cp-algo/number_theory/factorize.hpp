@@ -12,7 +12,7 @@ namespace cp_algo::math {
             auto f = [&](auto x) {
                 return x * x + t;
             };
-            base x, y;
+            base x = 0, y = 0;
             base g = 1;
             while(g == 1) {
                 for(int i = 0; i < 64; i++) {

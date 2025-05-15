@@ -60,7 +60,7 @@ namespace cp_algo {
     }
 
     template<std::size_t Align = 32>
-    [[gnu::always_inline]] inline bool is_aligned(const void* p) noexcept {
+    [[gnu::always_inline]] inline bool is_aligned(const auto* p) noexcept {
         return (reinterpret_cast<std::uintptr_t>(p) % Align) == 0;
     }
 

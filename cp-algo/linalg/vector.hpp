@@ -2,57 +2,44 @@
 #define CP_ALGO_LINALG_VECTOR_HPP
 #include "../random/rng.hpp"
 #include "../number_theory/modint.hpp"
+#include "../util/big_alloc.hpp"
+#include "../util/simd.hpp"
+#include "../util/checkpoint.hpp"
 #include <functional>
 #include <algorithm>
 #include <valarray>
 #include <iostream>
 #include <iterator>
 #include <cassert>
+#include <ranges>
 namespace cp_algo::linalg {
-    template<class vec, typename base>
-    struct valarray_base: std::valarray<base> {
-        using Base = std::valarray<base>;
+    template<typename base, class Alloc = big_alloc<base>>
+    struct vec: std::basic_string<base, std::char_traits<base>, Alloc> {
+        using Base = std::basic_string<base, std::char_traits<base>, Alloc>;
         using Base::Base;
 
-        valarray_base(base const& t): Base(t, 1) {}
-
-        auto begin() {return std::begin(to_valarray());}
-        auto begin() const {return std::begin(to_valarray());}
-        auto end() {return std::end(to_valarray());}
-        auto end() const {return std::end(to_valarray());}
-
-        bool operator == (vec const& t) const {return std::ranges::equal(*this, t);}
-        bool operator != (vec const& t) const {return !(*this == t);}
-
-        vec operator-() const {return Base::operator-();}
-
-        static vec from_range(auto const& R) {
-            vec res(std::ranges::distance(R));
-            std::ranges::copy(R, res.begin());
-            return res;
-        }
-        Base& to_valarray() {return static_cast<Base&>(*this);}
-        Base const& to_valarray() const {return static_cast<Base const&>(*this);}
-    };
-
-    template<class vec, typename base>
-    vec operator+(valarray_base<vec, base> const& a, valarray_base<vec, base> const& b) {
-        return a.to_valarray() + b.to_valarray();
-    }
-    template<class vec, typename base>
-    vec operator-(valarray_base<vec, base> const& a, valarray_base<vec, base> const& b) {
-        return a.to_valarray() - b.to_valarray();
-    }
-
-    template<class vec, typename base>
-    struct vec_base: valarray_base<vec, base> {
-        using Base = valarray_base<vec, base>;
-        using Base::Base;
+        vec(Base const& t): Base(t) {}
+        vec(Base &&t): Base(std::move(t)) {}
+        vec(size_t n): Base(n, base()) {}
+        vec(auto &&r): Base(std::ranges::to<Base>(r)) {}
 
         static vec ei(size_t n, size_t i) {
             vec res(n);
             res[i] = 1;
             return res;
+        }
+
+        auto operator-() const {
+            return *this | std::views::transform([](auto x) {return -x;});
+        }
+        auto operator *(base t) const {
+            return *this | std::views::transform([t](auto x) {return x * t;});
+        }
+        auto operator *=(base t) {
+            for(auto &it: *this) {
+                it *= t;
+            }
+            return *this;
         }
 
         virtual void add_scaled(vec const& b, base scale, size_t i = 0) {
@@ -74,7 +61,9 @@ namespace cp_algo::linalg {
             }
         }
         void print() const {
-            std::ranges::copy(*this, std::ostream_iterator<base>(std::cout, " "));
+            for(auto &it: *this) {
+                std::cout << it << " ";
+            }
             std::cout << "\n";
         }
         static vec random(size_t n) {
@@ -84,10 +73,10 @@ namespace cp_algo::linalg {
         }
         // Concatenate vectors
         vec operator |(vec const& t) const {
-            vec res(size(*this) + size(t));
-            res[std::slice(0, size(*this), 1)] = *this;
-            res[std::slice(size(*this), size(t), 1)] = t;
-            return res;
+            return std::views::join(std::array{
+                std::views::all(*this),
+                std::views::all(t)
+            });
         }
 
         // Generally, vec shouldn't be modified
@@ -115,23 +104,32 @@ namespace cp_algo::linalg {
         base pivot_inv;
     };
 
-    template<typename base>
-    struct vec: vec_base<vec<base>, base> {
-        using Base = vec_base<vec<base>, base>;
-        using Base::Base;
-    };
-
-    template<math::modint_type base>
-    struct vec<base>: vec_base<vec<base>, base> {
-        using Base = vec_base<vec<base>, base>;
+    template<math::modint_type base, class Alloc = big_alloc<base>>
+    struct modint_vec: vec<base, Alloc> {
+        using Base = vec<base, Alloc>;
         using Base::Base;
 
-        void add_scaled(vec const& b, base scale, size_t i = 0) override {
+        modint_vec(Base const& t): Base(t) {}
+        modint_vec(Base &&t): Base(std::move(t)) {}
+
+        void add_scaled(Base const& b, base scale, size_t i = 0) override {
             static_assert(base::bits >= 64, "Only wide modint types for linalg");
-            uint64_t scaler = scale.getr();
             if(scale != base(0)) {
-                for(; i < size(*this); i++) {
-                    (*this)[i].add_unsafe(scaler * b[i].getr_direct());
+                assert(Base::size() == b.size());
+                size_t n = size(*this);
+                u64x4 scaler = u64x4() + scale.getr();
+                if (is_aligned(this) && is_aligned(&b[0])) // verify we're not in SSO
+                for(i -= i % 4; i < n - 3; i += 4) {
+                    auto &ai = vector_cast<u64x4>((*this)[i]);
+                    auto bi = vector_cast<u64x4 const>(b[i]);
+#ifdef __AVX2__
+                    ai += u64x4(_mm256_mul_epu32(__m256i(scaler), __m256i(bi)));
+#else
+                    ai += scaler * bi;
+#endif
+                }
+                for(; i < n; i++) {
+                    (*this)[i].add_unsafe(b[i].getr_direct() * scale.getr());
                 }
                 if(++counter == 4) {
                     for(auto &it: *this) {
@@ -141,7 +139,7 @@ namespace cp_algo::linalg {
                 }
             }
         }
-        vec const& normalize() override {
+        Base const& normalize() override {
             for(auto &it: *this) {
                 it.normalize();
             }

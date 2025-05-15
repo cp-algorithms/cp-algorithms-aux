@@ -21,7 +21,7 @@ namespace cp_algo::math {
         static UInt2 modmod() {
             return UInt2(mod()) * mod();
         }
-        modint_base(): r(0) {}
+        modint_base() = default;
         modint_base(Int2 rr) {
             to_modint().setr(UInt((rr + modmod()) % mod()));
         }

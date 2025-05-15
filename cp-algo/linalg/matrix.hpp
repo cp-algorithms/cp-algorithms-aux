@@ -10,14 +10,26 @@
 #include <array>
 namespace cp_algo::linalg {
     enum gauss_mode {normal, reverse};
-    template<typename base_t>
-    struct matrix: valarray_base<matrix<base_t>, vec<base_t>> {
+
+    template<typename base_t, class _vec_t = std::conditional_t<
+        math::modint_type<base_t>,
+        modint_vec<base_t>,
+        vec<base_t>>>
+    struct matrix: std::vector<_vec_t> {
+        using vec_t = _vec_t;
         using base = base_t;
-        using Base = valarray_base<matrix<base>, vec<base>>;
+        using Base = std::vector<vec_t>;
         using Base::Base;
 
-        matrix(size_t n): Base(vec<base>(n), n) {}
-        matrix(size_t n, size_t m): Base(vec<base>(m), n) {}
+        matrix(size_t n): Base(n, vec_t(n)) {}
+        matrix(size_t n, size_t m): Base(n, vec_t(m)) {}
+
+        matrix(Base const& t): Base(t) {}
+        matrix(Base &&t): Base(std::move(t)) {}
+
+        static matrix from(auto &&r) {
+            return std::ranges::to<Base>(r);
+        }
 
         size_t n() const {return size(*this);}
         size_t m() const {return n() ? size(row(0)) : 0;}
@@ -26,6 +38,10 @@ namespace cp_algo::linalg {
         auto& row(size_t i) {return (*this)[i];}
         auto const& row(size_t i) const {return (*this)[i];}
 
+
+        auto operator-() const {
+            return from(*this | std::views::transform([](auto x) {return vec_t(-x);}));
+        }
         matrix& operator *=(base t) {for(auto &it: *this) it *= t; return *this;}
         matrix operator *(base t) const {return matrix(*this) *= t;}
         matrix& operator /=(base t) {return *this *= base(1) / t;}
@@ -34,6 +50,13 @@ namespace cp_algo::linalg {
         // Make sure the result is matrix, not Base
         matrix& operator *=(matrix const& t) {return *this = *this * t;}
 
+        void read_transposed() {
+            for(size_t j = 0; j < m(); j++) {
+                for(size_t i = 0; i < n(); i++) {
+                    std::cin >> (*this)[i][j];
+                }
+            }
+        }
         void read() {
             for(auto &it: *this) {
                 it.read();
@@ -55,7 +78,7 @@ namespace cp_algo::linalg {
             n = 0;
             for(auto &it: blocks) {
                 for(size_t i = 0; i < it.n(); i++) {
-                    res[n + i][std::slice(n, it.n(), 1)] = it[i];
+                    std::ranges::copy(it[i], begin(res[n + i]) + n);
                 }
                 n += it.n();
             }
@@ -63,7 +86,7 @@ namespace cp_algo::linalg {
         }
         static matrix random(size_t n, size_t m) {
             matrix res(n, m);
-            std::ranges::generate(res, std::bind(vec<base>::random, m));
+            std::ranges::generate(res, std::bind(vec_t::random, m));
             return res;
         }
         static matrix random(size_t n) {
@@ -86,12 +109,9 @@ namespace cp_algo::linalg {
             }
             return res;
         }
-        matrix submatrix(auto slicex, auto slicey) const {
-            matrix res = (*this)[slicex];
-            for(auto &row: res) {
-                row = vec<base>(row[slicey]);
-            }
-            return res;
+        matrix submatrix(auto viewx, auto viewy) const {
+            return from(*this | viewx | std::views::transform(
+                [&](auto const& y) {return vec_t(y | viewy);}));
         }
 
         matrix T() const {
@@ -115,8 +135,8 @@ namespace cp_algo::linalg {
             return res.normalize();
         }
 
-        vec<base> apply(vec<base> const& x) const {
-            return (matrix(x) * *this)[0];
+        vec_t apply(vec_t const& x) const {
+            return (matrix(1, x) * *this)[0];
         }
 
         matrix pow(uint64_t k) const {
@@ -193,7 +213,7 @@ namespace cp_algo::linalg {
                 det *= b[i][i];
                 b[i] *= base(1) / b[i][i];
             }
-            return {det, b.submatrix(std::slice(0, n(), 1), std::slice(n(), n(), 1))};
+            return {det, b.submatrix(std::views::take(n()), std::views::drop(n()) | std::views::take(n()))};
         }
 
         // Can also just run gauss on T() | eye(m)
@@ -218,16 +238,16 @@ namespace cp_algo::linalg {
         std::optional<std::array<matrix, 2>> solve(matrix t) const {
             matrix sols = (*this | t).kernel();
             if(sols.n() < t.m() || sols.submatrix(
-                std::slice(sols.n() - t.m(), t.m(), 1),
-                std::slice(m(), t.m(), 1)
+                std::views::drop(sols.n() - t.m()),
+                std::views::drop(m())
             ) != -eye(t.m())) {
                 return std::nullopt;
             } else {
                 return std::array{
-                    sols.submatrix(std::slice(sols.n() - t.m(), t.m(), 1),
-                                   std::slice(0, m(), 1)),
-                    sols.submatrix(std::slice(0, sols.n() - t.m(), 1),
-                                   std::slice(0, m(), 1))
+                    sols.submatrix(std::views::drop(sols.n() - t.m()),
+                                   std::views::take(m())),
+                    sols.submatrix(std::views::take(sols.n() - t.m()),
+                                   std::views::take(m()))
                 };
             }
         }

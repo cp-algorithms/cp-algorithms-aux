@@ -1,5 +1,5 @@
 // @brief Product of Polynomial Sequence
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/product_of_polynomial_sequence
+#define PROBLEM "https://judge.yosupo.jp/problem/product_of_polynomial_sequence"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>

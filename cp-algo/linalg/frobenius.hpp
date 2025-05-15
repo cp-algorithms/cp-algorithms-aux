@@ -4,27 +4,30 @@
 #include "matrix.hpp"
 #include <algorithm>
 #include <vector>
+#include <ranges>
 namespace cp_algo::linalg {
     enum frobenius_mode {blocks, full};
     template<frobenius_mode mode = blocks>
     auto frobenius_form(auto const& A) {
         using matrix = std::decay_t<decltype(A)>;
+        using vec_t = matrix::vec_t;
+        using base = typename matrix::base;
         using base = matrix::base;
         using polyn = math::poly_t<base>;
         assert(A.n() == A.m());
         size_t n = A.n();
         std::vector<polyn> charps;
-        std::vector<vec<base>> basis, basis_init;
+        std::vector<vec_t> basis, basis_init;
         while(size(basis) < n) {
             size_t start = size(basis);
             auto generate_block = [&](auto x) {
                 while(true) {
-                    vec<base> y = x | vec<base>::ei(n + 1, size(basis));
+                    vec_t y = x | vec_t::ei(n + 1, size(basis));
                     for(auto &it: basis) {
                         y.reduce_by(it);
                     }
                     y.normalize();
-                    if(vec<base>(y[std::slice(0, n, 1)]) == vec<base>(n)) {
+                    if(std::ranges::count(y | std::views::take(n), base(0)) == int(n)) {
                         return polyn(typename polyn::Vector(begin(y) + n, end(y)));
                     } else {
                         basis_init.push_back(x);
@@ -33,7 +36,7 @@ namespace cp_algo::linalg {
                     }
                 }
             };
-            auto full_rec = generate_block(vec<base>::random(n));
+            auto full_rec = generate_block(vec_t::random(n));
             // Extra trimming to make it block-diagonal (expensive)
             if constexpr (mode == full) {
                 if(full_rec.mod_xk(start) != polyn()) {
@@ -58,12 +61,12 @@ namespace cp_algo::linalg {
                 }
                 basis[i].normalize();
             }
-            auto T = matrix::from_range(basis_init);
-            auto Tinv = matrix::from_range(basis);
+            auto T = matrix(basis_init);
+            auto Tinv = matrix(basis);
             std::ignore = Tinv.sort_classify(n);
             for(size_t i = 0; i < n; i++) {
-                Tinv[i] = vec<base>(
-                    Tinv[i][std::slice(n, n, 1)]
+                Tinv[i] = vec_t(
+                    Tinv[i] | std::views::drop(n) | std::views::take(n)
                 ) * (base(1) / Tinv[i][i]);
             }
             return std::tuple{T, Tinv, charps};

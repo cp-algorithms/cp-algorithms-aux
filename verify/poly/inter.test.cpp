@@ -1,5 +1,5 @@
 // @brief Polynomial Interpolation
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/polynomial_interpolation
+#define PROBLEM "https://judge.yosupo.jp/problem/polynomial_interpolation"
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

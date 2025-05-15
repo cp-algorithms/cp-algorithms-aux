@@ -1,8 +1,9 @@
 // @brief Adjugate Matrix
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/adjugate_matrix
+#define PROBLEM "https://judge.yosupo.jp/problem/adjugate_matrix"
 #pragma GCC optimize("Ofast,unroll-loops")
-#include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/linalg/matrix.hpp"
 
 const int64_t mod = 998244353;
 

@@ -1,9 +1,10 @@
 // @brief Matrix Determinant
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/matrix_det
+#define PROBLEM "https://judge.yosupo.jp/problem/matrix_det"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
-#include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#define CP_ALGO_CHECKPOINT
+#include "cp-algo/linalg/matrix.hpp"
 
 using namespace std;
 using namespace cp_algo::linalg;

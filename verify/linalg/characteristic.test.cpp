@@ -1,10 +1,10 @@
 // @brief Characteristic Polynomial
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/characteristic_polynomial
+#define PROBLEM "https://judge.yosupo.jp/problem/characteristic_polynomial"
 #pragma GCC optimize("Ofast,unroll-loops")
-//#pragma GCC target("tune=native")
 #define CP_ALGO_MAXN 1 << 10
-#include "cp-algo/linalg/frobenius.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/linalg/frobenius.hpp"
 
 using namespace std;
 using namespace cp_algo::math;

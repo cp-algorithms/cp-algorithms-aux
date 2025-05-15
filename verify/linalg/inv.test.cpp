@@ -1,8 +1,8 @@
 // @brief Inverse Matrix
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/inverse_matrix
+#define PROBLEM "https://judge.yosupo.jp/problem/inverse_matrix"
 #pragma GCC optimize("Ofast,unroll-loops")
-#include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
+#include "cp-algo/linalg/matrix.hpp"
 
 using namespace std;
 using namespace cp_algo::linalg;

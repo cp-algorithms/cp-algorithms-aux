@@ -1,8 +1,9 @@
 // @brief Matrix Product
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/matrix_product
+#define PROBLEM "https://judge.yosupo.jp/problem/matrix_product"
 #pragma GCC optimize("Ofast,unroll-loops")
-#include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/linalg/matrix.hpp"
 
 using namespace std;
 using namespace cp_algo::linalg;

@@ -1,9 +1,10 @@
 // @brief Pow of Matrix (Frobenius)
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/pow_of_matrix
+#define PROBLEM "https://judge.yosupo.jp/problem/pow_of_matrix"
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_MAXN 256
-#include "cp-algo/linalg/frobenius.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/linalg/frobenius.hpp"
 
 using namespace std;
 using namespace cp_algo::math;

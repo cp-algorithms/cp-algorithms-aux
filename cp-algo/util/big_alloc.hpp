@@ -20,6 +20,8 @@ namespace cp_algo {
     public:
         using value_type = T;
         template <class U> struct rebind { using other = big_alloc<U, Align>; };
+        constexpr bool operator==(const big_alloc&) const = default;
+        constexpr bool operator!=(const big_alloc&) const = default;
 
         big_alloc() noexcept = default;
         template <typename U, std::size_t A>

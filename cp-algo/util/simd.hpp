@@ -3,6 +3,7 @@
 #include <experimental/simd>
 #include <cstdint>
 #include <cstddef>
+#include <memory>
 namespace cp_algo {
     template<typename T, size_t len>
     using simd [[gnu::vector_size(len * sizeof(T))]] = T;

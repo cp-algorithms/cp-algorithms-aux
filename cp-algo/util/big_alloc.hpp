@@ -13,43 +13,49 @@
 #endif
 
 namespace cp_algo {
-    template <typename T>
-    class big_alloc: public std::allocator<T> {
-        public:
+    template <typename T, std::size_t Align = 32>
+    class big_alloc {
+        static_assert( Align >= alignof(void*), "Align must be at least pointer-size");
+        static_assert(std::popcount(Align) == 1, "Align must be a power of two");
+    public:
         using value_type = T;
-        using base = std::allocator<T>;
+        template <class U> struct rebind { using other = big_alloc<U, Align>; };
 
         big_alloc() noexcept = default;
+        template <typename U, std::size_t A>
+        big_alloc(const big_alloc<U, A>&) noexcept {}
 
-        template <typename U>
-        big_alloc(const big_alloc<U>&) noexcept {}
-
-#if CP_ALGO_USE_MMAP
         [[nodiscard]] T* allocate(std::size_t n) {
-            if(n * sizeof(T) < 1024 * 1024) {
-                return base::allocate(n);
-            }
-            n *= sizeof(T);
-            void* raw = mmap(nullptr, n,
-                            PROT_READ | PROT_WRITE,
-                            MAP_PRIVATE | MAP_ANONYMOUS,
-                            -1, 0);
-            madvise(raw, n, MADV_HUGEPAGE);
-            madvise(raw, n, MADV_POPULATE_WRITE);
-            return static_cast<T*>(raw);
-        }
-#endif
-
+            std::size_t padded = round_up(n * sizeof(T));
+            std::size_t align = std::max<std::size_t>(alignof(T),  Align);
 #if CP_ALGO_USE_MMAP
-        void deallocate(T* p, std::size_t n) noexcept {
-            if(n * sizeof(T) < 1024 * 1024) {
-                return base::deallocate(p, n);
+            if (padded >= MEGABYTE) {
+                void* raw = mmap(nullptr, padded,
+                                PROT_READ | PROT_WRITE,
+                                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                madvise(raw, padded, MADV_HUGEPAGE);
+                madvise(raw, padded, MADV_POPULATE_WRITE);
+                return static_cast<T*>(raw);
             }
-            if(p) {
-                munmap(p, n * sizeof(T));
-            }
-        }
 #endif
+            return static_cast<T*>(::operator new(padded, std::align_val_t(align)));
+        }
+
+        void deallocate(T* p, std::size_t n) noexcept {
+            if (!p) return;
+            std::size_t padded = round_up(n * sizeof(T));
+            std::size_t align  = std::max<std::size_t>(alignof(T),  Align);
+    #if CP_ALGO_USE_MMAP
+            if (padded >= MEGABYTE) { munmap(p, padded); return; }
+    #endif
+            ::operator delete(p, padded, std::align_val_t(align));
+        }
+
+    private:
+        static constexpr std::size_t MEGABYTE = 1 << 20;
+        static constexpr std::size_t round_up(std::size_t x) noexcept {
+            return (x + Align - 1) / Align * Align;
+        }
     };
 }
 #endif // CP_ALGO_UTIL_big_alloc_HPP

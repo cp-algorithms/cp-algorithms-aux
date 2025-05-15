@@ -58,5 +58,15 @@ namespace cp_algo {
         static constexpr u64x4 shuffler = {3, 0, 1, 2};
         return __builtin_shuffle(x, shuffler);
     }
+
+    template<std::size_t Align = 32>
+    constexpr std::size_t aligned_idx(auto const& c, std::size_t i = 0) {
+        auto const* p = std::data(c) + i;
+        using value_type = std::remove_pointer_t<decltype(p)>;
+        constexpr auto mask = Align - 1;
+        std::uintptr_t addr = reinterpret_cast<std::uintptr_t>(p);
+        std::size_t bytes_to_next = (-addr) & mask;
+        return i + bytes_to_next / sizeof(value_type);
+    }
 }
 #endif // CP_ALGO_UTIL_SIMD_HPP

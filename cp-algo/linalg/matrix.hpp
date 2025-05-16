@@ -110,8 +110,9 @@ namespace cp_algo::linalg {
             return res;
         }
         matrix submatrix(auto viewx, auto viewy) const {
-            return from(*this | viewx | std::views::transform(
-                [&](auto const& y) {return vec_t(y | viewy);}));
+            return from(*this | viewx | std::views::transform([&](auto const& y) {
+                return y | viewy;
+            }));
         }
 
         matrix T() const {
@@ -213,7 +214,7 @@ namespace cp_algo::linalg {
                 det *= b[i][i];
                 b[i] *= base(1) / b[i][i];
             }
-            return {det, b.submatrix(std::views::take(n()), std::views::drop(n()) | std::views::take(n()))};
+            return {det, b.submatrix(std::views::all, std::views::drop(n()))};
         }
 
         // Can also just run gauss on T() | eye(m)
@@ -244,10 +245,8 @@ namespace cp_algo::linalg {
                 return std::nullopt;
             } else {
                 return std::array{
-                    sols.submatrix(std::views::drop(sols.n() - t.m()),
-                                   std::views::take(m())),
-                    sols.submatrix(std::views::take(sols.n() - t.m()),
-                                   std::views::take(m()))
+                    sols.submatrix(std::views::drop(sols.n() - t.m()), std::views::all),
+                    sols.submatrix(std::views::take(sols.n() - t.m()), std::views::all)
                 };
             }
         }

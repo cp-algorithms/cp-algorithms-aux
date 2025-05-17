@@ -245,8 +245,8 @@ namespace cp_algo::linalg {
                 return std::nullopt;
             } else {
                 return std::array{
-                    sols.submatrix(std::views::drop(sols.n() - t.m()), std::views::all),
-                    sols.submatrix(std::views::take(sols.n() - t.m()), std::views::all)
+                    sols.submatrix(std::views::drop(sols.n() - t.m()), std::views::take(m())),
+                    sols.submatrix(std::views::take(sols.n() - t.m()), std::views::take(m()))
                 };
             }
         }

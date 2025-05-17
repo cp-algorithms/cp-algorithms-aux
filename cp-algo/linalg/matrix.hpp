@@ -109,10 +109,10 @@ namespace cp_algo::linalg {
             }
             return res;
         }
-        matrix submatrix(auto viewx, auto viewy) const {
-            return from(*this | viewx | std::views::transform([&](auto const& y) {
+        auto submatrix(auto viewx, auto viewy) const {
+            return *this | viewx | std::views::transform([viewy](auto const& y) {
                 return y | viewy;
-            }));
+            });
         }
 
         matrix T() const {
@@ -214,7 +214,7 @@ namespace cp_algo::linalg {
                 det *= b[i][i];
                 b[i] *= base(1) / b[i][i];
             }
-            return {det, b.submatrix(std::views::all, std::views::drop(n()))};
+            return {det, from(b.submatrix(std::views::all, std::views::drop(n())))};
         }
 
         // Can also just run gauss on T() | eye(m)
@@ -238,15 +238,15 @@ namespace cp_algo::linalg {
         // [solution, basis], transposed
         std::optional<std::array<matrix, 2>> solve(matrix t) const {
             matrix sols = (*this | t).kernel();
-            if(sols.n() < t.m() || sols.submatrix(
+            if(sols.n() < t.m() || from(sols.submatrix(
                 std::views::drop(sols.n() - t.m()),
                 std::views::drop(m())
-            ) != -eye(t.m())) {
+            )) != -eye(t.m())) {
                 return std::nullopt;
             } else {
                 return std::array{
-                    sols.submatrix(std::views::drop(sols.n() - t.m()), std::views::take(m())),
-                    sols.submatrix(std::views::take(sols.n() - t.m()), std::views::take(m()))
+                    from(sols.submatrix(std::views::drop(sols.n() - t.m()), std::views::take(m()))),
+                    from(sols.submatrix(std::views::take(sols.n() - t.m()), std::views::take(m())))
                 };
             }
         }

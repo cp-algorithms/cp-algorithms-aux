@@ -119,7 +119,7 @@ namespace cp_algo::linalg {
                 size_t n = size(*this);
                 u64x4 scaler = u64x4() + scale.getr();
                 if (is_aligned(&(*this)[0]) && is_aligned(&b[0])) // verify we're not in SSO
-                for(i -= i % 4; i < n; i += 4) {
+                for(i -= i % 4; i + 3 < n; i += 4) {
                     auto &ai = vector_cast<u64x4>((*this)[i]);
                     auto bi = vector_cast<u64x4 const>(b[i]);
 #ifdef __AVX2__

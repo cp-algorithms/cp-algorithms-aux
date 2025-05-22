@@ -1,5 +1,5 @@
-// @brief Convolution mod $10^9+7$
-#define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_1000000007"
+// @brief Convolution (Large)
+#define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_large"
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
@@ -9,7 +9,7 @@
 using namespace std;
 using namespace cp_algo::math;
 
-const int mod = 1e9 + 7;
+const int mod = 998244353;
 using base = modint<mod>;
 
 void solve() {

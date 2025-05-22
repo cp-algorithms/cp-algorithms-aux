@@ -1,5 +1,5 @@
 // @brief Division of Polynomials
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/division_of_polynomials
+#define PROBLEM "https://judge.yosupo.jp/problem/division_of_polynomials"
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

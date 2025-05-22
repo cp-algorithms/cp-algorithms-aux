@@ -1,5 +1,5 @@
 // @brief Sqrt Mod
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/sqrt_mod
+#define PROBLEM "https://judge.yosupo.jp/problem/sqrt_mod"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/number_theory/discrete_sqrt.hpp"

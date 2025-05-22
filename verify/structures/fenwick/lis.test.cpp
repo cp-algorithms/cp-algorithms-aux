@@ -1,5 +1,5 @@
 // @brief Longest Increasing Subsequence
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/longest_increasing_subsequence
+#define PROBLEM "https://judge.yosupo.jp/problem/longest_increasing_subsequence"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/structures/fenwick.hpp"
 #include "cp-algo/util/compress_coords.hpp"

@@ -1,5 +1,5 @@
 // @brief Pow of Power Series
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/pow_of_formal_power_series
+#define PROBLEM "https://judge.yosupo.jp/problem/pow_of_formal_power_series"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>

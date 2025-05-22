@@ -1,9 +1,10 @@
 // @brief Counting Spanning Trees (Directed)
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/counting_spanning_tree_directed
+#define PROBLEM "https://judge.yosupo.jp/problem/counting_spanning_tree_directed"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
-#include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/combinatorics.hpp"
+#include "cp-algo/linalg/matrix.hpp"
 
 using namespace std;
 using namespace cp_algo::math;

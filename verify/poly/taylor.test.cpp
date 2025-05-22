@@ -1,5 +1,5 @@
 // @brief Polynomial Taylor Shift
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/polynomial_taylor_shift
+#define PROBLEM "https://judge.yosupo.jp/problem/polynomial_taylor_shift"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/math/poly.hpp"

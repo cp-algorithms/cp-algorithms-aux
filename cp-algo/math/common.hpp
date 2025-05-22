@@ -2,6 +2,7 @@
 #define CP_ALGO_MATH_COMMON_HPP
 #include <functional>
 #include <cstdint>
+#include <cassert>
 namespace cp_algo::math {
 #ifdef CP_ALGO_MAXN
     const int maxn = CP_ALGO_MAXN;

@@ -1,5 +1,5 @@
 // @brief Dynamic Range Affine Range Sum
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/dynamic_sequence_range_affine_range_sum
+#define PROBLEM "https://judge.yosupo.jp/problem/dynamic_sequence_range_affine_range_sum"
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/structures/treap/metas/reverse.hpp"
 #include "cp-algo/structures/treap.hpp"

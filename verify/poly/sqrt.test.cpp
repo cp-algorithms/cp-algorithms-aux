@@ -1,5 +1,5 @@
 // @brief Sqrt of Power Series
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/sqrt_of_formal_power_series
+#define PROBLEM "https://judge.yosupo.jp/problem/sqrt_of_formal_power_series"
 #include "cp-algo/math/poly.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include <bits/stdc++.h>

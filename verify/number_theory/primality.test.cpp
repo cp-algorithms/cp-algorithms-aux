@@ -1,5 +1,5 @@
 // @brief Primality Test
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/primality_test
+#define PROBLEM "https://judge.yosupo.jp/problem/primality_test"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/number_theory/primality.hpp"
 #include <bits/stdc++.h>

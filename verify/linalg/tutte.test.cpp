@@ -1,5 +1,5 @@
 // @brief Matching on General Graph (Tutte matrix)
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/general_matching
+#define PROBLEM "https://judge.yosupo.jp/problem/general_matching"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/linalg/matrix.hpp"

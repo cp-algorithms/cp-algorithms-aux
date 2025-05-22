@@ -1,5 +1,5 @@
 // @brief Range Affine Range Sum
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/range_affine_range_sum
+#define PROBLEM "https://judge.yosupo.jp/problem/range_affine_range_sum"
 #include "cp-algo/structures/segtree/metas/affine.hpp"
 #include "cp-algo/structures/segtree.hpp"
 #include "cp-algo/number_theory/modint.hpp"

@@ -1,5 +1,5 @@
 // @brief Shortest Path
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/shortest_path
+#define PROBLEM "https://judge.yosupo.jp/problem/shortest_path"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/graph/shortest_path.hpp"
 #include <bits/stdc++.h>

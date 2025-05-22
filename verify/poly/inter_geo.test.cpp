@@ -1,5 +1,5 @@
 // @brief Polynomial Interpolation (Geometric Sequence)
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/polynomial_interpolation_on_geometric_sequence
+#define PROBLEM "https://judge.yosupo.jp/problem/polynomial_interpolation_on_geometric_sequence"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>

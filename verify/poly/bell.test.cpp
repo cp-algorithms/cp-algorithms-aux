@@ -1,5 +1,5 @@
 // @brief Bell Number
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/bell_number
+#define PROBLEM "https://judge.yosupo.jp/problem/bell_number"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>

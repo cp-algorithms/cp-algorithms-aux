@@ -1,5 +1,5 @@
 // @brief Factorize
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/factorize
+#define PROBLEM "https://judge.yosupo.jp/problem/factorize"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/number_theory/factorize.hpp"
 #include <bits/stdc++.h>

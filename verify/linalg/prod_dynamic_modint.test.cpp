@@ -1,5 +1,5 @@
 // @brief Matrix Product (dynamic modint)
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/matrix_product
+#define PROBLEM "https://judge.yosupo.jp/problem/matrix_product"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/linalg/matrix.hpp"

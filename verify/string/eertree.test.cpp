@@ -1,5 +1,5 @@
 // @brief Eertree
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/eertree
+#define PROBLEM "https://judge.yosupo.jp/problem/eertree"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/structures/eertree.hpp"

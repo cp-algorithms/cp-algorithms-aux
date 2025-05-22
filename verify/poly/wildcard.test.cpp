@@ -1,5 +1,5 @@
 // @brief Wildcard Pattern Matching
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/wildcard_pattern_matching
+#define PROBLEM "https://judge.yosupo.jp/problem/wildcard_pattern_matching"
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #include "cp-algo/math/cvector.hpp"

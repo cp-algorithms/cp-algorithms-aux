@@ -1,9 +1,9 @@
 // @brief Cycle Detection (Directed)
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/cycle_detection
+#define PROBLEM "https://judge.yosupo.jp/problem/cycle_detection"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
-#include "cp-algo/graph/cycle.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/graph/cycle.hpp"
 
 using namespace std;
 using namespace cp_algo::graph;

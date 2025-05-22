@@ -1,5 +1,5 @@
 // @brief System of Linear Equations (Mod 2)
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/system_of_linear_equations_mod_2
+#define PROBLEM "https://judge.yosupo.jp/problem/system_of_linear_equations_mod_2"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/structures/bitpack.hpp"
 #include <bits/stdc++.h>

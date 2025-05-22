@@ -1,5 +1,5 @@
 // @brief Pow of Matrix
-// competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/pow_of_matrix
+#define PROBLEM "https://judge.yosupo.jp/problem/pow_of_matrix"
 #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/linalg/matrix.hpp"

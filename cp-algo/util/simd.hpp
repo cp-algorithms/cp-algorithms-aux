@@ -7,11 +7,12 @@
 namespace cp_algo {
     template<typename T, size_t len>
     using simd [[gnu::vector_size(len * sizeof(T))]] = T;
+    using u32x8 = simd<uint32_t, 8>;
     using i64x4 = simd<int64_t, 4>;
     using u64x4 = simd<uint64_t, 4>;
-    using u32x8 = simd<uint32_t, 8>;
     using i32x4 = simd<int32_t, 4>;
     using u32x4 = simd<uint32_t, 4>;
+    using i16x4 = simd<int16_t, 4>;
     using dx4 = simd<double, 4>;
 
     [[gnu::always_inline]] inline dx4 abs(dx4 a) {

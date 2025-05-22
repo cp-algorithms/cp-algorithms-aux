@@ -111,15 +111,6 @@ namespace cp_algo::math {
         auto getr() const {return Base::r;}
     };
 
-    inline constexpr auto inv2(auto x) {
-        assert(x % 2);
-        std::make_unsigned_t<decltype(x)> y = 1;
-        while(y * x != 1) {
-            y *= 2 - x * y;
-        }
-        return y;
-    }
-
     template<typename Int = int64_t>
     struct dynamic_modint: modint_base<dynamic_modint<Int>, Int> {
         using Base = modint_base<dynamic_modint<Int>, Int>;

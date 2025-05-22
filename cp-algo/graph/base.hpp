@@ -44,9 +44,7 @@ namespace cp_algo::graph {
             return std::views::iota(0, n());
         }
         auto edges_view() const {
-            return std::views::iota(0, 2 * m()) | std::views::filter(
-                [](edge_index e) {return !(e % 2);}
-            );
+            return std::views::iota(0, 2 * m()) | std::views::stride(2);
         }
         auto const& incidence_lists() const {return adj;}
         edge_t const& edge(edge_index e) const {return edges[e];}

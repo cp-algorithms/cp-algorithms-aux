@@ -29,5 +29,13 @@ namespace cp_algo::math {
     T bpow(T const& x, auto n) {
         return bpow(x, n, T(1));
     }
+    inline constexpr auto inv2(auto x) {
+        assert(x % 2);
+        std::make_unsigned_t<decltype(x)> y = 1;
+        while(y * x != 1) {
+            y *= 2 - x * y;
+        }
+        return y;
+    }
 }
 #endif // CP_ALGO_MATH_COMMON_HPP

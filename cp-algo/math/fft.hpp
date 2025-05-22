@@ -30,7 +30,7 @@ namespace cp_algo::math::fft {
         }
 
         dft(size_t n): A(n), B(n) {init();}
-        dft(auto const& a, size_t n): A(n), B(n) {
+        dft(auto const& a, size_t n, bool partial = true): A(n), B(n) {
             init();
             base b2x32 = bpow(base(2), 32);
             u64x4 cur = {
@@ -66,35 +66,47 @@ namespace cp_algo::math::fft {
             }
             checkpoint("dft init");
             if(n) {
-                A.fft();
-                B.fft();
+                if(partial) {
+                    A.fft();
+                    B.fft();
+                } else {
+                    A.template fft<false>();
+                    B.template fft<false>();
+                }
             }
         }
-        template<bool overwrite = true>
+        template<bool overwrite = true, bool partial = true>
         void dot(auto const& C, auto const& D, auto &Aout, auto &Bout, auto &Cout) const {
             cvector::exec_on_evals<1>(A.size() / flen, [&](size_t k, point rt) {
                 k *= flen;
-                auto [Ax, Ay] = A.at(k);
-                auto [Bx, By] = B.at(k);
                 vpoint AC, AD, BC, BD;
                 AC = AD = BC = BD = vz;
                 auto Cv = C.at(k), Dv = D.at(k);
-                for (size_t i = 0; i < flen; i++) {
-                    vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};
-                    AC += Av * Cv; AD += Av * Dv;
-                    BC += Bv * Cv; BD += Bv * Dv;
-                    real(Cv) = rotate_right(real(Cv));
-                    imag(Cv) = rotate_right(imag(Cv));
-                    real(Dv) = rotate_right(real(Dv));
-                    imag(Dv) = rotate_right(imag(Dv));
-                    auto cx = real(Cv)[0], cy = imag(Cv)[0];
-                    auto dx = real(Dv)[0], dy = imag(Dv)[0];
-                    real(Cv)[0] = cx * real(rt) - cy * imag(rt);
-                    imag(Cv)[0] = cx * imag(rt) + cy * real(rt);
-                    real(Dv)[0] = dx * real(rt) - dy * imag(rt);
-                    imag(Dv)[0] = dx * imag(rt) + dy * real(rt);
+                if constexpr(partial) {
+                    auto [Ax, Ay] = A.at(k);
+                    auto [Bx, By] = B.at(k);
+                    for (size_t i = 0; i < flen; i++) {
+                        vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};
+                        AC += Av * Cv; AD += Av * Dv;
+                        BC += Bv * Cv; BD += Bv * Dv;
+                        real(Cv) = rotate_right(real(Cv));
+                        imag(Cv) = rotate_right(imag(Cv));
+                        real(Dv) = rotate_right(real(Dv));
+                        imag(Dv) = rotate_right(imag(Dv));
+                        auto cx = real(Cv)[0], cy = imag(Cv)[0];
+                        auto dx = real(Dv)[0], dy = imag(Dv)[0];
+                        real(Cv)[0] = cx * real(rt) - cy * imag(rt);
+                        imag(Cv)[0] = cx * imag(rt) + cy * real(rt);
+                        real(Dv)[0] = dx * real(rt) - dy * imag(rt);
+                        imag(Dv)[0] = dx * imag(rt) + dy * real(rt);
+                    }
+                } else {
+                    AC = A.at(k) * Cv;
+                    AD = A.at(k) * Dv;
+                    BC = B.at(k) * Cv;
+                    BD = B.at(k) * Dv;
                 }
-                if(overwrite) {
+                if constexpr (overwrite) {
                     Aout.at(k) = AC;
                     Cout.at(k) = AD + BC;
                     Bout.at(k) = BD;

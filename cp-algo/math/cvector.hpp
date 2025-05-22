@@ -109,9 +109,26 @@ namespace cp_algo::math::fft {
             });
             checkpoint("dot");
         }
-
+        template<bool partial = true>
         void ifft() {
             size_t n = size();
+            if constexpr (!partial) {
+                point pi(0, 1);
+                exec_on_evals<4>(n / 4, [&](size_t k, point rt) {
+                    k *= 4;
+                    point v1 = conj(rt);
+                    point v2 = v1 * v1;
+                    point v3 = v1 * v2;
+                    auto A = get(k);
+                    auto B = get(k + 1);
+                    auto C = get(k + 2);
+                    auto D = get(k + 3);
+                    set(k, (A + B) + (C + D));
+                    set(k + 2, ((A + B) - (C + D)) * v2);
+                    set(k + 1, ((A - B) - pi * (C - D)) * v1);
+                    set(k + 3, ((A - B) + pi * (C - D)) * v3);
+                });
+            }
             bool parity = std::countr_zero(n) % 2;
             if(parity) {
                 exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) {
@@ -147,9 +164,14 @@ namespace cp_algo::math::fft {
             }
             checkpoint("ifft");
             for(size_t k = 0; k < n; k += flen) {
-                set(k, get<vpoint>(k) /= vz + (ftype)(n / flen));
+                if constexpr (partial) {
+                    set(k, get<vpoint>(k) /= vz + ftype(n / flen));
+                } else {
+                    set(k, get<vpoint>(k) /= vz + ftype(n));
+                }
             }
         }
+        template<bool partial = true>
         void fft() {
             size_t n = size();
             bool parity = std::countr_zero(n) % 2;
@@ -183,6 +205,23 @@ namespace cp_algo::math::fft {
                     auto t = at(k + flen) * vrt;
                     at(k + flen) = at(k) - t;
                     at(k) += t;
+                });
+            }
+            if constexpr (!partial) {
+                point pi(0, 1);
+                exec_on_evals<4>(n / 4, [&](size_t k, point rt) {
+                    k *= 4;
+                    point v1 = rt;
+                    point v2 = v1 * v1;
+                    point v3 = v1 * v2;
+                        auto A = get(k);
+                        auto B = get(k + 1) * v1;
+                        auto C = get(k + 2) * v2;
+                        auto D = get(k + 3) * v3;
+                        set(k, (A + C) + (B + D));
+                        set(k + 1, (A + C) - (B + D));
+                        set(k + 2, (A - C) + pi * (B - D));
+                        set(k + 3, (A - C) - pi * (B - D));
                 });
             }
             checkpoint("fft");

@@ -56,27 +56,26 @@ namespace cp_algo::math::fft {
                         auto [j, x] = jx;
                         return ranks[j] == i ? x : base(0);
                     }
-                ), M);
+                ), M, false);
                 B.emplace_back(b.data | std::views::enumerate | std::views::transform(
                     [&](auto jx) {
                         auto [j, x] = jx;
                         return ranks[j] == i ? x : base(0);
                     }
-                ), M);
+                ), M, false);
             }
-            std::vector<dft<base>> C;
             for(size_t i = 0; i < K; i++) {
                 dft<base> C(M);
                 cvector X = C.A;
                 for(size_t j = 0; j < K; j++) {
                     size_t tj = (i - j + K) % K;
-                    A[j].template dot<false>(B[tj].A, B[tj].B, C.A, C.B, X);
+                    A[j].template dot<false, false>(B[tj].A, B[tj].B, C.A, C.B, X);
                 }
                 checkpoint("dot");
                 std::vector<base, cp_algo::big_alloc<base>> res((N + flen - 1) / flen * flen);
-                C.A.ifft();
-                C.B.ifft();
-                X.ifft();
+                C.A.template ifft<false>();
+                C.B.template ifft<false>();
+                X.template ifft<false>();
                 C.recover_mod(X, res, N);
                 for(size_t j = 0; j < N; j++) {
                     if(i == ranks[j]) {

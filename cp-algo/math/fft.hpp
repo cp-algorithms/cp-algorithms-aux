@@ -29,6 +29,7 @@ namespace cp_algo::math::fft {
             }
         }
 
+        dft(size_t n): A(n), B(n) {init();}
         dft(auto const& a, size_t n): A(n), B(n) {
             init();
             base b2x32 = bpow(base(2), 32);
@@ -69,8 +70,8 @@ namespace cp_algo::math::fft {
                 B.fft();
             }
         }
-
-        void dot(auto &&C, auto const& D) {
+        template<bool overwrite = true>
+        void dot(auto const& C, auto const& D, auto &Aout, auto &Bout, auto &Cout) const {
             cvector::exec_on_evals<1>(A.size() / flen, [&](size_t k, point rt) {
                 k *= flen;
                 auto [Ax, Ay] = A.at(k);
@@ -93,11 +94,21 @@ namespace cp_algo::math::fft {
                     real(Dv)[0] = dx * real(rt) - dy * imag(rt);
                     imag(Dv)[0] = dx * imag(rt) + dy * real(rt);
                 }
-                A.at(k) = AC;
-                C.at(k) = AD + BC;
-                B.at(k) = BD;
+                if(overwrite) {
+                    Aout.at(k) = AC;
+                    Cout.at(k) = AD + BC;
+                    Bout.at(k) = BD;
+                } else {
+                    Aout.at(k) += AC;
+                    Cout.at(k) += AD + BC;
+                    Bout.at(k) += BD;
+                }
             });
             checkpoint("dot");
+        }
+
+        void dot(auto &&C, auto const& D) {
+            dot(C, D, A, B, C);
         }
 
         void recover_mod(auto &&C, auto &res, size_t k) {

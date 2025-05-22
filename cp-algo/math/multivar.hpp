@@ -26,17 +26,20 @@ namespace cp_algo::math::fft {
             for(auto [i, x]: ranks | std::views::enumerate) {
                 x = rank(i);
             }
+            checkpoint("multivar init");
         }
         void read() {
             for(auto &it: data) {
                 std::cin >> it;
             }
+            checkpoint("multivar read");
         }
         void print() {
             for(auto &it: data) {
                 std::cout << it << " ";
             }
             std::cout << "\n";
+            checkpoint("multivar write");
         }
         void mul(multivar<base> const& b) {
             assert(dim == b.dim);
@@ -69,6 +72,7 @@ namespace cp_algo::math::fft {
                     size_t tj = (i - j + K) % K;
                     A[j].template dot<false>(B[tj].A, B[tj].B, C.A, C.B, X);
                 }
+                checkpoint("dot");
                 std::vector<base, cp_algo::big_alloc<base>> res((N + flen - 1) / flen * flen);
                 C.A.ifft();
                 C.B.ifft();
@@ -79,6 +83,7 @@ namespace cp_algo::math::fft {
                         data[j] = res[j];
                     }
                 }
+                checkpoint("store");
             }
         }
     };

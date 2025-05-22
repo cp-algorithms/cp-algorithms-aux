@@ -22,6 +22,7 @@ void solve() {
     b.read();
     a.mul(b);
     a.print();
+    cp_algo::checkpoint<1>();
 }
 
 signed main() {

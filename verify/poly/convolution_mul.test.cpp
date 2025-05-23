@@ -22,6 +22,7 @@ void solve() {
         cur *= g;
         cur %= p;
     }
+    cp_algo::checkpoint("find lg");
     base a0, b0, as = 0, bs = 0;
     vector<base> a(p-1), b(p-1);
     cin >> a0;
@@ -34,6 +35,7 @@ void solve() {
         cin >> b[lg[i]];
         bs += b[lg[i]];
     }
+    cp_algo::checkpoint("read");
     base c0 = (a0 + as) * (b0 + bs) - as * bs;
     cout << c0 << " ";
     cp_algo::math::fft::mul(a, b);
@@ -43,6 +45,8 @@ void solve() {
     for(int i = 1; i <= p - 1; i++) {
         cout << a[lg[i]] << " ";
     }
+    cp_algo::checkpoint("write");
+    cp_algo::checkpoint<1>();
 }
 
 signed main() {

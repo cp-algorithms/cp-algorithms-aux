@@ -12,14 +12,10 @@ const int mod = 998244353;
 typedef modint<mod> base;
 typedef poly_t<base> polyn;
 
-base nCr(int n, int r) {
-    return fact<base>(n) * rfact<base>(r) * rfact<base>(n-r);
-}
-
 polyn xm1k(size_t k) {
     polyn::Vector ans(k+1);
-    for(int i = 0; i <= k; i++) {
-        ans[i] = (k - i) & 1 ? -nCr(k, i) : nCr(k, i);
+    for(size_t i = 0; i <= k; i++) {
+        ans[i] = (k - i) & 1 ? -binom<base>(k, i) : binom<base>(k, i);
     }
     return ans;
 }
@@ -32,7 +28,7 @@ void solve() {
     polyn H = num / den;
     base ans = 0;
 
-    base id[d+1];
+    vector<base> id(d+1);
     vector<int> lp(d+1);
     id[0] = bpow(base(0), d);
     id[1] = 1;

@@ -6,7 +6,7 @@ namespace cp_algo::math {
     // fact/rfact/small_inv are caching
     // Beware of usage with dynamic mod
     template<typename T>
-    T fact(int n) {
+    T fact(auto n) {
         static std::vector<T> F(maxn);
         static bool init = false;
         if(!init) {
@@ -20,7 +20,7 @@ namespace cp_algo::math {
     }
     // Only works for modint types
     template<typename T>
-    T rfact(int n) {
+    T rfact(auto n) {
         static std::vector<T> F(maxn);
         static bool init = false;
         if(!init) {
@@ -34,7 +34,7 @@ namespace cp_algo::math {
         return F[n];
     }
     template<typename T>
-    T small_inv(int n) {
+    T small_inv(auto n) {
         static std::vector<T> F(maxn);
         static bool init = false;
         if(!init) {
@@ -46,16 +46,16 @@ namespace cp_algo::math {
         return F[n];
     }
     template<typename T>
-    T binom_large(T n, int r) {
+    T binom_large(T n, auto r) {
         assert(r < maxn);
         T ans = 1;
-        for(int i = 0; i < r; i++) {
+        for(decltype(r) i = 0; i < r; i++) {
             ans = ans * T(n - i) * small_inv<T>(i + 1);
         }
         return ans;
     }
     template<typename T>
-    T binom(int n, int r) {
+    T binom(auto n, auto r) {
         if(r < 0 || r > n) {
             return T(0);
         } else if(n >= maxn) {

@@ -12,17 +12,17 @@ namespace cp_algo::math {
         static constexpr size_t bits = sizeof(Int) * 8;
         using Int2 = std::conditional_t<bits <= 32, int64_t, __int128_t>;
         using UInt2 = std::conditional_t<bits <= 32, uint64_t, __uint128_t>;
-        static Int mod() {
+        constexpr static Int mod() {
             return modint::mod();
         }
-        static Int remod() {
+        constexpr static Int remod() {
             return modint::remod();
         }
-        static UInt2 modmod() {
+        constexpr static UInt2 modmod() {
             return UInt2(mod()) * mod();
         }
-        modint_base() = default;
-        modint_base(Int2 rr) {
+        constexpr modint_base() = default;
+        constexpr modint_base(Int2 rr) {
             to_modint().setr(UInt((rr + modmod()) % mod()));
         }
         modint inv() const {
@@ -63,10 +63,10 @@ namespace cp_algo::math {
             UInt R = to_modint().getr();
             return R - (R > (UInt)mod() / 2) * mod();
         }
-        void setr(UInt rr) {
+        constexpr void setr(UInt rr) {
             r = rr;
         }
-        UInt getr() const {
+        constexpr UInt getr() const {
             return r;
         }
 
@@ -85,8 +85,8 @@ namespace cp_algo::math {
     protected:
         UInt r;
     private:
-        modint& to_modint() {return static_cast<modint&>(*this);}
-        modint const& to_modint() const {return static_cast<modint const&>(*this);}
+        constexpr modint& to_modint() {return static_cast<modint&>(*this);}
+        constexpr modint const& to_modint() const {return static_cast<modint const&>(*this);}
     };
     template<typename modint>
     concept modint_type = std::is_base_of_v<modint_base<modint, typename modint::Int>, modint>;

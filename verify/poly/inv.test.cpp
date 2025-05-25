@@ -1,8 +1,9 @@
 // @brief Inv of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/inv_of_formal_power_series"
 #pragma GCC optimize("Ofast,unroll-loops")
-#include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -15,7 +16,7 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector a(n);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
+    for(auto &it: a) {cin >> it;}
     polyn(a).inv_inplace(n).print(n);
 }
 

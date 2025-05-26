@@ -15,14 +15,16 @@ using namespace cp_algo;
 constexpr int mod = 998244353;
 constexpr int imod = -math::inv2(mod);
 
-template<int maxn = 100'000>
+template<bool use_bump_alloc = false, int maxn = 100'000>
 vector<int> facts(vector<int> const& args) {
     constexpr int accum = 4;
     constexpr int simd_size = 8;
     constexpr int block = 1 << 18;
     constexpr int subblock = block / simd_size;
     using T = array<int, 2>;
-    using alloc = bump_alloc<T, 30 * maxn>;
+    using alloc = conditional_t<use_bump_alloc,
+        bump_alloc<T, 30 * maxn>,
+        allocator<T>>;
     basic_string<T, char_traits<T>, alloc> odd_args_per_block[mod / subblock];
     basic_string<T, char_traits<T>, alloc> reg_args_per_block[mod / subblock];
     constexpr int limit_reg = mod / 64;

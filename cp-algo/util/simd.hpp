@@ -41,13 +41,9 @@ namespace cp_algo {
     [[gnu::always_inline]] inline u64x4 low32(u64x4 x) {
         return x & uint32_t(-1);
     }
-    [[gnu::always_inline]] inline auto rotr(auto x) {
-        return decltype(x)(__builtin_shufflevector(u32x8(x), u32x8(x), 1, 2, 3, 0, 5, 6, 7, 4));
+    [[gnu::always_inline]] inline auto swap_bytes(auto x) {
+        return decltype(x)(__builtin_shufflevector(u32x8(x), u32x8(x), 1, 0, 3, 2, 5, 4, 7, 6));
     }
-    [[gnu::always_inline]] inline auto rotl(auto x) {
-        return decltype(x)(__builtin_shufflevector(u32x8(x), u32x8(x), 3, 0, 1, 2, 7, 4, 5, 6));
-    }
-
     [[gnu::always_inline]] inline u64x4 montgomery_reduce(u64x4 x, uint32_t mod, uint32_t imod) {
 #ifdef __AVX2__
         auto x_ninv = u64x4(_mm256_mul_epu32(__m256i(x), __m256i() + imod));
@@ -56,7 +52,7 @@ namespace cp_algo {
         auto x_ninv = x * imod;
         x += low32(x_ninv) * mod;
 #endif
-        return rotr(x);
+        return swap_bytes(x);
     }
 
     [[gnu::always_inline]] inline u64x4 montgomery_mul(u64x4 x, u64x4 y, uint32_t mod, uint32_t imod) {
@@ -68,7 +64,7 @@ namespace cp_algo {
     }
     [[gnu::always_inline]] inline u32x8 montgomery_mul(u32x8 x, u32x8 y, uint32_t mod, uint32_t imod) {
         return u32x8(montgomery_mul(u64x4(x), u64x4(y), mod, imod)) |
-               u32x8(rotl(montgomery_mul(u64x4(rotr(x)), u64x4(rotr(y)), mod, imod)));
+               u32x8(swap_bytes(montgomery_mul(u64x4(swap_bytes(x)), u64x4(swap_bytes(y)), mod, imod)));
     }
     [[gnu::always_inline]] inline dx4 rotate_right(dx4 x) {
         static constexpr u64x4 shuffler = {3, 0, 1, 2};

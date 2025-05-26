@@ -17,14 +17,14 @@ namespace cp_algo::math::fft {
             static const int splt = int(std::sqrt(base::mod())) + 1;
             return splt;
         }
-        static u64x4 mod, imod;
+        static uint32_t mod, imod;
 
         static void init() {
             if(!_init) {
                 factor = 1 + random::rng() % (base::mod() - 1);
                 ifactor = base(1) / factor;
-                mod = u64x4() + base::mod();
-                imod = u64x4() + inv2(-base::mod());
+                mod = base::mod();
+                imod = -inv2(base::mod());
                 _init = true;
             }
         }
@@ -199,8 +199,8 @@ namespace cp_algo::math::fft {
     template<modint_type base> base dft<base>::factor = 1;
     template<modint_type base> base dft<base>::ifactor = 1;
     template<modint_type base> bool dft<base>::_init = false;
-    template<modint_type base> u64x4 dft<base>::mod = {};
-    template<modint_type base> u64x4 dft<base>::imod = {};
+    template<modint_type base> uint32_t dft<base>::mod = {};
+    template<modint_type base> uint32_t dft<base>::imod = {};
     
     void mul_slow(auto &a, auto const& b, size_t k) {
         if(std::empty(a) || std::empty(b)) {

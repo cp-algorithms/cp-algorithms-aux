@@ -38,22 +38,47 @@ namespace cp_algo {
         };
     }
 
-    [[gnu::always_inline]] inline u64x4 montgomery_reduce(u64x4 x, u64x4 mod, u64x4 imod) {
-        auto x_ninv = u64x4(u32x8(x) * u32x8(imod));
+    [[gnu::always_inline]] inline u64x4 montgomery_reduce(u64x4 x, uint32_t mod, uint32_t imod) {
+        auto x_ninv = u64x4(u32x8(x) * (u32x8() + imod));
 #ifdef __AVX2__
-        x += u64x4(_mm256_mul_epu32(__m256i(x_ninv), __m256i(mod)));
+        x += u64x4(_mm256_mul_epu32(__m256i(x_ninv), __m256i() + mod));
 #else
         x += x_ninv * mod;
 #endif
         return x >> 32;
     }
 
-    [[gnu::always_inline]] inline u64x4 montgomery_mul(u64x4 x, u64x4 y, u64x4 mod, u64x4 imod) {
+    [[gnu::always_inline]] inline u64x4 montgomery_mul(u64x4 x, u64x4 y, uint32_t mod, uint32_t imod) {
 #ifdef __AVX2__
         return montgomery_reduce(u64x4(_mm256_mul_epu32(__m256i(x), __m256i(y))), mod, imod);
 #else
         return montgomery_reduce(x * y, mod, imod);
 #endif
+    }
+
+    u32x8 montgomery_mul(u32x8 x, u32x8 y, uint32_t mod, uint32_t imod) {
+        auto x0246 = u64x4(x) & uint32_t(-1);
+        auto y0246 = u64x4(y) & uint32_t(-1);
+        auto x1357 = u64x4(x) >> 32;
+        auto y1357 = u64x4(y) >> 32;
+#ifdef __AVX2__
+        auto xy0246 = u64x4(_mm256_mul_epu32(__m256i(x0246), __m256i(y0246)));
+        auto xy1357 = u64x4(_mm256_mul_epu32(__m256i(x1357), __m256i(y1357)));
+#else
+        u64x4 xy0246 = x0246 * y0246;
+        u64x4 xy1357 = x1357 * y1357;
+#endif
+        auto xy_inv = u64x4(u32x8(xy0246 | (xy1357 << 32)) * (u32x8() + imod));
+        auto xy_inv0246 = xy_inv & uint32_t(-1);
+        auto xy_inv1357 = xy_inv >> 32;
+#ifdef __AVX2__
+        xy0246 += u64x4(_mm256_mul_epu32(__m256i(xy_inv0246), __m256i() + mod));
+        xy1357 += u64x4(_mm256_mul_epu32(__m256i(xy_inv1357), __m256i() + mod));
+#else
+        xy0246 += xy_inv0246 * mod;
+        xy1357 += xy_inv1357 * mod;
+#endif
+        return u32x8((xy0246 >> 32) | (xy1357 & -1ULL << 32));
     }
 
     [[gnu::always_inline]] inline dx4 rotate_right(dx4 x) {

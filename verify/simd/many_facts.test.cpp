@@ -28,38 +28,48 @@ void facts_inplace(vector<int> &args) {
     }
     uint64_t b2x32 = (1ULL << 32) % mod;
     uint64_t fact = 1;
-    for(uint64_t b = 0; b <= limit; b += block) {
-        u64x4 cur = {b, b + block / 4, b + block / 2, b + 3 * block / 4};
-        static array<u64x4, block / 4> prods;
-        prods[0] = u64x4{cur[0] + !b, cur[1], cur[2], cur[3]};
-        cur = cur * b2x32 % mod;
-        for(int i = 1; i < block / 4; i++) {
-            cur += b2x32;
-            cur = cur >= mod ? cur - mod : cur;
-            prods[i] = montgomery_mul(prods[i - 1], cur, mod4, imod4);
-        }
-        for(auto i: args_per_block[b / block]) {
-            size_t x = args[i];
-            if(x >= mod / 2) {
-                x = mod - x - 1;
-            }
-            x -= b;
-            auto pre_blocks = x / (block / 4);
-            auto in_block = x % (block / 4);
-            auto ans = fact * prods[in_block][pre_blocks] % mod;
-            for(size_t z = 0; z < pre_blocks; z++) {
-                ans = ans * prods.back()[z] % mod;
-            }
-            if(args[i] >= mod / 2) {
-                ans = math::bpow(ans, mod - 2, 1ULL, [](auto a, auto b){return a * b % mod;});
-                args[i] = int(x % 2 ? ans : mod - ans);
-            } else {
-                args[i] = int(ans);
-            }
-        }
-        args_per_block[b / block].clear();
+    for(uint64_t b = 0; b <= limit; b += 4 * block) {
+        u64x4 cur[4];
+        static array<u64x4, block / 4> prods[4];
         for(int z = 0; z < 4; z++) {
-            fact = fact * prods.back()[z] % mod;
+            for(int j = 0; j < 4; j++) {
+                cur[z][j] = b + z * block + j * block / 4;
+                prods[z][0][j] = cur[z][j] + !(b || z || j);
+                cur[z][j] = cur[z][j] * b2x32 % mod;
+            }
+        }
+        for(int i = 1; i < block / 4; i++) {
+            for(int z = 0; z < 4; z++) {
+                cur[z] += b2x32;
+                cur[z] = cur[z] >= mod ? cur[z] - mod : cur[z];
+                prods[z][i] = montgomery_mul(prods[z][i - 1], cur[z], mod4, imod4);
+            }
+        }
+        for(int z = 0; z < 4; z++) {
+            uint64_t bl = b + z * block;
+            for(auto i: args_per_block[bl / block]) {
+                size_t x = args[i];
+                if(x >= mod / 2) {
+                    x = mod - x - 1;
+                }
+                x -= bl;
+                auto pre_blocks = x / (block / 4);
+                auto in_block = x % (block / 4);
+                auto ans = fact * prods[z][in_block][pre_blocks] % mod;
+                for(size_t j = 0; j < pre_blocks; j++) {
+                    ans = ans * prods[z].back()[j] % mod;
+                }
+                if(args[i] >= mod / 2) {
+                    ans = math::bpow(ans, mod - 2, 1ULL, [](auto a, auto b){return a * b % mod;});
+                    args[i] = int(x % 2 ? ans : mod - ans);
+                } else {
+                    args[i] = int(ans);
+                }
+            }
+            args_per_block[bl / block].clear();
+            for(int j = 0; j < 4; j++) {
+                fact = fact * prods[z].back()[j] % mod;
+            }
         }
     }
 }

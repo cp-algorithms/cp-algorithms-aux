@@ -56,29 +56,13 @@ namespace cp_algo {
 #endif
     }
 
-    u32x8 montgomery_mul(u32x8 x, u32x8 y, uint32_t mod, uint32_t imod) {
+    [[gnu::always_inline]] inline u32x8 montgomery_mul(u32x8 x, u32x8 y, uint32_t mod, uint32_t imod) {
         auto x0246 = u64x4(x) & uint32_t(-1);
         auto y0246 = u64x4(y) & uint32_t(-1);
         auto x1357 = u64x4(x) >> 32;
         auto y1357 = u64x4(y) >> 32;
-#ifdef __AVX2__
-        auto xy0246 = u64x4(_mm256_mul_epu32(__m256i(x0246), __m256i(y0246)));
-        auto xy1357 = u64x4(_mm256_mul_epu32(__m256i(x1357), __m256i(y1357)));
-#else
-        u64x4 xy0246 = x0246 * y0246;
-        u64x4 xy1357 = x1357 * y1357;
-#endif
-        auto xy_inv = u64x4(u32x8(xy0246 | (xy1357 << 32)) * (u32x8() + imod));
-        auto xy_inv0246 = xy_inv & uint32_t(-1);
-        auto xy_inv1357 = xy_inv >> 32;
-#ifdef __AVX2__
-        xy0246 += u64x4(_mm256_mul_epu32(__m256i(xy_inv0246), __m256i() + mod));
-        xy1357 += u64x4(_mm256_mul_epu32(__m256i(xy_inv1357), __m256i() + mod));
-#else
-        xy0246 += xy_inv0246 * mod;
-        xy1357 += xy_inv1357 * mod;
-#endif
-        return u32x8((xy0246 >> 32) | (xy1357 & -1ULL << 32));
+        return u32x8(montgomery_mul(x0246, y0246, mod, imod)) |
+               u32x8(montgomery_mul(x1357, y1357, mod, imod) << 32);
     }
 
     [[gnu::always_inline]] inline dx4 rotate_right(dx4 x) {

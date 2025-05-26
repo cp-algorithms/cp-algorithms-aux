@@ -10,8 +10,7 @@ using namespace std;
 using namespace cp_algo;
 
 constexpr int mod = 998244353;
-constexpr auto mod4 = u64x4() + mod;
-constexpr auto imod4 = u64x4() - math::inv2(mod);
+constexpr int imod = -math::inv2(mod);
 
 void facts_inplace(vector<int> &args) {
     constexpr int block = 1 << 16;
@@ -26,30 +25,31 @@ void facts_inplace(vector<int> &args) {
             args_per_block[(mod - x - 1) / block].push_back(i);
         }
     }
-    uint64_t b2x32 = (1ULL << 32) % mod;
+    uint32_t b2x32 = (1ULL << 32) % mod;
     uint64_t fact = 1;
-    const int K = 4;
-    for(uint64_t b = 0; b <= limit; b += K * block) {
-        u64x4 cur[K];
-        static array<u64x4, block / 4> prods[K];
-        for(int z = 0; z < K; z++) {
-            for(int j = 0; j < 4; j++) {
-                cur[z][j] = b + z * block + j * block / 4;
+    const int accum = 4;
+    const int simd_size = 8;
+    for(uint64_t b = 0; b <= limit; b += accum * block) {
+        u32x8 cur[accum];
+        static array<u32x8, block / simd_size> prods[accum];
+        for(int z = 0; z < accum; z++) {
+            for(int j = 0; j < simd_size; j++) {
+                cur[z][j] = uint32_t(b + z * block + j * (block / simd_size));
                 prods[z][0][j] = cur[z][j] + !(b || z || j);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-                cur[z][j] = cur[z][j] * b2x32 % mod;
+                cur[z][j] = uint32_t(uint64_t(cur[z][j]) * b2x32 % mod);
 #pragma GCC diagnostic pop
             }
         }
-        for(int i = 1; i < block / 4; i++) {
-            for(int z = 0; z < K; z++) {
+        for(int i = 1; i < block / simd_size; i++) {
+            for(int z = 0; z < accum; z++) {
                 cur[z] += b2x32;
                 cur[z] = cur[z] >= mod ? cur[z] - mod : cur[z];
-                prods[z][i] = montgomery_mul(prods[z][i - 1], cur[z], mod4, imod4);
+                prods[z][i] = montgomery_mul(prods[z][i - 1], cur[z], mod, imod);
             }
         }
-        for(int z = 0; z < K; z++) {
+        for(int z = 0; z < accum; z++) {
             uint64_t bl = b + z * block;
             for(auto i: args_per_block[bl / block]) {
                 size_t x = args[i];
@@ -57,8 +57,8 @@ void facts_inplace(vector<int> &args) {
                     x = mod - x - 1;
                 }
                 x -= bl;
-                auto pre_blocks = x / (block / 4);
-                auto in_block = x % (block / 4);
+                auto pre_blocks = x / (block / simd_size);
+                auto in_block = x % (block / simd_size);
                 auto ans = fact * prods[z][in_block][pre_blocks] % mod;
                 for(size_t j = 0; j < pre_blocks; j++) {
                     ans = ans * prods[z].back()[j] % mod;
@@ -71,7 +71,7 @@ void facts_inplace(vector<int> &args) {
                 }
             }
             args_per_block[bl / block].clear();
-            for(int j = 0; j < 4; j++) {
+            for(int j = 0; j < simd_size; j++) {
                 fact = fact * prods[z].back()[j] % mod;
             }
         }

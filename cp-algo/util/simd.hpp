@@ -38,12 +38,16 @@ namespace cp_algo {
         };
     }
 
+    [[gnu::always_inline]] inline u64x4 low32(u64x4 x) {
+        return x & uint32_t(-1);
+    }
+
     [[gnu::always_inline]] inline u64x4 montgomery_reduce(u64x4 x, uint32_t mod, uint32_t imod) {
         auto x_ninv = u64x4(u32x8(x) * (u32x8() + imod));
 #ifdef __AVX2__
         x += u64x4(_mm256_mul_epu32(__m256i(x_ninv), __m256i() + mod));
 #else
-        x += x_ninv * mod;
+        x += low32(x_ninv) * mod;
 #endif
         return x >> 32;
     }
@@ -52,13 +56,13 @@ namespace cp_algo {
 #ifdef __AVX2__
         return montgomery_reduce(u64x4(_mm256_mul_epu32(__m256i(x), __m256i(y))), mod, imod);
 #else
-        return montgomery_reduce(x * y, mod, imod);
+        return montgomery_reduce(low32(x) * low32(y), mod, imod);
 #endif
     }
 
     [[gnu::always_inline]] inline u32x8 montgomery_mul(u32x8 x, u32x8 y, uint32_t mod, uint32_t imod) {
-        auto x0246 = u64x4(x) & uint32_t(-1);
-        auto y0246 = u64x4(y) & uint32_t(-1);
+        auto x0246 = u64x4(x);
+        auto y0246 = u64x4(y);
         auto x1357 = u64x4(x) >> 32;
         auto y1357 = u64x4(y) >> 32;
         return u32x8(montgomery_mul(x0246, y0246, mod, imod)) |

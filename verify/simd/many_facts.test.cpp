@@ -2,6 +2,8 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/many_factorials"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include <bits/stdc++.h>
+#define CP_ALGO_CHECKPOINT
+#include "cp-algo/util/checkpoint.hpp"
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/util/simd.hpp"
 #include "cp-algo/math/common.hpp"
@@ -25,6 +27,7 @@ void facts_inplace(vector<int> &args) {
             args_per_block[(mod - x - 1) / block].push_back(i);
         }
     }
+    cp_algo::checkpoint("init");
     uint32_t b2x32 = (1ULL << 32) % mod;
     uint64_t fact = 1;
     const int accum = 4;
@@ -49,6 +52,7 @@ void facts_inplace(vector<int> &args) {
                 prods[z][i] = montgomery_mul(prods[z][i - 1], cur[z], mod, imod);
             }
         }
+        cp_algo::checkpoint("inner loop");
         for(int z = 0; z < accum; z++) {
             uint64_t bl = b + z * block;
             for(auto i: args_per_block[bl / block]) {
@@ -75,6 +79,7 @@ void facts_inplace(vector<int> &args) {
                 fact = fact * prods[z].back()[j] % mod;
             }
         }
+        cp_algo::checkpoint("write ans");
     }
 }
 
@@ -83,8 +88,11 @@ void solve() {
     cin >> n;
     vector<int> args(n);
     for(auto &x : args) {cin >> x;}
+    cp_algo::checkpoint("input read");
     facts_inplace(args);
     for(auto it: args) {cout << it << "\n";}
+    cp_algo::checkpoint("output written");
+    cp_algo::checkpoint<1>();
 }
 
 signed main() {

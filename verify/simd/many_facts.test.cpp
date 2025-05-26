@@ -15,7 +15,7 @@ void solve() {
     vector<base> args(n);
     for(auto &x : args) {cin >> x;}
     cp_algo::checkpoint("read");
-    auto res = facts(args);
+    auto res = facts<true, 100'000>(args);
     for(auto it: res) {cout << it << "\n";}
     cp_algo::checkpoint("write");
     cp_algo::checkpoint<1>();

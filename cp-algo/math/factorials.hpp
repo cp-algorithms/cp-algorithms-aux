@@ -8,8 +8,9 @@
 #include <ranges>
 
 namespace cp_algo::math {
-    template<bool use_bump_alloc = false, int maxn = 100'000>
+    template<bool use_bump_alloc = false, int maxn = -1>
     auto facts(auto const& args) {
+        static_assert(!use_bump_alloc || maxn > 0, "maxn must be set if use_bump_alloc is true");
         constexpr int max_mod = 1'000'000'000;
         constexpr int accum = 4;
         constexpr int simd_size = 8;

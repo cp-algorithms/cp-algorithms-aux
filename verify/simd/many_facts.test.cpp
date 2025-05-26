@@ -6,6 +6,7 @@
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/util/checkpoint.hpp"
 #include "cp-algo/util/simd.hpp"
+#include "cp-algo/util/bump_alloc.hpp"
 #include "cp-algo/math/common.hpp"
 
 using namespace std;
@@ -14,13 +15,16 @@ using namespace cp_algo;
 constexpr int mod = 998244353;
 constexpr int imod = -math::inv2(mod);
 
+template<int maxn = 100'000>
 vector<int> facts(vector<int> const& args) {
     constexpr int accum = 4;
     constexpr int simd_size = 8;
     constexpr int block = 1 << 18;
     constexpr int subblock = block / simd_size;
-    static basic_string<array<int, 2>> odd_args_per_block[mod / subblock];
-    static basic_string<array<int, 2>> reg_args_per_block[mod / subblock];
+    using T = array<int, 2>;
+    using alloc = bump_alloc<T, 30 * maxn>;
+    basic_string<T, char_traits<T>, alloc> odd_args_per_block[mod / subblock];
+    basic_string<T, char_traits<T>, alloc> reg_args_per_block[mod / subblock];
     constexpr int limit_reg = mod / 64;
     int limit_odd = 0;
 

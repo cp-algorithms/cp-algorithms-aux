@@ -5,7 +5,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "../util/bump_alloc.hpp"
 namespace cp_algo::structures {
     template<int sigma = 26, char mch = 'a'>
     struct eertree {
@@ -63,7 +62,7 @@ namespace cp_algo::structures {
             print(std::identity{});
         }
     private:
-        std::vector<std::forward_list<int, bump_alloc<int>>> to;
+        std::vector<std::forward_list<int>> to;
         std::vector<int> len, link, par;
         std::string s;
         int n = 1, sz = 2, last = 0;

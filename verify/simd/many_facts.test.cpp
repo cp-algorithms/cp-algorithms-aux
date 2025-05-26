@@ -35,7 +35,10 @@ void facts_inplace(vector<int> &args) {
             for(int j = 0; j < 4; j++) {
                 cur[z][j] = b + z * block + j * block / 4;
                 prods[z][0][j] = cur[z][j] + !(b || z || j);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                 cur[z][j] = cur[z][j] * b2x32 % mod;
+#pragma GCC diagnostic pop
             }
         }
         for(int i = 1; i < block / 4; i++) {

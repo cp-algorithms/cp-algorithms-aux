@@ -28,10 +28,11 @@ void facts_inplace(vector<int> &args) {
     }
     uint64_t b2x32 = (1ULL << 32) % mod;
     uint64_t fact = 1;
-    for(uint64_t b = 0; b <= limit; b += 4 * block) {
-        u64x4 cur[4];
-        static array<u64x4, block / 4> prods[4];
-        for(int z = 0; z < 4; z++) {
+    const int K = 4;
+    for(uint64_t b = 0; b <= limit; b += K * block) {
+        u64x4 cur[K];
+        static array<u64x4, block / 4> prods[K];
+        for(int z = 0; z < K; z++) {
             for(int j = 0; j < 4; j++) {
                 cur[z][j] = b + z * block + j * block / 4;
                 prods[z][0][j] = cur[z][j] + !(b || z || j);
@@ -42,13 +43,13 @@ void facts_inplace(vector<int> &args) {
             }
         }
         for(int i = 1; i < block / 4; i++) {
-            for(int z = 0; z < 4; z++) {
+            for(int z = 0; z < K; z++) {
                 cur[z] += b2x32;
                 cur[z] = cur[z] >= mod ? cur[z] - mod : cur[z];
                 prods[z][i] = montgomery_mul(prods[z][i - 1], cur[z], mod4, imod4);
             }
         }
-        for(int z = 0; z < 4; z++) {
+        for(int z = 0; z < K; z++) {
             uint64_t bl = b + z * block;
             for(auto i: args_per_block[bl / block]) {
                 size_t x = args[i];

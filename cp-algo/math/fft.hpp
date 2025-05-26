@@ -24,7 +24,7 @@ namespace cp_algo::math::fft {
                 factor = 1 + random::rng() % (base::mod() - 1);
                 ifactor = base(1) / factor;
                 mod = base::mod();
-                imod = -inv2(base::mod());
+                imod = -inv2<uint32_t>(base::mod());
                 _init = true;
             }
         }

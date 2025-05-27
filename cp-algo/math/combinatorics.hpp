@@ -1,7 +1,8 @@
 #ifndef CP_ALGO_MATH_COMBINATORICS_HPP
 #define CP_ALGO_MATH_COMBINATORICS_HPP
-#include "common.hpp"
+#include "../math/common.hpp"
 #include <cassert>
+#include <ranges>
 namespace cp_algo::math {
     // fact/rfact/small_inv are caching
     // Beware of usage with dynamic mod
@@ -52,12 +53,12 @@ namespace cp_algo::math {
     }
     template<typename T>
     std::vector<T> bulk_invs(auto const& args) {
-        std::vector<T> res(size(args), args[0]);
-        for(size_t i = 1; i < size(args); i++) {
+        std::vector<T> res(std::size(args), args[0]);
+        for(size_t i = 1; i < std::size(args); i++) {
             res[i] = res[i - 1] * args[i];
         }
         auto all_invs = T(1) / res.back();
-        for(size_t i = size(args) - 1; i > 0; i--) {
+        for(size_t i = std::size(args) - 1; i > 0; i--) {
             res[i] = all_invs * res[i - 1];
             all_invs *= args[i];
         }
@@ -66,7 +67,7 @@ namespace cp_algo::math {
     }
     template<typename T>
     T small_inv(auto n) {
-        static auto F = builk_invs<T>(std::views::iota(1) | std::views::take(maxn));
+        static auto F = bulk_invs<T>(std::views::iota(1, maxn));
         return F[n - 1];
     }
     template<typename T>

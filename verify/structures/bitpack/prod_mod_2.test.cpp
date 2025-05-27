@@ -12,15 +12,16 @@ using cp_algo::structures::bitpack;
 const int maxn = 1 << 12;
 bitpack<maxn> a[maxn], b[maxn], c[maxn];
 const int K = 8;
-bitpack<maxn> precalc[maxn / K][1 << K];
+bitpack<maxn> precalc[1 << K];
 
-void process_precalc() {
-    for(int i = 0; i < maxn / K; i++) {
-        for(int j = 0; j < K; j++) {
-            int step = 1 << j;
-            for(int k = 0; k < step; k++) {
-                precalc[i][k + step] = precalc[i][k] ^ b[K * i + j];
-            }
+void process_precalc(int i) {
+    for(auto &it: precalc) {
+        it = bitpack<maxn>();
+    }
+    for(int j = 0; j < K; j++) {
+        int step = 1 << j;
+        for(int k = 0; k < step; k++) {
+            precalc[k + step] = precalc[k] ^ b[K * i + j];
         }
     }
 }
@@ -39,12 +40,11 @@ void solve() {
         b[i] = row;
     }
     cp_algo::checkpoint("read");
-    process_precalc();
-    cp_algo::checkpoint("precalc");
     for(int j = 0; j < m; j += 64) {
         for(int z = 0; z < 64 / K; z++) {
+            process_precalc(j / K + z);
             for(int i = 0; i < n; i++) {
-                c[i] ^= precalc[j / K + z][uint8_t(a[i].word(j / 64) >> K * z)];
+                c[i] ^= precalc[uint8_t(a[i].word(j / 64) >> K * z)];
             }
         }
     }

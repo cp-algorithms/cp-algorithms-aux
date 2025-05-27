@@ -5,14 +5,17 @@
 #include <bit>
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Miller–Rabin_primality_test
-    bool is_prime(uint64_t m) {
+    template<typename _Int>
+    bool is_prime(_Int m) {
+        using Int = std::make_signed_t<_Int>;
+        using UInt = std::make_unsigned_t<Int>;
         if(m == 1 || m % 2 == 0) {
             return m == 2;
         }
         // m - 1 = 2^s * d
-        int s = std::countr_zero(m - 1);
+        int s = std::countr_zero(UInt(m - 1));
         auto d = (m - 1) >> s;
-        using base = dynamic_modint<>;
+        using base = dynamic_modint<Int>;
         auto test = [&](base x) {
             x = bpow(x, d);
             if(std::abs(x.rem()) <= 1) {

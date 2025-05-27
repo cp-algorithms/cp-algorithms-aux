@@ -4,19 +4,21 @@
 #include <optional>
 namespace cp_algo::math {
     // Find min non-negative x s.t. a*b^x = c (mod m)
-    std::optional<int64_t> discrete_log(int64_t b, int64_t c, int64_t m, int64_t a = 1) {
+    template<typename _Int>
+    std::optional<_Int> discrete_log(_Int b, _Int c, _Int m, _Int a = 1) {
         if(std::abs(a - c) % m == 0) {
             return 0;
         }
-        if(std::gcd(a, m) != std::gcd(a * b, m)) {
-            auto res = discrete_log(b, c, m, a * b % m);
+        if(std::gcd(a, m) != std::gcd(int64_t(a) * b, int64_t(m))) {
+            auto res = discrete_log(b, c, m, _Int(int64_t(a) * b % m));
             return res ? std::optional(*res + 1) : res;
         }
         // a * b^x is periodic here
-        using base = dynamic_modint<>;
-        return base::with_mod(m, [&]() -> std::optional<uint64_t> {
+        using Int = std::make_signed_t<_Int>;
+        using base = dynamic_modint<Int>;
+        return base::with_mod(m, [&]() -> std::optional<_Int> {
             int sqrtmod = std::max(1, (int)std::sqrt(m) / 2);
-            std::unordered_map<int64_t, int> small;
+            std::unordered_map<_Int, int> small;
             base cur = a;
             for(int i = 0; i < sqrtmod; i++) {
                 small[cur.getr()] = i;

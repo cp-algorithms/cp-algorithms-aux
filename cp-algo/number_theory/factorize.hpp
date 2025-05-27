@@ -5,8 +5,10 @@
 #include <generator>
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
-    auto proper_divisor(uint64_t m) {
-        using base = dynamic_modint<>;
+    template<typename _Int>
+    auto proper_divisor(_Int m) {
+        using Int = std::make_signed_t<_Int>;
+        using base = dynamic_modint<Int>;
         return m % 2 == 0 ? 2 : base::with_mod(m, [&]() {
             base t = random::rng();
             auto f = [&](auto x) {
@@ -31,7 +33,8 @@ namespace cp_algo::math {
             return g.getr();
         });
     }
-    std::generator<uint64_t> factorize(uint64_t m) {
+    template<typename Int>
+    std::generator<Int> factorize(Int m) {
         if(is_prime(m)) {
             co_yield m;
         } else if(m > 1) {

@@ -8,7 +8,7 @@
 using namespace std;
 using namespace cp_algo::linalg;
 using namespace cp_algo::math;
-using base = dynamic_modint<>;
+using base = dynamic_modint<int64_t>;
 
 const int64_t mod = 998244353;
 

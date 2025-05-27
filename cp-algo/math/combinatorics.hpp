@@ -33,17 +33,41 @@ namespace cp_algo::math {
         }
         return F[n];
     }
-    template<typename T>
-    T small_inv(auto n) {
-        static std::vector<T> F(maxn);
+    template<typename T, int base>
+    T pow_fixed(int n) {
+        static std::vector<T> prec_low(1 << 16);
+        static std::vector<T> prec_high(1 << 16);
         static bool init = false;
         if(!init) {
-            for(int i = 1; i < maxn; i++) {
-                F[i] = rfact<T>(i) * fact<T>(i - 1);
-            }
             init = true;
+            prec_low[0] = prec_high[0] = T(1);
+            T step_low = T(base);
+            T step_high = bpow(T(base), 1 << 16);
+            for(int i = 1; i < (1 << 16); i++) {
+                prec_low[i] = prec_low[i - 1] * step_low;
+                prec_high[i] = prec_high[i - 1] * step_high;
+            }
         }
-        return F[n];
+        return prec_low[n & 0xFFFF] * prec_high[n >> 16];
+    }
+    template<typename T>
+    std::vector<T> bulk_invs(auto const& args) {
+        std::vector<T> res(size(args), args[0]);
+        for(size_t i = 1; i < size(args); i++) {
+            res[i] = res[i - 1] * args[i];
+        }
+        auto all_invs = T(1) / res.back();
+        for(size_t i = size(args) - 1; i > 0; i--) {
+            res[i] = all_invs * res[i - 1];
+            all_invs *= args[i];
+        }
+        res[0] = all_invs;
+        return res;
+    }
+    template<typename T>
+    T small_inv(auto n) {
+        static auto F = builk_invs<T>(std::views::iota(1) | std::views::take(maxn));
+        return F[n - 1];
     }
     template<typename T>
     T binom_large(T n, auto r) {

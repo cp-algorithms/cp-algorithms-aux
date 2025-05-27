@@ -111,7 +111,7 @@ namespace cp_algo::math {
         auto getr() const {return Base::r;}
     };
 
-    template<typename Int = int64_t>
+    template<typename Int = int>
     struct dynamic_modint: modint_base<dynamic_modint<Int>, Int> {
         using Base = modint_base<dynamic_modint<Int>, Int>;
         using Base::Base;

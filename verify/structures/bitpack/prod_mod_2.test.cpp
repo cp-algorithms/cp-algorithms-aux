@@ -2,7 +2,6 @@
 // @brief Matrix Product (Mod 2)
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_product_mod_2"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
 #include "cp-algo/structures/bitpack.hpp"
 #include <bits/stdc++.h>
 
@@ -11,6 +10,19 @@ using cp_algo::structures::bitpack;
 
 const int maxn = 1 << 12;
 bitpack<maxn> a[maxn], b[maxn], c[maxn];
+const int K = 8;
+bitpack<maxn> precalc[maxn / K][1 << K];
+
+void process_precalc() {
+    for(int i = 0; i < maxn / K; i++) {
+        for(int j = 0; j < K; j++) {
+            int step = 1 << j;
+            for(int k = 0; k < step; k++) {
+                precalc[i][k + step] = precalc[i][k] ^ b[K * i + j];
+            }
+        }
+    }
+}
 
 void solve() {
     int n, m, k;
@@ -24,10 +36,11 @@ void solve() {
         cin >> row;
         b[i] = row;
     }
-    for(int i = 0; i < n; i++) {
-        for(int j = 0; j < m; j++) {
-            if(a[i][j]) {
-                c[i] ^= b[j];
+    process_precalc();
+    for(int j = 0; j < m; j += 64) {
+        for(int z = 0; z < 64 / K; z++) {
+            for(int i = 0; i < n; i++) {
+                c[i] ^= precalc[j / K + z][uint8_t(a[i].word(j / 64) >> K * z)];
             }
         }
     }

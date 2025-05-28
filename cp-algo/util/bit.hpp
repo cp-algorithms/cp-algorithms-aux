@@ -32,5 +32,30 @@ namespace cp_algo {
     [[gnu::always_inline]] inline uint64_t read_bits64(char const* p) {
         return read_bits(p) | (uint64_t(read_bits(p + 32)) << 32);
     }
+
+    [[gnu::target("avx2"), gnu::always_inline]] inline void write_bits(char *p, uint32_t bits) {
+        auto bytes = u32x8() + bits;
+        static constexpr u8x32 shuffler = {
+            0, 0, 0, 0, 0, 0, 0, 0,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            2, 2, 2, 2, 2, 2, 2, 2,
+            3, 3, 3, 3, 3, 3, 3, 3
+        };
+        auto shuffled = u8x32(_mm256_shuffle_epi8(__m256i() + bits, __m256i(shuffler)));
+        static constexpr u8x32 mask = {
+            1, 2, 4, 8, 16, 32, 64, 128,
+            1, 2, 4, 8, 16, 32, 64, 128,
+            1, 2, 4, 8, 16, 32, 64, 128,
+            1, 2, 4, 8, 16, 32, 64, 128
+        };
+        u8x32 to_save = (shuffled & mask) ? '1' : '0';
+        for(int z = 0; z < 32; z++) {
+            p[z] = to_save[z];
+        }
+    }
+    [[gnu::target("avx2"), gnu::always_inline]] inline void write_bits64(char *p, uint64_t bits) {
+        write_bits(p, uint32_t(bits));
+        write_bits(p + 32, uint32_t(bits >> 32));
+    }
 }
 #endif // CP_ALGO_UTIL_BIT_HPP

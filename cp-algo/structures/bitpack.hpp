@@ -37,12 +37,8 @@ namespace cp_algo::structures {
 
         std::string to_string() const {
             std::string res(blocks * width, '0');
-            for(size_t i = 0, pos = 0; i < blocks; i++, pos += width) {
-                auto block = data[i];
-                for(size_t j = 0; j < width; j++) {
-                    res[pos + j] = '0' + block % 2;
-                    block /= 2;
-                }
+            for(size_t i = 0; i < blocks; i++) {
+                write_bits64(res.data() + i * width, data[i]);
             }
             res.resize(n);
             return res;

@@ -1,28 +1,24 @@
 #ifndef CP_ALGO_STRUCTURES_BITPACK_HPP
 #define CP_ALGO_STRUCTURES_BITPACK_HPP
 #include "../structures/bit_array.hpp"
+#include "../util/simd.hpp"
 #include <cstdint>
 #include <cstddef>
 #include <string>
 #include <array>
 namespace cp_algo::structures {
-    template<size_t n, typename Int = uint64_t>
-    struct bitpack: bit_array<n, Int> {
-        using Base = bit_array<n, Int>;
+    template<size_t n>
+    struct bitpack: bit_array<n, uint64_t> {
+        using Base = bit_array<n, uint64_t>;
         using Base::width, Base::blocks, Base::data;
+        using Base::set, Base::reset;
         auto operator <=> (bitpack const& t) const = default;
 
         bitpack() {}
-        bitpack(std::string bits) {
-            size_t rem = size(bits) % width;
-            if(rem) {
-                bits += std::string(width - rem, '0');
-            }
-            for(size_t i = 0, pos = 0; pos < size(bits); i++, pos += width) {
-                for(size_t j = width; j; j--) {
-                    data[i] *= 2;
-                    data[i] ^= bits[pos + j - 1] == '1';
-                }
+        bitpack(std::string &bits) {
+            bits.resize((size(bits) + width - 1) / width * width);
+            for(size_t i = 0; i < blocks; i++) {
+                data[i] = read_bits64(bits.data() + i * width);
             }
         }
 
@@ -42,7 +38,7 @@ namespace cp_algo::structures {
         std::string to_string() const {
             std::string res(blocks * width, '0');
             for(size_t i = 0, pos = 0; i < blocks; i++, pos += width) {
-                Int block = data[i];
+                auto block = data[i];
                 for(size_t j = 0; j < width; j++) {
                     res[pos + j] = '0' + block % 2;
                     block /= 2;

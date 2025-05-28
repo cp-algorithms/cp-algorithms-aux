@@ -40,11 +40,12 @@ void solve() {
         b[i] = row;
     }
     cp_algo::checkpoint("read");
-    for(int j = 0; j < m; j += 64) {
-        for(int z = 0; z < 64 / K; z++) {
+    const int width = bitpack<maxn>::width;
+    for(int j = 0; j < m; j += width) {
+        for(int z = 0; z < width / K; z++) {
             process_precalc(j / K + z);
             for(int i = 0; i < n; i++) {
-                c[i] ^= precalc[uint8_t(a[i].word(j / 64) >> K * z)];
+                c[i] ^= precalc[uint8_t(a[i].word(j / width) >> K * z)];
             }
         }
     }

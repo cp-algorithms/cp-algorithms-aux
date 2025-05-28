@@ -14,6 +14,9 @@ namespace cp_algo::structures {
         void set(size_t x) {
             data[x / width] |= 1ULL << (x % width);
         }
+        void reset(size_t x) {
+            data[x / width] &= ~(1ULL << (x % width));
+        }
         void flip(size_t x) {
             data[x / width] ^= 1ULL << (x % width);
         }

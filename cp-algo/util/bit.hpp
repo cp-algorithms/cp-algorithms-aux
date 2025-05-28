@@ -1,6 +1,6 @@
 #ifndef CP_ALGO_UTIL_BIT_HPP
 #define CP_ALGO_UTIL_BIT_HPP
-#include <immintrin.h>
+#include "../util/simd.hpp"
 #include <cstdint>
 #include <array>
 #include <bit>
@@ -24,6 +24,13 @@ namespace cp_algo {
         } else {
             callback.template operator()<1ULL << fl>();
         }
+    }
+
+    [[gnu::target("avx2"), gnu::always_inline]] inline uint32_t read_bits(char const* p) {
+        return _mm256_movemask_epi8(__m256i(vector_cast<u8x32 const>(p[0]) + (127 - '0')));
+    }
+    [[gnu::always_inline]] inline uint64_t read_bits64(char const* p) {
+        return read_bits(p) | (uint64_t(read_bits(p + 32)) << 32);
     }
 }
 #endif // CP_ALGO_UTIL_BIT_HPP

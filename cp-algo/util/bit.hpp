@@ -34,7 +34,6 @@ namespace cp_algo {
     }
 
     [[gnu::target("avx2"), gnu::always_inline]] inline void write_bits(char *p, uint32_t bits) {
-        auto bytes = u32x8() + bits;
         static constexpr u8x32 shuffler = {
             0, 0, 0, 0, 0, 0, 0, 0,
             1, 1, 1, 1, 1, 1, 1, 1,
@@ -48,9 +47,8 @@ namespace cp_algo {
             1, 2, 4, 8, 16, 32, 64, 128,
             1, 2, 4, 8, 16, 32, 64, 128
         };
-        u8x32 to_save = (shuffled & mask) ? '1' : '0';
         for(int z = 0; z < 32; z++) {
-            p[z] = to_save[z];
+            p[z] = shuffled[z] & mask[z] ? '1' : '0';
         }
     }
     [[gnu::target("avx2"), gnu::always_inline]] inline void write_bits64(char *p, uint64_t bits) {

@@ -7,38 +7,36 @@
 #include <string>
 #include <array>
 namespace cp_algo::structures {
-    template<size_t n>
-    struct bitpack: bit_array<n, uint64_t> {
-        using Base = bit_array<n, uint64_t>;
-        using Base::width, Base::blocks, Base::data;
-        using Base::set, Base::reset;
-        auto operator <=> (bitpack const& t) const = default;
+    template<typename BitArray>
+    struct _bitpack: BitArray {
+        using Base = BitArray;
+        using Base::Base, Base::width, Base::words, Base::data, Base::n, Base::word;
+        auto operator <=> (_bitpack const& t) const = default;
 
-        bitpack() {}
-        bitpack(std::string &bits) {
-            bits.resize((size(bits) + width - 1) / width * width);
-            for(size_t i = 0; i < blocks; i++) {
-                data[i] = read_bits64(bits.data() + i * width);
+        _bitpack(std::string &bits): _bitpack(std::size(bits)) {
+            bits += std::string(-std::size(bits) % width, '0');
+            for(size_t i = 0; i < words; i++) {
+                word(i) = read_bits64(bits.data() + i * width);
             }
         }
 
-        bitpack& xor_hint(bitpack const& t, size_t hint) {
-            for(size_t i = hint / width; i < blocks; i++) {
+        _bitpack& xor_hint(_bitpack const& t, size_t hint) {
+            for(size_t i = hint / width; i < std::size(data); i++) {
                 data[i] ^= t.data[i];
             }
             return *this;
         }
-        bitpack& operator ^= (bitpack const& t) {
+        _bitpack& operator ^= (_bitpack const& t) {
             return xor_hint(t, 0);
         }
-        bitpack operator ^ (bitpack const& t) const {
-            return bitpack(*this) ^= t;
+        _bitpack operator ^ (_bitpack const& t) const {
+            return _bitpack(*this) ^= t;
         }
 
         std::string to_string() const {
-            std::string res(blocks * width, '0');
-            for(size_t i = 0; i < blocks; i++) {
-                write_bits64(res.data() + i * width, data[i]);
+            std::string res(words * width, '0');
+            for(size_t i = 0; i < words; i++) {
+                write_bits64(res.data() + i * width, word(i));
             }
             res.resize(n);
             return res;
@@ -47,15 +45,19 @@ namespace cp_algo::structures {
         size_t ctz() const {
             size_t res = 0;
             size_t i = 0;
-            while(i < blocks && data[i] == 0) {
+            while(i < words && word(i) == 0) {
                 res += width;
                 i++;
             }
-            if(i < blocks) {
-                res += std::countr_zero(data[i]);
+            if(i < words) {
+                res += std::countr_zero(word(i));
             }
             return std::min(res, n);
         }
     };
+
+    template<int N>
+    using bitpack = _bitpack<bit_array<N>>;
+    using dynamic_bitpack = _bitpack<dynamic_bit_array>;
 }
 #endif // CP_ALGO_STRUCTURES_BITPACK_HPP

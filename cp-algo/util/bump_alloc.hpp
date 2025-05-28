@@ -8,6 +8,9 @@ namespace cp_algo {
         static char* buf;
         static size_t buf_ind;
         using value_type = T;
+        template <class U> struct rebind { using other = bump_alloc<U, max_len>; };
+        constexpr bool operator==(const bump_alloc&) const = default;
+        constexpr bool operator!=(const bump_alloc&) const = default;
         bump_alloc() = default;
         template<class U> bump_alloc(const U&) {}
         T* allocate(size_t n) {

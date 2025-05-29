@@ -1,9 +1,10 @@
 // @brief Ordered Set
 #define PROBLEM "https://judge.yosupo.jp/problem/ordered_set"
 #pragma GCC optimize("Ofast,unroll-loops")
+#include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/structures/fenwick_set.hpp"
 #include "cp-algo/util/compress_coords.hpp"
-#include <bits/stdc++.h>
 
 using namespace std;
 using cp_algo::structures::fenwick_set;

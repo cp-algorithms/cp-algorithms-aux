@@ -2,15 +2,31 @@
 #define CP_ALGO_STRUCTURES_BIT_ARRAY_HPP
 #include "../util/bit.hpp"
 #include "../util/bump_alloc.hpp"
+#include <cassert>
 namespace cp_algo::structures {
+    template<typename C>
+    concept Resizable = requires(C& c, std::size_t n) { c.resize(n); };
+
     template<class Cont>
     struct _bit_array {
         static constexpr size_t width = bit_width<uint64_t>;
         size_t words, n;
         alignas(32) Cont data;
 
-        _bit_array(): words(0), n(0) {}
-        _bit_array(size_t N): words((N + width - 1) / width), n(N), data() {}
+        void resize(size_t N) {
+            n = N;
+            words = (n + width - 1) / width;
+            if constexpr (Resizable<Cont>) {
+                data.resize(words);
+            } else {
+                assert(std::size(data) >= words);
+            }
+        }
+
+        _bit_array(): n(0), words(0), data() {}
+        _bit_array(size_t N): data() {
+            resize(N);
+        }
 
         uint64_t& word(size_t x) {
             return data[x];
@@ -47,9 +63,7 @@ namespace cp_algo::structures {
     struct bit_array: _bit_array<std::array<uint64_t, (N + 63) / 64>> {
         using Base = _bit_array<std::array<uint64_t, (N + 63) / 64>>;
         using Base::Base, Base::words, Base::data;
-        bit_array(): Base(N) {
-            data.fill(0);
-        }
+        bit_array(): Base(N) {}
     };
     struct dynamic_bit_array: _bit_array<std::vector<uint64_t>> {
         using Base = _bit_array<std::vector<uint64_t>>;

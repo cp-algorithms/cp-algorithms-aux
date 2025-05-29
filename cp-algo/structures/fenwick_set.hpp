@@ -3,17 +3,17 @@
 #include "fenwick.hpp"
 #include "bit_array.hpp"
 namespace cp_algo::structures {
-    template<size_t maxc, typename Uint = uint64_t>
-    using popcount_array = std::array<int, maxc / bit_width<Uint> + 1>;
+    template<size_t maxc>
+    using popcount_array = std::array<int, maxc / bit_width<uint64_t> + 1>;
     // fenwick-based set for [0, maxc)
-    template<size_t maxc, typename Uint = uint64_t>
-    struct fenwick_set: fenwick<int, popcount_array<maxc, Uint>> {
-        using Base = fenwick<int, popcount_array<maxc, Uint>>;
-        static constexpr size_t word = bit_width<Uint>;
+    template<size_t maxc>
+    struct fenwick_set: fenwick<int, popcount_array<maxc>> {
+        using Base = fenwick<int, popcount_array<maxc>>;
+        static constexpr size_t word = bit_width<uint64_t>;
         size_t sz = 0;
-        bit_array<maxc, Uint> bits;
+        bit_array<maxc> bits;
 
-        fenwick_set(): Base(popcount_array<maxc, Uint>{}) {}
+        fenwick_set(): Base(popcount_array<maxc>{}) {}
         fenwick_set(auto &&range): fenwick_set() {
             for(auto x: range) {
                 Base::data[x / word + 1] += 1;

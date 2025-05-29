@@ -7,8 +7,8 @@
 using namespace std;
 using namespace cp_algo::structures;
 
-const int maxn = 1 << 13;
-bitpack<maxn> a[maxn];
+const int maxn = 1 << 12;
+bitpack<2 * maxn> a[maxn];
 
 void solve() {
     size_t n;
@@ -18,6 +18,7 @@ void solve() {
     for(size_t i = 0; i < n; i++) {
         cin >> row;
         a[i] = row;
+        a[i].resize(2 * n);
         a[i].set(n + i);
         for(size_t j = 0; j < i; j++) {
             if(a[i][lead[j]]) {

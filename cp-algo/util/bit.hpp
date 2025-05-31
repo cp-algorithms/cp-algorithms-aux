@@ -13,7 +13,7 @@ namespace cp_algo {
         return (1ULL << n) - 1;
     }
     size_t order_of_bit(auto x, size_t k) {
-        return std::popcount(x << ( -k % bit_width<decltype(x)>));
+        return k ? std::popcount(x << (bit_width<decltype(x)> - k)) : 0;
     }
     [[gnu::target("bmi2")]] inline size_t kth_set_bit(uint64_t x, size_t k) {
         return std::countr_zero(_pdep_u64(1ULL << k, x));

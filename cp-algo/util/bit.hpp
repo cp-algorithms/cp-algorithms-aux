@@ -8,11 +8,14 @@ namespace cp_algo {
     template<typename Uint>
     constexpr size_t bit_width = sizeof(Uint) * 8;
 
-    size_t order_of_bit(auto x, size_t k) {
-        return k ? std::popcount(x << (bit_width<decltype(x)> - k)) : 0;
+    // n < 64
+    uint64_t mask(size_t n) {
+        return (1ULL << n) - 1;
     }
-    [[gnu::target("bmi2")]]
-    size_t kth_set_bit(uint64_t x, size_t k) {
+    size_t order_of_bit(auto x, size_t k) {
+        return std::popcount(x << ( -k % bit_width<decltype(x)>));
+    }
+    [[gnu::target("bmi2")]] inline size_t kth_set_bit(uint64_t x, size_t k) {
         return std::countr_zero(_pdep_u64(1ULL << k, x));
     }
     template<int fl = 0>
@@ -25,15 +28,24 @@ namespace cp_algo {
             callback.template operator()<1ULL << fl>();
         }
     }
+    void with_bit_ceil(size_t n, auto &&callback) {
+        with_bit_floor(n, [&]<size_t N>() {
+            if(N == n) {
+                callback.template operator()<N>();
+            } else {
+                callback.template operator()<N << 1>();
+            }
+        });
+    }
 
-    [[gnu::target("avx2"), gnu::always_inline]] inline uint32_t read_bits(char const* p) {
+    [[gnu::target("avx2")]] inline uint32_t read_bits(char const* p) {
         return _mm256_movemask_epi8(__m256i(vector_cast<u8x32 const>(p[0]) + (127 - '0')));
     }
-    [[gnu::always_inline]] inline uint64_t read_bits64(char const* p) {
+    [[gnu::target("avx2")]] inline uint64_t read_bits64(char const* p) {
         return read_bits(p) | (uint64_t(read_bits(p + 32)) << 32);
     }
 
-    [[gnu::target("avx2"), gnu::always_inline]] inline void write_bits(char *p, uint32_t bits) {
+    [[gnu::target("avx2")]] inline void write_bits(char *p, uint32_t bits) {
         static constexpr u8x32 shuffler = {
             0, 0, 0, 0, 0, 0, 0, 0,
             1, 1, 1, 1, 1, 1, 1, 1,
@@ -51,7 +63,7 @@ namespace cp_algo {
             p[z] = shuffled[z] & mask[z] ? '1' : '0';
         }
     }
-    [[gnu::target("avx2"), gnu::always_inline]] inline void write_bits64(char *p, uint64_t bits) {
+    [[gnu::target("avx2")]] inline void write_bits64(char *p, uint64_t bits) {
         write_bits(p, uint32_t(bits));
         write_bits(p + 32, uint32_t(bits >> 32));
     }

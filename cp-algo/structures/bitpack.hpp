@@ -13,27 +13,27 @@ namespace cp_algo::structures {
         using Base::Base, Base::width, Base::words, Base::data, Base::n, Base::word;
         auto operator <=> (_bitpack const& t) const = default;
 
-        _bitpack(std::string &bits): _bitpack(std::size(bits)) {
+        constexpr _bitpack(std::string &bits): _bitpack(std::size(bits)) {
             bits += std::string(-std::size(bits) % width, '0');
             for(size_t i = 0; i < words; i++) {
                 word(i) = read_bits64(bits.data() + i * width);
             }
         }
 
-        _bitpack& xor_hint(_bitpack const& t, size_t hint) {
+        constexpr _bitpack& xor_hint(_bitpack const& t, size_t hint) {
             for(size_t i = hint / width; i < std::size(data); i++) {
                 data[i] ^= t.data[i];
             }
             return *this;
         }
-        _bitpack& operator ^= (_bitpack const& t) {
+        constexpr _bitpack& operator ^= (_bitpack const& t) {
             return xor_hint(t, 0);
         }
-        _bitpack operator ^ (_bitpack const& t) const {
+        constexpr _bitpack operator ^ (_bitpack const& t) const {
             return _bitpack(*this) ^= t;
         }
 
-        std::string to_string() const {
+        constexpr std::string to_string() const {
             std::string res(words * width, '0');
             for(size_t i = 0; i < words; i++) {
                 write_bits64(res.data() + i * width, word(i));
@@ -42,7 +42,20 @@ namespace cp_algo::structures {
             return res;
         }
 
-        size_t ctz() const {
+        constexpr size_t count(size_t n) const {
+            size_t res = 0;
+            for(size_t i = 0; i < n / width; i++) {
+                res += std::popcount(word(i));
+            }
+            if (n % width) {
+                res += std::popcount(word(n / width) & mask(n % width));
+            }
+            return res;
+        }
+        constexpr size_t count() const {
+            return count(n);
+        }
+        constexpr size_t ctz() const {
             size_t res = 0;
             size_t i = 0;
             while(i < words && word(i) == 0) {
@@ -56,7 +69,7 @@ namespace cp_algo::structures {
         }
     };
 
-    template<int N>
+    template<size_t N>
     using bitpack = _bitpack<bit_array<N>>;
     using dynamic_bitpack = _bitpack<dynamic_bit_array>;
 }

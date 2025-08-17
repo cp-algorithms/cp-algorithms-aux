@@ -3,11 +3,11 @@
 #include <chrono>
 #include <random>
 namespace cp_algo::random {
+    std::mt19937_64 gen(
+        std::chrono::steady_clock::now().time_since_epoch().count()
+    );
     uint64_t rng() {
-        static std::mt19937_64 rng(
-            std::chrono::steady_clock::now().time_since_epoch().count()
-        );
-        return rng();
+        return gen();
     }
 }
 #endif // CP_ALGO_RANDOM_RNG_HPP

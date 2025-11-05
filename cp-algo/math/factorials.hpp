@@ -1,10 +1,10 @@
 #ifndef CP_ALGO_MATH_FACTORIALS_HPP
 #define CP_ALGO_MATH_FACTORIALS_HPP
-#include "cp-algo/util/checkpoint.hpp"
-#include "cp-algo/util/bump_alloc.hpp"
-#include "cp-algo/util/simd.hpp"
-#include "cp-algo/math/combinatorics.hpp"
-#include "cp-algo/number_theory/modint.hpp"
+#include "../util/checkpoint.hpp"
+#include "../util/bump_alloc.hpp"
+#include "../util/simd.hpp"
+#include "../math/combinatorics.hpp"
+#include "../number_theory/modint.hpp"
 #include <ranges>
 
 namespace cp_algo::math {

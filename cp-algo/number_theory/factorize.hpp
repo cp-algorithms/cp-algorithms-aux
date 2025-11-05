@@ -43,5 +43,16 @@ namespace cp_algo::math {
             co_yield std::ranges::elements_of(factorize(m / g));
         }
     }
+    template<typename Int>
+    std::generator<Int> divisors_sqrt(Int m) {
+        for(Int i = 1; i * i <= m; i++) {
+            if(m % i == 0) {
+                co_yield i;
+                if(i * i != m) {
+                    co_yield m / i;
+                }
+            }
+        }
+    }
 }
 #endif // CP_ALGO_MATH_FACTORIZE_HPP

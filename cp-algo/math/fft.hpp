@@ -278,7 +278,7 @@ namespace cp_algo::math::fft {
         using base = std::decay_t<decltype(a[0])>;
         dft<base>::init();
         if(k <= (1 << 16)) {
-            auto ap = std::ranges::to<std::vector<base, big_alloc<base>>>(a);
+            std::vector<base, big_alloc<base>> ap(begin(a), end(a));
             mul_truncate(ap, b, 2 * k);
             mod_split(ap, k, bpow(dft<base>::factor, k));
             std::ranges::copy(ap | std::views::take(k), begin(a));

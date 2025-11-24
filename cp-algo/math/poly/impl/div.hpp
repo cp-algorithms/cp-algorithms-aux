@@ -111,7 +111,7 @@ namespace cp_algo::math::poly::impl {
         // Q(-x) = P0(x^2) + xP1(x^2)
         auto [q0, q1] = p.bisect(n);
         
-        size_t N = fft::com_size(size(q0.a), (n + 1) / 2);
+        size_t N = fft::com_size((n + 1) / 2, (n + 1) / 2);
         
         auto q0f = fft::dft<base>(q0.a, N);
         auto q1f = fft::dft<base>(q1.a, N);

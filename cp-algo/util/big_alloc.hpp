@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_UTIL_big_alloc_HPP
 #define CP_ALGO_UTIL_big_alloc_HPP
 
+#include <vector>
 #include <cstddef>
 #include <iostream>
 
@@ -59,5 +60,8 @@ namespace cp_algo {
             return (x + Align - 1) / Align * Align;
         }
     };
+
+    template<typename T>
+    using big_vector = std::vector<T, big_alloc<T>>;
 }
 #endif // CP_ALGO_UTIL_big_alloc_HPP

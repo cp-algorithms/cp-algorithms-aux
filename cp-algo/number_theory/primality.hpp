@@ -26,11 +26,17 @@ namespace cp_algo::math {
             }
             return x == -1;
         };
-        return base::with_mod(m, [&](){
-            // Works for all m < 2^64: https://miller-rabin.appspot.com
-            return std::ranges::all_of(std::array{
-                2, 325, 9375, 28178, 450775, 9780504, 1795265022
-            }, test);
+        return base::with_mod(m, [&]() {
+#ifdef CP_ALGO_NUMBER_THEORY_PRIMALITY_BASES_HPP
+            uint16_t base2 = 7, base3 = 61;
+            if (m != uint32_t(m)) {
+                base2 = base_table1[uint32_t(m * 0xAD625B89) >> 18];
+                base3 = base_table2[base2 >> 13];
+            }
+            return test(2) && test(base2) && test(base3);
+#else
+            return std::ranges::all_of(std::array{2, 325, 9375, 28178, 450775, 9780504, 1795265022}, test);
+#endif
         });
     }
 }

@@ -74,13 +74,14 @@ namespace cp_algo::math {
         auto m = size(G);
         std::decay_t<decltype(G)> F(m);
         std::vector<bool> assigned(m);
+        auto Gi = G[1].inv();
         exec_on_blocks(n, [&](interval x, interval y, interval z) {
-            auto sum_y = G[y.hi] - G[y.lo - 1];
             if (!assigned[x.hi]) {
-                F[x.hi] = F[x.lo - 1] + H[z.lo] / sum_y;
+                F[x.hi] = F[x.lo - 1] + H[z.lo] * Gi;
                 assigned[x.hi] = true;
             }
             auto sum_x = F[x.hi] - F[x.lo - 1];
+            auto sum_y = G[y.hi] - G[y.lo - 1];
             auto t = sum_y * sum_x;
             H[z.lo] -= t;
             H[z.hi + 1] += t;

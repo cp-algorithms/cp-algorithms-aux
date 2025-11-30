@@ -28,16 +28,23 @@ namespace cp_algo::math {
         };
 
         auto call = [&](interval x, interval y, interval z) {
-            auto sum_x = F[x.hi] - F[x.lo - 1];
-            decltype(sum_x) sum_y;
+            auto Fx = F[x.hi] - F[x.lo - 1];
+            auto Fy = F[y.hi] - F[y.lo - 1];
+            decltype(Fx) Gx, Gy, t;
             if constexpr (mode == standard) {
-                sum_y = G[y.hi] - G[y.lo - 1];
+                Gy = G[y.hi] - G[y.lo - 1];
+                Gx = G[x.hi] - G[x.lo - 1];
             } else {
-                sum_y = G[y.lo - 1] - G[y.hi];
+                Gy = G[y.lo - 1] - G[y.hi];
+                Gx = G[x.lo - 1] - G[x.hi];
             }
-            auto t = sum_x * sum_y;
+            if(x == y) [[unlikely]] {
+                t = Fx * Gy;
+            } else {
+                t = Fx * Gy + Fy * Gx;
+            }
             H[z.lo] += t;
-            if (z.hi < num_floors) {
+            if (z.hi < num_floors)  {
                 H[z.hi + 1] -= t;
             }
         };
@@ -51,7 +58,6 @@ namespace cp_algo::math {
                     int y_hi_ord = to_ord(n / (x * z));
                     if (y_hi_ord < y_lo_ord) break;
                     call({x, x}, {y_lo_ord, y_hi_ord}, {k, k});
-                    call({y_lo_ord, y_hi_ord}, {x, x}, {k, k});
                 }
             }
 
@@ -65,7 +71,6 @@ namespace cp_algo::math {
                     int z_hi_ord = to_ord(n / x);
                     if (z_hi_ord < z_lo_ord) break;
                     call({x, x}, {y, y}, {z_lo_ord, z_hi_ord});
-                    call({y, y}, {x, x}, {z_lo_ord, z_hi_ord});
                 }
                 int z_lo_ord = to_ord(1LL * x * x);
                 call({x, x}, {x, x}, {z_lo_ord, num_floors});

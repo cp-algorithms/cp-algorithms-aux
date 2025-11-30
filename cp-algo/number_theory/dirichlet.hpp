@@ -86,7 +86,6 @@ namespace cp_algo::math {
     }
 
     void Dirichlet_div_inplace(auto &H, auto const& G, int64_t n) {
-        auto m = size(G);
         auto Gi = G[1].inv();
         H[0] -= H[0];
         adjacent_difference(begin(H), end(H), begin(H));

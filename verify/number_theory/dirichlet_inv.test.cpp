@@ -1,6 +1,9 @@
 // @brief Dirichlet Inverse and Prefix Sums
 #define PROBLEM "https://judge.yosupo.jp/problem/dirichlet_inverse_and_prefix_sums"
 #pragma GCC optimize("Ofast,unroll-loops")
+#include <iostream>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/big_alloc.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/number_theory/dirichlet.hpp"
 #include <bits/stdc++.h>
@@ -13,14 +16,11 @@ void solve() {
     int64_t n;
     cin >> n;
     auto [_, m] = floor_stats(n);
-    vector<base> H(m+1), G(m+1);
+    cp_algo::big_vector<base> G(m+1);
     for (int i = 1; i <= m; ++i) {
         cin >> G[i];
     }
-    for (int i = 1; i <= m; ++i) {
-        H[i] = 1;
-    }
-    auto F = Dirichlet_div(H, G, n);
+    auto F = Dirichlet_div(views::repeat(base(1)), G, n);
     for (int i = 1; i <= m; ++i) {
         cout << F[i] << " \n"[i == m];
     }

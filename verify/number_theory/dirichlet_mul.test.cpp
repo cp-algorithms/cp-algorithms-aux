@@ -1,6 +1,9 @@
 // @brief Dirichlet Convolution and Prefix Sums
 #define PROBLEM "https://judge.yosupo.jp/problem/dirichlet_convolution_and_prefix_sums"
 #pragma GCC optimize("Ofast,unroll-loops")
+#include <iostream>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/big_alloc.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/number_theory/dirichlet.hpp"
 #include <bits/stdc++.h>
@@ -13,7 +16,7 @@ void solve() {
     int64_t n;
     cin >> n;
     auto [_, m] = floor_stats(n);
-    vector<base> F(m+1), G(m+1);
+    cp_algo::big_vector<base> F(m+1), G(m+1);
     for (int i = 1; i <= m; ++i) {
         cin >> F[i];
     }

@@ -20,7 +20,7 @@ namespace cp_algo::math {
     // Return the value to be saved in H[k]
     enum exec_mode { standard, reverse };
     template<exec_mode mode = standard>
-    void exec_on_blocks(int64_t n, auto &H, auto const& F, auto const& G, auto &&callback) {
+    void Dirichlet_helper(int64_t n, auto &H, auto const& F, auto const& G, auto &&callback) {
         auto [rt_n, num_floors] = floor_stats(n);
 
         auto to_ord = [&](int64_t k) {
@@ -78,7 +78,7 @@ namespace cp_algo::math {
         auto m = size(F);
         std::decay_t<decltype(F)> H(m);
         H[1] = F[1] * G[1];
-        exec_on_blocks(n, H, F, G, [&](auto k) {
+        Dirichlet_helper(n, H, F, G, [&](auto k) {
             return H[k] + (F[k] - F[k-1]) * G[1] + (G[k] - G[k-1]) * F[1];
         });
         partial_sum(begin(H), end(H), begin(H));
@@ -90,7 +90,7 @@ namespace cp_algo::math {
         H[0] -= H[0];
         adjacent_difference(begin(H), end(H), begin(H));
         H[1] *= Gi;
-        exec_on_blocks<reverse>(n, H, H, G, [&](auto k) {
+        Dirichlet_helper<reverse>(n, H, H, G, [&](auto k) {
             return (Gi * (H[k] - (G[k] - G[k-1]) * H[1])) + H[k-1];
         });
     }

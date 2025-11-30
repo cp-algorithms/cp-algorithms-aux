@@ -1,6 +1,6 @@
 // @brief Dirichlet Inverse and Prefix Sums
 #define PROBLEM "https://judge.yosupo.jp/problem/dirichlet_inverse_and_prefix_sums"
-
+#pragma GCC optimize("Ofast,unroll-loops")
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/number_theory/dirichlet.hpp"
 #include <bits/stdc++.h>

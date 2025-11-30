@@ -73,12 +73,10 @@ namespace cp_algo::math {
         std::adjacent_difference(begin(H), end(H), begin(H));
         auto m = size(G);
         std::decay_t<decltype(G)> F(m);
-        std::vector<bool> assigned(m);
         auto Gi = G[1].inv();
         exec_on_blocks(n, [&](interval x, interval y, interval z) {
-            if (!assigned[x.hi]) {
+            if (y.lo == 1) [[unlikely]] {
                 F[x.hi] = F[x.lo - 1] + H[z.lo] * Gi;
-                assigned[x.hi] = true;
             }
             auto sum_x = F[x.hi] - F[x.lo - 1];
             auto sum_y = G[y.hi] - G[y.lo - 1];

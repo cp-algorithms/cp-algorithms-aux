@@ -1,8 +1,8 @@
 #ifndef CP_ALGO_NUMBER_THEORY_DIRICHLET_HPP
 #define CP_ALGO_NUMBER_THEORY_DIRICHLET_HPP
-#include <numeric>
+#include <algorithm>
 #include <cstdint>
-#include <vector>
+#include <ranges>
 #include <cmath>
 namespace cp_algo::math {    
     auto floor_stats(int64_t n) {
@@ -16,8 +16,10 @@ namespace cp_algo::math {
     };
 
     // callback(k, prefix) such that:
-    // (F * G)[k] = prefix + (F[k] - F[k-1]) * G[1] + (G[k] - G[k-1]) * F[1]
+    //     (F * G)[k] = prefix + (F[k] - F[k-1]) * G[1] + (G[k] - G[k-1]) * F[1]
     // Uses H as a buffer for (F * G)[k], then overrides with callback results
+    enum exec_mode { standard, reverse };
+    template<exec_mode mode = standard>
     void exec_on_blocks(int64_t n, auto &H, auto const& F, auto const& G, auto &&callback) {
         auto [rt_n, num_floors] = floor_stats(n);
 
@@ -27,7 +29,12 @@ namespace cp_algo::math {
 
         auto call = [&](interval x, interval y, interval z) {
             auto sum_x = F[x.hi] - F[x.lo - 1];
-            auto sum_y = G[y.hi] - G[y.lo - 1];
+            decltype(sum_x) sum_y;
+            if constexpr (mode == standard) {
+                sum_y = G[y.hi] - G[y.lo - 1];
+            } else {
+                sum_y = G[y.lo - 1] - G[y.hi];
+            }
             auto t = sum_x * sum_y;
             H[z.lo] += t;
             if (z.hi < num_floors) {
@@ -66,26 +73,32 @@ namespace cp_algo::math {
         }
     }
 
-    auto Dirichlet_mul(auto &&F, auto &&G, int64_t n) {
+    auto Dirichlet_mul(auto const& F, auto const& G, int64_t n) {
         auto m = size(F);
         std::decay_t<decltype(F)> H(m);
         H[1] = F[1] * G[1];
         exec_on_blocks(n, H, F, G, [&](auto k, auto prefix) {
-            return prefix + (F[k] - F[k - 1]) * G[1] + (G[k] - G[k - 1]) * F[1];
+            return prefix + (F[k] - F[k-1]) * G[1] + (G[k] - G[k-1]) * F[1];
         });
         return H;
     }
 
-    auto Dirichlet_div(auto &&H, auto &&G, int64_t n) {
+    void Dirichlet_div_inplace(auto &H, auto const& G, int64_t n) {
         auto m = size(G);
-        std::decay_t<decltype(G)> F(m);
         auto Gi = G[1].inv();
-        F[1] = Gi * H[1];
-        exec_on_blocks(n, F, F, G, [&](auto k, auto prefix) {
-            return F[k-1] + (Gi * (H[k] - prefix - (G[k] - G[k-1]) * F[1]));
+        H[0] -= H[0];
+        adjacent_difference(begin(H), end(H), begin(H));
+        H[1] *= Gi;
+        exec_on_blocks<reverse>(n, H, H, G, [&](auto k, auto) {
+            return (Gi * (H[k] - (G[k] - G[k-1]) * H[1])) + H[k-1];
         });
-        return F;
     }
 
+    auto Dirichlet_div(auto const& H, auto const& G, int64_t n) {
+        auto m = size(G);
+        auto F = H | std::views::take(m) | std::ranges::to<std::decay_t<decltype(G)>>();
+        Dirichlet_div_inplace(F, G, n);
+        return F;
+    }
 }
 #endif // CP_ALGO_NUMBER_THEORY_DIRICHLET_HPP

@@ -10,6 +10,18 @@ namespace cp_algo::math {
         return std::pair{rt_n, 2 * rt_n - (n / rt_n == rt_n)};
     }
 
+    auto floor_generator(int64_t n) {
+        auto [rt_n, num_floors] = floor_stats(n);
+        return [n, rt_n = rt_n, num_floors = num_floors](int k) {
+            return k <= rt_n ? int64_t(k) : n / int64_t(num_floors - k + 1);
+        };
+    }
+
+    auto floors(int64_t n) {
+        auto [_, m] = floor_stats(n);
+        return std::views::iota(0, m+1) | std::views::transform(floor_generator(n));
+    }
+
     struct interval {
         int lo, hi;
         auto operator <=>(const interval&) const = default;
@@ -96,8 +108,8 @@ namespace cp_algo::math {
     }
 
     auto Dirichlet_div(auto const& H, auto const& G, int64_t n) {
-        auto m = size(G);
-        auto F = H | std::views::take(m) | std::ranges::to<std::decay_t<decltype(G)>>();
+        auto m = std::size(G);
+        auto F = H | std::views::take(m) | std::ranges::to<std::vector>();
         Dirichlet_div_inplace(F, G, n);
         return F;
     }

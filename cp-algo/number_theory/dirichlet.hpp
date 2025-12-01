@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <ranges>
+#include <vector>
 #include <cmath>
 namespace cp_algo::math {    
     auto floor_stats(int64_t n) {

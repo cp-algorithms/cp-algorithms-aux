@@ -7,7 +7,7 @@
 #include <vector>
 namespace cp_algo {
     template<size_t maxc>
-    void count_sort(auto &a, auto &&proj = std::identity{}) {
+    void count_sort(auto &a, auto &&proj) {
         std::array<int, maxc> cnt = {};
         for(auto &x: a) {
             cnt[proj(x)]++;
@@ -19,8 +19,12 @@ namespace cp_algo {
         }
         a = std::move(res);
     }
+    template<size_t maxc>
+    void count_sort(auto &a) {
+        count_sort<maxc>(a, std::identity{});
+    }
 
-    void radix_sort(auto &a, auto &&proj = std::identity{}) {
+    void radix_sort(auto &a, auto &&proj) {
         if(empty(a)) {
             return;
         }
@@ -33,6 +37,9 @@ namespace cp_algo {
                 });
             }
         });
+    }
+    void radix_sort(auto &a) {
+        radix_sort(a, std::identity{});
     }
 }
 #endif // CP_ALGO_UTIL_SORT_HPP

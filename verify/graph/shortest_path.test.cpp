@@ -10,15 +10,18 @@ using namespace cp_algo::graph;
 void solve() {
     int n, m, s, t;
     cin >> n >> m >> s >> t;
-    graph<directed, weighted_edge> g(n);
+    weighted_digraph g(n);
     g.read_edges(m);
-    auto [X, Y] = shortest_path(g, s, t);
-    if(X == -1) {
-        cout << X << "\n";
+    auto opath = shortest_path(g, s, t);
+    if(!opath) {
+        cout << -1 << "\n";
     } else {
-        cout << X << ' ' << size(Y) << "\n";
-        for(auto [u, e]: Y) {
-            cout << u << ' ' << g.edge(e).to << "\n";
+        auto [d, path] = *opath;
+        cout << d << ' ' << size(path) << "\n";
+        int v = s;
+        for(auto e: path) {
+            cout << v << ' ' << g.edge(e).to << "\n";
+            v = g.edge(e).to;
         }
     }
 }

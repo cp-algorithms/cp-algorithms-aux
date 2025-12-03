@@ -11,14 +11,14 @@ using namespace cp_algo::graph;
 void solve() {
     int n, m;
     cin >> n >> m;
-    graph<directed> g(n);
+    digraph g(n);
     g.read_edges(m);
     auto res = find_cycle(g);
     if(empty(res)) {
         cout << -1 << "\n";
     } else {
         cout << size(res) << "\n";
-        for(auto it: res) {cout << it / 2 << '\n';}
+        for(auto it: res) {cout << it << '\n';}
     }
 }
 

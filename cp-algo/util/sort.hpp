@@ -20,16 +20,16 @@ namespace cp_algo {
         a = std::move(res);
     }
 
-    void radix_sort(auto &a) {
+    void radix_sort(auto &a, auto &&proj = std::identity{}) {
         if(empty(a)) {
             return;
         }
-        auto [mn, mx] = std::ranges::minmax(a);
+        auto [mn, mx] = std::ranges::minmax(a, {}, proj);
         with_bit_floor<1>(size(a), [&]<size_t floor>() {
             constexpr int base = std::min<size_t>(floor, 1 << 16);
-            for(int64_t i = 1; i <= mx - mn; i *= base) {
-                count_sort<base>(a, [&](auto x) {
-                    return (x - mn) / i % base;
+            for(int64_t i = 1; i <= std::invoke(proj, mx) - std::invoke(proj, mn); i *= base) {
+                count_sort<base>(a, [&](auto const& x) {
+                    return (std::invoke(proj, x) - std::invoke(proj, mn)) / i % base;
                 });
             }
         });

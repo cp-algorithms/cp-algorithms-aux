@@ -1,7 +1,6 @@
 // @brief Cycle Detection (Undirected)
 #define PROBLEM "https://judge.yosupo.jp/problem/cycle_detection_undirected"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
 #include "cp-algo/graph/cycle.hpp"
 #include <bits/stdc++.h>
 
@@ -11,7 +10,7 @@ using namespace cp_algo::graph;
 void solve() {
     int n, m;
     cin >> n >> m;
-    graph<undirected> g(n);
+    graph g(n);
     g.read_edges(m);
     auto res = find_cycle(g);
     if(empty(res)) {
@@ -21,7 +20,7 @@ void solve() {
         cout << size(res) << "\n";
         for(auto it: res) {cout << g.edge(it).to << ' ';}
         cout << "\n";
-        for(auto it: res) {cout << it / 2 << ' ';}
+        for(auto it: res) {cout << graph<>::canonical_idx(it) << ' ';}
         cout << "\n";
     }
 }

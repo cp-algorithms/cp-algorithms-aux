@@ -1,7 +1,6 @@
 // @brief Eulerian Trail (Directed)
 #define PROBLEM "https://judge.yosupo.jp/problem/eulerian_trail_directed"
 #pragma GCC optimize("Ofast,unroll-loops")
-#pragma GCC target("tune=native")
 #include "cp-algo/graph/euler.hpp"
 #include <bits/stdc++.h>
 
@@ -11,17 +10,18 @@ using namespace cp_algo::graph;
 void solve() {
     int n, m;
     cin >> n >> m;
-    graph<directed> g(n);
+    digraph g(n);
     g.read_edges(m);
-    auto [v0, es] = euler_trail(g);
-    if(ssize(es) != m) {
+    auto trail = euler_trail(g);
+    if(!trail) {
         cout << "No" << "\n";
     } else {
+        auto [v0, es] = *trail;
         cout << "Yes" << "\n";
         cout << v0 << ' ';
         for(auto e: es) {cout << g.edge(e).to << ' ';}
         cout << "\n";
-        for(auto e: es) {cout << e / 2 << ' ';}
+        for(auto e: es) {cout << e << ' ';}
         cout << "\n";
     }
 }

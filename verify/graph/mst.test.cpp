@@ -10,11 +10,11 @@ using namespace cp_algo::graph;
 void solve() {
     int n, m;
     cin >> n >> m;
-    graph<undirected, weighted_edge> g(n);
+    weighted_graph g(n);
     g.read_edges(m);
     auto [X, E] = mst(g);
     cout << X << "\n";
-    for(int e: E) {cout << e / 2 << " ";}
+    for(int e: E) {cout << e << " ";}
 }
 
 signed main() {

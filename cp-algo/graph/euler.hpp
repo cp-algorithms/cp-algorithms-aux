@@ -2,58 +2,79 @@
 #define CP_ALGO_GRAPH_EULER_HPP
 #include "base.hpp"
 #include <algorithm>
+#include <iostream>
+#include <optional>
 #include <utility>
 #include <vector>
+#include <cassert>
 namespace cp_algo::graph {
-    template<typename graph>
-    int euler_start(graph const& g) {
+    template<graph_type graph>
+    std::optional<node_index> euler_start(graph const& g) {
         std::vector<int> deg(g.n());
-        constexpr bool undirected = graph::undirected;
-        int res = 0;
-        g.call_edges([&](edge_index e) {
-            int u = g.edge(e ^ 1).to;
-            int v = g.edge(e).to;
-            res = u;
-            deg[u]++;
-            deg[v]--;
-        });
-        if constexpr (undirected) {
-            for(auto &it: deg) {
-                it = bool(it % 2);
+        std::optional<node_index> default_start = 0;
+        for(auto v: g.nodes()) {
+            for(auto e: g.outgoing(v)) {
+                deg[v]++;
+                default_start = v;
+                if constexpr (digraph_type<graph>) {
+                    deg[g.edge(e).to]--;
+                }
             }
         }
-        auto nodes = g.nodes_view();
+        if constexpr (undirected_graph_type<graph>) {
+            for(auto &it: deg) {
+                it %= 2;
+            }
+        }
         auto is_start = [&](int v) {return deg[v] > 0;};
-        auto starts = std::ranges::count_if(nodes, is_start);
-        if(starts > 1 + undirected) {
-            res = -1;
-        } else if(starts == 1 + undirected) {
-            auto start = *std::ranges::find_if(nodes, is_start);
-            res = deg[start] == 1 ? start : -1;
+        auto starts = std::ranges::count_if(g.nodes(), is_start);
+        auto need_starts = undirected_graph_type<graph> ? 2 : 1;
+        if(starts > need_starts) {
+            return std::nullopt;
+        } else if(starts == need_starts) {
+            auto start = *std::ranges::find_if(g.nodes(), is_start);
+            if (deg[start] == 1) {
+                return start;
+            } else {
+                return std::nullopt;
+            }
         }
-        return res;
+        return default_start;
     }
-    auto euler_trail(auto const& g) {
-        int v0 = euler_start(g);
-        std::vector<int> trail;
-        if(~v0) {
-            std::vector<bool> used(g.m());
-            auto& adj = g.incidence_lists();
-            auto head = adj.head;
-            auto dfs = [&](auto &&self, int v) -> void {
-                while(head[v]) {
-                    int e = adj.data[std::exchange(head[v], adj.next[head[v]])];
-                    if(!used[e / 2]) {
-                        used[e / 2] = 1;
-                        self(self, g.edge(e).to);
-                        trail.push_back(e);
-                    }
+    // Try finding a trail starting from v0
+    // may be partial if graph is not Eulerian or disconnected
+    template<graph_type graph>
+    std::vector<edge_index> try_euler_trail(graph const& g, node_index v0) {
+        std::vector<edge_index> trail;
+        std::vector<bool> used(g.m());
+        auto head = g.nodes() | std::views::transform([&](auto v) {
+            return begin(g.outgoing(v));
+        }) | std::ranges::to<std::vector>();
+        auto dfs = [&](this auto &&dfs, int v) -> void {
+            while (head[v] != end(g.outgoing(v))) {
+                auto e = *head[v]++;
+                if(!used[graph::canonical_idx(e)]) {
+                    used[graph::canonical_idx(e)] = 1;
+                    dfs(g.edge(e).to);
+                    trail.push_back(e);
                 }
-            };
-            dfs(dfs, v0);
-            std::ranges::reverse(trail);
+            }
+        };
+        dfs(v0);
+        std::ranges::reverse(trail);
+        return trail;
+    }
+    template<graph_type graph>
+    std::optional<std::pair<node_index, std::vector<edge_index>>> euler_trail(graph const& g) {
+        auto v0 = euler_start(g);
+        if (!v0) {
+            return std::nullopt;
         }
-        return std::pair{v0, trail};
+        auto result = try_euler_trail(g, *v0);
+        if ((edge_index)result.size() != g.m()) {
+            return std::nullopt;
+        }
+        return {{*v0, std::move(result)}};
     }
 }
 #endif // CP_ALGO_GRAPH_EULER_HPP

@@ -2,35 +2,40 @@
 #define CP_ALGO_GRAPH_CYCLE_HPP
 #include "base.hpp"
 #include <algorithm>
-#include <vector>
 namespace cp_algo::graph {
-    std::vector<int> find_cycle(auto const& g) {
-        std::vector<char> state(g.n());
-        std::vector<int> cycle;
-        auto dfs = [&](auto &&self, int v, int pe) -> bool {
-            state[v] = 1;
-            bool found = false;
-            g.call_adjacent(v, [&](int e) {
-                if(e / 2 != pe / 2) {
-                    int u = g.edge(e).to;
-                    if(state[u] == 0) {
-                        if(self(self, u, e)) {
-                            if(g.edge(cycle[0]).to != g.edge(cycle.back() ^ 1).to) {
-                                cycle.push_back(e);
-                            }
-                            found = true;
-                        }
-                    } else if(state[u] == 1) {
-                        cycle = {e};
-                        found = true;
+    template<graph_type graph>
+    std::vector<edge_index> find_cycle(graph const& g) {
+        enum node_state { unvisited, visiting, visited };
+        std::vector<node_state> state(g.n());
+        std::vector<edge_index> cycle;
+        bool closed = false;
+        auto dfs = [&](this auto &&dfs, node_index v, edge_index ep = -1) -> bool {
+            state[v] = visiting;
+            for(auto e: g.outgoing(v)) {
+                if constexpr (undirected_graph_type<graph>) {
+                    if (ep == graph::opposite_idx(e)) {
+                        continue;
                     }
                 }
-            }, [&found](){return found;});
-            state[v] = 2;
-            return found;
+                node_index u = g.edge(e).to;
+                if(state[u] == unvisited) {
+                    if (dfs(u, e)) {
+                        if (!closed) {
+                            cycle.push_back(e);
+                            closed |= g.edge(cycle[0]).to == v;
+                        }
+                        return true;
+                    }
+                } else if(state[u] == visiting) {
+                    cycle = {e};
+                    return true;
+                }
+            }
+            state[v] = visited;
+            return false;
         };
-        for(int i: g.nodes_view()) {
-            if(!state[i] && dfs(dfs, i, -2)) {
+        for(node_index i: g.nodes()) {
+            if(state[i] == unvisited && dfs(i)) {
                 break;
             }
         }

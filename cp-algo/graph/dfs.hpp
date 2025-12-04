@@ -10,6 +10,7 @@ namespace cp_algo::graph {
     struct dfs_context {
         big_vector<node_state> state;
         graph const* g;
+        bool done = false;  // Set to true to stop DFS early
         
         dfs_context(graph const& g): state(g.n()), g(&g) {}
         
@@ -17,24 +18,24 @@ namespace cp_algo::graph {
         void on_enter(node_index) {}
         
         // Called when discovering a tree edge (v->u is a tree edge, u is unvisited)
-        void on_tree_edge(node_index, node_index, edge_index) {}
+        void on_tree_edge(node_index, edge_index) {}
         
         // Called after returning from a child via tree edge
-        void on_return_from_child(node_index, node_index, edge_index) {}
+        void on_return_from_child(node_index, edge_index) {}
         
         // Called when encountering a back edge (v->u, u is visiting)
-        void on_back_edge(node_index, node_index, edge_index) {}
+        void on_back_edge(node_index, edge_index) {}
         
         // Called when encountering a forward/cross edge (v->u, u is visited)
-        void on_forward_cross_edge(node_index, node_index, edge_index) {}
+        void on_forward_cross_edge(node_index, edge_index) {}
         
         // Called when exiting a node (all edges processed)
         void on_exit(node_index) {}
     };
     
     template<template<typename> class Context, graph_type graph>
-    Context<graph>& dfs(Context<graph>& context) {
-        graph const& g = *context.g;
+    Context<graph> dfs(graph const& g) {
+        Context<graph> context(g);
         auto const& adj = g.incidence_lists();
         struct frame {
             node_index v;
@@ -48,6 +49,7 @@ namespace cp_algo::graph {
         std::stack<frame> dfs_stack;
         
         for (auto root: g.nodes()) {
+            if (context.done) break;
             if (context.state[root] != unvisited) continue;
             
             if constexpr (undirected_graph_type<graph>) {
@@ -56,7 +58,7 @@ namespace cp_algo::graph {
                 dfs_stack.push({root, {}, 0, frame::INIT});
             }
             
-            while (!dfs_stack.empty()) {
+            while (!empty(dfs_stack)) {
                 auto& f = dfs_stack.top();
                 
                 if (f.state == frame::INIT) {
@@ -64,19 +66,20 @@ namespace cp_algo::graph {
                     context.on_enter(f.v);
                     f.sv = adj.head[f.v];
                     f.state = frame::PROCESS_EDGES;
+                    continue;
                 }
                 
                 if (f.state == frame::HANDLE_CHILD) {
                     auto e = adj.data[f.sv];
                     f.sv = adj.next[f.sv];
-                    node_index u = g.edge(e).to;
-                    context.on_return_from_child(f.v, u, e);
+                    context.on_return_from_child(f.v, e);
                     f.state = frame::PROCESS_EDGES;
+                    continue;
                 }
-                
+
                 // PROCESS_EDGES
                 bool found_child = false;
-                while (f.sv != 0) {
+                while (f.sv != 0 && !context.done) {
                     auto e = adj.data[f.sv];
                     
                     if constexpr (undirected_graph_type<graph>) {
@@ -88,7 +91,7 @@ namespace cp_algo::graph {
                     
                     node_index u = g.edge(e).to;
                     if (context.state[u] == unvisited) {
-                        context.on_tree_edge(f.v, u, e);
+                        context.on_tree_edge(f.v, e);
                         f.state = frame::HANDLE_CHILD;
                         if constexpr (undirected_graph_type<graph>) {
                             dfs_stack.push({u, e, 0, frame::INIT});
@@ -98,9 +101,9 @@ namespace cp_algo::graph {
                         found_child = true;
                         break;
                     } else if (context.state[u] == visiting) {
-                        context.on_back_edge(f.v, u, e);
+                        context.on_back_edge(f.v, e);
                     } else if (context.state[u] == visited) {
-                        context.on_forward_cross_edge(f.v, u, e);
+                        context.on_forward_cross_edge(f.v, e);
                     }
                     f.sv = adj.next[f.sv];
                 }

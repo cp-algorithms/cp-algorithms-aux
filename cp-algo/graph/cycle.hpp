@@ -1,46 +1,38 @@
 #ifndef CP_ALGO_GRAPH_CYCLE_HPP
 #define CP_ALGO_GRAPH_CYCLE_HPP
+#include "dfs.hpp"
 #include "base.hpp"
-#include <algorithm>
+#include <deque>
 namespace cp_algo::graph {
     template<graph_type graph>
-    std::vector<edge_index> find_cycle(graph const& g) {
-        enum node_state { unvisited, visiting, visited };
-        std::vector<node_state> state(g.n());
-        std::vector<edge_index> cycle;
+    struct cycle_context: dfs_context<graph> {
+        using base = dfs_context<graph>;
+        using base::base;
+        std::deque<edge_index> cycle;
         bool closed = false;
-        auto dfs = [&](this auto &&dfs, node_index v, edge_index ep = -1) -> bool {
-            state[v] = visiting;
-            for(auto e: g.outgoing(v)) {
-                if constexpr (undirected_graph_type<graph>) {
-                    if (ep == graph::opposite_idx(e)) {
-                        continue;
-                    }
-                }
-                node_index u = g.edge(e).to;
-                if(state[u] == unvisited) {
-                    if (dfs(u, e)) {
-                        if (!closed) {
-                            cycle.push_back(e);
-                            closed |= g.edge(cycle[0]).to == v;
-                        }
-                        return true;
-                    }
-                } else if(state[u] == visiting) {
-                    cycle = {e};
-                    return true;
-                }
-            }
-            state[v] = visited;
-            return false;
-        };
-        for(node_index i: g.nodes()) {
-            if(state[i] == unvisited && dfs(i)) {
-                break;
+        int v0;
+        
+        void on_return_from_child(node_index v, edge_index e) {
+            if (!empty(cycle) && !closed) {
+                cycle.push_front(e);
+                closed |= v == v0;
             }
         }
-        std::ranges::reverse(cycle);
-        return cycle;
+        
+        void on_back_edge(node_index v, edge_index e) {
+            if (empty(cycle)) {
+                v0 = base::g->edge(e).to;
+                base::done = true;
+                closed = v == v0;
+                cycle.push_front(e);
+            }
+        }
+    };
+    
+    template<graph_type graph>
+    std::deque<edge_index> find_cycle(graph const& g) {
+        auto context = dfs<cycle_context>(g);
+        return context.cycle;
     }
 }
 #endif // CP_ALGO_GRAPH_CYCLE_HPP

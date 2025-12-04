@@ -16,10 +16,11 @@ void solve() {
     if(empty(res)) {
         cout << -1 << "\n";
     } else {
-        ranges::reverse(res);
         cout << size(res) << "\n";
+        ranges::rotate(res, prev(end(res)));
         for(auto it: res) {cout << g.edge(it).to << ' ';}
         cout << "\n";
+        ranges::rotate(res, next(begin(res)));
         for(auto it: res) {cout << graph<>::canonical_idx(it) << ' ';}
         cout << "\n";
     }

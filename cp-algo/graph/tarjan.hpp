@@ -9,12 +9,13 @@
 namespace cp_algo::graph {
     template<graph_type graph>
     struct tarjan_context: dfs_context<graph> {
+        using base = dfs_context<graph>;
         big_vector<int> tin, low;
         std::stack<int> stack;
         int timer;
         structures::csr<node_index> components;
         
-        tarjan_context(graph const& g): dfs_context<graph>(g),
+        tarjan_context(graph const& g): base(g),
             tin(g.n()), low(g.n()), timer(0) {
             components.reserve_data(g.n());
         }
@@ -24,15 +25,18 @@ namespace cp_algo::graph {
             stack.push(v);
         }
 
-        void on_return_from_child(node_index v, node_index u, edge_index) {
+        void on_return_from_child(node_index v, edge_index e) {
+            node_index u = base::g->edge(e).to;
             low[v] = std::min(low[v], low[u]);
         }
 
-        void on_back_edge(node_index v, node_index u, edge_index) {
+        void on_back_edge(node_index v, edge_index e) {
+            node_index u = base::g->edge(e).to;
             low[v] = std::min(low[v], tin[u]);
         }
 
-        void on_forward_cross_edge(node_index v, node_index u, edge_index) {
+        void on_forward_cross_edge(node_index v, edge_index e) {
+            node_index u = base::g->edge(e).to;
             low[v] = std::min(low[v], tin[u]);
         }
 
@@ -44,17 +48,11 @@ namespace cp_algo::graph {
             do {
                 u = stack.top();
                 stack.pop();
-                this->state[u] = blocked;
+                base::state[u] = blocked;
                 components.push(u);
             } while(u != v);
         }
     };
-    
-    template<template<typename> class Context, graph_type graph>
-    auto tarjan(graph const& g) {
-        Context<graph> context(g);
-        return dfs(context).components;
-    }
     template<graph_type graph>
     struct exit_context: tarjan_context<graph> {
         using tarjan_context<graph>::tarjan_context;
@@ -69,13 +67,13 @@ namespace cp_algo::graph {
     // returns components in reverse topological order
     template<digraph_type graph>
     auto strongly_connected_components(graph const& g) {
-        return tarjan<exit_context>(g);
+        return dfs<exit_context>(g).components;
     }
     
     // Tarjan's algorithm for Two-Edge-Connected Components
     template<undirected_graph_type graph>
     auto two_edge_connected_components(graph const& g) {
-        return tarjan<exit_context>(g);
+        return dfs<exit_context>(g).components;
     }
 
     template<undirected_graph_type graph>
@@ -83,8 +81,9 @@ namespace cp_algo::graph {
         using base = tarjan_context<graph>;
         using base::base;
         
-        void on_return_from_child(node_index v, node_index u, edge_index e) {
-            base::on_return_from_child(v, u, e);
+        void on_return_from_child(node_index v, edge_index e) {
+            base::on_return_from_child(v, e);
+            node_index u = base::g->edge(e).to;
             if (base::low[u] >= base::tin[v]) {
                 base::collect(u);
                 base::components.push(v);
@@ -99,7 +98,7 @@ namespace cp_algo::graph {
     // Tarjan's algorithm for Biconnected Components (vertex-biconnected)
     template<undirected_graph_type graph>
     auto biconnected_components(graph const& g) {
-        return tarjan<bcc_context>(g);
+        return dfs<bcc_context>(g).components;
     }
 }
 #endif // CP_ALGO_GRAPH_TARJAN_HPP

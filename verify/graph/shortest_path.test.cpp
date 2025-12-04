@@ -20,8 +20,8 @@ void solve() {
         cout << d << ' ' << size(path) << "\n";
         int v = s;
         for(auto e: path) {
-            cout << v << ' ' << g.edge(e).to << "\n";
-            v = g.edge(e).to;
+            int w = g.edge(e).to;
+            cout << exchange(v, w) << ' ' << w << "\n";
         }
     }
 }

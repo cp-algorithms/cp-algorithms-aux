@@ -6,7 +6,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
-#include <cassert>
+#include <stack>
 namespace cp_algo::graph {
     template<graph_type graph>
     std::optional<node_index> euler_start(graph const& g) {
@@ -44,28 +44,42 @@ namespace cp_algo::graph {
     // Try finding a trail starting from v0
     // may be partial if graph is not Eulerian or disconnected
     template<graph_type graph>
-    std::vector<edge_index> try_euler_trail(graph const& g, node_index v0) {
-        std::vector<edge_index> trail;
-        std::vector<bool> used(g.m());
-        auto head = g.nodes() | std::views::transform([&](auto v) {
-            return begin(g.outgoing(v));
-        }) | std::ranges::to<std::vector>();
-        auto dfs = [&](this auto &&dfs, int v) -> void {
-            while (head[v] != end(g.outgoing(v))) {
-                auto e = *head[v]++;
-                if(!used[graph::canonical_idx(e)]) {
-                    used[graph::canonical_idx(e)] = 1;
-                    dfs(g.edge(e).to);
-                    trail.push_back(e);
+    std::deque<edge_index> try_euler_trail(graph const& g, node_index v0) {
+        std::deque<edge_index> trail;
+        enum state { unvisited, visited };
+        std::vector<state> state(g.m());
+        auto const& adj = g.incidence_lists();
+        auto head = adj.head;
+        
+        std::stack<edge_index> stack;
+        stack.push(-1);
+        
+        while (!empty(stack)) {
+            auto ep = stack.top();
+            node_index w = ~ep ? g.edge(ep).to : v0;
+            bool found_edge = false;
+            
+            while (head[w] != 0) {
+                auto e = adj.data[std::exchange(head[w], adj.next[head[w]])];
+                if(state[graph::canonical_idx(e)] == unvisited) {
+                    state[graph::canonical_idx(e)] = visited;
+                    stack.push(e);
+                    found_edge = true;
+                    break;
                 }
             }
-        };
-        dfs(v0);
-        std::ranges::reverse(trail);
+            
+            if (!found_edge) {
+                stack.pop();
+                if (~ep) {
+                    trail.push_front(ep);
+                }
+            }
+        }
         return trail;
     }
     template<graph_type graph>
-    std::optional<std::pair<node_index, std::vector<edge_index>>> euler_trail(graph const& g) {
+    std::optional<std::pair<node_index, std::deque<edge_index>>> euler_trail(graph const& g) {
         auto v0 = euler_start(g);
         if (!v0) {
             return std::nullopt;

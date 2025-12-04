@@ -9,16 +9,16 @@ namespace cp_algo::graph {
             node_index u;
             edge_index e;
         };
-        std::vector<uint64_t> dist;
+        std::vector<int64_t> dist;
         std::vector<reverse> pre;
-        static constexpr uint64_t inf = 1e18;
+        static constexpr int64_t inf = 1e18;
         shortest_path_context(int n)
             : dist(n, inf), pre(n) {}
     };
 
     struct dijkstra_context : shortest_path_context {
         struct que_t {
-            uint64_t dist;
+            int64_t dist;
             node_index v;
             bool operator<(que_t const& other) const {
                 return dist > other.dist;

@@ -3,7 +3,7 @@
 #pragma GCC optimize("Ofast,unroll-loops")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/graph/scc.hpp"
+#include "cp-algo/graph/tarjan.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -14,7 +14,7 @@ void solve() {
     cin >> n >> m;
     digraph g(n);
     g.read_edges(m);
-    auto comps = scc(g);
+    auto comps = strongly_connected_components(g);
     cout << size(comps) << '\n';
     for(auto const& comp: comps.rows() | views::reverse) {
         cout << size(comp) << ' ';

@@ -4,12 +4,14 @@
 #include "../structures/csr.hpp"
 #include <algorithm>
 #include <cassert>
+#include <stack>
 namespace cp_algo::graph {
     enum node_state { unvisited, visiting, visited, blocked };
     template<graph_type graph>
     struct tarjan_context {
         big_vector<int> tin, low;
         big_vector<node_state> state;
+        std::stack<int> stack;
         graph const* g;
         int timer;
         structures::csr<node_index> components;
@@ -22,14 +24,14 @@ namespace cp_algo::graph {
         void on_exit(node_index) {}
 
         void collect(node_index v) {
-            state[v] = blocked;
-            components.push(v);
-            for(auto e: g->outgoing(v)) {
-                node_index u = g->edge(e).to;
-                if (state[u] != blocked && state[u] != visiting) {
-                    collect(u);
-                }
-            }
+            components.new_row();
+            node_index u;
+            do {
+                u = stack.top();
+                stack.pop();
+                state[u] = blocked;
+                components.push(u);
+            } while(u != v);
         }
     };
     template<template<typename> class Context, graph_type graph>
@@ -38,6 +40,7 @@ namespace cp_algo::graph {
         auto dfs = [&](this auto &&dfs, node_index v, edge_index ep = -1) -> void {
             context.state[v] = visiting;
             context.tin[v] = context.low[v] = context.timer++;
+            context.stack.push(v);
             for(auto e: g.outgoing(v)) {
                 if constexpr (undirected_graph_type<graph>) {
                     if (ep == graph::opposite_idx(e)) {
@@ -70,7 +73,6 @@ namespace cp_algo::graph {
         
         void on_exit(node_index v) {
             if (base::low[v] == base::tin[v]) {
-                base::components.new_row();
                 base::collect(v);
             }
         }
@@ -94,15 +96,13 @@ namespace cp_algo::graph {
         using base::base;
         void on_tree_edge(node_index v, node_index u) {
             if (base::low[u] >= base::tin[v]) {
-                base::components.new_row();
                 base::collect(u);
                 base::components.push(v);
             }
         }
         void on_exit(node_index v) {
             if (std::empty(base::g->outgoing(v))) {
-                base::components.new_row();
-                base::components.push(v);
+                base::collect(v);
             }
         }
     };

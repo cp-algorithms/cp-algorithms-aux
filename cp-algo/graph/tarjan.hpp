@@ -37,31 +37,73 @@ namespace cp_algo::graph {
     template<template<typename> class Context, graph_type graph>
     auto tarjan(graph const& g) {
         Context<graph> context(g);
-        auto dfs = [&](this auto &&dfs, node_index v, edge_index ep = -1) -> void {
-            context.state[v] = visiting;
-            context.tin[v] = context.low[v] = context.timer++;
-            context.stack.push(v);
-            for(auto e: g.outgoing(v)) {
-                if constexpr (undirected_graph_type<graph>) {
-                    if (ep == graph::opposite_idx(e)) {
-                        continue;
-                    }
-                }
-                node_index u = g.edge(e).to;
-                if (context.state[u] == unvisited) {
-                    dfs(u, e);
-                    context.low[v] = std::min(context.low[v], context.low[u]);
-                    context.on_tree_edge(v, u);
-                } else if (context.state[u] != blocked) {
-                    context.low[v] = std::min(context.low[v], context.tin[u]);
-                }
-            }
-            context.state[v] = visited;
-            context.on_exit(v);
+        
+        auto const& adj = g.incidence_lists();
+        
+        struct frame {
+            node_index v;
+            edge_index ep;
+            int sv; // edge index in stack_union
+            enum { INIT, PROCESS_EDGES, HANDLE_CHILD } state;
         };
-        for (auto v: g.nodes()) {
-            if (context.state[v] == unvisited) {
-                dfs(v);
+        
+        std::stack<frame> dfs_stack;
+        
+        for (auto root: g.nodes()) {
+            if (context.state[root] != unvisited) continue;
+            
+            dfs_stack.push({root, -1, 0, frame::INIT});
+            
+            while (!dfs_stack.empty()) {
+                auto& f = dfs_stack.top();
+                
+                if (f.state == frame::INIT) {
+                    context.state[f.v] = visiting;
+                    context.tin[f.v] = context.low[f.v] = context.timer++;
+                    context.stack.push(f.v);
+                    f.sv = adj.head[f.v];
+                    f.state = frame::PROCESS_EDGES;
+                }
+                
+                if (f.state == frame::HANDLE_CHILD) {
+                    auto e = adj.data[f.sv];
+                    f.sv = adj.next[f.sv];
+                    node_index u = g.edge(e).to;
+                    context.low[f.v] = std::min(context.low[f.v], context.low[u]);
+                    context.on_tree_edge(f.v, u);
+                    f.state = frame::PROCESS_EDGES;
+                }
+                
+                // PROCESS_EDGES
+                bool found_child = false;
+                while (f.sv != 0) {
+                    auto e = adj.data[f.sv];
+                    
+                    if constexpr (undirected_graph_type<graph>) {
+                        if (f.ep == graph::opposite_idx(e)) {
+                            f.sv = adj.next[f.sv];
+                            continue;
+                        }
+                    }
+                    
+                    node_index u = g.edge(e).to;
+                    if (context.state[u] == unvisited) {
+                        f.state = frame::HANDLE_CHILD;
+                        dfs_stack.push({u, e, 0, frame::INIT});
+                        found_child = true;
+                        break;
+                    } else if (context.state[u] != blocked) {
+                        context.low[f.v] = std::min(context.low[f.v], context.tin[u]);
+                    }
+                    f.sv = adj.next[f.sv];
+                }
+                
+                if (found_child) continue;
+                
+                // All edges processed
+                context.state[f.v] = visited;
+                context.on_exit(f.v);
+                dfs_stack.pop();
             }
         }
         return context.components;

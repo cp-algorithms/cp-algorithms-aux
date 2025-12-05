@@ -1,46 +1,27 @@
 #ifndef CP_ALGO_GRAPH_TARJAN_HPP
 #define CP_ALGO_GRAPH_TARJAN_HPP
-#include "dfs.hpp"
+#include "dfs_time.hpp"
 #include "base.hpp"
 #include "../structures/csr.hpp"
 #include <algorithm>
 #include <cassert>
 #include <stack>
 namespace cp_algo::graph {
+    // Add stack and components collection
     template<graph_type graph>
-    struct tarjan_context: dfs_context<graph> {
-        using base = dfs_context<graph>;
-        big_vector<int> tin, low;
+    struct tarjan_context: dfs_low_context<graph> {
+        using base = dfs_low_context<graph>;
         std::stack<int> stack;
-        int timer;
         structures::csr<node_index> components;
         
-        tarjan_context(graph const& g): base(g),
-            tin(g.n()), low(g.n()), timer(0) {
+        tarjan_context(graph const& g): base(g) {
             components.reserve_data(g.n());
         }
 
         void on_enter(node_index v) {
-            tin[v] = low[v] = timer++;
+            base::on_enter(v);
             stack.push(v);
         }
-
-        void on_return_from_child(node_index v, edge_index e) {
-            node_index u = base::g->edge(e).traverse(v);
-            low[v] = std::min(low[v], low[u]);
-        }
-
-        void on_back_edge(node_index v, edge_index e) {
-            node_index u = base::g->edge(e).traverse(v);
-            low[v] = std::min(low[v], tin[u]);
-        }
-
-        void on_forward_cross_edge(node_index v, edge_index e) {
-            node_index u = base::g->edge(e).traverse(v);
-            low[v] = std::min(low[v], tin[u]);
-        }
-
-        void on_tree_edge_processed(node_index, node_index, edge_index) {}
 
         void collect(node_index v) {
             components.new_row();

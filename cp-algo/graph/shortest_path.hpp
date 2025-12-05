@@ -112,16 +112,32 @@ namespace cp_algo::graph {
     }
 
     template<weighted_graph_type graph>
+    shortest_path_context dijkstra(graph const& g, node_index s) {
+        return sssp_impl<dijkstra_context>(g, s);
+    }
+    template<weighted_graph_type graph>
+    shortest_path_context spfa(graph const& g, node_index s) {
+        return sssp_impl<spfa_context>(g, s);
+    }
+    
+    template<weighted_graph_type graph>
     shortest_path_context single_source_shortest_path(graph const& g, node_index s) {
         bool negative_edges = false;
         for (auto e: g.edges()) {
             negative_edges |= e.w < 0;
         }
-        if (negative_edges) {
-            return sssp_impl<spfa_context>(g, s);
-        } else {
-            return sssp_impl<dijkstra_context>(g, s);
+        return negative_edges ? spfa(g, s) : dijkstra(g, s);
+    }
+
+    std::vector<edge_index> recover_path(auto const& pre, node_index s, node_index t) {
+        std::vector<edge_index> path;
+        node_index v = t;
+        while(v != s) {
+            path.push_back(pre[v].e);
+            v = pre[v].u;
         }
+        std::ranges::reverse(path);
+        return path;
     }
 
     template<weighted_graph_type graph>
@@ -130,14 +146,7 @@ namespace cp_algo::graph {
         if (dist[t] == shortest_path_context::inf) {
             return std::nullopt;
         }
-        std::vector<edge_index> path;
-        node_index v = t;
-        while(v != s) {
-            path.push_back(pre[v].e);
-            v = pre[v].u;
-        }
-        std::ranges::reverse(path);
-        return {{dist[t], path}};
+        return {{dist[t], recover_path(pre, s, t)}};
     }
 }
 #endif // CP_ALGO_GRAPH_SHORTEST_PATH_HPP

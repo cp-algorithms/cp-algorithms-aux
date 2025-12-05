@@ -13,6 +13,17 @@ namespace cp_algo::graph {
         using incidence_list = structures::stack_union<edge_index>;
         graph(int n, int v0 = 0): v0(v0), adj(n) {}
 
+        graph transpose() const {
+            static_assert(mode == directed, "transpose is only defined for directed graphs");
+            graph<edge_t, mode> gt(n(), v0);
+            for(auto v: nodes()) {
+                for(auto e: outgoing(v)) {
+                    node_index u = edge(e).to;
+                    gt.add_edge(u, edge(e).backedge(v));
+                }
+            }
+            return gt;
+        }
         void add_edge(node_index u, edge_t e) {
             adj.push(u, (edge_index)size(E));
             E.push_back(e);
@@ -67,7 +78,7 @@ namespace cp_algo::graph {
             }
         }
         static edge_index opposite_idx(edge_index e) {
-            static_assert(mode == undirected, "opposite_index is only defined for undirected graphs");
+            static_assert(mode == undirected, "opposite_idx is only defined for undirected graphs");
             return e ^ 1;
         }
     private:

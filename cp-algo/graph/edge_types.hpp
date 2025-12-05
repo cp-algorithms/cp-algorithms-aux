@@ -5,19 +5,26 @@
 namespace cp_algo::graph {
     using node_index = int;
     struct edge_base {
-        node_index to;
+        node_index xor_endpoints;
 
         edge_base() {}
-        edge_base(node_index v): to(v) {}
+        edge_base(node_index from, node_index to): xor_endpoints(from ^ to) {}
+
+        // Given one endpoint, return the other
+        node_index traverse(node_index from) const {
+            return xor_endpoints ^ from;
+        }
 
         static auto read(node_index v0 = 0) {
             node_index u, v;
             std::cin >> u >> v;
-            return std::pair{u - v0, edge_base(v - v0)};
+            u -= v0;
+            v -= v0;
+            return std::pair{u, edge_base(u, v)};
         }
 
-        edge_base backedge(int from) const {
-            return {from};
+        edge_base backedge() const {
+            return *this;
         }
     };
 
@@ -25,17 +32,17 @@ namespace cp_algo::graph {
         int64_t w;
 
         weighted_edge() {}
-        weighted_edge(node_index v, int64_t w): edge_base(v), w(w) {}
+        weighted_edge(node_index from, node_index to, int64_t w): edge_base(from, to), w(w) {}
 
         static auto read(node_index v0 = 0) {
-            node_index u, v;
+            auto [u, e] = edge_base::read(v0);
             int64_t w;
-            std::cin >> u >> v >> w;
-            return std::pair{u - v0, weighted_edge{v - v0, w}};
+            std::cin >> w;
+            return std::pair{u, weighted_edge(u, e.traverse(u), w)};
         }
 
-        weighted_edge backedge(node_index from) const {
-            return {from, w};
+        weighted_edge backedge() const {
+            return *this;
         }
     };
 

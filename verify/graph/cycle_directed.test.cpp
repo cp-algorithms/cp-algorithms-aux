@@ -13,12 +13,12 @@ void solve() {
     cin >> n >> m;
     digraph g(n);
     g.read_edges(m);
-    auto res = find_cycle(g);
-    if(empty(res)) {
+    auto [v, cycle] = find_cycle(g);
+    if(empty(cycle)) {
         cout << -1 << "\n";
     } else {
-        cout << size(res) << "\n";
-        for(auto it: res) {cout << it << '\n';}
+        cout << size(cycle) << "\n";
+        for(auto it: cycle) {cout << it << '\n';}
     }
 }
 

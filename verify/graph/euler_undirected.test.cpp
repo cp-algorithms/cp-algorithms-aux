@@ -16,12 +16,15 @@ void solve() {
     if(!trail) {
         cout << "No" << "\n";
     } else {
-        auto [v0, es] = *trail;
+        auto [v, es] = *trail;
         cout << "Yes" << "\n";
-        cout << v0 << ' ';
-        for(auto e: es) {cout << g.edge(e).to << ' ';}
+        cout << v;
+        for(auto e: es) {
+            v = g.edge(e).traverse(v);
+            cout << ' ' << v;
+        }
         cout << "\n";
-        for(auto e: es) {cout << graph<>::canonical_idx(e) << ' ';}
+        for(auto e: es) {cout << e << ' ';}
         cout << "\n";
     }
 }

@@ -25,7 +25,7 @@ std::tuple<int64_t, node_index, std::vector<edge_index>> tree_diameter(graph con
             t = v;
         }
     }
-    return {d2[t], s, recover_path(pre, s, t)};
+    return {d2[t], s, recover_path(g, pre, s, t)};
 }
 
 void solve() {
@@ -36,8 +36,10 @@ void solve() {
     auto [d, s, path] = tree_diameter(g);
     cout << d << ' ' << size(path) + 1 << '\n';
     cout << s;
+    node_index current = s;
     for(auto e: path) {
-        cout << ' ' << g.edge(e).to;
+        current = g.edge(e).traverse(current);
+        cout << ' ' << current;
     }
     cout << "\n";
 }

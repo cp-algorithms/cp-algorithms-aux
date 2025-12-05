@@ -21,7 +21,7 @@ namespace cp_algo::graph {
         
         void on_back_edge(node_index v, edge_index e) {
             if (empty(cycle)) {
-                v0 = base::g->edge(e).to;
+                v0 = base::g->edge(e).traverse(v);
                 base::done = true;
                 closed = v == v0;
                 cycle.push_front(e);
@@ -30,9 +30,9 @@ namespace cp_algo::graph {
     };
     
     template<graph_type graph>
-    std::deque<edge_index> find_cycle(graph const& g) {
+    std::pair<node_index, std::deque<edge_index>> find_cycle(graph const& g) {
         auto context = dfs<cycle_context>(g);
-        return context.cycle;
+        return {context.v0, context.cycle};
     }
 }
 #endif // CP_ALGO_GRAPH_CYCLE_HPP

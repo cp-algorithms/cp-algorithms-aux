@@ -5,12 +5,8 @@
 #include <queue>
 namespace cp_algo::graph {
     struct shortest_path_context {
-        struct reverse {
-            node_index u;
-            edge_index e;
-        };
         std::vector<int64_t> dist;
-        std::vector<reverse> pre;
+        std::vector<edge_index> pre;
         static constexpr int64_t inf = 1e18;
         shortest_path_context(int n)
             : dist(n, inf), pre(n) {}
@@ -28,7 +24,7 @@ namespace cp_algo::graph {
 
         dijkstra_context(int n) : shortest_path_context(n) {}
 
-        void push(node_index, node_index v) {
+        void push(node_index, edge_index, node_index v) {
             pq.push({dist[v], v});
         }
 
@@ -52,7 +48,7 @@ namespace cp_algo::graph {
 
         spfa_context(int n) : shortest_path_context(n), flags(n) {}
 
-        void push(node_index, node_index v) {
+        void push(node_index, edge_index, node_index v) {
             if (!(flags[v] & in_queue)) {
                 que.push(v);
                 flags[v] |= in_queue;
@@ -73,15 +69,19 @@ namespace cp_algo::graph {
     };
 
     struct deep_spfa_context: spfa_context {
-        std::vector<std::basic_string<node_index>> dependents;
+        struct traverse_edge {
+            edge_index e;
+            node_index v;
+        };
+        std::vector<std::basic_string<traverse_edge>> dependents;
 
         deep_spfa_context(int n) : spfa_context(n), dependents(n) {}
 
-        void push(node_index u, node_index v) {
+        void push(node_index u, edge_index e, node_index v) {
             invalidate_subtree(v);
-            dependents[u].push_back(v);
+            dependents[u].push_back({e, v});
             flags[v] &= ~invalidated;
-            spfa_context::push(u, v);
+            spfa_context::push(u, e, v);
         }
 
         void invalidate_subtree(node_index v) {
@@ -91,9 +91,9 @@ namespace cp_algo::graph {
                 to_invalidate.pop_back();
                 flags[u] |= invalidated;
                 flags[u] &= ~in_queue;
-                for (auto dep: dependents[u]) {
-                    if (pre[dep].u == u) {
-                        to_invalidate.push_back(dep);
+                for (auto [e, v]: dependents[u]) {
+                    if (pre[v] == e) {
+                        to_invalidate.push_back(v);
                     }
                 }
                 dependents[u].clear();
@@ -105,16 +105,16 @@ namespace cp_algo::graph {
     Context sssp_impl(graph const& g, node_index s) {
         Context context(g.n());
         context.dist[s] = 0;
-        context.push(s, s);
+        context.push(s, -1, s);
         while(auto ov = context.next_node()) {
             node_index v = *ov;
             for(auto e: g.outgoing(v)) {
-                node_index u = g.edge(e).to;
+                node_index u = g.edge(e).traverse(v);
                 auto w = g.edge(e).w;
                 if(context.dist[v] + w < context.dist[u]) {
                     context.dist[u] = context.dist[v] + w;
-                    context.pre[u] = {v, e};
-                    context.push(v, u);
+                    context.pre[u] = e;
+                    context.push(v, e, u);
                 }
             }
         }
@@ -143,12 +143,12 @@ namespace cp_algo::graph {
         return negative_edges ? deep_spfa(g, s) : dijkstra(g, s);
     }
 
-    std::vector<edge_index> recover_path(auto const& pre, node_index s, node_index t) {
+    std::vector<edge_index> recover_path(auto const& g, auto const& pre, node_index s, node_index t) {
         std::vector<edge_index> path;
         node_index v = t;
         while(v != s) {
-            path.push_back(pre[v].e);
-            v = pre[v].u;
+            path.push_back(pre[v]);
+            v = g.edge(pre[v]).traverse(v);
         }
         std::ranges::reverse(path);
         return path;
@@ -160,7 +160,7 @@ namespace cp_algo::graph {
         if (dist[t] == shortest_path_context::inf) {
             return std::nullopt;
         }
-        return {{dist[t], recover_path(pre, s, t)}};
+        return {{dist[t], recover_path(g, pre, s, t)}};
     }
 }
 #endif // CP_ALGO_GRAPH_SHORTEST_PATH_HPP

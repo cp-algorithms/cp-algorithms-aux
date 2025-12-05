@@ -18,22 +18,21 @@ namespace cp_algo::graph {
             graph<edge_t, mode> gt(n(), v0);
             for(auto v: nodes()) {
                 for(auto e: outgoing(v)) {
-                    node_index u = edge(e).to;
-                    gt.add_edge(u, edge(e).backedge(v));
+                    gt.add_edge(edge(e).traverse(v), edge(e).backedge());
                 }
             }
             return gt;
         }
         void add_edge(node_index u, edge_t e) {
-            adj.push(u, (edge_index)size(E));
+            edge_index idx = (edge_index)size(E);
             E.push_back(e);
+            adj.push(u, idx);
             if constexpr (mode == undirected) {
-                adj.push(e.to, (edge_index)size(E));
-                E.push_back(e.backedge(u));
+                adj.push(e.traverse(u), idx);
             }
         }
         void add_edge(node_index u, auto... Args) {
-            add_edge(u, edge_t(Args...));
+            add_edge(u, edge_t(u, Args...));
         }
         void read_edges(node_index m) {
             adj.reserve(mode == undirected ? 2 * m : m);
@@ -42,45 +41,14 @@ namespace cp_algo::graph {
                 add_edge(u, e);
             }
         }
-        auto outgoing(node_index v) const {
-            return adj[v];
-        }
-        auto nodes() const {
-            return std::views::iota(node_index(0), n());
-        }
-
-        auto edges() const {
-            if constexpr (mode == undirected) {
-                return E | std::views::stride(2);
-            } else {
-                return E | std::views::all;
-            }
-        }
-        auto edge_indices() const {
-            auto indices = std::views::iota(edge_index(0), edge_index(size(E)));
-            if constexpr (mode == undirected) {
-                return indices | std::views::stride(2);
-            } else {
-                return indices;
-            }
-        }
-        incidence_list const& incidence_lists() const {return adj;}
-        edge_t const& edge(edge_index e) const {return E[e];}
-        node_index n() const {return (node_index)adj.size();}
-        edge_index m() const {
-            return (edge_index)size(edges());
-        }
-        static edge_index canonical_idx(edge_index e) {
-            if constexpr (mode == undirected) {
-                return e / 2;
-            } else {
-                return e;
-            }
-        }
-        static edge_index opposite_idx(edge_index e) {
-            static_assert(mode == undirected, "opposite_idx is only defined for undirected graphs");
-            return e ^ 1;
-        }
+        auto outgoing(node_index v) const {return adj[v];}
+        auto edges() const {return E | std::views::all;}
+        auto nodes() const {return std::views::iota(node_index(0), n());}
+        auto edge_indices() const {return std::views::iota(edge_index(0), m());}
+        auto&& incidence_lists(this auto&& self) {return self.adj;}
+        auto&& edge(this auto&& self, edge_index e) {return self.E[e];}
+        node_index n() const {return (node_index)incidence_lists().size();}
+        edge_index m() const {return (edge_index)edges().size();}
     private:
         node_index v0;
         big_vector<edge_t> E;

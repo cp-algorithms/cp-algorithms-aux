@@ -26,17 +26,17 @@ namespace cp_algo::graph {
         }
 
         void on_return_from_child(node_index v, edge_index e) {
-            node_index u = base::g->edge(e).to;
+            node_index u = base::g->edge(e).traverse(v);
             low[v] = std::min(low[v], low[u]);
         }
 
         void on_back_edge(node_index v, edge_index e) {
-            node_index u = base::g->edge(e).to;
+            node_index u = base::g->edge(e).traverse(v);
             low[v] = std::min(low[v], tin[u]);
         }
 
         void on_forward_cross_edge(node_index v, edge_index e) {
-            node_index u = base::g->edge(e).to;
+            node_index u = base::g->edge(e).traverse(v);
             low[v] = std::min(low[v], tin[u]);
         }
 
@@ -83,7 +83,7 @@ namespace cp_algo::graph {
         
         void on_return_from_child(node_index v, edge_index e) {
             base::on_return_from_child(v, e);
-            node_index u = base::g->edge(e).to;
+            node_index u = base::g->edge(e).traverse(v);
             if (base::low[u] >= base::tin[v]) {
                 base::collect(u);
                 base::components.push(v);

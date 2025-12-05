@@ -17,7 +17,7 @@ namespace cp_algo::graph {
                 deg[v]++;
                 default_start = v;
                 if constexpr (digraph_type<graph>) {
-                    deg[g.edge(e).to]--;
+                    deg[g.edge(e).traverse(v)]--;
                 }
             }
         }
@@ -51,19 +51,22 @@ namespace cp_algo::graph {
         auto const& adj = g.incidence_lists();
         auto head = adj.head;
         
-        std::stack<edge_index> stack;
-        stack.push(-1);
+        struct stack_frame {
+            edge_index ep;
+            node_index v;
+        };
+        std::stack<stack_frame> stack;
+        stack.push({-1, v0});
         
         while (!empty(stack)) {
-            auto ep = stack.top();
-            node_index w = ~ep ? g.edge(ep).to : v0;
+            auto [ep, v] = stack.top();
             bool found_edge = false;
             
-            while (head[w] != 0) {
-                auto e = adj.data[std::exchange(head[w], adj.next[head[w]])];
-                if(state[graph::canonical_idx(e)] == unvisited) {
-                    state[graph::canonical_idx(e)] = visited;
-                    stack.push(e);
+            while (head[v] != 0) {
+                auto e = adj.data[std::exchange(head[v], adj.next[head[v]])];
+                if(state[e] == unvisited) {
+                    state[e] = visited;
+                    stack.push({e, g.edge(e).traverse(v)});
                     found_edge = true;
                     break;
                 }

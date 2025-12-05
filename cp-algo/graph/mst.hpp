@@ -8,20 +8,27 @@ namespace cp_algo::graph {
     template<weighted_undirected_graph_type graph>
     std::pair<int64_t, std::vector<edge_index>> mst(graph const& g) {
         struct edge {
-            int64_t w;
-            edge_index i;
+            edge_index idx;
+            node_index v;
         };
-        auto edges = g.edge_indices() | std::ranges::to<std::vector>();
+        std::vector<edge> edges;
+        for(auto v: g.nodes()) {
+            for(auto e: g.outgoing(v)) {
+                if (v < g.edge(e).traverse(v)) {
+                    edges.push_back({e, v});
+                }
+            }
+        }
         radix_sort(edges, [&](auto e) {
-            return g.edge(e).w;
+            return g.edge(e.idx).w;
         });
         structures::dsu me(g.n());
         int64_t total = 0;
         std::vector<edge_index> mst;
-        for(auto e: edges) {
-            if(me.uni(g.edge(e).to, g.edge(graph::opposite_idx(e)).to)) {
-                total += g.edge(e).w;
-                mst.push_back(graph::canonical_idx(e));
+        for(auto [idx, v]: edges) {
+            if(me.uni(v, g.edge(idx).traverse(v))) {
+                total += g.edge(idx).w;
+                mst.push_back(idx);
             }
         }
         return {total, mst};

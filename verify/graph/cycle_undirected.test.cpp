@@ -12,16 +12,18 @@ void solve() {
     cin >> n >> m;
     graph g(n);
     g.read_edges(m);
-    auto res = find_cycle(g);
-    if(empty(res)) {
+    auto [v, cycle] = find_cycle(g);
+    if(empty(cycle)) {
         cout << -1 << "\n";
     } else {
-        cout << size(res) << "\n";
-        ranges::rotate(res, prev(end(res)));
-        for(auto it: res) {cout << g.edge(it).to << ' ';}
+        cout << size(cycle) << "\n";
+        cout << v;
+        for(auto it: cycle | views::take(size(cycle) - 1)) {
+            v = g.edge(it).traverse(v);
+            cout << ' ' << v;
+        }
         cout << "\n";
-        ranges::rotate(res, next(begin(res)));
-        for(auto it: res) {cout << graph<>::canonical_idx(it) << ' ';}
+        for(auto it: cycle) {cout << it << ' ';}
         cout << "\n";
     }
 }

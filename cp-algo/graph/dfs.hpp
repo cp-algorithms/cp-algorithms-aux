@@ -83,13 +83,13 @@ namespace cp_algo::graph {
                     auto e = adj.data[f.sv];
                     
                     if constexpr (undirected_graph_type<graph>) {
-                        if (f.ep == graph::opposite_idx(e)) {
+                        if (f.ep == e) {
                             f.sv = adj.next[f.sv];
                             continue;
                         }
                     }
                     
-                    node_index u = g.edge(e).to;
+                    node_index u = g.edge(e).traverse(f.v);
                     if (context.state[u] == unvisited) {
                         context.on_tree_edge(f.v, e);
                         f.state = frame::HANDLE_CHILD;

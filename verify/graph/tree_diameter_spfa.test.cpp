@@ -1,4 +1,4 @@
-// @brief Tree Diameter
+// @brief Tree Diameter (SPFA)
 #define PROBLEM "https://judge.yosupo.jp/problem/tree_diameter"
 #pragma GCC optimize("Ofast,unroll-loops")
 #include <iostream>

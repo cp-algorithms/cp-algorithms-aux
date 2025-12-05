@@ -214,14 +214,14 @@ namespace cp_algo::math::fft {
                     point v1 = rt;
                     point v2 = v1 * v1;
                     point v3 = v1 * v2;
-                        auto A = get(k);
-                        auto B = get(k + 1) * v1;
-                        auto C = get(k + 2) * v2;
-                        auto D = get(k + 3) * v3;
-                        set(k, (A + C) + (B + D));
-                        set(k + 1, (A + C) - (B + D));
-                        set(k + 2, (A - C) + pi * (B - D));
-                        set(k + 3, (A - C) - pi * (B - D));
+                    auto A = get(k);
+                    auto B = get(k + 1) * v1;
+                    auto C = get(k + 2) * v2;
+                    auto D = get(k + 3) * v3;
+                    set(k, (A + C) + (B + D));
+                    set(k + 1, (A + C) - (B + D));
+                    set(k + 2, (A - C) + pi * (B - D));
+                    set(k + 3, (A - C) - pi * (B - D));
                 });
             }
             checkpoint("fft");

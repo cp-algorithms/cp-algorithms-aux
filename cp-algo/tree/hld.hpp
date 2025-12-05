@@ -30,6 +30,7 @@ namespace cp_algo::graph {
             }
             par[root] = up[root] = root;
             for(auto v: topsort | std::views::reverse) {
+                if (size[v] == 1) continue;
                 node_index big = -1;
                 for(auto e: g.outgoing(v)) {
                     auto u = g.edge(e).traverse(v);
@@ -38,7 +39,7 @@ namespace cp_algo::graph {
                         big = u;
                     }
                 }
-                int t = in[v] + (big == -1 ? 0 : size[big]);
+                int t = in[v] + size[big];
                 for(auto e: g.outgoing(v)) {
                     auto u = g.edge(e).traverse(v);
                     if (size[u] > size[v]) continue;

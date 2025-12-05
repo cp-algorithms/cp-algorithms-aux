@@ -16,7 +16,9 @@ namespace cp_algo::graph {
             big_vector<node_index> topsort;
             topsort.reserve(g.n());
             auto push_size = [&](node_index v, edge_index e) {
-                topsort.push_back(v);
+                if (size[v] > 1) {
+                    topsort.push_back(v);
+                }
                 if (v != root) {
                     auto p = g.edge(e).traverse(v);
                     size[p] += size[v];
@@ -30,7 +32,6 @@ namespace cp_algo::graph {
             }
             par[root] = up[root] = root;
             for(auto v: topsort | std::views::reverse) {
-                if (size[v] == 1) continue;
                 node_index big = -1;
                 for(auto e: g.outgoing(v)) {
                     auto u = g.edge(e).traverse(v);
@@ -56,7 +57,7 @@ namespace cp_algo::graph {
         }
         node_index lca(node_index a, node_index b) {
             while (up[a] != up[b]) {
-                if (in[up[a]] < in[up[b]]) {
+                if (in[a] < in[b]) {
                     b = par[up[b]];
                 } else {
                     a = par[up[a]];

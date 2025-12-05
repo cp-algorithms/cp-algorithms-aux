@@ -105,6 +105,7 @@ namespace cp_algo::graph {
     Context sssp_impl(graph const& g, node_index s) {
         Context context(g.n());
         context.dist[s] = 0;
+        context.pre[s] = -1;
         context.push(s, -1, s);
         while(auto ov = context.next_node()) {
             node_index v = *ov;

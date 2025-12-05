@@ -14,7 +14,7 @@ void solve() {
     cin >> n;
     weighted_graph g(n);
     g.read_edges(n - 1);
-    auto [d, v, path] = tree_diameter<recover_path>(g);
+    auto [d, v, path] = tree_diameter<diameter_mode::recover_path>(g);
     cout << d << ' ' << size(path) + 1 << '\n';
     cout << v;
     for(auto e: path) {

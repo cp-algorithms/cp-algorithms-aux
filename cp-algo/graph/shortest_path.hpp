@@ -16,7 +16,7 @@ namespace cp_algo::graph {
             : dist(n, inf), pre(n) {}
     };
 
-    struct dijkstra_context : shortest_path_context {
+    struct dijkstra_context: shortest_path_context {
         struct que_t {
             int64_t dist;
             node_index v;
@@ -44,37 +44,18 @@ namespace cp_algo::graph {
         }
     };
 
-    struct spfa_context : shortest_path_context {
+    struct spfa_context: shortest_path_context {
         std::queue<node_index> que;
         std::vector<char> flags;
         static constexpr char in_queue = 1;
         static constexpr char invalidated = 2;
-        std::vector<std::basic_string<node_index>> dependents;
 
-        spfa_context(int n) : shortest_path_context(n), flags(n), dependents(n) {}
+        spfa_context(int n) : shortest_path_context(n), flags(n) {}
 
-        void push(node_index u, node_index v) {
-            invalidate_subtree(v);
-            dependents[u].push_back(v);
-            flags[v] &= ~invalidated;
+        void push(node_index, node_index v) {
             if (!(flags[v] & in_queue)) {
                 que.push(v);
                 flags[v] |= in_queue;
-            }
-        }
-
-        void invalidate_subtree(node_index v) {
-            std::vector<node_index> to_invalidate = {v};
-            while (!empty(to_invalidate)) {
-                node_index u = to_invalidate.back();
-                to_invalidate.pop_back();
-                flags[u] |= invalidated;
-                for (auto dep: dependents[u]) {
-                    if (pre[dep].u == u) {
-                        to_invalidate.push_back(dep);
-                    }
-                }
-                dependents[u].clear();
             }
         }
 
@@ -88,6 +69,35 @@ namespace cp_algo::graph {
                 }
             }
             return std::nullopt;
+        }
+    };
+
+    struct deep_spfa_context: spfa_context {
+        std::vector<std::basic_string<node_index>> dependents;
+
+        deep_spfa_context(int n) : spfa_context(n), dependents(n) {}
+
+        void push(node_index u, node_index v) {
+            invalidate_subtree(v);
+            dependents[u].push_back(v);
+            flags[v] &= ~invalidated;
+            spfa_context::push(u, v);
+        }
+
+        void invalidate_subtree(node_index v) {
+            std::vector<node_index> to_invalidate = {v};
+            while (!empty(to_invalidate)) {
+                node_index u = to_invalidate.back();
+                to_invalidate.pop_back();
+                flags[u] |= invalidated;
+                flags[u] &= ~in_queue;
+                for (auto dep: dependents[u]) {
+                    if (pre[dep].u == u) {
+                        to_invalidate.push_back(dep);
+                    }
+                }
+                dependents[u].clear();
+            }
         }
     };
 
@@ -119,6 +129,10 @@ namespace cp_algo::graph {
     shortest_path_context spfa(graph const& g, node_index s) {
         return sssp_impl<spfa_context>(g, s);
     }
+    template<weighted_graph_type graph>
+    shortest_path_context deep_spfa(graph const& g, node_index s) {
+        return sssp_impl<deep_spfa_context>(g, s);
+    }
     
     template<weighted_graph_type graph>
     shortest_path_context single_source_shortest_path(graph const& g, node_index s) {
@@ -126,7 +140,7 @@ namespace cp_algo::graph {
         for (auto e: g.edges()) {
             negative_edges |= e.w < 0;
         }
-        return negative_edges ? spfa(g, s) : dijkstra(g, s);
+        return negative_edges ? deep_spfa(g, s) : dijkstra(g, s);
     }
 
     std::vector<edge_index> recover_path(auto const& pre, node_index s, node_index t) {

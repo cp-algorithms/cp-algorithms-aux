@@ -3,7 +3,7 @@
 #pragma GCC optimize("Ofast,unroll-loops")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/graph/tree_diameter.hpp"
+#include "cp-algo/tree/diameter.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

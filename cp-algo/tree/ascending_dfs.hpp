@@ -1,7 +1,7 @@
-#ifndef CP_ALGO_GRAPH_ASCENDING_DFS_HPP
-#define CP_ALGO_GRAPH_ASCENDING_DFS_HPP
+#ifndef CP_ALGO_TREE_ASCENDING_DFS_HPP
+#define CP_ALGO_TREE_ASCENDING_DFS_HPP
 
-#include "base.hpp"
+#include "../graph/base.hpp"
 #include <cassert>
 #include <vector>
 #include <ranges>
@@ -65,4 +65,4 @@ namespace cp_algo::graph {
         }, callback, root);
     }
 }
-#endif // CP_ALGO_GRAPH_ASCENDING_DFS_HPP
+#endif // CP_ALGO_TREE_ASCENDING_DFS_HPP

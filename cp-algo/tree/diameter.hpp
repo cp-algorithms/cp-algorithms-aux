@@ -1,7 +1,7 @@
-#ifndef CP_ALGO_GRAPH_TREE_DIAMETER_HPP
-#define CP_ALGO_GRAPH_TREE_DIAMETER_HPP
+#ifndef CP_ALGO_TREE_DIAMETER_HPP
+#define CP_ALGO_TREE_DIAMETER_HPP
 #include "ascending_dfs.hpp"
-#include "base.hpp"
+#include "../graph/base.hpp"
 #include <tuple>
 #include <string>
 #include <algorithm>
@@ -59,4 +59,4 @@ namespace cp_algo::graph {
         }
     }
 }
-#endif // CP_ALGO_GRAPH_TREE_DIAMETER_HPP
+#endif // CP_ALGO_TREE_DIAMETER_HPP

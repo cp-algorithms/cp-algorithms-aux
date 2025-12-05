@@ -23,16 +23,17 @@ namespace cp_algo::graph {
             }
             return gt;
         }
-        void add_edge(node_index u, edge_t e) {
+        edge_index add_edge(node_index u, edge_t e) {
             edge_index idx = (edge_index)size(E);
             E.push_back(e);
             adj.push(u, idx);
             if constexpr (mode == undirected) {
                 adj.push(e.traverse(u), idx);
             }
+            return idx;
         }
-        void add_edge(node_index u, auto... Args) {
-            add_edge(u, edge_t(u, Args...));
+        edge_index add_edge(node_index u, auto... Args) {
+            return add_edge(u, edge_t(u, Args...));
         }
         void read_edges(node_index m) {
             adj.reserve(mode == undirected ? 2 * m : m);

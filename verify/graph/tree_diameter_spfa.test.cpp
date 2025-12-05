@@ -33,13 +33,12 @@ void solve() {
     cin >> n;
     weighted_graph g(n);
     g.read_edges(n - 1);
-    auto [d, s, path] = tree_diameter(g);
+    auto [d, v, path] = tree_diameter(g);
     cout << d << ' ' << size(path) + 1 << '\n';
-    cout << s;
-    node_index current = s;
+    cout << v;
     for(auto e: path) {
-        current = g.edge(e).traverse(current);
-        cout << ' ' << current;
+        v = g.edge(e).traverse(v);
+        cout << ' ' << v;
     }
     cout << "\n";
 }

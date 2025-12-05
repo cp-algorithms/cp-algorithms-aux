@@ -3,9 +3,6 @@
 #include "ascending_dfs.hpp"
 #include "../graph/base.hpp"
 #include "../util/big_alloc.hpp"
-#include <vector>
-#include <ranges>
-
 namespace cp_algo::graph {
     struct heavy_light {
         big_vector<node_index> size, in, up, par;
@@ -55,15 +52,57 @@ namespace cp_algo::graph {
                 }
             }
         }
-        node_index lca(node_index a, node_index b) {
+        enum lca_mode { without_distances, with_distances };
+        template<lca_mode mode = without_distances>
+        auto lca(node_index a, node_index b) {
+            int dista = 0, distb = 0;
             while (up[a] != up[b]) {
-                if (in[a] < in[b]) {
+                if (in[up[a]] < in[up[b]]) {
+                    if constexpr (mode == with_distances) distb += in[b] - in[up[b]] + 1;
                     b = par[up[b]];
                 } else {
+                    if constexpr (mode == with_distances) dista += in[a] - in[up[a]] + 1;
                     a = par[up[a]];
                 }
             }
-            return in[a] < in[b] ? a : b;
+            node_index c = in[a] < in[b] ? a : b;
+            if constexpr (mode == with_distances) {
+                return std::tuple{c, dista + in[a] - in[c], distb + in[b] - in[c]};
+            } else {
+                return c;
+            }
+        }
+        big_vector<node_index> rin;
+        void compute_rin() {
+            if (empty(rin)) {
+                rin.resize(std::size(in));
+                for (auto [v, inv]: in | std::views::enumerate) {
+                    rin[inv] = node_index(v);
+                }
+            }
+        }
+        node_index jump_up(node_index v, int steps) {
+            compute_rin();
+            while (steps > 0) {
+                int path_dist = in[v] - in[up[v]];
+                if (steps <= path_dist) {
+                    return rin[in[v] - steps];
+                }
+                steps -= path_dist + 1;
+                v = par[up[v]];
+            }
+            return v;
+        }
+        std::optional<node_index> jump(node_index from, node_index to, int steps) {
+            compute_rin();
+            auto [l, dist_from, dist_to] = lca<with_distances>(from, to);
+            auto dist = dist_from + dist_to;
+            if (steps > dist) return std::nullopt;
+            if (steps <= dist_from) {
+                return jump_up(from, steps);
+            } else {
+                return jump_up(to, dist - steps);
+            }
         }
     };
 }

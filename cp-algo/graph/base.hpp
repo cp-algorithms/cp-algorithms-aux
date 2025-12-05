@@ -18,7 +18,7 @@ namespace cp_algo::graph {
             graph<edge_t, mode> gt(n(), v0);
             for(auto v: nodes()) {
                 for(auto e: outgoing(v)) {
-                    gt.add_edge(edge(e).traverse(v), edge(e).backedge());
+                    gt.add_edge(edge(e).traverse(v), edge(e));
                 }
             }
             return gt;

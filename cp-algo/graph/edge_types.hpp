@@ -5,14 +5,14 @@
 namespace cp_algo::graph {
     using node_index = int;
     struct edge_base {
-        node_index xor_endpoints;
+        int xor_nodes;
 
         edge_base() {}
-        edge_base(node_index from, node_index to): xor_endpoints(from ^ to) {}
+        edge_base(node_index from, node_index to): xor_nodes(from ^ to) {}
 
         // Given one endpoint, return the other
         node_index traverse(node_index from) const {
-            return xor_endpoints ^ from;
+            return xor_nodes ^ from;
         }
 
         static auto read(node_index v0 = 0) {
@@ -21,10 +21,6 @@ namespace cp_algo::graph {
             u -= v0;
             v -= v0;
             return std::pair{u, edge_base(u, v)};
-        }
-
-        edge_base backedge() const {
-            return *this;
         }
     };
 
@@ -39,10 +35,6 @@ namespace cp_algo::graph {
             int64_t w;
             std::cin >> w;
             return std::pair{u, weighted_edge(u, e.traverse(u), w)};
-        }
-
-        weighted_edge backedge() const {
-            return *this;
         }
     };
 

@@ -94,10 +94,16 @@ def main():
         sys.exit(1)
     
     print("Injecting minified code into documentation...")
+    print(f"  Markdown dir: {markdown_dir}")
+    print(f"  Minified source dir: {minified_dir}")
+    print(f"  Minified bundled dir: {minified_bundled_dir}")
     
     count = 0
     # Find all markdown files
-    for md_file in markdown_dir.rglob('*.md'):
+    md_files = list(markdown_dir.rglob('*.md'))
+    print(f"  Found {len(md_files)} markdown files")
+    
+    for md_file in md_files:
         # Get relative path without .md extension
         rel_path = md_file.relative_to(markdown_dir)
         path_without_ext = str(rel_path)[:-3]  # Remove .md
@@ -140,9 +146,17 @@ def main():
                     break
         
         # Only inject if we found at least one minified version
-        if (minified_code or minified_bundled_code) and inject_minified_to_markdown(md_file, minified_code, minified_bundled_code):
-            count += 1
-            print(f"  Updated: {path_without_ext}")
+        if (minified_code or minified_bundled_code):
+            if inject_minified_to_markdown(md_file, minified_code, minified_bundled_code):
+                count += 1
+                print(f"  Updated: {path_without_ext}")
+            else:
+                print(f"  Failed to inject into: {path_without_ext}")
+        else:
+            # Debug: show why no files were found
+            if count == 0 or len(md_file.relative_to(markdown_dir).parts) == 3:  # Print first few
+                print(f"  No minified files found for: {path_without_ext}")
+                print(f"    Looked for: {path_in_min}.*")
     
     print(f"\nUpdated {count} documentation files")
     return 0

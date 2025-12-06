@@ -200,7 +200,9 @@ def main():
             # Skip files that are already in min or min-bundled directories
             # (these would be from previous minification runs in the bundled dir)
             rel_path_str = str(bundled_file.relative_to(bundled_dir))
-            if '/min/' in rel_path_str or '/min-bundled/' in rel_path_str:
+            # Check for 'min' or 'min-bundled' as directory components
+            if any(part in ['min', 'min-bundled'] for part in bundled_file.relative_to(bundled_dir).parts):
+                print(f"  Skipping already-minified: {rel_path_str}")
                 continue
             
             if bundled_file.is_file() and bundled_file.suffix in ['.hpp', '.cpp', '.h']:

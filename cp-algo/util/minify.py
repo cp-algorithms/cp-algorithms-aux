@@ -8,8 +8,46 @@ import re
 import sys
 
 def minify_cpp(code):
-    # Remove single-line comments
-    code = re.sub(r'//.*?$', '', code, flags=re.MULTILINE)
+    # Remove comments while preserving strings
+    lines = code.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        # Remove single-line comments, but not if // is inside a string
+        in_string = False
+        escape_next = False
+        result = []
+        i = 0
+        
+        while i < len(line):
+            if escape_next:
+                result.append(line[i])
+                escape_next = False
+                i += 1
+                continue
+            
+            if line[i] == '\\' and in_string:
+                result.append(line[i])
+                escape_next = True
+                i += 1
+                continue
+            
+            if line[i] == '"':
+                result.append(line[i])
+                in_string = not in_string
+                i += 1
+                continue
+            
+            if not in_string and i + 1 < len(line) and line[i:i+2] == '//':
+                # Found comment outside string, discard rest of line
+                break
+            
+            result.append(line[i])
+            i += 1
+        
+        cleaned_lines.append(''.join(result))
+    
+    code = '\n'.join(cleaned_lines)
     
     # Remove multi-line comments (but preserve #line directives content)
     code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
@@ -34,14 +72,55 @@ def minify_cpp(code):
     def compress_line(line):
         if line.startswith('#'):
             return line
-        # Keep strings intact
-        parts = re.split(r'("(?:[^"\\]|\\.)*")', line)
-        for i in range(0, len(parts), 2):
-            # Compress multiple spaces to one
-            parts[i] = re.sub(r'\s+', ' ', parts[i])
-            # Remove spaces around operators (carefully)
-            parts[i] = re.sub(r'\s*([+\-*/%=<>!&|^~,;:?(){}[\]])\s*', r'\1', parts[i])
-        return ''.join(parts)
+        
+        # Split by string literals while keeping them
+        result = []
+        current = []
+        i = 0
+        
+        while i < len(line):
+            if line[i] == '"':
+                # Found start of string - save accumulated code
+                if current:
+                    code_part = ''.join(current)
+                    # Compress the code part
+                    code_part = re.sub(r'\s+', ' ', code_part)
+                    code_part = re.sub(r'\s*([+\-*/%=<>!&|^~,;:?(){}[\]])\s*', r'\1', code_part)
+                    result.append(code_part)
+                    current = []
+                
+                # Now collect the entire string literal
+                string_chars = ['"']
+                i += 1
+                while i < len(line):
+                    if line[i] == '\\' and i + 1 < len(line):
+                        # Escape sequence
+                        string_chars.append(line[i])
+                        string_chars.append(line[i + 1])
+                        i += 2
+                    elif line[i] == '"':
+                        # End of string
+                        string_chars.append('"')
+                        i += 1
+                        break
+                    else:
+                        string_chars.append(line[i])
+                        i += 1
+                
+                # Keep string literal as-is
+                result.append(''.join(string_chars))
+            else:
+                current.append(line[i])
+                i += 1
+        
+        # Handle any remaining code
+        if current:
+            code_part = ''.join(current)
+            code_part = re.sub(r'\s+', ' ', code_part)
+            code_part = re.sub(r'\s*([+\-*/%=<>!&|^~,;:?(){}[\]])\s*', r'\1', code_part)
+            result.append(code_part)
+        
+        return ''.join(result)
     
     lines = [compress_line(line) for line in code.split('\n')]
     code = '\n'.join(lines)

@@ -80,7 +80,7 @@ def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bund
 def main():
     markdown_dir = Path('_jekyll')
     minified_dir = Path('cp-algo/min')
-    minified_bundled_dir = Path('cp-algo/min-bundled')
+    minified_bundled_dir = Path('.competitive-verifier/minified-bundled')
     
     # If _jekyll doesn't exist, try the verify-helper path (for local testing)
     if not markdown_dir.exists():

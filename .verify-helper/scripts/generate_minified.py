@@ -139,7 +139,6 @@ def main():
     minified_ci_dir = Path('.competitive-verifier/minified')
     minified_bundled_ci_dir = Path('.competitive-verifier/minified-bundled')
     minified_committed_dir = Path('cp-algo/min')
-    minified_bundled_committed_dir = Path('cp-algo/min-bundled')
     
     # Verify source directory exists
     if not source_dir.exists():
@@ -153,8 +152,7 @@ def main():
             shutil.rmtree(d)
         d.mkdir(parents=True, exist_ok=True)
     
-    for d in [minified_committed_dir, minified_bundled_committed_dir]:
-        d.mkdir(parents=True, exist_ok=True)
+    minified_committed_dir.mkdir(parents=True, exist_ok=True)
     
     print("Generating minified versions from source files...")
     
@@ -186,6 +184,8 @@ def main():
     print(f"  - cp-algo/min/")
     
     # Now process bundled versions if they exist
+    # NOTE: Bundled minified files are ONLY for CI/docs injection
+    # They are NOT committed to the repo to avoid bloat
     if bundled_dir.exists():
         print(f"\nGenerating minified bundled versions from bundled files...")
         total_bundled = 0
@@ -216,17 +216,21 @@ def main():
                 if rel_path.parts[0] == 'cp-algo':
                     rel_path = Path(*rel_path.parts[1:])
                 
-                # Output paths for minified bundled
+                # Output path for minified bundled (CI only, NOT committed)
                 minified_bundled_ci_file = minified_bundled_ci_dir / rel_path
-                minified_bundled_committed_file = minified_bundled_committed_dir / rel_path
                 
-                if process_file(bundled_file, minified_bundled_ci_file, minified_bundled_committed_file):
-                    processed_bundled += 1
+                # Only write to CI directory
+                minified_bundled_ci_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(bundled_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                minified = minify_cpp(content)
+                with open(minified_bundled_ci_file, 'w', encoding='utf-8') as f:
+                    f.write(minified)
+                processed_bundled += 1
         
         print(f"\nProcessed {processed_bundled}/{total_bundled} bundled files")
         print(f"Generated bundled minified in:")
-        print(f"  - .competitive-verifier/minified-bundled/")
-        print(f"  - cp-algo/min-bundled/")
+        print(f"  - .competitive-verifier/minified-bundled/ (CI only, not committed)")
     
     if processed_files < total_files and total_files > 0:
         sys.exit(1)

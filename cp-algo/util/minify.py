@@ -123,7 +123,27 @@ def minify_cpp(code):
         return ''.join(result)
     
     lines = [compress_line(line) for line in code.split('\n')]
-    code = '\n'.join(lines)
+    
+    # Join lines intelligently: keep preprocessor directives on their own lines,
+    # and keep a newline after them
+    result_lines = []
+    for i, line in enumerate(lines):
+        if not line:
+            continue
+        
+        if line.startswith('#'):
+            # Preprocessor directive - always on its own line
+            result_lines.append(line)
+        else:
+            # Regular code - try to join with previous line if possible
+            if result_lines and not result_lines[-1].startswith('#'):
+                # Previous line is not a preprocessor directive, can join
+                result_lines[-1] += line
+            else:
+                # Previous line is a preprocessor directive or this is first line
+                result_lines.append(line)
+    
+    code = '\n'.join(result_lines)
     
     return code
 

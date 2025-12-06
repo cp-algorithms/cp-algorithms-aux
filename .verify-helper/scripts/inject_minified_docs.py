@@ -13,6 +13,20 @@ import json
 import yaml
 
 
+class _LiteralDumper(yaml.SafeDumper):
+    """Dump multiline strings using literal style so code stays readable."""
+
+
+def _str_presenter(dumper, data):
+    if isinstance(data, str) and "\n" in data:
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style='|')
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+# Register custom string representer
+_LiteralDumper.add_representer(str, _str_presenter)
+
+
 def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bundled_code=None):
     """Inject minified code into markdown file's front matter using proper YAML parsing."""
     try:
@@ -62,9 +76,14 @@ def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bund
         if not updated:
             return False
         
-        # Re-serialize YAML front matter
-        # Use default_flow_style=False to keep lists as blocks, allow_unicode=True for special chars
-        new_front_matter_str = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        # Re-serialize YAML front matter with literal blocks for multiline strings
+        new_front_matter_str = yaml.dump(
+            front_matter,
+            Dumper=_LiteralDumper,
+            default_flow_style=False,
+            allow_unicode=True,
+            sort_keys=False,
+        )
         
         # Write updated content
         new_content = f'---{new_front_matter_str}---{body}'

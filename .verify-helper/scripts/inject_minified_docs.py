@@ -47,14 +47,26 @@ def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bund
         if 'data' not in front_matter or not isinstance(front_matter['data'], dict):
             return False
         
-        # Add or update minifiedCode in the nested data object
+        # Ensure embedded array exists
+        if 'embedded' not in front_matter['data']:
+            return False
+        
+        if not isinstance(front_matter['data']['embedded'], list):
+            return False
+        
+        # Add minified versions to the embedded array
         if minified_code:
-            front_matter['data']['minifiedCode'] = minified_code
+            front_matter['data']['embedded'].append({
+                'name': 'minified',
+                'code': minified_code
+            })
             updated = True
         
-        # Add or update minifiedBundledCode in the nested data object
         if minified_bundled_code:
-            front_matter['data']['minifiedBundledCode'] = minified_bundled_code
+            front_matter['data']['embedded'].append({
+                'name': 'minified + bundled',
+                'code': minified_bundled_code
+            })
             updated = True
         
         if not updated:

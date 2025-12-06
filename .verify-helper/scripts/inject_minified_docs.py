@@ -43,14 +43,18 @@ def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bund
         
         updated = False
         
-        # Add or update minifiedCode
+        # The code is nested in front_matter['data'], not at root level
+        if 'data' not in front_matter or not isinstance(front_matter['data'], dict):
+            return False
+        
+        # Add or update minifiedCode in the nested data object
         if minified_code:
-            front_matter['minifiedCode'] = minified_code
+            front_matter['data']['minifiedCode'] = minified_code
             updated = True
         
-        # Add or update minifiedBundledCode
+        # Add or update minifiedBundledCode in the nested data object
         if minified_bundled_code:
-            front_matter['minifiedBundledCode'] = minified_bundled_code
+            front_matter['data']['minifiedBundledCode'] = minified_bundled_code
             updated = True
         
         if not updated:
@@ -58,7 +62,7 @@ def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bund
         
         # Re-serialize YAML front matter
         # Use default_flow_style=False to keep lists as blocks, allow_unicode=True for special chars
-        new_front_matter_str = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True)
+        new_front_matter_str = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True, sort_keys=False)
         
         # Write updated content
         new_content = f'---{new_front_matter_str}---{body}'

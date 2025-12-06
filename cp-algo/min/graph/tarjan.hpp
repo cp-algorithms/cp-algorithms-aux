@@ -6,5 +6,34 @@
 #include <algorithm>
 #include <cassert>
 #include <stack>
-namespace cp_algo::graph{template<graph_type graph>struct tarjan_context:dfs_low_context<graph>{using base=dfs_low_context<graph>;std::stack<int>stack;structures::csr<node_index>components;tarjan_context(graph const&g):base(g){components.reserve_data(g.n());}void on_enter(node_index v){base::on_enter(v);stack.push(v);}void collect(node_index v){components.new_row();node_index u;do{u=stack.top();stack.pop();base::state[u]=blocked;components.push(u);}while(u!=v);}};template<graph_type graph>struct exit_context:tarjan_context<graph>{using tarjan_context<graph>::tarjan_context;void on_exit(node_index v){if(this->low[v]==this->tin[v]){this->collect(v);}}};template<digraph_type graph>auto strongly_connected_components(graph const&g){return dfs<exit_context>(g).components;}template<undirected_graph_type graph>auto two_edge_connected_components(graph const&g){return dfs<exit_context>(g).components;}template<undirected_graph_type graph>struct bcc_context:tarjan_context<graph>{using base=tarjan_context<graph>;using base::base;void on_return_from_child(node_index v,edge_index e){base::on_return_from_child(v,e);node_index u=base::g->edge(e).traverse(v);if(base::low[u]>=base::tin[v]){base::collect(u);base::components.push(v);}}void on_exit(node_index v){if(std::empty(base::g->outgoing(v))){base::collect(v);}}};template<undirected_graph_type graph>auto biconnected_components(graph const&g){return dfs<bcc_context>(g).components;}}
+namespace cp_algo::graph{template<graph_type graph>
+struct tarjan_context:dfs_low_context<graph>{using base=dfs_low_context<graph>;
+std::stack<int>stack;
+structures::csr<node_index>components;
+tarjan_context(graph const&g):base(g){components.reserve_data(g.n());}
+void on_enter(node_index v){base::on_enter(v);
+stack.push(v);}
+void collect(node_index v){components.new_row();
+node_index u;
+do{u=stack.top();
+stack.pop();
+base::state[u]=blocked;
+components.push(u);}while(u!=v);}};
+template<graph_type graph>
+struct exit_context:tarjan_context<graph>{using tarjan_context<graph>::tarjan_context;
+void on_exit(node_index v){if(this->low[v]==this->tin[v]){this->collect(v);}}};
+template<digraph_type graph>
+auto strongly_connected_components(graph const&g){return dfs<exit_context>(g).components;}
+template<undirected_graph_type graph>
+auto two_edge_connected_components(graph const&g){return dfs<exit_context>(g).components;}
+template<undirected_graph_type graph>
+struct bcc_context:tarjan_context<graph>{using base=tarjan_context<graph>;
+using base::base;
+void on_return_from_child(node_index v,edge_index e){base::on_return_from_child(v,e);
+node_index u=base::g->edge(e).traverse(v);
+if(base::low[u]>=base::tin[v]){base::collect(u);
+base::components.push(v);}}
+void on_exit(node_index v){if(std::empty(base::g->outgoing(v))){base::collect(v);}}};
+template<undirected_graph_type graph>
+auto biconnected_components(graph const&g){return dfs<bcc_context>(g).components;}}
 #endif

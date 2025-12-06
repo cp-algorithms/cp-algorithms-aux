@@ -33,7 +33,7 @@ def minify_code(code):
     """Minify C++ code on-the-fly using the minify utility."""
     try:
         result = subprocess.run(
-            ['python3', 'cp-algo/util/minify.py'],
+            ['python3', 'cp-algo/minify.py'],
             input=code,
             capture_output=True,
             text=True,
@@ -145,6 +145,8 @@ def main():
     markdown_dir = Path('_jekyll')
     minified_dir = Path('cp-algo/min')
     minified_bundled_dir = Path('.competitive-verifier/minified-bundled')
+    # Repository root (script is in .verify-helper/scripts/)
+    repo_root = Path(__file__).resolve().parents[2]
     
     # If _jekyll doesn't exist, try the verify-helper path (for local testing)
     if not markdown_dir.exists():
@@ -200,7 +202,7 @@ def main():
             # Reconstruct source file path - test files are relative to repo root
             if original_ext:
                 # path_without_ext is like "verify/test_file", we need the actual file in the repo
-                source_file = docs_root.parent / (path_without_ext + original_ext)
+                source_file = repo_root / (path_without_ext + original_ext)
                 if source_file.exists():
                     # Generate bundled+minified version only
                     minified_bundled_code = bundle_and_minify(source_file)

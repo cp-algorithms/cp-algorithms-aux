@@ -13,90 +13,30 @@ without inlining dependencies.
 import os
 import re
 import sys
+import subprocess
 from pathlib import Path
 
 
 def minify_cpp(code):
-    """Minify C++ code while preserving header guards and removing unnecessary whitespace."""
-    lines = code.split('\n')
-    result = []
-    in_multiline_comment = False
-    header_guard = None
-    endif_lines = []
-    
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        
-        # Handle multiline comments
-        if '/*' in stripped:
-            in_multiline_comment = True
-        if '*/' in stripped:
-            in_multiline_comment = False
-            continue
-        if in_multiline_comment:
-            continue
-        
-        # Remove single-line comments
-        if '//' in stripped:
-            stripped = stripped.split('//')[0].strip()
-        
-        # Skip empty lines
-        if not stripped:
-            continue
-        
-        # Detect and preserve header guards
-        if stripped.startswith('#ifndef '):
-            header_guard = stripped
-            result.append(stripped)
-            continue
-        elif stripped.startswith('#define ') and header_guard and len(result) == 1:
-            result.append(stripped)
-            continue
-        elif stripped == '#endif' and header_guard:
-            endif_lines.append(stripped)
-            continue
-        
-        # Keep preprocessor directives as-is (they need to be on own lines)
-        if stripped.startswith('#'):
-            result.append(stripped)
-            continue
-        
-        # Compress spaces in code lines (but preserve strings)
-        def compress_line(line):
-            # Split by strings to preserve their content
-            parts = re.split(r'("(?:[^"\\]|\\.)*")', line)
-            for i in range(0, len(parts), 2):
-                # Compress multiple spaces to one
-                parts[i] = re.sub(r'\s+', ' ', parts[i])
-                # Remove spaces around operators (but keep space for clarity in some cases)
-                parts[i] = re.sub(r'\s*([+\-*/%=<>!&|^~,;:?(){}[\]])\s*', r'\1', parts[i])
-                # Remove leading/trailing spaces
-                parts[i] = parts[i].strip()
-            return ''.join(parts)
-        
-        compressed = compress_line(stripped)
-        if compressed:
-            result.append(compressed)
-    
-    # Join lines - try to put on same line when possible
-    code = '\n'.join(result)
-    
-    # Remove newlines after opening braces and before closing braces
-    code = re.sub(r'\{\n', '{', code)
-    code = re.sub(r'\n\}', '}', code)
-    
-    # Remove newlines around colons in class/struct definitions
-    code = re.sub(r'\n:', ':', code)
-    code = re.sub(r':\n', ':', code)
-    
-    # Remove multiple consecutive newlines (keep max 1)
-    code = re.sub(r'\n\n+', '\n', code)
-    
-    # Add back endif if we had header guards
-    if endif_lines:
-        code = code + '\n' + '\n'.join(endif_lines)
-    
-    return code
+    """Delegate to the shared minifier so CI and local minified files match."""
+    minifier = Path(__file__).resolve().parents[2] / 'cp-algo/minify.py'
+    try:
+        result = subprocess.run(
+            ['python3', str(minifier)],
+            input=code,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout
+    except FileNotFoundError:
+        print(f"Warning: minifier not found at {minifier}, skipping minification", file=sys.stderr)
+        return code
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: minifier failed ({e}); skipping minification", file=sys.stderr)
+        if e.stdout:
+            return e.stdout
+        return code
 
 
 def process_file(bundled_path, minified_path, committed_path=None):

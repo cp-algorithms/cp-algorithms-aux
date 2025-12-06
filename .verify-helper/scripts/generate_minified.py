@@ -192,6 +192,11 @@ def main():
         processed_bundled = 0
         
         for bundled_file in bundled_dir.rglob('*'):
+            # Skip verify directory - these are test files with #line directives
+            # that get corrupted during minification
+            if 'verify' in bundled_file.parts:
+                continue
+            
             if bundled_file.is_file() and bundled_file.suffix in ['.hpp', '.cpp', '.h']:
                 total_bundled += 1
                 

@@ -43,8 +43,11 @@ def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bund
         
         updated = False
         
-        # The code is nested in front_matter['data'], not at root level
-        if 'data' not in front_matter or not isinstance(front_matter['data'], dict):
+        # The code is nested in front_matter['data'], but create 'data' if it doesn't exist
+        if 'data' not in front_matter:
+            front_matter['data'] = {}
+        
+        if not isinstance(front_matter['data'], dict):
             return False
         
         # Add minified code as custom fields (we'll display these in a custom template)

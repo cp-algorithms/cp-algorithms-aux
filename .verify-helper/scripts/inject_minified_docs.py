@@ -47,26 +47,13 @@ def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bund
         if 'data' not in front_matter or not isinstance(front_matter['data'], dict):
             return False
         
-        # Ensure embedded array exists
-        if 'embedded' not in front_matter['data']:
-            return False
-        
-        if not isinstance(front_matter['data']['embedded'], list):
-            return False
-        
-        # Add minified versions to the embedded array
+        # Add minified code as custom fields (we'll display these in a custom template)
         if minified_code:
-            front_matter['data']['embedded'].append({
-                'name': 'minified',
-                'code': minified_code
-            })
+            front_matter['data']['minifiedCode'] = minified_code
             updated = True
         
         if minified_bundled_code:
-            front_matter['data']['embedded'].append({
-                'name': 'minified + bundled',
-                'code': minified_bundled_code
-            })
+            front_matter['data']['minifiedBundledCode'] = minified_bundled_code
             updated = True
         
         if not updated:

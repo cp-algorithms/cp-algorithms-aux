@@ -1,2 +1,95 @@
 {%- include dependencies.html data=include.data -%}
-{%- include code_and_testcases.html data=include.data -%}
+
+<h2>Code</h2>
+
+{%- comment -%}Build extended embedded array with minified versions{%- endcomment -%}
+{%- assign extended_embedded = include.data.embedded -%}
+
+{%- if include.data.minifiedCode -%}
+{%- assign minified_obj = '{"name":"minified","code":"PLACEHOLDER"}' | parse_json -%}
+{%- assign extended_embedded = extended_embedded | push: minified_obj -%}
+{%- endif -%}
+
+{%- if include.data.minifiedBundledCode -%}
+{%- assign minified_bundled_obj = '{"name":"minified + bundled","code":"PLACEHOLDER"}' | parse_json -%}
+{%- assign extended_embedded = extended_embedded | push: minified_bundled_obj -%}
+{%- endif -%}
+
+{%- comment -%}Display code with tabs{%- endcomment -%}
+{%- if extended_embedded.size >= 1 -%}
+<div class="code">
+{%- for source in include.data.embedded -%}
+    {%- assign codeBody = source.code -%}
+    <pre class="hljs {% unless forloop.first %}disable{% endunless %}" id="code-body-{{forloop.index}}"><code class="language-{{include.data.pathExtension}}">{{ codeBody | xml_escape }}</code></pre>
+{%- endfor -%}
+
+{%- if include.data.minifiedCode -%}
+    {%- assign idx = include.data.embedded.size | plus: 1 -%}
+    <pre class="hljs disable" id="code-body-{{idx}}"><code class="language-{{include.data.pathExtension}}">{{ include.data.minifiedCode | xml_escape }}</code></pre>
+{%- endif -%}
+
+{%- if include.data.minifiedBundledCode -%}
+    {%- assign idx = include.data.embedded.size -%}
+    {%- if include.data.minifiedCode -%}{%- assign idx = idx | plus: 2 -%}{%- else -%}{%- assign idx = idx | plus: 1 -%}{%- endif -%}
+    <pre class="hljs disable" id="code-body-{{idx}}"><code class="language-{{include.data.pathExtension}}">{{ include.data.minifiedBundledCode | xml_escape }}</code></pre>
+{%- endif -%}
+
+    <div class="btn-area">
+    {%- assign total_tabs = include.data.embedded.size -%}
+    {%- if include.data.minifiedCode -%}{%- assign total_tabs = total_tabs | plus: 1 -%}{%- endif -%}
+    {%- if include.data.minifiedBundledCode -%}{%- assign total_tabs = total_tabs | plus: 1 -%}{%- endif -%}
+    
+    {%- if total_tabs >= 2 -%}
+        <div class="btn-group">
+        {%- for source in include.data.embedded -%}
+            <button type="button" class="code-btn code-toggle-btn {% if forloop.first %}selected{% endif %}" data-target="code-body-{{forloop.index}}">{{source.name}}</button>
+        {%- endfor -%}
+        
+        {%- if include.data.minifiedCode -%}
+            {%- assign idx = include.data.embedded.size | plus: 1 -%}
+            <button type="button" class="code-btn code-toggle-btn" data-target="code-body-{{idx}}">minified</button>
+        {%- endif -%}
+        
+        {%- if include.data.minifiedBundledCode -%}
+            {%- assign idx = include.data.embedded.size -%}
+            {%- if include.data.minifiedCode -%}{%- assign idx = idx | plus: 2 -%}{%- else -%}{%- assign idx = idx | plus: 1 -%}{%- endif -%}
+            <button type="button" class="code-btn code-toggle-btn" data-target="code-body-{{idx}}">minified + bundled</button>
+        {%- endif -%}
+        </div>
+    {%- endif -%}
+        <div class="btn-group"><button type="button" class="code-btn code-copy-btn hint--top hint--always hint--disable" aria-label="Copied!">Copy</button></div>
+    </div>
+</div>
+{%- else -%}
+<div style="height: 5em;">:x: <b>There is no code.</b></div>
+{%- endif -%}
+
+{%- if include.data.testcases and include.data.testcases.size != 0 -%}
+<h2>Test cases</h2>
+<table class="testcases-table">
+    <thead>
+        <tr>
+            <th class="col col1">Env</th>
+            <th class="col col2">Name</th>
+            <th class="col col3">Status</th>
+            <th class="col col4">Elapsed</th>
+            <th class="col col5">Memory</th>
+        </tr>
+    </thead>
+    <tbody>
+        {%- for case in include.data.testcases -%}
+        <tr>
+            <td class="col col1">{{ case.environment | xml_escape }}</td>
+            <td class="col col2">{{ case.name | xml_escape }}</td>
+            {%- if case.status == "AC" -%}
+            <td class="col col3">{{ site.icons.TEST_ACCEPTED }}&nbsp;AC</td>
+            {%- else -%}
+            <td class="col col3">{{site.icons.TEST_WRONG_ANSWER}}&nbsp;{{ case.status | xml_escape }}</td>
+            {%- endif -%}
+            <td class="col col4">{{ case.elapsed | times: 1000 | round }} ms</td>
+            <td class="col col5">{{ case.memory | round }} MB</td>
+        </tr>
+        {%- endfor -%}
+    </tbody>
+</table>
+{%- endif -%}

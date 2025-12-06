@@ -196,17 +196,12 @@ def main():
         minified_bundled_code = None
         
         if is_test_file:
-            # For test files, generate minified versions on-the-fly from the source file
+            # For test files, only generate bundled+minified version (not plain minified)
             # Reconstruct source file path
             if original_ext:
                 source_file = Path(path_without_ext + original_ext)
                 if source_file.exists():
-                    # Read the source and minify directly
-                    with open(source_file, 'r', encoding='utf-8') as f:
-                        source_code = f.read()
-                    minified_code = minify_code(source_code)
-                    
-                    # Generate bundled+minified version
+                    # Generate bundled+minified version only
                     minified_bundled_code = bundle_and_minify(source_file)
         else:
             # For library files, use pre-generated minified versions

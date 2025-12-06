@@ -179,6 +179,9 @@ jobs:
       - name: Inject minified code into documentation
         shell: bash
         run: python3 .verify-helper/scripts/inject_minified_docs.py
+      - name: Copy custom Jekyll templates
+        shell: bash
+        run: cp -r .verify-helper/docs/static/* _jekyll/ 2>/dev/null || true
       - name: Save result
         uses: actions/cache/save@v4
         with:
@@ -203,19 +206,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          changes=false
           
+          # Only commit minified source files, not bundled versions
+          # Bundled versions are generated during CI and used for docs injection,
+          # but we don't store them in the repo to avoid bloat
           if [ -n "$(git status cp-algo/min/ --porcelain)" ]; then
             git add cp-algo/min/
-            changes=true
-          fi
-          
-          if [ -n "$(git status cp-algo/min-bundled/ --porcelain)" ]; then
-            git add cp-algo/min-bundled/
-            changes=true
-          fi
-          
-          if [ "$changes" = true ]; then
             git commit -m "chore: update minified library versions"
             git push
           else

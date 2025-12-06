@@ -209,6 +209,11 @@ def main():
                 # Calculate relative path within bundled
                 rel_path = bundled_file.relative_to(bundled_dir)
                 
+                # Strip the 'cp-algo/' prefix if present (bundled dir already has full structure)
+                # so we don't get cp-algo/min-bundled/cp-algo/...
+                if rel_path.parts[0] == 'cp-algo':
+                    rel_path = Path(*rel_path.parts[1:])
+                
                 # Output paths for minified bundled
                 minified_bundled_ci_file = minified_bundled_ci_dir / rel_path
                 minified_bundled_committed_file = minified_bundled_committed_dir / rel_path

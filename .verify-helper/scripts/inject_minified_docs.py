@@ -3,6 +3,7 @@
 Inject minified code into documentation markdown files.
 This script reads minified versions from cp-algo/min/ and cp-algo/min-bundled/
 and adds minifiedCode and minifiedBundledCode fields to the documentation markdown files.
+For test files, generates minified versions on-the-fly without storing them.
 """
 
 import os
@@ -11,6 +12,7 @@ from pathlib import Path
 import re
 import json
 import yaml
+import subprocess
 
 
 class _LiteralDumper(yaml.SafeDumper):
@@ -25,6 +27,48 @@ def _str_presenter(dumper, data):
 
 # Register custom string representer
 _LiteralDumper.add_representer(str, _str_presenter)
+
+
+def minify_code(code):
+    """Minify C++ code on-the-fly using the minify utility."""
+    try:
+        result = subprocess.run(
+            ['python3', 'cp-algo/util/minify.py'],
+            input=code,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to minify code: {e}", file=sys.stderr)
+        return None
+    except FileNotFoundError:
+        print("Warning: minify.py not found, skipping minification", file=sys.stderr)
+        return None
+
+
+def bundle_and_minify(source_file):
+    """Bundle and minify a test file using oj-bundle and minify.py."""
+    try:
+        # First bundle with oj-bundle
+        bundle_result = subprocess.run(
+            ['oj-bundle', str(source_file)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        bundled_code = bundle_result.stdout
+        
+        # Then minify
+        minified = minify_code(bundled_code)
+        return minified
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to bundle/minify {source_file}: {e}", file=sys.stderr)
+        return None
+    except FileNotFoundError:
+        print("Warning: oj-bundle not found, skipping bundled minification", file=sys.stderr)
+        return None
 
 
 def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bundled_code=None):
@@ -131,10 +175,15 @@ def main():
         rel_path = md_file.relative_to(markdown_dir)
         path_without_ext = str(rel_path)[:-3]  # Remove trailing .md
 
+        # Determine if this is a test file or library file
+        is_test_file = path_without_ext.startswith('verify/')
+        
         # Drop the original source extension so we don't end up with double extensions
+        original_ext = None
         for src_ext in ('.hpp', '.cpp', '.h'):
             if path_without_ext.endswith(src_ext):
                 path_without_ext = path_without_ext[: -len(src_ext)]
+                original_ext = src_ext
                 break
 
         # Strip cp-algo/ prefix if present since min/min-bundled dirs don't duplicate it
@@ -146,33 +195,48 @@ def main():
         minified_code = None
         minified_bundled_code = None
         
-        # Try to find corresponding minified source file
-        possible_extensions = ['hpp', 'cpp', 'h']
-        
-        for ext in possible_extensions:
-            if minified_code is None and minified_dir.exists():
-                minified_file = minified_dir / f"{path_in_min}.{ext}"
-                if minified_file.exists():
-                    with open(minified_file, 'r', encoding='utf-8') as f:
-                        minified_code = f.read()
-                    break
-        
-        # Try to find corresponding minified bundled file
-        # Try both with and without cp-algo/ prefix for backwards compatibility
-        for ext in possible_extensions:
-            if minified_bundled_code is None and minified_bundled_dir.exists():
-                # Try without prefix first (correct structure after fix)
-                minified_bundled_file = minified_bundled_dir / f"{path_in_min}.{ext}"
-                if minified_bundled_file.exists():
-                    with open(minified_bundled_file, 'r', encoding='utf-8') as f:
-                        minified_bundled_code = f.read()
-                    break
-                # Also try with cp-algo/ prefix (old nested structure)
-                minified_bundled_file = minified_bundled_dir / f"cp-algo/{path_in_min}.{ext}"
-                if minified_bundled_file.exists():
-                    with open(minified_bundled_file, 'r', encoding='utf-8') as f:
-                        minified_bundled_code = f.read()
-                    break
+        if is_test_file:
+            # For test files, generate minified versions on-the-fly from the source file
+            # Reconstruct source file path
+            if original_ext:
+                source_file = Path(path_without_ext + original_ext)
+                if source_file.exists():
+                    # Read the source and minify directly
+                    with open(source_file, 'r', encoding='utf-8') as f:
+                        source_code = f.read()
+                    minified_code = minify_code(source_code)
+                    
+                    # Generate bundled+minified version
+                    minified_bundled_code = bundle_and_minify(source_file)
+        else:
+            # For library files, use pre-generated minified versions
+            # Try to find corresponding minified source file
+            possible_extensions = ['hpp', 'cpp', 'h']
+            
+            for ext in possible_extensions:
+                if minified_code is None and minified_dir.exists():
+                    minified_file = minified_dir / f"{path_in_min}.{ext}"
+                    if minified_file.exists():
+                        with open(minified_file, 'r', encoding='utf-8') as f:
+                            minified_code = f.read()
+                        break
+            
+            # Try to find corresponding minified bundled file
+            # Try both with and without cp-algo/ prefix for backwards compatibility
+            for ext in possible_extensions:
+                if minified_bundled_code is None and minified_bundled_dir.exists():
+                    # Try without prefix first (correct structure after fix)
+                    minified_bundled_file = minified_bundled_dir / f"{path_in_min}.{ext}"
+                    if minified_bundled_file.exists():
+                        with open(minified_bundled_file, 'r', encoding='utf-8') as f:
+                            minified_bundled_code = f.read()
+                        break
+                    # Also try with cp-algo/ prefix (old nested structure)
+                    minified_bundled_file = minified_bundled_dir / f"cp-algo/{path_in_min}.{ext}"
+                    if minified_bundled_file.exists():
+                        with open(minified_bundled_file, 'r', encoding='utf-8') as f:
+                            minified_bundled_code = f.read()
+                        break
         
         # Only inject if we found at least one minified version
         if (minified_code or minified_bundled_code):

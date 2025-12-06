@@ -176,15 +176,6 @@ jobs:
           verify-result: ${{github.workspace}}/merged-result.json
           destination: _jekyll
           write-summary: true
-      - name: Copy custom templates to Jekyll
-        shell: bash
-        run: |
-          if [ -d ".verify-helper/markdown/_includes" ]; then
-            cp -r .verify-helper/markdown/_includes _jekyll/
-          fi
-          if [ -d ".verify-helper/markdown/_layouts" ]; then
-            cp -r .verify-helper/markdown/_layouts _jekyll/
-          fi
       - name: Inject minified code into documentation
         shell: bash
         run: python3 .verify-helper/scripts/inject_minified_docs.py

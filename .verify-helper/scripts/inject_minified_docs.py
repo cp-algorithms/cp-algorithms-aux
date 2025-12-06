@@ -86,7 +86,8 @@ def inject_minified_to_markdown(markdown_file, minified_code=None, minified_bund
         )
         
         # Write updated content
-        new_content = f'---{new_front_matter_str}---{body}'
+        # Emit well-formed front matter blocks; Jekyll requires newlines after delimiters
+        new_content = f'---\n{new_front_matter_str}---\n{body}'
         with open(markdown_file, 'w', encoding='utf-8') as f:
             f.write(new_content)
         

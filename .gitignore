@@ -1,3 +1,5 @@
 main.test.cpp
 .competitive-verifier/*
 verify_files.json
+cp-algo/min-bundled
+cp-algo/min/min-bundled

@@ -107,10 +107,16 @@ def main():
     print(f"  Found {len(md_files)} markdown files")
     
     for md_file in md_files:
-        # Get relative path without .md extension
+        # Get relative path without .md extension, then drop original source extension (.hpp/.cpp/.h)
         rel_path = md_file.relative_to(markdown_dir)
-        path_without_ext = str(rel_path)[:-3]  # Remove .md
-        
+        path_without_ext = str(rel_path)[:-3]  # Remove trailing .md
+
+        # Drop the original source extension so we don't end up with double extensions
+        for src_ext in ('.hpp', '.cpp', '.h'):
+            if path_without_ext.endswith(src_ext):
+                path_without_ext = path_without_ext[: -len(src_ext)]
+                break
+
         # Strip cp-algo/ prefix if present since min/min-bundled dirs don't duplicate it
         # e.g., _jekyll/cp-algo/math/fft.md -> look for cp-algo/min/math/fft.hpp
         path_in_min = path_without_ext

@@ -2,8 +2,10 @@
 #define CP_ALGO_UTIL_COMPLEX_HPP
 #include <iostream>
 #include <cmath>
-namespace cp_algo{template<typename T>
-struct complex{using value_type=T;
+namespace cp_algo{
+template<typename T>
+struct complex{
+using value_type=T;
 T x,y;
 constexpr complex():x(),y(){}
 constexpr complex(T x):x(x),y(){}
@@ -29,7 +31,8 @@ T const imag()const{return y;}
 T&real(){return x;}
 T&imag(){return y;}
 static constexpr complex polar(T r,T theta){return{T(r*cos(theta)),T(r*sin(theta))};}
-auto operator<=>(complex const&t)const=default;};
+auto operator<=>(complex const&t)const=default;
+};
 template<typename T>
 complex<T>operator*(auto x,complex<T>y){return y*=x;}
 template<typename T>complex<T>conj(complex<T>x){return x.conj();}
@@ -40,7 +43,12 @@ template<typename T>T&imag(complex<T>&x){return x.imag();}
 template<typename T>T const real(complex<T>const&x){return x.real();}
 template<typename T>T const imag(complex<T>const&x){return x.imag();}
 template<typename T>
-constexpr complex<T>polar(T r,T theta){return complex<T>::polar(r,theta);}
+constexpr complex<T>polar(T r,T theta){
+return complex<T>::polar(r,theta);
+}
 template<typename T>
-std::ostream&operator<<(std::ostream&out,complex<T>x){return out<<x.real()<<' '<<x.imag();}}
+std::ostream&operator<<(std::ostream&out,complex<T>x){
+return out<<x.real()<<' '<<x.imag();
+}
+}
 #endif

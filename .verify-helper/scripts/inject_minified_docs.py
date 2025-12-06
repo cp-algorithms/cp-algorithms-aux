@@ -197,9 +197,10 @@ def main():
         
         if is_test_file:
             # For test files, only generate bundled+minified version (not plain minified)
-            # Reconstruct source file path
+            # Reconstruct source file path - test files are relative to repo root
             if original_ext:
-                source_file = Path(path_without_ext + original_ext)
+                # path_without_ext is like "verify/test_file", we need the actual file in the repo
+                source_file = docs_root.parent / (path_without_ext + original_ext)
                 if source_file.exists():
                     # Generate bundled+minified version only
                     minified_bundled_code = bundle_and_minify(source_file)

@@ -201,10 +201,21 @@ jobs:
       - name: Commit minified versions
         shell: bash
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          changes=false
+          
           if [ -n "$(git status cp-algo/min/ --porcelain)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
             git add cp-algo/min/
+            changes=true
+          fi
+          
+          if [ -n "$(git status cp-algo/min-bundled/ --porcelain)" ]; then
+            git add cp-algo/min-bundled/
+            changes=true
+          fi
+          
+          if [ "$changes" = true ]; then
             git commit -m "chore: update minified library versions"
             git push
           else

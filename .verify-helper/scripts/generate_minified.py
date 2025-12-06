@@ -133,10 +133,13 @@ def process_file(bundled_path, minified_path, committed_path=None):
 def main():
     # Source directory to minify
     source_dir = Path('cp-algo')
+    bundled_dir = Path('.competitive-verifier/bundled')
     
     # Output directories
     minified_ci_dir = Path('.competitive-verifier/minified')
+    minified_bundled_ci_dir = Path('.competitive-verifier/minified-bundled')
     minified_committed_dir = Path('cp-algo/min')
+    minified_bundled_committed_dir = Path('cp-algo/min-bundled')
     
     # Verify source directory exists
     if not source_dir.exists():
@@ -144,21 +147,23 @@ def main():
         sys.exit(1)
     
     # Clear output directories
-    if minified_ci_dir.exists():
-        import shutil
-        shutil.rmtree(minified_ci_dir)
+    for d in [minified_ci_dir, minified_bundled_ci_dir]:
+        if d.exists():
+            import shutil
+            shutil.rmtree(d)
+        d.mkdir(parents=True, exist_ok=True)
     
-    minified_ci_dir.mkdir(parents=True, exist_ok=True)
-    minified_committed_dir.mkdir(parents=True, exist_ok=True)
+    for d in [minified_committed_dir, minified_bundled_committed_dir]:
+        d.mkdir(parents=True, exist_ok=True)
     
     print("Generating minified versions from source files...")
     
     total_files = 0
     processed_files = 0
     
-    # Process all source files in cp-algo (but not in cp-algo/min itself)
+    # Process all source files in cp-algo (but not in cp-algo/min* itself)
     for src_file in source_dir.rglob('*'):
-        # Skip files in min directory
+        # Skip files in min directories
         if 'min' in src_file.parts:
             continue
         
@@ -168,17 +173,42 @@ def main():
             # Calculate relative path within cp-algo
             rel_path = src_file.relative_to(source_dir)
             
-            # Output paths
+            # Output paths for minified source
             minified_ci_file = minified_ci_dir / 'cp-algo' / rel_path
             minified_committed_file = minified_committed_dir / rel_path
             
             if process_file(src_file, minified_ci_file, minified_committed_file):
                 processed_files += 1
     
-    print(f"\nProcessed {processed_files}/{total_files} files")
-    print(f"Generated in:")
+    print(f"\nProcessed {processed_files}/{total_files} source files")
+    print(f"Generated source minified in:")
     print(f"  - .competitive-verifier/minified/cp-algo/")
     print(f"  - cp-algo/min/")
+    
+    # Now process bundled versions if they exist
+    if bundled_dir.exists():
+        print(f"\nGenerating minified bundled versions from bundled files...")
+        total_bundled = 0
+        processed_bundled = 0
+        
+        for bundled_file in bundled_dir.rglob('*'):
+            if bundled_file.is_file() and bundled_file.suffix in ['.hpp', '.cpp', '.h']:
+                total_bundled += 1
+                
+                # Calculate relative path within bundled
+                rel_path = bundled_file.relative_to(bundled_dir)
+                
+                # Output paths for minified bundled
+                minified_bundled_ci_file = minified_bundled_ci_dir / rel_path
+                minified_bundled_committed_file = minified_bundled_committed_dir / rel_path
+                
+                if process_file(bundled_file, minified_bundled_ci_file, minified_bundled_committed_file):
+                    processed_bundled += 1
+        
+        print(f"\nProcessed {processed_bundled}/{total_bundled} bundled files")
+        print(f"Generated bundled minified in:")
+        print(f"  - .competitive-verifier/minified-bundled/")
+        print(f"  - cp-algo/min-bundled/")
     
     if processed_files < total_files and total_files > 0:
         sys.exit(1)

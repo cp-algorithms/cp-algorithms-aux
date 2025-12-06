@@ -197,6 +197,12 @@ def main():
             if 'verify' in bundled_file.parts:
                 continue
             
+            # Skip files that are already in min or min-bundled directories
+            # (these would be from previous minification runs in the bundled dir)
+            rel_path_str = str(bundled_file.relative_to(bundled_dir))
+            if '/min/' in rel_path_str or '/min-bundled/' in rel_path_str:
+                continue
+            
             if bundled_file.is_file() and bundled_file.suffix in ['.hpp', '.cpp', '.h']:
                 total_bundled += 1
                 

@@ -102,6 +102,12 @@ def main():
         rel_path = md_file.relative_to(markdown_dir)
         path_without_ext = str(rel_path)[:-3]  # Remove .md
         
+        # Strip cp-algo/ prefix if present since min/min-bundled dirs don't duplicate it
+        # e.g., _jekyll/cp-algo/math/fft.md -> look for cp-algo/min/math/fft.hpp
+        path_in_min = path_without_ext
+        if path_in_min.startswith('cp-algo/'):
+            path_in_min = path_in_min[8:]  # Remove 'cp-algo/' prefix
+        
         minified_code = None
         minified_bundled_code = None
         
@@ -110,16 +116,24 @@ def main():
         
         for ext in possible_extensions:
             if minified_code is None and minified_dir.exists():
-                minified_file = minified_dir / f"{path_without_ext}.{ext}"
+                minified_file = minified_dir / f"{path_in_min}.{ext}"
                 if minified_file.exists():
                     with open(minified_file, 'r', encoding='utf-8') as f:
                         minified_code = f.read()
                     break
         
         # Try to find corresponding minified bundled file
+        # Try both with and without cp-algo/ prefix for backwards compatibility
         for ext in possible_extensions:
             if minified_bundled_code is None and minified_bundled_dir.exists():
-                minified_bundled_file = minified_bundled_dir / f"{path_without_ext}.{ext}"
+                # Try without prefix first (correct structure after fix)
+                minified_bundled_file = minified_bundled_dir / f"{path_in_min}.{ext}"
+                if minified_bundled_file.exists():
+                    with open(minified_bundled_file, 'r', encoding='utf-8') as f:
+                        minified_bundled_code = f.read()
+                    break
+                # Also try with cp-algo/ prefix (old nested structure)
+                minified_bundled_file = minified_bundled_dir / f"cp-algo/{path_in_min}.{ext}"
                 if minified_bundled_file.exists():
                     with open(minified_bundled_file, 'r', encoding='utf-8') as f:
                         minified_bundled_code = f.read()

@@ -30,7 +30,7 @@ namespace cp_algo::math::fft {
         vpoint& at(size_t k) {return r[k / flen];}
         vpoint at(size_t k) const {return r[k / flen];}
         template<class pt = point>
-        void set(size_t k, pt t) {
+        void set(size_t k, pt const& t) {
             if constexpr(std::is_same_v<pt, point>) {
                 real(r[k / flen])[k % flen] = real(t);
                 imag(r[k / flen])[k % flen] = imag(t);

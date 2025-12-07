@@ -10,20 +10,20 @@ namespace cp_algo {
         using value_type = T;
         T x, y;
         constexpr complex(): x(), y() {}
-        constexpr complex(T x): x(x), y() {}
-        constexpr complex(T x, T y): x(x), y(y) {}
-        complex& operator *= (T t) {x *= t; y *= t; return *this;}
-        complex& operator /= (T t) {x /= t; y /= t; return *this;}
-        complex operator * (T t) const {return complex(*this) *= t;}
-        complex operator / (T t) const {return complex(*this) /= t;}
-        complex& operator += (complex t) {x += t.x; y += t.y; return *this;}
-        complex& operator -= (complex t) {x -= t.x; y -= t.y; return *this;}
-        complex operator * (complex t) const {return {x * t.x - y * t.y, x * t.y + y * t.x};}
-        complex operator / (complex t) const {return *this * t.conj() / t.norm();}
-        complex operator + (complex t) const {return complex(*this) += t;}
-        complex operator - (complex t) const {return complex(*this) -= t;}
-        complex& operator *= (complex t) {return *this = *this * t;}
-        complex& operator /= (complex t) {return *this = *this / t;}
+        constexpr complex(T const& x): x(x), y() {}
+        constexpr complex(T const& x, T const& y): x(x), y(y) {}
+        complex& operator *= (T const& t) {x *= t; y *= t; return *this;}
+        complex& operator /= (T const& t) {x /= t; y /= t; return *this;}
+        complex operator * (T const& t) const {return complex(*this) *= t;}
+        complex operator / (T const& t) const {return complex(*this) /= t;}
+        complex& operator += (complex const& t) {x += t.x; y += t.y; return *this;}
+        complex& operator -= (complex const& t) {x -= t.x; y -= t.y; return *this;}
+        complex operator * (complex const& t) const {return {x * t.x - y * t.y, x * t.y + y * t.x};}
+        complex operator / (complex const& t) const {return *this * t.conj() / t.norm();}
+        complex operator + (complex const& t) const {return complex(*this) += t;}
+        complex operator - (complex const& t) const {return complex(*this) -= t;}
+        complex& operator *= (complex const& t) {return *this = *this * t;}
+        complex& operator /= (complex const& t) {return *this = *this / t;}
         complex operator - () const {return {-x, -y};}
         complex conj() const {return {x, -y};}
         T norm() const {return x * x + y * y;}
@@ -35,9 +35,9 @@ namespace cp_algo {
         static constexpr complex polar(T r, T theta) {return {T(r * cos(theta)), T(r * sin(theta))};}
         auto operator <=> (complex const& t) const = default;
     };
-    template<typename T> complex<T> conj(complex<T> x) {return x.conj();}
-    template<typename T> T norm(complex<T> x) {return x.norm();}
-    template<typename T> T abs(complex<T> x) {return x.abs();}
+    template<typename T> complex<T> conj(complex<T> const& x) {return x.conj();}
+    template<typename T> T norm(complex<T> const& x) {return x.norm();}
+    template<typename T> T abs(complex<T> const& x) {return x.abs();}
     template<typename T> T& real(complex<T> &x) {return x.real();}
     template<typename T> T& imag(complex<T> &x) {return x.imag();}
     template<typename T> [[gnu::target("avx2")]] T const real(complex<T> const& x) {return x.real();}
@@ -47,7 +47,7 @@ namespace cp_algo {
         return complex<T>::polar(r, theta);
     }
     template<typename T>
-    std::ostream& operator << (std::ostream &out, complex<T> x) {
+    std::ostream& operator << (std::ostream &out, complex<T> const& x) {
         return out << x.real() << ' ' << x.imag();
     }
 }

@@ -13,9 +13,9 @@
 #include <vector>
 #include <list>
 namespace cp_algo::math {
-    template<typename T, class Alloc = big_alloc<T>>
+    template<typename T>
     struct poly_t {
-        using Vector = std::vector<T, Alloc>;
+        using Vector = big_vector<T>;
         using base = T;
         Vector a;
         
@@ -464,7 +464,7 @@ namespace cp_algo::math {
             return (p_over_q * q).mod_xk_inplace(n).reverse(n);
         }
 
-        static poly_t build(std::vector<poly_t> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
+        static poly_t build(big_vector<poly_t> &res, int v, auto L, auto R) { // builds evaluation tree for (x-a1)(x-a2)...(x-an)
             if(R - L == 1) {
                 return res[v] = Vector{-*L, 1};
             } else {
@@ -473,7 +473,7 @@ namespace cp_algo::math {
             }
         }
 
-        poly_t to_newton(std::vector<poly_t> &tree, int v, auto l, auto r) {
+        poly_t to_newton(big_vector<poly_t> &tree, int v, auto l, auto r) {
             if(r - l == 1) {
                 return *this;
             } else {
@@ -489,12 +489,12 @@ namespace cp_algo::math {
                 return *this;
             }
             size_t n = p.size();
-            std::vector<poly_t> tree(4 * n);
+            big_vector<poly_t> tree(4 * n);
             build(tree, 1, begin(p), end(p));
             return to_newton(tree, 1, begin(p), end(p));
         }
 
-        Vector eval(std::vector<poly_t> &tree, int v, auto l, auto r) { // auxiliary evaluation function
+        Vector eval(big_vector<poly_t> &tree, int v, auto l, auto r) { // auxiliary evaluation function
             if(r - l == 1) {
                 return {eval(*l)};
             } else {
@@ -511,12 +511,12 @@ namespace cp_algo::math {
             if(is_zero()) {
                 return Vector(n, T(0));
             }
-            std::vector<poly_t> tree(4 * n);
+            big_vector<poly_t> tree(4 * n);
             build(tree, 1, begin(x), end(x));
             return eval(tree, 1, begin(x), end(x));
         }
         
-        poly_t inter(std::vector<poly_t> &tree, int v, auto ly, auto ry) { // auxiliary interpolation function
+        poly_t inter(big_vector<poly_t> &tree, int v, auto ly, auto ry) { // auxiliary interpolation function
             if(ry - ly == 1) {
                 return {*ly / a[0]};
             } else {
@@ -529,7 +529,7 @@ namespace cp_algo::math {
         
         static auto inter(Vector x, Vector y) { // interpolates minimum polynomial from (xi, yi) pairs
             size_t n = x.size();
-            std::vector<poly_t> tree(4 * n);
+            big_vector<poly_t> tree(4 * n);
             return build(tree, 1, begin(x), end(x)).deriv().inter(tree, 1, begin(y), end(y));
         }
 
@@ -670,7 +670,7 @@ namespace cp_algo::math {
         // compute A(B(x)) mod x^n in O(n^2)
         static poly_t compose(poly_t A, poly_t B, int n) {
             int q = std::sqrt(n);
-            std::vector<poly_t> Bk(q);
+            big_vector<poly_t> Bk(q);
             auto Bq = B.pow(q, n);
             Bk[0] = poly_t(T(1));
             for(int i = 1; i < q; i++) {
@@ -701,7 +701,7 @@ namespace cp_algo::math {
             auto [B0, B1] = std::make_pair(B.mod_xk(q), B.div_xk(q));
             
             B0 = B0.div_xk(1);
-            std::vector<poly_t> pw(A.deg() + 1);
+            big_vector<poly_t> pw(A.deg() + 1);
             auto getpow = [&](int k) {
                 return pw[k].is_zero() ? pw[k] = B0.pow(k, n - k) : pw[k];
             };
@@ -724,7 +724,7 @@ namespace cp_algo::math {
             
             poly_t ans = T(0);
             
-            std::vector<poly_t> B1p(r + 1);
+            big_vector<poly_t> B1p(r + 1);
             B1p[0] = poly_t(T(1));
             for(int i = 1; i <= r; i++) {
                 B1p[i] = (B1p[i - 1] * B1.mod_xk(n - i * q)).mod_xk(n - i * q);

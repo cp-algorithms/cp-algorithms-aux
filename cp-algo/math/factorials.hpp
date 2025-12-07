@@ -9,7 +9,7 @@
 
 namespace cp_algo::math {
     template<bool use_bump_alloc = false, int maxn = -1>
-    auto facts(auto const& args) {
+    [[gnu::target("avx2")]] auto facts(auto const& args) {
         static_assert(!use_bump_alloc || maxn > 0, "maxn must be set if use_bump_alloc is true");
         constexpr int max_mod = 1'000'000'000;
         constexpr int accum = 4;
@@ -27,7 +27,7 @@ namespace cp_algo::math {
         constexpr int limit_reg = max_mod / 64;
         int limit_odd = 0;
 
-        std::vector<base, big_alloc<base>> res(size(args), 1);
+        big_vector<base> res(size(args), 1);
         const int mod = base::mod();
         const int imod = -math::inv2(mod);
         for(auto [i, xy]: std::views::zip(args, res) | std::views::enumerate) {
@@ -56,13 +56,10 @@ namespace cp_algo::math {
                 static std::array<u32x8, subblock> prods[accum];
                 for(int z = 0; z < accum; z++) {
                     for(int j = 0; j < simd_size; j++) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                         cur[z][j] = uint32_t(b + z * block + j * subblock);
                         cur[z][j] = proj(cur[z][j]);
                         prods[z][0][j] = cur[z][j] + !cur[z][j];
                         prods[z][0][j] = uint32_t(uint64_t(prods[z][0][j]) * bi2x32.getr() % mod);
-#pragma GCC diagnostic pop
                     }
                 }
                 for(int i = 1; i < block / simd_size; i++) {

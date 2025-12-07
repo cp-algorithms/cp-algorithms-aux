@@ -6,7 +6,7 @@
 
 namespace cp_algo::math::fft {
     struct dft64 {
-        std::vector<cp_algo::math::fft::cvector> cv;
+        big_vector<cp_algo::math::fft::cvector> cv;
 
         static uint64_t factor, ifactor;
         static bool _init;
@@ -46,6 +46,21 @@ namespace cp_algo::math::fft {
             }
         }
 
+        [[gnu::target("avx2")]] static void do_dot_iter(point rt, std::array<vpoint, 4>& B, std::array<vpoint, 4> const& A, std::array<vpoint, 4>& C) {
+            for(size_t k = 0; k < 4; k++) {
+                for(size_t i = 0; i <= k; i++) {
+                    C[k] += A[i] * B[k - i];
+                }
+            }
+            for(size_t k = 0; k < 4; k++) {
+                real(B[k]) = rotate_right(real(B[k]));
+                imag(B[k]) = rotate_right(imag(B[k]));
+                auto bx = real(B[k])[0], by = imag(B[k])[0];
+                real(B[k])[0] = bx * real(rt) - by * imag(rt);
+                imag(B[k])[0] = bx * imag(rt) + by * real(rt);
+            }
+        }
+
         void dot(dft64 const& t) {
             size_t N = cv[0].size();
             cvector::exec_on_evals<1>(N / flen, [&](size_t k, point rt) {
@@ -69,18 +84,7 @@ namespace cp_algo::math::fft {
                         vpoint{vz + A2x[i], vz + A2y[i]},
                         vpoint{vz + A3x[i], vz + A3y[i]}
                     };
-                    for(size_t k = 0; k < 4; k++) {
-                        for(size_t i = 0; i <= k; i++) {
-                            C[k] += A[i] * B[k - i];
-                        }
-                    }
-                    for(size_t k = 0; k < 4; k++) {
-                        real(B[k]) = rotate_right(real(B[k]));
-                        imag(B[k]) = rotate_right(imag(B[k]));
-                        auto bx = real(B[k])[0], by = imag(B[k])[0];
-                        real(B[k])[0] = bx * real(rt) - by * imag(rt);
-                        imag(B[k])[0] = bx * imag(rt) + by * real(rt);
-                    }
+                    do_dot_iter(rt, B, A, C);
                 }
                 cv[0].at(k) = C[0];
                 cv[1].at(k) = C[1];

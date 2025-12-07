@@ -187,13 +187,13 @@ namespace cp_algo::math::fft {
         [[gnu::target("avx2")]] void mul(auto const& B, auto& res, size_t k) {
             mul(cvector(B.A), B.B, res, k);
         }
-        std::vector<base, big_alloc<base>> operator *= (dft &B) {
-            std::vector<base, big_alloc<base>> res(2 * A.size());
+        big_vector<base> operator *= (dft &B) {
+            big_vector<base> res(2 * A.size());
             mul_inplace(B, res, 2 * A.size());
             return res;
         }
-        std::vector<base, big_alloc<base>> operator *= (dft const& B) {
-            std::vector<base, big_alloc<base>> res(2 * A.size());
+        big_vector<base> operator *= (dft const& B) {
+            big_vector<base> res(2 * A.size());
             mul(B, res, 2 * A.size());
             return res;
         }
@@ -285,7 +285,7 @@ namespace cp_algo::math::fft {
         using base = std::decay_t<decltype(a[0])>;
         dft<base>::init();
         if(k <= (1 << 16)) {
-            std::vector<base, big_alloc<base>> ap(begin(a), end(a));
+            big_vector<base> ap(begin(a), end(a));
             mul_truncate(ap, b, 2 * k);
             mod_split(ap, k, bpow(dft<base>::factor, k));
             std::ranges::copy(ap | std::views::take(k), begin(a));

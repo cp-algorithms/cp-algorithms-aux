@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_MATH_COMBINATORICS_HPP
 #define CP_ALGO_MATH_COMBINATORICS_HPP
 #include "../math/common.hpp"
+#include "../util/big_alloc.hpp"
 #include <cassert>
 #include <ranges>
 namespace cp_algo::math {
@@ -8,7 +9,7 @@ namespace cp_algo::math {
     // Beware of usage with dynamic mod
     template<typename T>
     T fact(auto n) {
-        static std::vector<T> F(maxn);
+        static big_vector<T> F(maxn);
         static bool init = false;
         if(!init) {
             F[0] = T(1);
@@ -22,7 +23,7 @@ namespace cp_algo::math {
     // Only works for modint types
     template<typename T>
     T rfact(auto n) {
-        static std::vector<T> F(maxn);
+        static big_vector<T> F(maxn);
         static bool init = false;
         if(!init) {
             int t = (int)std::min<int64_t>(T::mod(), maxn) - 1;
@@ -36,8 +37,8 @@ namespace cp_algo::math {
     }
     template<typename T, int base>
     T pow_fixed(int n) {
-        static std::vector<T> prec_low(1 << 16);
-        static std::vector<T> prec_high(1 << 16);
+        static big_vector<T> prec_low(1 << 16);
+        static big_vector<T> prec_high(1 << 16);
         static bool init = false;
         if(!init) {
             init = true;
@@ -52,8 +53,8 @@ namespace cp_algo::math {
         return prec_low[n & 0xFFFF] * prec_high[n >> 16];
     }
     template<typename T>
-    std::vector<T> bulk_invs(auto const& args) {
-        std::vector<T> res(std::size(args), args[0]);
+    big_vector<T> bulk_invs(auto const& args) {
+        big_vector<T> res(std::size(args), args[0]);
         for(size_t i = 1; i < std::size(args); i++) {
             res[i] = res[i - 1] * args[i];
         }

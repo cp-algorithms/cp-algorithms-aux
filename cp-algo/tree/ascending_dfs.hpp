@@ -24,9 +24,9 @@ namespace cp_algo::graph {
     }
     // XOR-based DFS that tracks the remaining incident edge via XOR.
     template<undirected_graph_type graph>
-    auto xor_dfs(graph const& tree, auto &&callback, node_index root = 0) {
-        std::vector<edge_index> neig_xor(tree.n());
-        std::vector<int> degree(tree.n());
+    big_vector<edge_index> xor_dfs(graph const& tree, auto &&callback, node_index root = 0) {
+        big_vector<edge_index> neig_xor(tree.n());
+        big_vector<int> degree(tree.n());
         for (auto v : tree.nodes()) {
             degree[v] = (int)std::ranges::distance(tree.outgoing(v));
         }
@@ -47,7 +47,7 @@ namespace cp_algo::graph {
     }
     // DFS that uses a precomputed parent-edge array.
     template<undirected_graph_type graph>
-    void parent_dfs(graph const& tree, std::vector<edge_index> const& parent, auto &&callback) {
+    void parent_dfs(graph const& tree, auto const& parent, auto &&callback) {
         std::vector<int> degree(tree.n());
         node_index root = -1;
         for (auto [v, e] : parent | std::views::enumerate) {

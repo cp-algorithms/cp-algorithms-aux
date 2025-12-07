@@ -5,8 +5,8 @@
 #include <queue>
 namespace cp_algo::graph {
     struct shortest_path_context {
-        std::vector<int64_t> dist;
-        std::vector<edge_index> pre;
+        big_vector<int64_t> dist;
+        big_vector<edge_index> pre;
         static constexpr int64_t inf = 1e18;
         shortest_path_context(int n)
             : dist(n, inf), pre(n) {}
@@ -42,7 +42,7 @@ namespace cp_algo::graph {
 
     struct spfa_context: shortest_path_context {
         std::queue<node_index> que;
-        std::vector<char> flags;
+        big_vector<char> flags;
         static constexpr char in_queue = 1;
         static constexpr char invalidated = 2;
 
@@ -73,7 +73,7 @@ namespace cp_algo::graph {
             edge_index e;
             node_index v;
         };
-        std::vector<std::basic_string<traverse_edge>> dependents;
+        big_vector<std::basic_string<traverse_edge>> dependents;
 
         deep_spfa_context(int n) : spfa_context(n), dependents(n) {}
 
@@ -85,7 +85,7 @@ namespace cp_algo::graph {
         }
 
         void invalidate_subtree(node_index v) {
-            std::vector<node_index> to_invalidate = {v};
+            big_vector<node_index> to_invalidate = {v};
             while (!empty(to_invalidate)) {
                 node_index u = to_invalidate.back();
                 to_invalidate.pop_back();
@@ -144,8 +144,8 @@ namespace cp_algo::graph {
         return negative_edges ? deep_spfa(g, s) : dijkstra(g, s);
     }
 
-    std::vector<edge_index> recover_path(auto const& g, auto const& pre, node_index s, node_index t) {
-        std::vector<edge_index> path;
+    big_vector<edge_index> recover_path(auto const& g, auto const& pre, node_index s, node_index t) {
+        big_vector<edge_index> path;
         node_index v = t;
         while(v != s) {
             path.push_back(pre[v]);
@@ -156,7 +156,7 @@ namespace cp_algo::graph {
     }
 
     template<weighted_graph_type graph>
-    std::optional<std::pair<int64_t, std::vector<edge_index>>> shortest_path(graph const& g, node_index s, node_index t) {
+    std::optional<std::pair<int64_t, big_vector<edge_index>>> shortest_path(graph const& g, node_index s, node_index t) {
         auto [dist, pre] = single_source_shortest_path(g, s);
         if (dist[t] == shortest_path_context::inf) {
             return std::nullopt;

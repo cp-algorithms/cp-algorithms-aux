@@ -15,10 +15,10 @@ namespace cp_algo::linalg {
         math::modint_type<base_t>,
         modint_vec<base_t>,
         vec<base_t>>>
-    struct matrix: std::vector<_vec_t> {
+    struct matrix: big_vector<_vec_t> {
         using vec_t = _vec_t;
         using base = base_t;
-        using Base = std::vector<vec_t>;
+        using Base = big_vector<vec_t>;
         using Base::Base;
 
         matrix(size_t n): Base(n, vec_t(n)) {}
@@ -90,7 +90,7 @@ namespace cp_algo::linalg {
             }
         }
 
-        static matrix block_diagonal(std::vector<matrix> const& blocks) {
+        static matrix block_diagonal(big_vector<matrix> const& blocks) {
             size_t n = 0;
             for(auto &it: blocks) {
                 assert(it.n() == it.m());
@@ -283,7 +283,7 @@ namespace cp_algo::linalg {
         // variables into pivots and free
         auto sort_classify(size_t lim) {
             size_t rk = 0;
-            std::vector<size_t> free, pivots;
+            big_vector<size_t> free, pivots;
             for(size_t j = 0; j < lim; j++) {
                 for(size_t i = rk + 1; i < n() && row(rk)[j] == base(0); i++) {
                     if(row(i)[j] != base(0)) {

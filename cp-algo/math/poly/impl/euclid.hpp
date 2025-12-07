@@ -46,7 +46,7 @@ namespace cp_algo::math::poly::impl {
     gcd_result<poly> full_gcd(poly &&A, poly &&B) {
         using poly_t = std::decay_t<poly>;
         std::list<poly_t> ak;
-        std::vector<linfrac<poly_t>> trs;
+        big_vector<linfrac<poly_t>> trs;
         while(!B.is_zero()) {
             auto [a0, R] = A.divmod(B);
             ak.push_back(a0);

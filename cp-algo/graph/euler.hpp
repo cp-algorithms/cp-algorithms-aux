@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_GRAPH_EULER_HPP
 #define CP_ALGO_GRAPH_EULER_HPP
 #include "base.hpp"
+#include "../util/big_alloc.hpp"
 #include <algorithm>
 #include <iostream>
 #include <optional>
@@ -10,7 +11,7 @@
 namespace cp_algo::graph {
     template<graph_type graph>
     std::optional<node_index> euler_start(graph const& g) {
-        std::vector<int> deg(g.n());
+        big_vector<int> deg(g.n());
         std::optional<node_index> default_start = 0;
         for(auto v: g.nodes()) {
             for(auto e: g.outgoing(v)) {
@@ -47,7 +48,7 @@ namespace cp_algo::graph {
     std::deque<edge_index> try_euler_trail(graph const& g, node_index v0) {
         std::deque<edge_index> trail;
         enum state { unvisited, visited };
-        std::vector<state> state(g.m());
+        big_vector<state> state(g.m());
         auto const& adj = g.incidence_lists();
         auto head = adj.head;
         

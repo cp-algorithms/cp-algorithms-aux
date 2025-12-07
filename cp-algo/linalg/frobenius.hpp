@@ -16,8 +16,8 @@ namespace cp_algo::linalg {
         using polyn = math::poly_t<base>;
         assert(A.n() == A.m());
         size_t n = A.n();
-        std::vector<polyn> charps;
-        std::vector<vec_t> basis, basis_init;
+        big_vector<polyn> charps;
+        big_vector<vec_t> basis, basis_init;
         while(size(basis) < n) {
             size_t start = size(basis);
             auto generate_block = [&](auto x) {
@@ -78,7 +78,7 @@ namespace cp_algo::linalg {
     template<typename base>
     auto with_frobenius(matrix<base> const& A, auto &&callback) {
         auto [T, Tinv, charps] = frobenius_form<full>(A);
-        std::vector<matrix<base>> blocks;
+        big_vector<matrix<base>> blocks;
         for(auto charp: charps) {
             matrix<base> block(charp.deg());
             auto xk = callback(charp);

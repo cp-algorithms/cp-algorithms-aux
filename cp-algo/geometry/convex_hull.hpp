@@ -1,19 +1,19 @@
 #ifndef CP_ALGO_GEOMETRY_CONVEX_HULL_HPP
 #define CP_ALGO_GEOMETRY_CONVEX_HULL_HPP
 #include "point.hpp"
+#include "../util/big_alloc.hpp"
 #include <algorithm>
 #include <utility>
 #include <vector>
 #include <ranges>
 namespace cp_algo::geometry {
-    template<typename ftype>
-    std::vector<point_t<ftype>> convex_hull(std::vector<point_t<ftype>> r) {
-        using point = point_t<ftype>;
+    auto convex_hull(auto r) {
+        using point = std::decay_t<decltype(r[0])>;
         std::ranges::sort(r);
         if(size(r) <= 1 || r[0] == r.back()) {
-            return empty(r) ? r : std::vector{r[0]};
+            return empty(r) ? big_vector<point>{} : big_vector{r[0]};
         }
-        std::vector<point> hull = {r[0]};
+        big_vector<point> hull = {r[0]};
         for(int half: {0, 1}) {
             size_t base = size(hull);
             for(auto it: std::views::drop(r, 1)) {

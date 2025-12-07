@@ -10,7 +10,7 @@ using namespace std;
 using namespace cp_algo::graph;
 
 template<weighted_undirected_graph_type graph>
-std::tuple<int64_t, node_index, std::vector<edge_index>> tree_diameter(graph const& g) {
+std::tuple<int64_t, node_index, cp_algo::big_vector<edge_index>> tree_diameter(graph const& g) {
     auto [d1, _] = spfa(g, 0);
     node_index s = 0;
     for(auto v: g.nodes()) {

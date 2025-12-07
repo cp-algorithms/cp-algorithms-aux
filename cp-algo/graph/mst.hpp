@@ -6,12 +6,12 @@
 #include <algorithm>
 namespace cp_algo::graph {
     template<weighted_undirected_graph_type graph>
-    std::pair<int64_t, std::vector<edge_index>> mst(graph const& g) {
+    std::pair<int64_t, big_vector<edge_index>> mst(graph const& g) {
         struct edge {
             edge_index idx;
             node_index v;
         };
-        std::vector<edge> edges;
+        big_vector<edge> edges;
         for(auto v: g.nodes()) {
             for(auto e: g.outgoing(v)) {
                 if (v < g.edge(e).traverse(v)) {
@@ -24,7 +24,7 @@ namespace cp_algo::graph {
         });
         structures::dsu me(g.n());
         int64_t total = 0;
-        std::vector<edge_index> mst;
+        big_vector<edge_index> mst;
         for(auto [idx, v]: edges) {
             if(me.uni(v, g.edge(idx).traverse(v))) {
                 total += g.edge(idx).w;

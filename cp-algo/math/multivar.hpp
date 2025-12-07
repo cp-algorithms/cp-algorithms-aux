@@ -6,9 +6,9 @@
 namespace cp_algo::math::fft {
     template<modint_type base>
     struct multivar {
-        std::vector<base, cp_algo::big_alloc<base>> data;
-        std::vector<size_t, cp_algo::big_alloc<size_t>> ranks;
-        std::vector<size_t> dim;
+        big_vector<base> data;
+        big_vector<size_t> ranks;
+        big_vector<size_t> dim;
         size_t N;
         size_t rank(size_t i) {
             size_t cur = 1, res = 0, K = size(dim);
@@ -18,7 +18,7 @@ namespace cp_algo::math::fft {
             }
             return res % K;
         }
-        multivar(std::vector<size_t> const& dim): dim(dim), N(
+        multivar(auto const& dim): dim(begin(dim), end(dim)), N(
             std::ranges::fold_left(dim, 1, std::multiplies{})
         ) {
             data.resize(N);
@@ -48,7 +48,7 @@ namespace cp_algo::math::fft {
                 data[0] *= b.data[0];
                 return;
             }
-            std::vector<dft<base>> A, B;
+            big_vector<dft<base>> A, B;
             size_t M = std::max(flen, std::bit_ceil(2 * N - 1) / 2);
             for(size_t i = 0; i < K; i++) {
                 A.emplace_back(data | std::views::enumerate | std::views::transform(
@@ -72,7 +72,7 @@ namespace cp_algo::math::fft {
                     A[j].template dot<false, false>(B[tj].A, B[tj].B, C.A, C.B, X);
                 }
                 checkpoint("dot");
-                std::vector<base, cp_algo::big_alloc<base>> res((N + flen - 1) / flen * flen);
+                big_vector<base> res((N + flen - 1) / flen * flen);
                 C.A.template ifft<false>();
                 C.B.template ifft<false>();
                 X.template ifft<false>();

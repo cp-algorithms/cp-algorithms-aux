@@ -21,12 +21,12 @@ void semicorr(auto &a, auto &b) {
     a.ifft();
 }
 
-auto is_integer(auto a) {
+[[gnu::target("avx2")]] auto is_integer(auto a) {
     static const ftype eps = 1e-9;
     return cp_algo::abs(a - cp_algo::round(a)) < eps;
 }
 
-string matches(string const& A, string const& B, char wild = '*') {
+[[gnu::target("avx2")]] string matches(string const& A, string const& B, char wild = '*') {
     static ftype project[2][128];
     static bool init = false;
     if(!init) {

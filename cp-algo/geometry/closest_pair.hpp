@@ -1,14 +1,14 @@
 #ifndef CP_ALGO_GEOMETRY_CLOSEST_PAIR_HPP
 #define CP_ALGO_GEOMETRY_CLOSEST_PAIR_HPP
 #include "../random/rng.hpp"
+#include "../util/big_alloc.hpp"
 #include "point.hpp"
 #include <vector>
 #include <map>
 namespace cp_algo::geometry {
     // Rabin & Lipton
-    template<typename ftype>
-    auto closest_pair(std::vector<point_t<ftype>> const& r) {
-        using point = point_t<ftype>;
+    auto closest_pair(auto const& r) {
+        using point = std::decay_t<decltype(r[0])>;
         size_t n = size(r);
         int64_t md = 1e18;
         for(size_t i = 0; i < n / 100; i++) {
@@ -21,7 +21,7 @@ namespace cp_algo::geometry {
                 }
             }
         }
-        std::map<point, std::vector<size_t>> neigs;
+        std::map<point, big_vector<size_t>> neigs;
         md = (int64_t)ceil(sqrt((double)md));
         for(size_t i = 0; i < n; i++) {
             neigs[r[i] / md].push_back(i);

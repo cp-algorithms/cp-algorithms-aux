@@ -20,7 +20,7 @@ namespace cp_algo::math::fft {
     }
 
     struct cvector {
-        std::vector<vpoint, big_alloc<vpoint>> r;
+        big_vector<vpoint> r;
         cvector(size_t n) {
             n = std::max(flen, std::bit_ceil(n));
             r.resize(n / flen);

@@ -291,7 +291,7 @@ namespace cp_algo::math {
             rhs->coeff(rhs_need);
 
             // Build aligned prefixes starting at operand offsets
-            std::vector<T, big_alloc<T>> la(new_size), rb(new_size);
+            big_vector<T> la(new_size), rb(new_size);
             for(int i = 0; i < new_size; i++) {
                 la[i] = lhs->coeff(lhs->offset() + i);
                 rb[i] = rhs->coeff(rhs->offset() + i);

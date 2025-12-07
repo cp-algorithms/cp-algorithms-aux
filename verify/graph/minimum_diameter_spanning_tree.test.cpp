@@ -13,7 +13,7 @@ using namespace cp_algo::graph;
 template<weighted_undirected_graph_type graph>
 auto minimum_diameter_spanning_tree(graph const& g) {
     int64_t min_diameter = shortest_path_context::inf;
-    std::vector<edge_index> best_edges;
+    cp_algo::big_vector<edge_index> best_edges;
     for(auto v: g.nodes()) {
         auto [_, p] = dijkstra(g, v);
         auto d = tree_diameter(g, &p);

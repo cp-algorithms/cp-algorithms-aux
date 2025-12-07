@@ -5,10 +5,10 @@
 #include <string>
 #include <map>
 namespace cp_algo {
-    std::map<std::string, double> checkpoints;
     template<bool final = false>
-    void checkpoint([[maybe_unused]] std::string const& msg = "") {
+    void checkpoint([[maybe_unused]] auto const& msg = "") {
 #ifdef CP_ALGO_CHECKPOINT
+        static std::map<std::string, double> checkpoints;
         static double last = 0;
         double now = (double)clock() / CLOCKS_PER_SEC;
         double delta = now - last;

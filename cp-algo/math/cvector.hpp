@@ -115,7 +115,7 @@ namespace cp_algo::math::fft {
             checkpoint("dot");
         }
         template<bool partial = true>
-        void ifft() {
+        [[gnu::target("avx2")]] void ifft() {
             size_t n = size();
             if constexpr (!partial) {
                 point pi(0, 1);
@@ -177,7 +177,7 @@ namespace cp_algo::math::fft {
             }
         }
         template<bool partial = true>
-        void fft() {
+        [[gnu::target("avx2")]] void fft() {
             size_t n = size();
             bool parity = std::countr_zero(n) % 2;
             for(size_t leaf = 0; leaf < n; leaf += 4 * flen) {

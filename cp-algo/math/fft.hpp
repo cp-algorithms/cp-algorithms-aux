@@ -125,7 +125,7 @@ namespace cp_algo::math::fft {
             checkpoint("dot");
         }
 
-        void dot(auto &&C, auto const& D) {
+        [[gnu::target("avx2")]] void dot(auto &&C, auto const& D) {
             dot(C, D, A, B, C);
         }
 
@@ -209,7 +209,7 @@ namespace cp_algo::math::fft {
     template<modint_type base> uint32_t dft<base>::mod = {};
     template<modint_type base> uint32_t dft<base>::imod = {};
     
-    void mul_slow(auto &a, auto const& b, size_t k) {
+    [[gnu::target("avx2")]] void mul_slow(auto &a, auto const& b, size_t k) {
         if(std::empty(a) || std::empty(b)) {
             a.clear();
         } else {
@@ -230,7 +230,7 @@ namespace cp_algo::math::fft {
         }
         return std::max(flen, std::bit_ceil(as + bs - 1) / 2);
     }
-    void mul_truncate(auto &a, auto const& b, size_t k) {
+    [[gnu::target("avx2")]] void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
         if(std::min({k, std::size(a), std::size(b)}) < magic) {
             mul_slow(a, b, k);
@@ -279,7 +279,7 @@ namespace cp_algo::math::fft {
         }
         cp_algo::checkpoint("mod split");
     }
-    void cyclic_mul(auto &a, auto &&b, size_t k) {
+    [[gnu::target("avx2")]] void cyclic_mul(auto &a, auto &&b, size_t k) {
         assert(std::popcount(k) == 1);
         assert(std::size(a) == std::size(b) && std::size(a) == k);
         using base = std::decay_t<decltype(a[0])>;
@@ -312,13 +312,13 @@ namespace cp_algo::math::fft {
         }
         cp_algo::checkpoint("mod join");
     }
-    auto make_copy(auto &&x) {
+    [[gnu::target("avx2")]] auto make_copy(auto &&x) {
         return x;
     }
-    void cyclic_mul(auto &a, auto const& b, size_t k) {
+    [[gnu::target("avx2")]] void cyclic_mul(auto &a, auto const& b, size_t k) {
         return cyclic_mul(a, make_copy(b), k);
     }
-    void mul(auto &a, auto &&b) {
+    [[gnu::target("avx2")]] void mul(auto &a, auto &&b) {
         size_t N = size(a) + size(b);
         if(N > (1 << 20)) {
             N--;
@@ -331,7 +331,7 @@ namespace cp_algo::math::fft {
             mul_truncate(a, b, N - 1);
         }
     }
-    void mul(auto &a, auto const& b) {
+    [[gnu::target("avx2")]] void mul(auto &a, auto const& b) {
         size_t N = size(a) + size(b);
         if(N > (1 << 20)) {
             mul(a, make_copy(b));

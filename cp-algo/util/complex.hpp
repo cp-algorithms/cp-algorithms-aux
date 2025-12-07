@@ -12,38 +12,38 @@ namespace cp_algo {
         constexpr complex(): x(), y() {}
         constexpr complex(T const& x): x(x), y() {}
         constexpr complex(T const& x, T const& y): x(x), y(y) {}
-        complex& operator *= (T const& t) {x *= t; y *= t; return *this;}
-        complex& operator /= (T const& t) {x /= t; y /= t; return *this;}
-        complex operator * (T const& t) const {return complex(*this) *= t;}
-        complex operator / (T const& t) const {return complex(*this) /= t;}
-        complex& operator += (complex const& t) {x += t.x; y += t.y; return *this;}
-        complex& operator -= (complex const& t) {x -= t.x; y -= t.y; return *this;}
-        complex operator * (complex const& t) const {return {x * t.x - y * t.y, x * t.y + y * t.x};}
-        complex operator / (complex const& t) const {return *this * t.conj() / t.norm();}
-        complex operator + (complex const& t) const {return complex(*this) += t;}
-        complex operator - (complex const& t) const {return complex(*this) -= t;}
-        complex& operator *= (complex const& t) {return *this = *this * t;}
-        complex& operator /= (complex const& t) {return *this = *this / t;}
-        complex operator - () const {return {-x, -y};}
-        complex conj() const {return {x, -y};}
-        T norm() const {return x * x + y * y;}
-        T abs() const {return std::sqrt(norm());}
+        [[gnu::target("avx2")]] complex& operator *= (T const& t) {x *= t; y *= t; return *this;}
+        [[gnu::target("avx2")]] complex& operator /= (T const& t) {x /= t; y /= t; return *this;}
+        [[gnu::target("avx2")]] complex operator * (T const& t) const {return complex(*this) *= t;}
+        [[gnu::target("avx2")]] complex operator / (T const& t) const {return complex(*this) /= t;}
+        [[gnu::target("avx2")]] complex& operator += (complex const& t) {x += t.x; y += t.y; return *this;}
+        [[gnu::target("avx2")]] complex& operator -= (complex const& t) {x -= t.x; y -= t.y; return *this;}
+        [[gnu::target("avx2")]] complex operator * (complex const& t) const {return {x * t.x - y * t.y, x * t.y + y * t.x};}
+        [[gnu::target("avx2")]] complex operator / (complex const& t) const {return *this * t.conj() / t.norm();}
+        [[gnu::target("avx2")]] complex operator + (complex const& t) const {return complex(*this) += t;}
+        [[gnu::target("avx2")]] complex operator - (complex const& t) const {return complex(*this) -= t;}
+        [[gnu::target("avx2")]] complex& operator *= (complex const& t) {return *this = *this * t;}
+        [[gnu::target("avx2")]] complex& operator /= (complex const& t) {return *this = *this / t;}
+        [[gnu::target("avx2")]] complex operator - () const {return {-x, -y};}
+        [[gnu::target("avx2")]] complex conj() const {return {x, -y};}
+        [[gnu::target("avx2")]] T norm() const {return x * x + y * y;}
+        [[gnu::target("avx2")]] T abs() const {return std::sqrt(norm());}
         [[gnu::target("avx2")]] T const real() const {return x;}
         [[gnu::target("avx2")]] T const imag() const {return y;}
-        T& real() {return x;}
-        T& imag() {return y;}
-        static constexpr complex polar(T r, T theta) {return {T(r * cos(theta)), T(r * sin(theta))};}
-        auto operator <=> (complex const& t) const = default;
+        [[gnu::target("avx2")]] T& real() {return x;}
+        [[gnu::target("avx2")]] T& imag() {return y;}
+        [[gnu::target("avx2")]] static constexpr complex polar(T r, T theta) {return {T(r * cos(theta)), T(r * sin(theta))};}
+        [[gnu::target("avx2")]] auto operator <=> (complex const& t) const = default;
     };
-    template<typename T> complex<T> conj(complex<T> const& x) {return x.conj();}
-    template<typename T> T norm(complex<T> const& x) {return x.norm();}
-    template<typename T> T abs(complex<T> const& x) {return x.abs();}
-    template<typename T> T& real(complex<T> &x) {return x.real();}
-    template<typename T> T& imag(complex<T> &x) {return x.imag();}
+    template<typename T> [[gnu::target("avx2")]] complex<T> conj(complex<T> const& x) {return x.conj();}
+    template<typename T> [[gnu::target("avx2")]] T norm(complex<T> const& x) {return x.norm();}
+    template<typename T> [[gnu::target("avx2")]] T abs(complex<T> const& x) {return x.abs();}
+    template<typename T> [[gnu::target("avx2")]] T& real(complex<T> &x) {return x.real();}
+    template<typename T> [[gnu::target("avx2")]] T& imag(complex<T> &x) {return x.imag();}
     template<typename T> [[gnu::target("avx2")]] T const real(complex<T> const& x) {return x.real();}
     template<typename T> [[gnu::target("avx2")]] T const imag(complex<T> const& x) {return x.imag();}
     template<typename T>
-    constexpr complex<T> polar(T r, T theta) {
+    [[gnu::target("avx2")]] constexpr complex<T> polar(T r, T theta) {
         return complex<T>::polar(r, theta);
     }
     template<typename T>

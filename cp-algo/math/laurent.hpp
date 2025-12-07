@@ -6,6 +6,11 @@
 #include <vector>
 #include <cassert>
 #include <algorithm>
+#include <type_traits>
+#include <bit>
+
+#include "cvector.hpp"
+#include "convolution.hpp"
 
 namespace cp_algo::math {
     // Base provider interface for lazy coefficient evaluation
@@ -17,8 +22,12 @@ namespace cp_algo::math {
         mutable bool all_cached = false; // True if all non-zero coeffs are cached
         
         virtual ~provider() = default;
-        virtual std::optional<int> valuation() const { return std::nullopt; }
-        virtual std::optional<int> degree() const { return std::nullopt; }
+        virtual int offset() const { return 0; }
+        
+        // Returns true if this provider requires lazy evaluation (coefficients must be
+        // computed in order). False means dependencies can be bulk-cached for FFT.
+        // Examples: multiply needs lazy eval, add/subtract/negate/scale don't.
+        virtual bool needs_lazy_eval() const { return false; }
         
         // Compute k-th coefficient lazily without caching
         virtual T coeff_lazy(int k) const = 0;
@@ -29,16 +38,6 @@ namespace cp_algo::math {
             int old_size = cache.size();
             int new_size = old_size == 0 ? 1 : 2 * old_size;
             
-            // Check if we have a known degree
-            if(auto deg = degree()) {
-                int max_idx = *deg - cache_offset;
-                if(max_idx < new_size) {
-                    // All coefficients fit, just cache them all
-                    new_size = max_idx + 1;
-                    all_cached = true;
-                }
-            }
-            
             cache.resize(new_size);
             for(int i = old_size; i < new_size; i++) {
                 cache[i] = coeff_lazy(cache_offset + i);
@@ -48,8 +47,7 @@ namespace cp_algo::math {
         // Get coefficient with caching and doubling (default implementation)
         virtual T coeff(int k) const {
             if(!initialized) {
-                auto v = valuation();
-                cache_offset = v ? *v : 0;
+                cache_offset = offset();
                 initialized = true;
             }
             
@@ -63,19 +61,26 @@ namespace cp_algo::math {
                 return T(0);
             }
             
-            // Extend cache by doubling until we have enough
-            while(idx >= (int)cache.size() && !all_cached) {
-                double_up();
+            if(needs_lazy_eval()) {
+                // Sequentially extend cache to the requested index
+                while(idx >= (int)cache.size() && !all_cached) {
+                    int next_k = cache_offset + (int)cache.size();
+                    cache.push_back(coeff_lazy(next_k));
+                }
+            } else {
+                // Extend cache by doubling until we have enough
+                while(idx >= (int)cache.size() && !all_cached) {
+                    double_up();
+                }
             }
             
-            // Should have the coefficient now
             if(idx < (int)cache.size()) {
                 return cache[idx];
             }
             
             return T(0);
         }
-        
+
         // Alias for backwards compatibility
         T get(int k) const {
             return coeff(k);
@@ -90,12 +95,8 @@ namespace cp_algo::math {
         
         constant_provider(T value, int offset = 0) : value(value), offset(offset) {}
         
-        std::optional<int> valuation() const override {
-            return value != T(0) ? std::optional<int>(offset) : std::nullopt;
-        }
-        
-        std::optional<int> degree() const override {
-            return value != T(0) ? std::optional<int>(offset) : std::nullopt;
+        int offset() const override {
+            return offset;
         }
         
         T coeff_lazy(int k) const override {
@@ -134,14 +135,8 @@ namespace cp_algo::math {
             this->all_cached = true;
         }
         
-        std::optional<int> valuation() const override {
-            if(this->cache.empty()) return std::nullopt;
+        int offset() const override {
             return this->cache_offset;
-        }
-        
-        std::optional<int> degree() const override {
-            if(this->cache.empty()) return std::nullopt;
-            return this->cache_offset + (int)this->cache.size() - 1;
         }
         
         T coeff_lazy(int k) const override {
@@ -167,12 +162,8 @@ namespace cp_algo::math {
         
         virtual T transform(T const& a) const = 0;
         
-        std::optional<int> valuation() const override {
-            return operand->valuation();
-        }
-        
-        std::optional<int> degree() const override {
-            return operand->degree();
+        int offset() const override {
+            return operand->offset();
         }
         
         T coeff_lazy(int k) const override {
@@ -184,11 +175,9 @@ namespace cp_algo::math {
         }
     };
     
-    // Base class for binary operations that may have non-trivial bounds
+    // Base class for binary operations
     template<typename T>
     struct binary_provider : provider<T> {
-        enum class bound_type { valuation, degree };
-        
         std::shared_ptr<provider<T>> lhs, rhs;
         
         binary_provider(std::shared_ptr<provider<T>> lhs, std::shared_ptr<provider<T>> rhs)
@@ -196,44 +185,8 @@ namespace cp_algo::math {
         
         virtual T combine(T const& a, T const& b) const = 0;
         
-        std::optional<int> valuation() const override {
-            auto lv = lhs->valuation();
-            auto rv = rhs->valuation();
-            if(!lv || !rv) return std::nullopt;
-            
-            // If valuations are distinct, result is the minimum
-            if(*lv != *rv) {
-                return std::min(*lv, *rv);
-            }
-            
-            // Same valuation - check if they cancel
-            T val = combine(lhs->coeff_lazy(*lv), rhs->coeff_lazy(*lv));
-            if(val != T(0)) {
-                return *lv;
-            }
-            
-            // They cancel - undefined
-            return std::nullopt;
-        }
-        
-        std::optional<int> degree() const override {
-            auto ld = lhs->degree();
-            auto rd = rhs->degree();
-            if(!ld || !rd) return std::nullopt;
-            
-            // If degrees are distinct, result is the maximum
-            if(*ld != *rd) {
-                return std::max(*ld, *rd);
-            }
-            
-            // Same degree - check if they cancel
-            T val = combine(lhs->coeff_lazy(*ld), rhs->coeff_lazy(*ld));
-            if(val != T(0)) {
-                return *ld;
-            }
-            
-            // They cancel - undefined
-            return std::nullopt;
+        int offset() const override {
+            return std::min(lhs->offset(), rhs->offset());
         }
         
         T coeff_lazy(int k) const override {
@@ -296,26 +249,68 @@ namespace cp_algo::math {
         multiply_provider(std::shared_ptr<provider<T>> lhs, std::shared_ptr<provider<T>> rhs)
             : lhs(std::move(lhs)), rhs(std::move(rhs)) {}
         
-        std::optional<int> valuation() const override {
-            auto lv = lhs->valuation();
-            auto rv = rhs->valuation();
-            if(lv && rv) return *lv + *rv;
-            return std::nullopt;
+        int offset() const override {
+            return lhs->offset() + rhs->offset();
         }
         
-        std::optional<int> degree() const override {
-            auto ld = lhs->degree();
-            auto rd = rhs->degree();
-            if(ld && rd) return *ld + *rd;
-            return std::nullopt;
+        bool needs_lazy_eval() const override {
+            return lhs->needs_lazy_eval() || rhs->needs_lazy_eval();
         }
         
         T coeff_lazy(int k) const override {
+            int n = k - offset();
+            if(n < 0) return T(0);
             T result = T(0);
-            for(int j = 0; j <= k; j++) {
-                result += lhs->coeff(j) * rhs->coeff(k - j);
+            bool lazy_lhs = lhs->needs_lazy_eval();
+            bool lazy_rhs = rhs->needs_lazy_eval();
+            for(int j = 0; j <= n; j++) {
+                int i_l = lhs->offset() + j;
+                int i_r = rhs->offset() + (n - j);
+                auto a = lazy_lhs ? lhs->coeff(i_l) : lhs->coeff_lazy(i_l);
+                auto b = lazy_rhs ? rhs->coeff(i_r) : rhs->coeff_lazy(i_r);
+                result += a * b;
             }
             return result;
+        }
+
+        void double_up() const override {
+            int old_size = this->cache.size();
+            int new_size = old_size == 0 ? 1 : 2 * old_size;
+
+            // Lazy path: compute the next coefficient sequentially
+            if(needs_lazy_eval()) {
+                int k = this->cache_offset + old_size;
+                this->cache.push_back(coeff_lazy(k));
+                return;
+            }
+
+            // Ensure operands have enough cached coefficients for the prefix we need
+            int lhs_need = lhs->offset() + new_size - 1;
+            int rhs_need = rhs->offset() + new_size - 1;
+            lhs->coeff(lhs_need);
+            rhs->coeff(rhs_need);
+
+            // Build aligned prefixes starting at operand offsets
+            std::vector<T, big_alloc<T>> la(new_size), rb(new_size);
+            for(int i = 0; i < new_size; i++) {
+                la[i] = lhs->coeff(lhs->offset() + i);
+                rb[i] = rhs->coeff(rhs->offset() + i);
+            }
+
+            this->cache.resize(new_size);
+            convolution_prefix(la, rb, new_size);
+            for(int i = old_size; i < new_size && i < (int)la.size(); i++) {
+                this->cache[i] = la[i];
+            }
+
+            // If both operands are fully cached and we reached their total length, mark as done
+            if(lhs->all_cached && rhs->all_cached) {
+                size_t total_len = lhs->cache.size() + rhs->cache.size() - 1;
+                if((size_t)new_size >= total_len) {
+                    this->cache.resize(total_len);
+                    this->all_cached = true;
+                }
+            }
         }
     };
     

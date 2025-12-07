@@ -15,7 +15,7 @@ namespace cp_algo::math::fft {
     using point = complex<ftype>;
     using vpoint = complex<vftype>;
     static constexpr vftype vz = {};
-    vpoint vi(vpoint const& r) {
+    [[gnu::target("avx2")]] vpoint vi(vpoint const& r) {
         return {-imag(r), real(r)};
     }
 
@@ -39,7 +39,7 @@ namespace cp_algo::math::fft {
             }
         }
         template<class pt = point>
-        pt get(size_t k) const {
+        [[gnu::target("avx2")]] pt get(size_t k) const {
             if constexpr(std::is_same_v<pt, point>) {
                 return {real(r[k / flen])[k % flen], imag(r[k / flen])[k % flen]};
             } else {
@@ -79,18 +79,27 @@ namespace cp_algo::math::fft {
             return roots[std::bit_width(n)];
         }
         template<int step>
-        static void exec_on_eval(size_t n, size_t k, auto &&callback) {
+        [[gnu::target("avx2")]] static void exec_on_eval(size_t n, size_t k, auto &&callback) {
             callback(k, root(4 * step * n) * eval_point(step * k));
         }
         template<int step>
-        static void exec_on_evals(size_t n, auto &&callback) {
+        [[gnu::target("avx2")]] static void exec_on_evals(size_t n, auto &&callback) {
             point factor = root(4 * step * n);
             for(size_t i = 0; i < n; i++) {
                 callback(i, factor * eval_point(step * i));
             }
         }
 
-        void dot(cvector const& t) {
+        [[gnu::target("avx2")]] static void do_dot_iter(size_t i, point rt, vpoint& Bv, vpoint const& Av, vpoint& res) {
+            res += Av * Bv;
+            real(Bv) = rotate_right(real(Bv));
+            imag(Bv) = rotate_right(imag(Bv));
+            auto x = real(Bv)[0], y = imag(Bv)[0];
+            real(Bv)[0] = x * real(rt) - y * imag(rt);
+            imag(Bv)[0] = x * imag(rt) + y * real(rt);
+        }
+
+        [[gnu::target("avx2")]] void dot(cvector const& t) {
             size_t n = this->size();
             exec_on_evals<1>(n / flen, [&](size_t k, point rt) {
                 k *= flen;
@@ -98,12 +107,8 @@ namespace cp_algo::math::fft {
                 auto Bv = t.at(k);
                 vpoint res = vz;
                 for (size_t i = 0; i < flen; i++) {
-                    res += vpoint(vz + Ax[i], vz + Ay[i]) * Bv;
-                    real(Bv) = rotate_right(real(Bv));
-                    imag(Bv) = rotate_right(imag(Bv));
-                    auto x = real(Bv)[0], y = imag(Bv)[0];
-                    real(Bv)[0] = x * real(rt) - y * imag(rt);
-                    imag(Bv)[0] = x * imag(rt) + y * real(rt);
+                    vpoint Av = vpoint(vz + Ax[i], vz + Ay[i]);
+                    do_dot_iter(i, rt, Bv, Av, res);
                 }
                 set(k, res);
             });

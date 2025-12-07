@@ -2,6 +2,7 @@
 #define CP_ALGO_UTIL_COMPLEX_HPP
 #include <iostream>
 #include <cmath>
+#include <type_traits>
 namespace cp_algo {
     // Custom implementation, since std::complex is UB on non-floating types
     template<typename T>
@@ -27,22 +28,20 @@ namespace cp_algo {
         complex conj() const {return {x, -y};}
         T norm() const {return x * x + y * y;}
         T abs() const {return std::sqrt(norm());}
-        T const real() const {return x;}
-        T const imag() const {return y;}
+        [[gnu::target("avx2")]] T const real() const {return x;}
+        [[gnu::target("avx2")]] T const imag() const {return y;}
         T& real() {return x;}
         T& imag() {return y;}
         static constexpr complex polar(T r, T theta) {return {T(r * cos(theta)), T(r * sin(theta))};}
         auto operator <=> (complex const& t) const = default;
     };
-    template<typename T>
-    complex<T> operator * (auto x, complex<T> y) {return y *= x;}
     template<typename T> complex<T> conj(complex<T> x) {return x.conj();}
     template<typename T> T norm(complex<T> x) {return x.norm();}
     template<typename T> T abs(complex<T> x) {return x.abs();}
     template<typename T> T& real(complex<T> &x) {return x.real();}
     template<typename T> T& imag(complex<T> &x) {return x.imag();}
-    template<typename T> T const real(complex<T> const& x) {return x.real();}
-    template<typename T> T const imag(complex<T> const& x) {return x.imag();}
+    template<typename T> [[gnu::target("avx2")]] T const real(complex<T> const& x) {return x.real();}
+    template<typename T> [[gnu::target("avx2")]] T const imag(complex<T> const& x) {return x.imag();}
     template<typename T>
     constexpr complex<T> polar(T r, T theta) {
         return complex<T>::polar(r, theta);

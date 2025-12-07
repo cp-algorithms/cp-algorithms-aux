@@ -29,8 +29,26 @@ namespace cp_algo::math::fft {
             }
         }
 
+        [[gnu::target("avx2")]] static std::pair<vftype, vftype> 
+        do_split(auto const& a, size_t idx, size_t n, u64x4 mul) {
+            if(idx >= std::size(a)) {
+                return std::pair{vftype(), vftype()};
+            }
+            u64x4 au = {
+                idx < std::size(a) ? a[idx].getr() : 0,
+                idx + 1 < std::size(a) ? a[idx + 1].getr() : 0,
+                idx + 2 < std::size(a) ? a[idx + 2].getr() : 0,
+                idx + 3 < std::size(a) ? a[idx + 3].getr() : 0
+            };
+            au = montgomery_mul(au, mul, mod, imod);
+            au = au >= base::mod() ? au - base::mod() : au;
+            auto ai = to_double(i64x4(au >= base::mod() / 2 ? au - base::mod() : au));
+            auto quo = round(ai / split());
+            return std::pair{ai - quo * split(), quo};
+        }
+
         dft(size_t n): A(n), B(n) {init();}
-        dft(auto const& a, size_t n, bool partial = true): A(n), B(n) {
+        [[gnu::target("avx2")]] dft(auto const& a, size_t n, bool partial = true): A(n), B(n) {
             init();
             base b2x32 = bpow(base(2), 32);
             u64x4 cur = {
@@ -42,24 +60,8 @@ namespace cp_algo::math::fft {
             u64x4 step4 = u64x4{} + (bpow(factor, 4) * b2x32).getr();
             u64x4 stepn = u64x4{} + (bpow(factor, n) * b2x32).getr();
             for(size_t i = 0; i < std::min(n, std::size(a)); i += flen) {
-                auto splt = [&](size_t i, auto mul) {
-                    if(i >= std::size(a)) {
-                        return std::pair{vftype(), vftype()};
-                    }
-                    u64x4 au = {
-                        i < std::size(a) ? a[i].getr() : 0,
-                        i + 1 < std::size(a) ? a[i + 1].getr() : 0,
-                        i + 2 < std::size(a) ? a[i + 2].getr() : 0,
-                        i + 3 < std::size(a) ? a[i + 3].getr() : 0
-                    };
-                    au = montgomery_mul(au, mul, mod, imod);
-                    au = au >= base::mod() ? au - base::mod() : au;
-                    auto ai = to_double(i64x4(au >= base::mod() / 2 ? au - base::mod() : au));
-                    auto quo = round(ai / split());
-                    return std::pair{ai - quo * split(), quo};
-                };
-                auto [rai, qai] = splt(i, cur);
-                auto [rani, qani] = splt(n + i, montgomery_mul(cur, stepn, mod, imod));
+                auto [rai, qai] = do_split(a, i, n, cur);
+                auto [rani, qani] = do_split(a, n + i, n, montgomery_mul(cur, stepn, mod, imod));
                 A.at(i) = vpoint(rai, rani);
                 B.at(i) = vpoint(qai, qani);
                 cur = montgomery_mul(cur, step4, mod, imod);
@@ -75,8 +77,23 @@ namespace cp_algo::math::fft {
                 }
             }
         }
+        [[gnu::target("avx2")]] static void do_dot_iter(size_t i, point rt, vpoint& Cv, vpoint& Dv, vpoint const& Av, vpoint const& Bv, vpoint& AC, vpoint& AD, vpoint& BC, vpoint& BD) {
+            AC += Av * Cv; AD += Av * Dv;
+            BC += Bv * Cv; BD += Bv * Dv;
+            real(Cv) = rotate_right(real(Cv));
+            imag(Cv) = rotate_right(imag(Cv));
+            real(Dv) = rotate_right(real(Dv));
+            imag(Dv) = rotate_right(imag(Dv));
+            auto cx = real(Cv)[0], cy = imag(Cv)[0];
+            auto dx = real(Dv)[0], dy = imag(Dv)[0];
+            real(Cv)[0] = cx * real(rt) - cy * imag(rt);
+            imag(Cv)[0] = cx * imag(rt) + cy * real(rt);
+            real(Dv)[0] = dx * real(rt) - dy * imag(rt);
+            imag(Dv)[0] = dx * imag(rt) + dy * real(rt);
+        }
+
         template<bool overwrite = true, bool partial = true>
-        void dot(auto const& C, auto const& D, auto &Aout, auto &Bout, auto &Cout) const {
+        [[gnu::target("avx2")]] void dot(auto const& C, auto const& D, auto &Aout, auto &Bout, auto &Cout) const {
             cvector::exec_on_evals<1>(A.size() / flen, [&](size_t k, point rt) {
                 k *= flen;
                 vpoint AC, AD, BC, BD;
@@ -87,18 +104,7 @@ namespace cp_algo::math::fft {
                     auto [Bx, By] = B.at(k);
                     for (size_t i = 0; i < flen; i++) {
                         vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};
-                        AC += Av * Cv; AD += Av * Dv;
-                        BC += Bv * Cv; BD += Bv * Dv;
-                        real(Cv) = rotate_right(real(Cv));
-                        imag(Cv) = rotate_right(imag(Cv));
-                        real(Dv) = rotate_right(real(Dv));
-                        imag(Dv) = rotate_right(imag(Dv));
-                        auto cx = real(Cv)[0], cy = imag(Cv)[0];
-                        auto dx = real(Dv)[0], dy = imag(Dv)[0];
-                        real(Cv)[0] = cx * real(rt) - cy * imag(rt);
-                        imag(Cv)[0] = cx * imag(rt) + cy * real(rt);
-                        real(Dv)[0] = dx * real(rt) - dy * imag(rt);
-                        imag(Dv)[0] = dx * imag(rt) + dy * real(rt);
+                        do_dot_iter(i, rt, Cv, Dv, Av, Bv, AC, AD, BC, BD);
                     }
                 } else {
                     AC = A.at(k) * Cv;
@@ -123,7 +129,18 @@ namespace cp_algo::math::fft {
             dot(C, D, A, B, C);
         }
 
-        void recover_mod(auto &&C, auto &res, size_t k) {
+        [[gnu::target("avx2")]] static void do_recover_iter(size_t idx, auto A, auto B, auto C, auto mul, uint64_t splitsplit, auto &res) {
+            auto A0 = lround(A), A1 = lround(C), A2 = lround(B);
+            auto Ai = A0 + A1 * split() + A2 * splitsplit + uint64_t(base::modmod());
+            auto Au = montgomery_reduce(u64x4(Ai), mod, imod);
+            Au = montgomery_mul(Au, mul, mod, imod);
+            Au = Au >= base::mod() ? Au - base::mod() : Au;
+            for(size_t j = 0; j < flen; j++) {
+                res[idx + j].setr(typename base::UInt(Au[j]));
+            }
+        }
+
+        [[gnu::target("avx2")]] void recover_mod(auto &&C, auto &res, size_t k) {
             size_t check = (k + flen - 1) / flen * flen;
             assert(res.size() >= check);
             size_t n = A.size();
@@ -142,26 +159,16 @@ namespace cp_algo::math::fft {
                 auto [Ax, Ay] = A.at(i);
                 auto [Bx, By] = B.at(i);
                 auto [Cx, Cy] = C.at(i);
-                auto set_i = [&](size_t i, auto A, auto B, auto C, auto mul) {
-                    auto A0 = lround(A), A1 = lround(C), A2 = lround(B);
-                    auto Ai = A0 + A1 * split() + A2 * splitsplit + uint64_t(base::modmod());
-                    auto Au = montgomery_reduce(u64x4(Ai), mod, imod);
-                    Au = montgomery_mul(Au, mul, mod, imod);
-                    Au = Au >= base::mod() ? Au - base::mod() : Au;
-                    for(size_t j = 0; j < flen; j++) {
-                        res[i + j].setr(typename base::UInt(Au[j]));
-                    }
-                };
-                set_i(i, Ax, Bx, Cx, cur);
+                do_recover_iter(i, Ax, Bx, Cx, cur, splitsplit, res);
                 if(i + n < k) {
-                    set_i(i + n, Ay, By, Cy, montgomery_mul(cur, stepn, mod, imod));
+                    do_recover_iter(i + n, Ay, By, Cy, montgomery_mul(cur, stepn, mod, imod), splitsplit, res);
                 }
                 cur = montgomery_mul(cur, step4, mod, imod);
             }
             checkpoint("recover mod");
         }
 
-        void mul(auto &&C, auto const& D, auto &res, size_t k) {
+        [[gnu::target("avx2")]] void mul(auto &&C, auto const& D, auto &res, size_t k) {
             assert(A.size() == C.size());
             size_t n = A.size();
             if(!n) {
@@ -174,10 +181,10 @@ namespace cp_algo::math::fft {
             C.ifft();
             recover_mod(C, res, k);
         }
-        void mul_inplace(auto &&B, auto& res, size_t k) {
+        [[gnu::target("avx2")]] void mul_inplace(auto &&B, auto& res, size_t k) {
             mul(B.A, B.B, res, k);
         }
-        void mul(auto const& B, auto& res, size_t k) {
+        [[gnu::target("avx2")]] void mul(auto const& B, auto& res, size_t k) {
             mul(cvector(B.A), B.B, res, k);
         }
         std::vector<base, big_alloc<base>> operator *= (dft &B) {
@@ -240,7 +247,7 @@ namespace cp_algo::math::fft {
     }
 
     // store mod x^n-k in first half, x^n+k in second half
-    void mod_split(auto &&x, size_t n, auto k) {
+    [[gnu::target("avx2")]] void mod_split(auto &&x, size_t n, auto k) {
         using base = std::decay_t<decltype(k)>;
         dft<base>::init();
         assert(std::size(x) == 2 * n);

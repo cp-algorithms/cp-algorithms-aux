@@ -30,7 +30,7 @@ namespace cp_algo::math::fft {
         }
 
         [[gnu::target("avx2")]] static std::pair<vftype, vftype> 
-        do_split(auto const& a, size_t idx, size_t n, u64x4 mul) {
+        do_split(auto const& a, size_t idx, u64x4 mul) {
             if(idx >= std::size(a)) {
                 return std::pair{vftype(), vftype()};
             }
@@ -60,8 +60,8 @@ namespace cp_algo::math::fft {
             u64x4 step4 = u64x4{} + (bpow(factor, 4) * b2x32).getr();
             u64x4 stepn = u64x4{} + (bpow(factor, n) * b2x32).getr();
             for(size_t i = 0; i < std::min(n, std::size(a)); i += flen) {
-                auto [rai, qai] = do_split(a, i, n, cur);
-                auto [rani, qani] = do_split(a, n + i, n, montgomery_mul(cur, stepn, mod, imod));
+                auto [rai, qai] = do_split(a, i, cur);
+                auto [rani, qani] = do_split(a, n + i, montgomery_mul(cur, stepn, mod, imod));
                 A.at(i) = vpoint(rai, rani);
                 B.at(i) = vpoint(qai, qani);
                 cur = montgomery_mul(cur, step4, mod, imod);
@@ -77,7 +77,7 @@ namespace cp_algo::math::fft {
                 }
             }
         }
-        [[gnu::target("avx2")]] static void do_dot_iter(size_t i, point rt, vpoint& Cv, vpoint& Dv, vpoint const& Av, vpoint const& Bv, vpoint& AC, vpoint& AD, vpoint& BC, vpoint& BD) {
+        [[gnu::target("avx2")]] static void do_dot_iter(point rt, vpoint& Cv, vpoint& Dv, vpoint const& Av, vpoint const& Bv, vpoint& AC, vpoint& AD, vpoint& BC, vpoint& BD) {
             AC += Av * Cv; AD += Av * Dv;
             BC += Bv * Cv; BD += Bv * Dv;
             real(Cv) = rotate_right(real(Cv));
@@ -104,7 +104,7 @@ namespace cp_algo::math::fft {
                     auto [Bx, By] = B.at(k);
                     for (size_t i = 0; i < flen; i++) {
                         vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};
-                        do_dot_iter(i, rt, Cv, Dv, Av, Bv, AC, AD, BC, BD);
+                        do_dot_iter(rt, Cv, Dv, Av, Bv, AC, AD, BC, BD);
                     }
                 } else {
                     AC = A.at(k) * Cv;

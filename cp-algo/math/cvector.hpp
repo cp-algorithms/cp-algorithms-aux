@@ -90,7 +90,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        [[gnu::target("avx2")]] static void do_dot_iter(size_t i, point rt, vpoint& Bv, vpoint const& Av, vpoint& res) {
+        [[gnu::target("avx2")]] static void do_dot_iter(point rt, vpoint& Bv, vpoint const& Av, vpoint& res) {
             res += Av * Bv;
             real(Bv) = rotate_right(real(Bv));
             imag(Bv) = rotate_right(imag(Bv));
@@ -108,7 +108,7 @@ namespace cp_algo::math::fft {
                 vpoint res = vz;
                 for (size_t i = 0; i < flen; i++) {
                     vpoint Av = vpoint(vz + Ax[i], vz + Ay[i]);
-                    do_dot_iter(i, rt, Bv, Av, res);
+                    do_dot_iter(rt, Bv, Av, res);
                 }
                 set(k, res);
             });

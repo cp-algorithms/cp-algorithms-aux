@@ -6,8 +6,9 @@
 #include <map>
 namespace cp_algo {
     template<bool final = false>
-    void checkpoint([[maybe_unused]] auto const& msg = "") {
+    void checkpoint([[maybe_unused]] auto const& _msg = "") {
 #ifdef CP_ALGO_CHECKPOINT
+        std::string msg = _msg;
         static std::map<std::string, double> checkpoints;
         static double last = 0;
         double now = (double)clock() / CLOCKS_PER_SEC;

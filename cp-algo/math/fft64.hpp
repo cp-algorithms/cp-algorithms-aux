@@ -1,10 +1,10 @@
 #ifndef CP_ALGO_MATH_FFT64_HPP
 #define CP_ALGO_MATH_FFT64_HPP
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include "../random/rng.hpp"
 #include "../math/common.hpp"
 #include "../math/cvector.hpp"
+#pragma GCC push_options
+#pragma GCC target("avx2")
 
 namespace cp_algo::math::fft {
     struct dft64 {

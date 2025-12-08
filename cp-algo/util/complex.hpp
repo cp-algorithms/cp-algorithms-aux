@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cmath>
 #include <type_traits>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 namespace cp_algo {
     // Custom implementation, since std::complex is UB on non-floating types
     template<typename T>
@@ -51,4 +53,5 @@ namespace cp_algo {
         return out << x.real() << ' ' << x.imag();
     }
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_UTIL_COMPLEX_HPP

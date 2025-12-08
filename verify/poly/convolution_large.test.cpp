@@ -2,7 +2,6 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_large"
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_CHECKPOINT
-#include <bits/allocator.h>
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/fft.hpp"

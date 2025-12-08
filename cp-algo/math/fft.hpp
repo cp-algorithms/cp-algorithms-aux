@@ -1,13 +1,13 @@
 #ifndef CP_ALGO_MATH_FFT_HPP
 #define CP_ALGO_MATH_FFT_HPP
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include "../number_theory/modint.hpp"
 #include "../util/checkpoint.hpp"
 #include "../random/rng.hpp"
 #include "cvector.hpp"
 #include <iostream>
 #include <ranges>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 namespace cp_algo::math::fft {
     template<modint_type base>
     struct dft {

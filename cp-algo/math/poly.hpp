@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 #include <list>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 namespace cp_algo::math {
     template<typename T>
     struct poly_t {
@@ -745,4 +747,5 @@ namespace cp_algo::math {
         return b * a;
     }
 };
+#pragma GCC pop_options
 #endif // CP_ALGO_MATH_POLY_HPP

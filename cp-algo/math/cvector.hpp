@@ -1,13 +1,13 @@
 #ifndef CP_ALGO_MATH_CVECTOR_HPP
 #define CP_ALGO_MATH_CVECTOR_HPP
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include "../util/simd.hpp"
 #include "../util/complex.hpp"
 #include "../util/checkpoint.hpp"
 #include "../util/big_alloc.hpp"
 #include <ranges>
 #include <bit>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 
 namespace stdx = std::experimental;
 namespace cp_algo::math::fft {

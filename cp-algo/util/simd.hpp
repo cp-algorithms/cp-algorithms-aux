@@ -1,11 +1,11 @@
 #ifndef CP_ALGO_UTIL_SIMD_HPP
 #define CP_ALGO_UTIL_SIMD_HPP
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include <experimental/simd>
 #include <cstdint>
 #include <cstddef>
 #include <memory>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 
 namespace cp_algo {
     template<typename T, size_t len>

@@ -1,13 +1,13 @@
 #ifndef CP_ALGO_MATH_FACTORIALS_HPP
 #define CP_ALGO_MATH_FACTORIALS_HPP
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include "../util/checkpoint.hpp"
 #include "../util/bump_alloc.hpp"
 #include "../util/simd.hpp"
 #include "../math/combinatorics.hpp"
 #include "../number_theory/modint.hpp"
 #include <ranges>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 
 namespace cp_algo::math {
     template<bool use_bump_alloc = false, int maxn = -1>

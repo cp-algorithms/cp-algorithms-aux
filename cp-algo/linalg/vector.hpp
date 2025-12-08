@@ -1,7 +1,5 @@
 #ifndef CP_ALGO_LINALG_VECTOR_HPP
 #define CP_ALGO_LINALG_VECTOR_HPP
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include "../random/rng.hpp"
 #include "../number_theory/modint.hpp"
 #include "../util/big_alloc.hpp"
@@ -14,6 +12,8 @@
 #include <iterator>
 #include <cassert>
 #include <ranges>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 namespace cp_algo::linalg {
     template<typename base, class Alloc = big_alloc<base>>
     struct vec: std::basic_string<base, std::char_traits<base>, Alloc> {

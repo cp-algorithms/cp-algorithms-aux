@@ -9,6 +9,8 @@
 #include <vector>
 #include <tuple>
 #include <list>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 // operations related to gcd and Euclidean algo
 namespace cp_algo::math::poly::impl {
     template<typename poly>
@@ -99,4 +101,5 @@ namespace cp_algo::math::poly::impl {
         return Tr.b / q[0];
     }
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_MATH_POLY_IMPL_EUCLID_HPP

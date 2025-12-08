@@ -1,10 +1,10 @@
 #ifndef CP_ALGO_MATH_MULTIVAR_HPP
 #define CP_ALGO_MATH_MULTIVAR_HPP
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include "../util/big_alloc.hpp"
 #include "../number_theory/modint.hpp"
 #include "../math/fft.hpp"
+#pragma GCC push_options
+#pragma GCC target("avx2")
 namespace cp_algo::math::fft {
     template<modint_type base>
     struct multivar {

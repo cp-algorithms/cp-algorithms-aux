@@ -1,7 +1,5 @@
 #ifndef CP_ALGO_LINALG_MATRIX_HPP
 #define CP_ALGO_LINALG_MATRIX_HPP
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include "../random/rng.hpp"
 #include "../math/common.hpp"
 #include "vector.hpp"
@@ -10,6 +8,8 @@
 #include <cassert>
 #include <vector>
 #include <array>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 namespace cp_algo::linalg {
     enum gauss_mode {normal, reverse};
 

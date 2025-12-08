@@ -42,7 +42,7 @@ cp_algo::big_string matches(cp_algo::big_string const& A, cp_algo::big_string co
         }
     }
     project[0][(int)wild] = project[1][(int)wild] = 0;
-    vector<cvector> P;
+    cp_algo::big_vector<cvector> P;
     P.emplace_back((size(A) + 1) / 2);
     P.emplace_back((size(A) + 1) / 2);
     auto N = P[0].size();

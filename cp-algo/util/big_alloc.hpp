@@ -1,7 +1,9 @@
 #ifndef CP_ALGO_UTIL_big_alloc_HPP
 #define CP_ALGO_UTIL_big_alloc_HPP
 
+#include <deque>
 #include <vector>
+#include <string>
 #include <cstddef>
 #include <iostream>
 

@@ -1,5 +1,7 @@
 #ifndef CP_ALGO_LINALG_VECTOR_HPP
 #define CP_ALGO_LINALG_VECTOR_HPP
+#pragma GCC push_options
+#pragma GCC target("avx2")
 #include "../random/rng.hpp"
 #include "../number_theory/modint.hpp"
 #include "../util/big_alloc.hpp"
@@ -19,4 +21,5 @@ ai+=u64x4(_mm256_mul_epu32(__m256i(scaler),__m256i(bi)));
 ai+=scaler*bi;
 #endif
 }for(;i<n;i++){(*this)[i].add_unsafe(b[i].getr_direct()*scale.getr());}if(++counter==4){for(auto&it:*this){it.pseudonormalize();}counter=0;}}}Base const&normalize()override{for(auto&it:*this){it.normalize();}return*this;}base normalize(size_t i)override{return(*this)[i].normalize();}private:size_t counter=0;};}
+#pragma GCC pop_options
 #endif

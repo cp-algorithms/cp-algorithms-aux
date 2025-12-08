@@ -1,8 +1,5 @@
 #ifndef CP_ALGO_UTIL_SIMD_HPP
 #define CP_ALGO_UTIL_SIMD_HPP
-#define _GLIBCXX_USE_DEPRECATED 0
-#pragma GCC push_options
-#pragma GCC target("avx2")
 #include <experimental/simd>
 #include <cstdint>
 #include <cstddef>

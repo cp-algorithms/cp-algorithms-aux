@@ -15,7 +15,7 @@ namespace cp_algo::math::fft {
     using point = complex<ftype>;
     using vpoint = complex<vftype>;
     static constexpr vftype vz = {};
-    [[gnu::target("avx2")]] vpoint vi(vpoint const& r) {
+    simd_target vpoint vi(vpoint const& r) {
         return {-imag(r), real(r)};
     }
 
@@ -30,7 +30,7 @@ namespace cp_algo::math::fft {
         vpoint& at(size_t k) {return r[k / flen];}
         vpoint at(size_t k) const {return r[k / flen];}
         template<class pt = point>
-        void set(size_t k, pt const& t) {
+        simd_inline void set(size_t k, pt const& t) {
             if constexpr(std::is_same_v<pt, point>) {
                 real(r[k / flen])[k % flen] = real(t);
                 imag(r[k / flen])[k % flen] = imag(t);
@@ -39,7 +39,7 @@ namespace cp_algo::math::fft {
             }
         }
         template<class pt = point>
-        [[gnu::target("avx2")]] pt get(size_t k) const {
+        simd_inline pt get(size_t k) const {
             if constexpr(std::is_same_v<pt, point>) {
                 return {real(r[k / flen])[k % flen], imag(r[k / flen])[k % flen]};
             } else {
@@ -79,18 +79,18 @@ namespace cp_algo::math::fft {
             return roots[std::bit_width(n)];
         }
         template<int step>
-        [[gnu::target("avx2")]] static void exec_on_eval(size_t n, size_t k, auto &&callback) {
+        simd_target static void exec_on_eval(size_t n, size_t k, auto &&callback) {
             callback(k, root(4 * step * n) * eval_point(step * k));
         }
         template<int step>
-        [[gnu::target("avx2")]] static void exec_on_evals(size_t n, auto &&callback) {
+        simd_target static void exec_on_evals(size_t n, auto &&callback) {
             point factor = root(4 * step * n);
             for(size_t i = 0; i < n; i++) {
                 callback(i, factor * eval_point(step * i));
             }
         }
 
-        [[gnu::target("avx2")]] static void do_dot_iter(point rt, vpoint& Bv, vpoint const& Av, vpoint& res) {
+        simd_target static void do_dot_iter(point rt, vpoint& Bv, vpoint const& Av, vpoint& res) {
             res += Av * Bv;
             real(Bv) = rotate_right(real(Bv));
             imag(Bv) = rotate_right(imag(Bv));
@@ -99,7 +99,7 @@ namespace cp_algo::math::fft {
             imag(Bv)[0] = x * imag(rt) + y * real(rt);
         }
 
-        [[gnu::target("avx2")]] void dot(cvector const& t) {
+        simd_target void dot(cvector const& t) {
             size_t n = this->size();
             exec_on_evals<1>(n / flen, [&](size_t k, point rt) {
                 k *= flen;
@@ -115,7 +115,7 @@ namespace cp_algo::math::fft {
             checkpoint("dot");
         }
         template<bool partial = true>
-        [[gnu::target("avx2")]] void ifft() {
+        simd_target void ifft() {
             size_t n = size();
             if constexpr (!partial) {
                 point pi(0, 1);
@@ -177,7 +177,7 @@ namespace cp_algo::math::fft {
             }
         }
         template<bool partial = true>
-        [[gnu::target("avx2")]] void fft() {
+        simd_target void fft() {
             size_t n = size();
             bool parity = std::countr_zero(n) % 2;
             for(size_t leaf = 0; leaf < n; leaf += 4 * flen) {

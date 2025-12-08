@@ -2,6 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_large"
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_CHECKPOINT
+#include <bits/allocator.h>
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/fft.hpp"
@@ -15,13 +16,14 @@ using base = modint<mod>;
 void solve() {
     int n, m;
     cin >> n >> m;
-    vector<base, cp_algo::big_alloc<base>> a(n), b(m);
+    cp_algo::big_vector<base> a(n), b(m);
     for(auto &x: a) {cin >> x;}
     for(auto &x: b) {cin >> x;}
     cp_algo::checkpoint("read");
     fft::mul(a, b);
     for(auto x: a) {cout << x << " ";}
     cp_algo::checkpoint("write");
+    cp_algo::checkpoint<1>();
 }
 
 signed main() {

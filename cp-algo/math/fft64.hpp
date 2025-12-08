@@ -46,7 +46,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        [[gnu::target("avx2")]] static void do_dot_iter(point rt, std::array<vpoint, 4>& B, std::array<vpoint, 4> const& A, std::array<vpoint, 4>& C) {
+        simd_target static void do_dot_iter(point rt, std::array<vpoint, 4>& B, std::array<vpoint, 4> const& A, std::array<vpoint, 4>& C) {
             for(size_t k = 0; k < 4; k++) {
                 for(size_t i = 0; i <= k; i++) {
                     C[k] += A[i] * B[k - i];

@@ -38,14 +38,14 @@ namespace cp_algo {
         });
     }
 
-    [[gnu::target("avx2")]] inline uint32_t read_bits(char const* p) {
+    simd_inline uint32_t read_bits(char const* p) {
         return _mm256_movemask_epi8(__m256i(vector_cast<u8x32 const>(p[0]) + (127 - '0')));
     }
-    [[gnu::target("avx2")]] inline uint64_t read_bits64(char const* p) {
+    simd_inline uint64_t read_bits64(char const* p) {
         return read_bits(p) | (uint64_t(read_bits(p + 32)) << 32);
     }
 
-    [[gnu::target("avx2")]] inline void write_bits(char *p, uint32_t bits) {
+    simd_inline void write_bits(char *p, uint32_t bits) {
         static constexpr u8x32 shuffler = {
             0, 0, 0, 0, 0, 0, 0, 0,
             1, 1, 1, 1, 1, 1, 1, 1,
@@ -63,7 +63,7 @@ namespace cp_algo {
             p[z] = shuffled[z] & mask[z] ? '1' : '0';
         }
     }
-    [[gnu::target("avx2")]] inline void write_bits64(char *p, uint64_t bits) {
+    simd_inline void write_bits64(char *p, uint64_t bits) {
         write_bits(p, uint32_t(bits));
         write_bits(p + 32, uint32_t(bits >> 32));
     }

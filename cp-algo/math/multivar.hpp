@@ -1,5 +1,7 @@
 #ifndef CP_ALGO_MATH_MULTIVAR_HPP
 #define CP_ALGO_MATH_MULTIVAR_HPP
+#pragma GCC push_options
+#pragma GCC target("avx2")
 #include "../util/big_alloc.hpp"
 #include "../number_theory/modint.hpp"
 #include "../math/fft.hpp"
@@ -52,13 +54,13 @@ namespace cp_algo::math::fft {
             size_t M = std::max(flen, std::bit_ceil(2 * N - 1) / 2);
             for(size_t i = 0; i < K; i++) {
                 A.emplace_back(data | std::views::enumerate | std::views::transform(
-                    [&](auto jx) {
+                    [&](auto jx) __attribute__((always_inline)) {
                         auto [j, x] = jx;
                         return ranks[j] == i ? x : base(0);
                     }
                 ), M, false);
                 B.emplace_back(b.data | std::views::enumerate | std::views::transform(
-                    [&](auto jx) {
+                    [&](auto jx) __attribute__((always_inline)) {
                         auto [j, x] = jx;
                         return ranks[j] == i ? x : base(0);
                     }
@@ -87,4 +89,5 @@ namespace cp_algo::math::fft {
         }
     };
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_MATH_MULTIVAR_HPP

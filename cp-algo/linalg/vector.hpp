@@ -1,5 +1,7 @@
 #ifndef CP_ALGO_LINALG_VECTOR_HPP
 #define CP_ALGO_LINALG_VECTOR_HPP
+#pragma GCC push_options
+#pragma GCC target("avx2")
 #include "../random/rng.hpp"
 #include "../number_theory/modint.hpp"
 #include "../util/big_alloc.hpp"
@@ -152,4 +154,5 @@ namespace cp_algo::linalg {
         size_t counter = 0;
     };
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_LINALG_VECTOR_HPP

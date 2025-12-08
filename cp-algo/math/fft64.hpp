@@ -1,5 +1,7 @@
 #ifndef CP_ALGO_MATH_FFT64_HPP
 #define CP_ALGO_MATH_FFT64_HPP
+#pragma GCC push_options
+#pragma GCC target("avx2")
 #include "../random/rng.hpp"
 #include "../math/common.hpp"
 #include "../math/cvector.hpp"
@@ -46,7 +48,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        simd_target static void do_dot_iter(point rt, std::array<vpoint, 4>& B, std::array<vpoint, 4> const& A, std::array<vpoint, 4>& C) {
+        static void do_dot_iter(point rt, std::array<vpoint, 4>& B, std::array<vpoint, 4> const& A, std::array<vpoint, 4>& C) {
             for(size_t k = 0; k < 4; k++) {
                 for(size_t i = 0; i <= k; i++) {
                     C[k] += A[i] * B[k - i];
@@ -63,7 +65,7 @@ namespace cp_algo::math::fft {
 
         void dot(dft64 const& t) {
             size_t N = cv[0].size();
-            cvector::exec_on_evals<1>(N / flen, [&](size_t k, point rt) {
+            cvector::exec_on_evals<1>(N / flen, [&](size_t k, point rt) __attribute__((always_inline)) {
                 k *= flen;
                 auto [A0x, A0y] = cv[0].at(k);
                 auto [A1x, A1y] = cv[1].at(k);
@@ -127,4 +129,5 @@ namespace cp_algo::math::fft {
         A.recover_mod(a, n + m - 1);
     }
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_MATH_FFT64_HPP

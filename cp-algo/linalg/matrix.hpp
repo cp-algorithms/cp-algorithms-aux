@@ -1,5 +1,7 @@
 #ifndef CP_ALGO_LINALG_MATRIX_HPP
 #define CP_ALGO_LINALG_MATRIX_HPP
+#pragma GCC push_options
+#pragma GCC target("avx2")
 #include "../random/rng.hpp"
 #include "../math/common.hpp"
 #include "vector.hpp"
@@ -304,4 +306,5 @@ namespace cp_algo::linalg {
     template<typename base_t>
     auto operator *(base_t t, matrix<base_t> const& A) {return A * t;}
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_LINALG_MATRIX_HPP

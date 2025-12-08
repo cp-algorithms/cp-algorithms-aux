@@ -38,14 +38,14 @@ namespace cp_algo {
         });
     }
 
-    simd_inline uint32_t read_bits(char const* p) {
+    inline uint32_t read_bits(char const* p) {
         return _mm256_movemask_epi8(__m256i(vector_cast<u8x32 const>(p[0]) + (127 - '0')));
     }
-    simd_inline uint64_t read_bits64(char const* p) {
+    inline uint64_t read_bits64(char const* p) {
         return read_bits(p) | (uint64_t(read_bits(p + 32)) << 32);
     }
 
-    simd_inline void write_bits(char *p, uint32_t bits) {
+    inline void write_bits(char *p, uint32_t bits) {
         static constexpr u8x32 shuffler = {
             0, 0, 0, 0, 0, 0, 0, 0,
             1, 1, 1, 1, 1, 1, 1, 1,
@@ -63,7 +63,7 @@ namespace cp_algo {
             p[z] = shuffled[z] & mask[z] ? '1' : '0';
         }
     }
-    simd_inline void write_bits64(char *p, uint64_t bits) {
+    inline void write_bits64(char *p, uint64_t bits) {
         write_bits(p, uint32_t(bits));
         write_bits(p + 32, uint32_t(bits >> 32));
     }

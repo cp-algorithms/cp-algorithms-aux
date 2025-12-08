@@ -1,5 +1,7 @@
 #ifndef CP_ALGO_MATH_FACTORIALS_HPP
 #define CP_ALGO_MATH_FACTORIALS_HPP
+#pragma GCC push_options
+#pragma GCC target("avx2")
 #include "../util/checkpoint.hpp"
 #include "../util/bump_alloc.hpp"
 #include "../util/simd.hpp"
@@ -9,7 +11,7 @@
 
 namespace cp_algo::math {
     template<bool use_bump_alloc = false, int maxn = -1>
-    simd_target auto facts(auto const& args) {
+    auto facts(auto const& args) {
         static_assert(!use_bump_alloc || maxn > 0, "maxn must be set if use_bump_alloc is true");
         constexpr int max_mod = 1'000'000'000;
         constexpr int accum = 4;
@@ -93,4 +95,5 @@ namespace cp_algo::math {
         return res;
     }
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_MATH_FACTORIALS_HPP

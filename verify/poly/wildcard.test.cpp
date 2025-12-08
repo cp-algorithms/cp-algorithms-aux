@@ -21,12 +21,12 @@ void semicorr(auto &a, auto &b) {
     a.ifft();
 }
 
-simd_target auto is_integer(auto a) {
+auto is_integer(auto a) {
     static const ftype eps = 1e-9;
     return cp_algo::abs(a - cp_algo::round(a)) < eps;
 }
 
-simd_target string matches(string const& A, string const& B, char wild = '*') {
+string matches(string const& A, string const& B, char wild = '*') {
     static ftype project[2][128];
     static bool init = false;
     if(!init) {

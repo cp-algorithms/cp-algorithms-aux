@@ -1,5 +1,7 @@
 #ifndef CP_ALGO_MATH_FFT_HPP
 #define CP_ALGO_MATH_FFT_HPP
+#pragma GCC push_options
+#pragma GCC target("avx2")
 #include "../number_theory/modint.hpp"
 #include "../util/checkpoint.hpp"
 #include "../random/rng.hpp"
@@ -29,7 +31,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        simd_target static std::pair<vftype, vftype> 
+        static std::pair<vftype, vftype> 
         do_split(auto const& a, size_t idx, u64x4 mul) {
             if(idx >= std::size(a)) {
                 return std::pair{vftype(), vftype()};
@@ -48,7 +50,7 @@ namespace cp_algo::math::fft {
         }
 
         dft(size_t n): A(n), B(n) {init();}
-        simd_target dft(auto const& a, size_t n, bool partial = true): A(n), B(n) {
+        dft(auto const& a, size_t n, bool partial = true): A(n), B(n) {
             init();
             base b2x32 = bpow(base(2), 32);
             u64x4 cur = {
@@ -77,7 +79,7 @@ namespace cp_algo::math::fft {
                 }
             }
         }
-        simd_target static void do_dot_iter(point rt, vpoint& Cv, vpoint& Dv, vpoint const& Av, vpoint const& Bv, vpoint& AC, vpoint& AD, vpoint& BC, vpoint& BD) {
+        static void do_dot_iter(point rt, vpoint& Cv, vpoint& Dv, vpoint const& Av, vpoint const& Bv, vpoint& AC, vpoint& AD, vpoint& BC, vpoint& BD) {
             AC += Av * Cv; AD += Av * Dv;
             BC += Bv * Cv; BD += Bv * Dv;
             real(Cv) = rotate_right(real(Cv));
@@ -93,8 +95,8 @@ namespace cp_algo::math::fft {
         }
 
         template<bool overwrite = true, bool partial = true>
-        simd_target void dot(auto const& C, auto const& D, auto &Aout, auto &Bout, auto &Cout) const {
-            cvector::exec_on_evals<1>(A.size() / flen, [&](size_t k, point rt) {
+        void dot(auto const& C, auto const& D, auto &Aout, auto &Bout, auto &Cout) const {
+            cvector::exec_on_evals<1>(A.size() / flen, [&](size_t k, point rt) __attribute__((always_inline)) {
                 k *= flen;
                 vpoint AC, AD, BC, BD;
                 AC = AD = BC = BD = vz;
@@ -125,11 +127,11 @@ namespace cp_algo::math::fft {
             checkpoint("dot");
         }
 
-        [[gnu::target("avx2")]] void dot(auto &&C, auto const& D) {
+        void dot(auto &&C, auto const& D) {
             dot(C, D, A, B, C);
         }
 
-        simd_target static void do_recover_iter(size_t idx, auto A, auto B, auto C, auto mul, uint64_t splitsplit, auto &res) {
+        static void do_recover_iter(size_t idx, auto A, auto B, auto C, auto mul, uint64_t splitsplit, auto &res) {
             auto A0 = lround(A), A1 = lround(C), A2 = lround(B);
             auto Ai = A0 + A1 * split() + A2 * splitsplit + uint64_t(base::modmod());
             auto Au = montgomery_reduce(u64x4(Ai), mod, imod);
@@ -140,7 +142,7 @@ namespace cp_algo::math::fft {
             }
         }
 
-        simd_target void recover_mod(auto &&C, auto &res, size_t k) {
+        void recover_mod(auto &&C, auto &res, size_t k) {
             size_t check = (k + flen - 1) / flen * flen;
             assert(res.size() >= check);
             size_t n = A.size();
@@ -168,7 +170,7 @@ namespace cp_algo::math::fft {
             checkpoint("recover mod");
         }
 
-        simd_target void mul(auto &&C, auto const& D, auto &res, size_t k) {
+        void mul(auto &&C, auto const& D, auto &res, size_t k) {
             assert(A.size() == C.size());
             size_t n = A.size();
             if(!n) {
@@ -181,10 +183,10 @@ namespace cp_algo::math::fft {
             C.ifft();
             recover_mod(C, res, k);
         }
-        simd_target void mul_inplace(auto &&B, auto& res, size_t k) {
+        void mul_inplace(auto &&B, auto& res, size_t k) {
             mul(B.A, B.B, res, k);
         }
-        simd_target void mul(auto const& B, auto& res, size_t k) {
+        void mul(auto const& B, auto& res, size_t k) {
             mul(cvector(B.A), B.B, res, k);
         }
         big_vector<base> operator *= (dft &B) {
@@ -209,7 +211,7 @@ namespace cp_algo::math::fft {
     template<modint_type base> uint32_t dft<base>::mod = {};
     template<modint_type base> uint32_t dft<base>::imod = {};
     
-    [[gnu::target("avx2")]] void mul_slow(auto &a, auto const& b, size_t k) {
+    void mul_slow(auto &a, auto const& b, size_t k) {
         if(std::empty(a) || std::empty(b)) {
             a.clear();
         } else {
@@ -230,7 +232,7 @@ namespace cp_algo::math::fft {
         }
         return std::max(flen, std::bit_ceil(as + bs - 1) / 2);
     }
-    [[gnu::target("avx2")]] void mul_truncate(auto &a, auto const& b, size_t k) {
+    void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
         if(std::min({k, std::size(a), std::size(b)}) < magic) {
             mul_slow(a, b, k);
@@ -247,7 +249,7 @@ namespace cp_algo::math::fft {
     }
 
     // store mod x^n-k in first half, x^n+k in second half
-    simd_target void mod_split(auto &&x, size_t n, auto k) {
+    void mod_split(auto &&x, size_t n, auto k) {
         using base = std::decay_t<decltype(k)>;
         dft<base>::init();
         assert(std::size(x) == 2 * n);
@@ -279,7 +281,7 @@ namespace cp_algo::math::fft {
         }
         cp_algo::checkpoint("mod split");
     }
-    [[gnu::target("avx2")]] void cyclic_mul(auto &a, auto &&b, size_t k) {
+    void cyclic_mul(auto &a, auto &&b, size_t k) {
         assert(std::popcount(k) == 1);
         assert(std::size(a) == std::size(b) && std::size(a) == k);
         using base = std::decay_t<decltype(a[0])>;
@@ -312,13 +314,13 @@ namespace cp_algo::math::fft {
         }
         cp_algo::checkpoint("mod join");
     }
-    [[gnu::target("avx2")]] auto make_copy(auto &&x) {
+    auto make_copy(auto &&x) {
         return x;
     }
-    [[gnu::target("avx2")]] void cyclic_mul(auto &a, auto const& b, size_t k) {
+    void cyclic_mul(auto &a, auto const& b, size_t k) {
         return cyclic_mul(a, make_copy(b), k);
     }
-    [[gnu::target("avx2")]] void mul(auto &a, auto &&b) {
+    void mul(auto &a, auto &&b) {
         size_t N = size(a) + size(b);
         if(N > (1 << 20)) {
             N--;
@@ -331,7 +333,7 @@ namespace cp_algo::math::fft {
             mul_truncate(a, b, N - 1);
         }
     }
-    [[gnu::target("avx2")]] void mul(auto &a, auto const& b) {
+    void mul(auto &a, auto const& b) {
         size_t N = size(a) + size(b);
         if(N > (1 << 20)) {
             mul(a, make_copy(b));
@@ -340,4 +342,5 @@ namespace cp_algo::math::fft {
         }
     }
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_MATH_FFT_HPP

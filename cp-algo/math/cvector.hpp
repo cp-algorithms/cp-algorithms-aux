@@ -1,5 +1,7 @@
 #ifndef CP_ALGO_MATH_CVECTOR_HPP
 #define CP_ALGO_MATH_CVECTOR_HPP
+#pragma GCC push_options
+#pragma GCC target("avx2")
 #include "../util/simd.hpp"
 #include "../util/complex.hpp"
 #include "../util/checkpoint.hpp"
@@ -15,7 +17,7 @@ namespace cp_algo::math::fft {
     using point = complex<ftype>;
     using vpoint = complex<vftype>;
     static constexpr vftype vz = {};
-    simd_target vpoint vi(vpoint const& r) {
+    vpoint vi(vpoint const& r) {
         return {-imag(r), real(r)};
     }
 
@@ -30,7 +32,7 @@ namespace cp_algo::math::fft {
         vpoint& at(size_t k) {return r[k / flen];}
         vpoint at(size_t k) const {return r[k / flen];}
         template<class pt = point>
-        simd_inline void set(size_t k, pt const& t) {
+        inline void set(size_t k, pt const& t) {
             if constexpr(std::is_same_v<pt, point>) {
                 real(r[k / flen])[k % flen] = real(t);
                 imag(r[k / flen])[k % flen] = imag(t);
@@ -39,7 +41,7 @@ namespace cp_algo::math::fft {
             }
         }
         template<class pt = point>
-        simd_inline pt get(size_t k) const {
+        inline pt get(size_t k) const {
             if constexpr(std::is_same_v<pt, point>) {
                 return {real(r[k / flen])[k % flen], imag(r[k / flen])[k % flen]};
             } else {
@@ -79,18 +81,18 @@ namespace cp_algo::math::fft {
             return roots[std::bit_width(n)];
         }
         template<int step>
-        simd_target static void exec_on_eval(size_t n, size_t k, auto &&callback) {
+        static void exec_on_eval(size_t n, size_t k, auto &&callback) {
             callback(k, root(4 * step * n) * eval_point(step * k));
         }
         template<int step>
-        simd_target static void exec_on_evals(size_t n, auto &&callback) {
+        static void exec_on_evals(size_t n, auto &&callback) {
             point factor = root(4 * step * n);
             for(size_t i = 0; i < n; i++) {
                 callback(i, factor * eval_point(step * i));
             }
         }
 
-        simd_target static void do_dot_iter(point rt, vpoint& Bv, vpoint const& Av, vpoint& res) {
+        static void do_dot_iter(point rt, vpoint& Bv, vpoint const& Av, vpoint& res) {
             res += Av * Bv;
             real(Bv) = rotate_right(real(Bv));
             imag(Bv) = rotate_right(imag(Bv));
@@ -99,9 +101,9 @@ namespace cp_algo::math::fft {
             imag(Bv)[0] = x * imag(rt) + y * real(rt);
         }
 
-        simd_target void dot(cvector const& t) {
+        void dot(cvector const& t) {
             size_t n = this->size();
-            exec_on_evals<1>(n / flen, [&](size_t k, point rt) {
+            exec_on_evals<1>(n / flen, [&](size_t k, point rt) __attribute__((always_inline)) {
                 k *= flen;
                 auto [Ax, Ay] = at(k);
                 auto Bv = t.at(k);
@@ -115,11 +117,11 @@ namespace cp_algo::math::fft {
             checkpoint("dot");
         }
         template<bool partial = true>
-        simd_target void ifft() {
+        void ifft() {
             size_t n = size();
             if constexpr (!partial) {
                 point pi(0, 1);
-                exec_on_evals<4>(n / 4, [&](size_t k, point rt) {
+                exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
                     k *= 4;
                     point v1 = conj(rt);
                     point v2 = v1 * v1;
@@ -136,7 +138,7 @@ namespace cp_algo::math::fft {
             }
             bool parity = std::countr_zero(n) % 2;
             if(parity) {
-                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) {
+                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
                     k *= 2 * flen;
                     vpoint cvrt = {vz + real(rt), vz - imag(rt)};
                     auto B = at(k) - at(k + flen);
@@ -149,7 +151,7 @@ namespace cp_algo::math::fft {
                 size_t level = std::countr_one(leaf + 3);
                 for(size_t lvl = 4 + parity; lvl <= level; lvl += 2) {
                     size_t i = (1 << lvl) / 4;
-                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) {
+                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) __attribute__((always_inline)) {
                         k <<= lvl;
                         vpoint v1 = {vz + real(rt), vz - imag(rt)};
                         vpoint v2 = v1 * v1;
@@ -177,7 +179,7 @@ namespace cp_algo::math::fft {
             }
         }
         template<bool partial = true>
-        simd_target void fft() {
+        void fft() {
             size_t n = size();
             bool parity = std::countr_zero(n) % 2;
             for(size_t leaf = 0; leaf < n; leaf += 4 * flen) {
@@ -185,7 +187,7 @@ namespace cp_algo::math::fft {
                 level -= level % 2 != parity;
                 for(size_t lvl = level; lvl >= 4; lvl -= 2) {
                     size_t i = (1 << lvl) / 4;
-                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) {
+                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) __attribute__((always_inline)) {
                         k <<= lvl;
                         vpoint v1 = {vz + real(rt), vz + imag(rt)};
                         vpoint v2 = v1 * v1;
@@ -204,7 +206,7 @@ namespace cp_algo::math::fft {
                 }
             }
             if(parity) {
-                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) {
+                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
                     k *= 2 * flen;
                     vpoint vrt = {vz + real(rt), vz + imag(rt)};
                     auto t = at(k + flen) * vrt;
@@ -214,7 +216,7 @@ namespace cp_algo::math::fft {
             }
             if constexpr (!partial) {
                 point pi(0, 1);
-                exec_on_evals<4>(n / 4, [&](size_t k, point rt) {
+                exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
                     k *= 4;
                     point v1 = rt;
                     point v2 = v1 * v1;
@@ -252,4 +254,5 @@ namespace cp_algo::math::fft {
         return res;
     }();
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_MATH_CVECTOR_HPP

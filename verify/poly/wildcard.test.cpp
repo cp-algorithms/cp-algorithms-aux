@@ -2,6 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/wildcard_pattern_matching"
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_CHECKPOINT
+#pragma GCC target("avx2")
 #include "cp-algo/math/cvector.hpp"
 #include "cp-algo/random/rng.hpp"
 #include <bits/stdc++.h>

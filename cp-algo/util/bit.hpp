@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <array>
 #include <bit>
+#pragma GCC push_options
+#pragma GCC target("avx2")
 namespace cp_algo {
     template<typename Uint>
     constexpr size_t bit_width = sizeof(Uint) * 8;
@@ -68,4 +70,5 @@ namespace cp_algo {
         write_bits(p + 32, uint32_t(bits >> 32));
     }
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_UTIL_BIT_HPP

@@ -2,6 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_product_mod_2"
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_CHECKPOINT
+//#pragma GCC target("avx2")
 #include "cp-algo/structures/bitpack.hpp"
 #include "cp-algo/util/checkpoint.hpp"
 #include <bits/stdc++.h>

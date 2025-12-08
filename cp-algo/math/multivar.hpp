@@ -54,13 +54,13 @@ namespace cp_algo::math::fft {
             size_t M = std::max(flen, std::bit_ceil(2 * N - 1) / 2);
             for(size_t i = 0; i < K; i++) {
                 A.emplace_back(data | std::views::enumerate | std::views::transform(
-                    [&](auto jx) __attribute__((always_inline)) {
+                    [&](auto jx) {
                         auto [j, x] = jx;
                         return ranks[j] == i ? x : base(0);
                     }
                 ), M, false);
                 B.emplace_back(b.data | std::views::enumerate | std::views::transform(
-                    [&](auto jx) __attribute__((always_inline)) {
+                    [&](auto jx) {
                         auto [j, x] = jx;
                         return ranks[j] == i ? x : base(0);
                     }

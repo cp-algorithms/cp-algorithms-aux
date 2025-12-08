@@ -63,5 +63,8 @@ namespace cp_algo {
 
     template<typename T>
     using big_vector = std::vector<T, big_alloc<T>>;
+    template<typename T>
+    using big_basic_string = std::basic_string<T, std::char_traits<T>, big_alloc<T>>;
+    using big_string = big_basic_string<char>;
 }
 #endif // CP_ALGO_UTIL_big_alloc_HPP

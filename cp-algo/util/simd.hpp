@@ -6,7 +6,6 @@
 #include <memory>
 #pragma GCC push_options
 #pragma GCC target("avx2")
-
 namespace cp_algo {
     template<typename T, size_t len>
     using simd [[gnu::vector_size(len * sizeof(T))]] = T;

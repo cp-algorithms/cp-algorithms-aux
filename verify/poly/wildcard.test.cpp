@@ -3,9 +3,9 @@
 #pragma GCC optimize("Ofast,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #pragma GCC target("avx2")
+#include <bits/stdc++.h>
 #include "cp-algo/math/cvector.hpp"
 #include "cp-algo/random/rng.hpp"
-#include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::math;
@@ -27,7 +27,7 @@ auto is_integer(auto a) {
     return cp_algo::abs(a - cp_algo::round(a)) < eps;
 }
 
-string matches(string const& A, string const& B, char wild = '*') {
+cp_algo::big_string matches(cp_algo::big_string const& A, cp_algo::big_string const& B, char wild = '*') {
     static ftype project[2][128];
     static bool init = false;
     if(!init) {
@@ -61,7 +61,7 @@ string matches(string const& A, string const& B, char wild = '*') {
     ranges::for_each(B | views::reverse | views::enumerate, assign(1));
     cp_algo::checkpoint("cvector fill");
     semicorr(P[0], P[1]);
-    string ans(2 * size(P[0]), '0');
+    cp_algo::big_string ans(2 * size(P[0]), '0');
     auto start = (ssize(B) - 1) / fft::flen * fft::flen;
     for(auto j = start; j < size(ans); j += fft::flen) {
         decltype(is_integer(real(P[0].at(j)))) check;
@@ -79,7 +79,7 @@ string matches(string const& A, string const& B, char wild = '*') {
 }
 
 void solve() {
-    string a, b;
+    cp_algo::big_string a, b;
     cin >> a >> b;
     cp_algo::checkpoint("input");
     cout << matches(a, b) << "\n";

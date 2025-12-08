@@ -32,11 +32,9 @@ cp_algo::big_string matches(cp_algo::big_string const& A, cp_algo::big_string co
     static bool init = false;
     if(!init) {
         init = true;
-        std::random_device rd;
-        std::mt19937 gen(rd());
         std::uniform_real_distribution<> dis(.5, 2.);
         for(int i = 0; i < 128; i++) {
-            ftype x = dis(gen);
+            ftype x = dis(cp_algo::random::gen);
             project[0][i] = x;
             project[1][i] = 1. / x;
         }

@@ -7,7 +7,7 @@
 #include <map>
 namespace cp_algo{
 #ifdef CP_ALGO_CHECKPOINT
-std::map<big_string,double>checkpoints;double last;
+big_map<big_string,double>checkpoints;double last;
 #endif
 template<bool final=false>void checkpoint([[maybe_unused]]auto const&_msg){
 #ifdef CP_ALGO_CHECKPOINT

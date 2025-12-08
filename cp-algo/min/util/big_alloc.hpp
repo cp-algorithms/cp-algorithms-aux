@@ -1,6 +1,8 @@
 #ifndef CP_ALGO_UTIL_big_alloc_HPP
 #define CP_ALGO_UTIL_big_alloc_HPP
+#include <deque>
 #include <vector>
+#include <string>
 #include <cstddef>
 #include <iostream>
 #if defined(__linux__) || defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
@@ -17,5 +19,5 @@ return static_cast<T*>(::operator new(padded,std::align_val_t(align)));}void dea
 #if CP_ALGO_USE_MMAP
 if(padded>=MEGABYTE){munmap(p,padded);return;}
 #endif
-::operator delete(p,padded,std::align_val_t(align));}private:static constexpr std::size_t MEGABYTE=1<<20;static constexpr std::size_t round_up(std::size_t x)noexcept{return(x+Align-1)/Align*Align;}};template<typename T>using big_vector=std::vector<T,big_alloc<T>>;template<typename T>using big_basic_string=std::basic_string<T,std::char_traits<T>,big_alloc<T>>;using big_string=big_basic_string<char>;}
+::operator delete(p,padded,std::align_val_t(align));}private:static constexpr std::size_t MEGABYTE=1<<20;static constexpr std::size_t round_up(std::size_t x)noexcept{return(x+Align-1)/Align*Align;}};template<typename T>using big_vector=std::vector<T,big_alloc<T>>;template<typename T>using big_basic_string=std::basic_string<T,std::char_traits<T>,big_alloc<T>>;template<typename T>using big_deque=std::deque<T,big_alloc<T>>;using big_string=big_basic_string<char>;}
 #endif

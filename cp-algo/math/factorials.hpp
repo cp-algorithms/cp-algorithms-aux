@@ -58,10 +58,13 @@ namespace cp_algo::math {
                 static std::array<u32x8, subblock> prods[accum];
                 for(int z = 0; z < accum; z++) {
                     for(int j = 0; j < simd_size; j++) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                         cur[z][j] = uint32_t(b + z * block + j * subblock);
                         cur[z][j] = proj(cur[z][j]);
                         prods[z][0][j] = cur[z][j] + !cur[z][j];
                         prods[z][0][j] = uint32_t(uint64_t(prods[z][0][j]) * bi2x32.getr() % mod);
+#pragma GCC diagnostic pop
                     }
                 }
                 for(int i = 1; i < block / simd_size; i++) {

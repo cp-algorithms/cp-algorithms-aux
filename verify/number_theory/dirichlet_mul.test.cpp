@@ -1,6 +1,6 @@
 // @brief Dirichlet Convolution and Prefix Sums
 #define PROBLEM "https://judge.yosupo.jp/problem/dirichlet_convolution_and_prefix_sums"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/util/big_alloc.hpp"

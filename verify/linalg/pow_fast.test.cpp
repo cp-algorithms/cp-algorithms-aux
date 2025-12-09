@@ -1,6 +1,6 @@
 // @brief Pow of Matrix (Frobenius)
 #define PROBLEM "https://judge.yosupo.jp/problem/pow_of_matrix"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_MAXN 256
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"

@@ -1,6 +1,6 @@
 // @brief Convolution (Mod $2^{64}$)
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_2_64"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
 #include "cp-algo/math/fft64.hpp"

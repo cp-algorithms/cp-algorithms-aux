@@ -1,7 +1,7 @@
 
 // @brief Determinant of Matrix (Mod 2)
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_det_mod_2"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/structures/bitpack.hpp"
 #include <bits/stdc++.h>
 

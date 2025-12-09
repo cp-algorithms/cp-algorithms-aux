@@ -1,6 +1,6 @@
 // @brief Convolution (Large)
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_large"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"

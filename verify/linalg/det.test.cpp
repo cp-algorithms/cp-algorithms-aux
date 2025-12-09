@@ -1,6 +1,6 @@
 // @brief Matrix Determinant
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_det"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #define CP_ALGO_CHECKPOINT

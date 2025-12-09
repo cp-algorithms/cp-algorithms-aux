@@ -1,6 +1,6 @@
 // @brief Discrete Logarithm
 #define PROBLEM "https://judge.yosupo.jp/problem/discrete_logarithm_mod"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/number_theory/discrete_log.hpp"
 #include <bits/stdc++.h>
 

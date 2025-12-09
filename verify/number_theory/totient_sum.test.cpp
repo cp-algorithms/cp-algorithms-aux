@@ -1,6 +1,6 @@
 // @brief Sum of Totient Function
 #define PROBLEM "https://judge.yosupo.jp/problem/sum_of_totient_function"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/number_theory/modint.hpp"

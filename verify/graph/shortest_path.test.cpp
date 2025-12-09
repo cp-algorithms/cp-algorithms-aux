@@ -1,6 +1,6 @@
 // @brief Shortest Path
 #define PROBLEM "https://judge.yosupo.jp/problem/shortest_path"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/graph/shortest_path.hpp"
 #include <bits/stdc++.h>
 

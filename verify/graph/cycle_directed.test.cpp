@@ -1,6 +1,6 @@
 // @brief Cycle Detection (Directed)
 #define PROBLEM "https://judge.yosupo.jp/problem/cycle_detection"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/graph/cycle.hpp"

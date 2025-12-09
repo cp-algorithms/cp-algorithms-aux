@@ -1,6 +1,6 @@
 // @brief Static Convex Hull
 #define PROBLEM "https://judge.yosupo.jp/problem/static_convex_hull"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("tune=native")
 #include "cp-algo/geometry/convex_hull.hpp"
 #include <bits/stdc++.h>

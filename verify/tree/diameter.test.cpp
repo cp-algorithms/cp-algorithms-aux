@@ -1,6 +1,6 @@
 // @brief Tree Diameter
 #define PROBLEM "https://judge.yosupo.jp/problem/tree_diameter"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/tree/diameter.hpp"

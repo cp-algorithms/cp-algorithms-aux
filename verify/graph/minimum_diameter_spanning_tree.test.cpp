@@ -1,6 +1,6 @@
 // @brief Minimum Diameter Spanning Tree
 #define PROBLEM "https://judge.yosupo.jp/problem/minimum_diameter_spanning_tree"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/graph/shortest_path.hpp"

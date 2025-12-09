@@ -1,6 +1,6 @@
 // @brief Conversion to Newton Basis
 #define PROBLEM "https://judge.yosupo.jp/problem/conversion_from_monomial_basis_to_newton_basis"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

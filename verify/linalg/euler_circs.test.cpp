@@ -1,6 +1,6 @@
 // @brief Counting Eulerian Circuits
 #define PROBLEM "https://judge.yosupo.jp/problem/counting_eulerian_circuits"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/combinatorics.hpp"

@@ -1,6 +1,6 @@
 // @brief Wildcard Pattern Matching
 #define PROBLEM "https://judge.yosupo.jp/problem/wildcard_pattern_matching"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>

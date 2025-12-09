@@ -1,6 +1,6 @@
 // @brief Product of Polynomial Sequence
 #define PROBLEM "https://judge.yosupo.jp/problem/product_of_polynomial_sequence"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

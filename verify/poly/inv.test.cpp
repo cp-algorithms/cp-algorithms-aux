@@ -1,6 +1,6 @@
 // @brief Inv of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/inv_of_formal_power_series"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly.hpp"

@@ -1,6 +1,6 @@
 // @brief Matrix Product (Mod 2)
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_product_mod_2"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 //#pragma GCC target("avx2")
 #include "cp-algo/structures/bitpack.hpp"

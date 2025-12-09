@@ -1,6 +1,6 @@
 // @brief Multipoint Evaluation (Geometric Sequence)
 #define PROBLEM "https://judge.yosupo.jp/problem/multipoint_evaluation_on_geometric_sequence"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

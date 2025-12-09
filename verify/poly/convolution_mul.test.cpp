@@ -1,6 +1,6 @@
 // @brief Convolution on the Multiplicative Monoid of $\mathbb Z/p\mathbb{Z}$
 #define PROBLEM "https://judge.yosupo.jp/problem/mul_modp_convolution"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"

@@ -1,6 +1,6 @@
 // @brief Eulerian Trail (Undirected)
 #define PROBLEM "https://judge.yosupo.jp/problem/eulerian_trail_undirected"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/graph/euler.hpp"
 #include <bits/stdc++.h>
 

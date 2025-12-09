@@ -1,6 +1,6 @@
 // @brief Cycle Detection (Undirected)
 #define PROBLEM "https://judge.yosupo.jp/problem/cycle_detection_undirected"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/graph/cycle.hpp"
 #include <bits/stdc++.h>
 

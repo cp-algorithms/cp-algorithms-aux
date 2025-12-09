@@ -1,6 +1,6 @@
 // @brief Strongly Connected Components
 #define PROBLEM "https://judge.yosupo.jp/problem/scc"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/graph/tarjan.hpp"

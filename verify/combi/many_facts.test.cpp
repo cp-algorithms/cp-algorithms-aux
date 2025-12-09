@@ -1,6 +1,6 @@
 // @brief Many Factorials
 #define PROBLEM "https://judge.yosupo.jp/problem/many_factorials"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"

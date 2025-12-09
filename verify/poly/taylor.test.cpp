@@ -1,6 +1,6 @@
 // @brief Polynomial Taylor Shift
 #define PROBLEM "https://judge.yosupo.jp/problem/polynomial_taylor_shift"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

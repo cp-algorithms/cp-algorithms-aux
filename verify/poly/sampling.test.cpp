@@ -1,7 +1,7 @@
 // @brief Shift of Sampling Points of Polynomial
 #define PROBLEM "https://judge.yosupo.jp/problem/shift_of_sampling_points_of_polynomial"
 #define CP_ALGO_MAXN 1 << 20
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

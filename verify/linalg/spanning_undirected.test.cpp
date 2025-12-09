@@ -1,6 +1,6 @@
 // @brief Counting Spanning Trees (Undirected)
 #define PROBLEM "https://judge.yosupo.jp/problem/counting_spanning_tree_undirected"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/combinatorics.hpp"

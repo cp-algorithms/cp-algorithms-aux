@@ -1,7 +1,7 @@
 // @brief Matching on General Graph
 #define PROBLEM "https://judge.yosupo.jp/problem/general_matching"
 #include <bits/stdc++.h>
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/linalg/matrix.hpp"
 

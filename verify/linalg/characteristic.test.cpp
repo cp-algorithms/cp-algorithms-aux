@@ -1,6 +1,6 @@
 // @brief Characteristic Polynomial
 #define PROBLEM "https://judge.yosupo.jp/problem/characteristic_polynomial"
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_MAXN 1 << 10
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"

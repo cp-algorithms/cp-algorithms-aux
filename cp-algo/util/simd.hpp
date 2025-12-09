@@ -18,8 +18,13 @@ namespace cp_algo {
     using u8x32 = simd<uint8_t, 32>;
     using dx4 = simd<double, 4>;
 
-    inline dx4 abs(dx4 a) {
-    return a < -a ? -a : a;
+    dx4 abs(dx4 a) {
+        return dx4{
+            std::abs(a[0]),
+            std::abs(a[1]),
+            std::abs(a[2]),
+            std::abs(a[3])
+        };
     }
 
     // https://stackoverflow.com/a/77376595

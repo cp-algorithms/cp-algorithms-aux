@@ -12,7 +12,6 @@
 
 #define CP_ALGO_SIMD_PRAGMA_PUSH \
     _Pragma("GCC push_options") \
-    _Pragma("GCC optimize(\"O3,unroll-loops\")") \
     CP_ALGO_SIMD_AVX2_TARGET
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo {

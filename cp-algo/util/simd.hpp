@@ -4,10 +4,16 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
+#if defined(__x86_64__) && !defined(CP_ALGO_DISABLE_AVX2)
+#define CP_ALGO_SIMD_AVX2_TARGET _Pragma("GCC target(\"avx2\")")
+#else
+#define CP_ALGO_SIMD_AVX2_TARGET
+#endif
+
 #define CP_ALGO_SIMD_PRAGMA_PUSH \
     _Pragma("GCC push_options") \
     _Pragma("GCC optimize(\"O3,unroll-loops\")") \
-    _Pragma("GCC target(\"avx2\")")
+    CP_ALGO_SIMD_AVX2_TARGET
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo {
     template<typename T, size_t len>

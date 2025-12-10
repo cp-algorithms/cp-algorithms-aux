@@ -1,14 +1,14 @@
 // @brief System of Linear Equations (Mod 2)
 #define PROBLEM "https://judge.yosupo.jp/problem/system_of_linear_equations_mod_2"
 #pragma GCC optimize("O3,unroll-loops")
-#include "cp-algo/structures/bitpack.hpp"
+#include "cp-algo/structures/bit_array_util.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
-using cp_algo::structures::bitpack;
+using namespace cp_algo::structures;
 
 const int maxn = (1 << 12) + 1;
-bitpack<maxn> a[maxn];
+bit_array<maxn> a[maxn];
 
 void solve() {
     size_t n, m;
@@ -21,7 +21,7 @@ void solve() {
     cin >> bs;
     for(size_t i = 0; i < n; i++) {
         As[i] += bs[i];
-        a[i] = As[i];
+        from_string(a[i], As[i]);
     }
     vector<size_t> lead(n);
     auto vars = views::iota((size_t)0, m + 1);
@@ -32,7 +32,7 @@ void solve() {
                 a[i].xor_hint(a[j], lead[j]);
             }
         }
-        lead[i] = a[i].ctz();
+        lead[i] = ctz(a[i]);
         if(lead[i] == m) {
             cout << -1 << "\n";
             return;
@@ -47,7 +47,7 @@ void solve() {
             }
         }
     }
-    bitpack<maxn> x[maxn];
+    bit_array<maxn> x[maxn];
     for(auto [j, pj]: views::enumerate(free)) {
         x[j].set(pj);
         for(size_t i = 0; i < n; i++) {
@@ -60,7 +60,7 @@ void solve() {
     swap(x[0], x[rk]);
     cout << rk << "\n";
     for(size_t i = 0; i <= rk; i++) {
-        cout << x[i].to_string().substr(0, m) << "\n";
+        cout << to_string(x[i]).substr(0, m) << "\n";
     }
 }
 

@@ -3,16 +3,17 @@
 #pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 //#pragma GCC target("avx2")
-#include "cp-algo/structures/bitpack.hpp"
+#include "cp-algo/structures/bit_array_util.hpp"
 #include "cp-algo/util/checkpoint.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
+using namespace cp_algo::structures;
 
 const int maxn = 1 << 12;
 const size_t K = 8;
 
-using bitpack = cp_algo::structures::bitpack<maxn>;
+using bitpack = cp_algo::structures::bit_array<maxn>;
 
 bitpack a[maxn], b[maxn], c[maxn];
 bitpack precalc[1 << K];
@@ -33,20 +34,20 @@ void solve() {
     string row;
     for(int i = 0; i < n; i++) {
         cin >> row;
-        a[i] = row;
+        from_string(a[i], row);
     }
     for(auto &it: b) {
-        it = bitpack(k);
+        it.resize(k);
     }
     for(int i = 0; i < m; i++) {
         cin >> row;
-        b[i] = row;
+        from_string(b[i], row);
     }
     for(auto &it: c) {
-        it = bitpack(k);
+        it.resize(k);
     }
     for(auto &it: precalc) {
-        it = bitpack(k);
+        it.resize(k);
     }
     cp_algo::checkpoint("read");
     const int width = bitpack::width;
@@ -60,7 +61,7 @@ void solve() {
     }
     cp_algo::checkpoint("mul");
     for(int i = 0; i < n; i++) {
-        cout << c[i].to_string() << "\n";
+        cout << to_string(c[i]) << "\n";
     }
     cp_algo::checkpoint("write");
     cp_algo::checkpoint<1>();

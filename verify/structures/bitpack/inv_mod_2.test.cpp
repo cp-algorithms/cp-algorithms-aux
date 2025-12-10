@@ -1,14 +1,14 @@
 // @brief Inverse Matrix (Mod 2)
 #define PROBLEM "https://judge.yosupo.jp/problem/inverse_matrix_mod_2"
 #pragma GCC optimize("O3,unroll-loops")
-#include "cp-algo/structures/bitpack.hpp"
+#include "cp-algo/structures/bit_array_util.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::structures;
 
 const int maxn = 1 << 12;
-bitpack<2 * maxn> a[maxn];
+bit_array<2 * maxn> a[maxn];
 
 void solve() {
     size_t n;
@@ -17,7 +17,7 @@ void solve() {
     vector<size_t> lead(n);
     for(size_t i = 0; i < n; i++) {
         cin >> row;
-        a[i] = row;
+        from_string(a[i], row);
         a[i].resize(2 * n);
         a[i].set(n + i);
         for(size_t j = 0; j < i; j++) {
@@ -25,7 +25,7 @@ void solve() {
                 a[i].xor_hint(a[j], lead[j]);
             }
         }
-        lead[i] = a[i].ctz();
+        lead[i] = ctz(a[i]);
         if(lead[i] >= n) {
             cout << -1 << "\n";
             return;
@@ -41,7 +41,7 @@ void solve() {
             swap(a[i], a[lead[i]]);
             swap(lead[i], lead[lead[i]]);
         }
-        cout << a[i].to_string().substr(n, n) << "\n";
+        cout << to_string(a[i]).substr(n, n) << "\n";
     }
 }
 

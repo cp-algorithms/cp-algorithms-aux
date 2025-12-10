@@ -2,9 +2,21 @@
 #define CP_ALGO_UTIL_BIT_HPP
 #include "../util/simd.hpp"
 #include <cstdint>
+#include <cstddef>
 #include <array>
 #include <bit>
-CP_ALGO_SIMD_PRAGMA_PUSH
+
+#if defined(__x86_64__) && !defined(CP_ALGO_DISABLE_AVX2)
+#define CP_ALGO_BIT_OPS_TARGET _Pragma("GCC target(\"avx2,bmi,bmi2,lzcnt,popcnt\")")
+#else
+#define CP_ALGO_BIT_OPS_TARGET _Pragma("GCC target(\"bmi,bmi2,lzcnt,popcnt\")")
+#endif
+
+#define CP_ALGO_BIT_PRAGMA_PUSH \
+    _Pragma("GCC push_options") \
+    CP_ALGO_BIT_OPS_TARGET
+
+CP_ALGO_BIT_PRAGMA_PUSH
 namespace cp_algo {
     template<typename Uint>
     constexpr size_t bit_width = sizeof(Uint) * 8;
@@ -16,7 +28,7 @@ namespace cp_algo {
     size_t order_of_bit(auto x, size_t k) {
         return k ? std::popcount(x << (bit_width<decltype(x)> - k)) : 0;
     }
-    [[gnu::target("bmi2")]] inline size_t kth_set_bit(uint64_t x, size_t k) {
+    inline size_t kth_set_bit(uint64_t x, size_t k) {
         return std::countr_zero(_pdep_u64(1ULL << k, x));
     }
     template<int fl = 0>

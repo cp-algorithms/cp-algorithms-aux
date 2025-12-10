@@ -2,14 +2,14 @@
 // @brief Determinant of Matrix (Mod 2)
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_det_mod_2"
 #pragma GCC optimize("O3,unroll-loops")
-#include "cp-algo/structures/bitpack.hpp"
+#include "cp-algo/structures/bit_array_util.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
-using cp_algo::structures::bitpack;
+using cp_algo::structures::bit_array;
 
 const int maxn = 1 << 12;
-bitpack<maxn> a[maxn];
+bit_array<maxn> a[maxn];
 
 void solve() {
     size_t n;
@@ -18,13 +18,13 @@ void solve() {
     vector<size_t> lead(n);
     for(size_t i = 0; i < n; i++) {
         cin >> row;
-        a[i] = row;
+        from_string(a[i], row);
         for(size_t j = 0; j < i; j++) {
             if(a[i][lead[j]]) {
                 a[i].xor_hint(a[j], lead[j]);
             }
         }
-        lead[i] = a[i].ctz();
+        lead[i] = ctz(a[i]);
         if(lead[i] == n) {
             cout << 0 << "\n";
             return;

@@ -1,14 +1,17 @@
 #ifndef CP_ALGO_STRUCTURES_BIT_ARRAY_HPP
 #define CP_ALGO_STRUCTURES_BIT_ARRAY_HPP
 #include "../util/bit.hpp"
+#include "../util/big_alloc.hpp"
 #include <cassert>
+CP_ALGO_BIT_PRAGMA_PUSH
 namespace cp_algo::structures {
     template<typename C>
     concept Resizable = requires(C& c, std::size_t n) { c.resize(n); };
 
     template<class Cont>
     struct _bit_array {
-        static constexpr size_t width = bit_width<uint64_t>;
+        using word_t = typename Cont::value_type;
+        static constexpr size_t width = bit_width<word_t>;
         size_t words, n;
         alignas(32) Cont data;
 
@@ -22,18 +25,24 @@ namespace cp_algo::structures {
             }
         }
 
-        constexpr _bit_array(): n(0), words(0), data() {}
+        constexpr _bit_array(): data() {
+            if constexpr (!Resizable<Cont>) {
+                resize(std::size(data) * width);
+            } else {
+                resize(0);
+            }
+        }
         constexpr _bit_array(size_t N): data() {
             resize(N);
         }
 
-        constexpr uint64_t& word(size_t x) {
+        constexpr word_t& word(size_t x) {
             return data[x];
         }
-        constexpr uint64_t word(size_t x) const {
+        constexpr word_t word(size_t x) const {
             return data[x];
         }
-        constexpr void set_all(uint64_t val = -1) {
+        constexpr void set_all(word_t val = -1) {
             for(auto& w: data) {w = val;}
         }
         constexpr void reset() {
@@ -57,21 +66,26 @@ namespace cp_algo::structures {
         constexpr size_t size() const {
             return n;
         }
-    };
-
-    template<size_t N>
-    struct bit_array: _bit_array<std::array<uint64_t, (N + 63) / 64>> {
-        using Base = _bit_array<std::array<uint64_t, (N + 63) / 64>>;
-        using Base::Base, Base::words, Base::data;
-        constexpr bit_array(): Base(N) {}
-    };
-    struct dynamic_bit_array: _bit_array<std::vector<uint64_t>> {
-        using Base = _bit_array<std::vector<uint64_t>>;
-        using Base::Base, Base::words;
-        constexpr dynamic_bit_array(size_t N): Base(N) {
-            data.resize(words);
+        
+        auto operator <=> (_bit_array const& t) const = default;
+        
+        constexpr _bit_array& xor_hint(_bit_array const& t, size_t hint) {
+            for(size_t i = hint / width; i < std::size(data); i++) {
+                data[i] ^= t.data[i];
+            }
+            return *this;
+        }
+        constexpr _bit_array& operator ^= (_bit_array const& t) {
+            return xor_hint(t, 0);
+        }
+        constexpr _bit_array operator ^ (_bit_array const& t) const {
+            return _bit_array(*this) ^= t;
         }
     };
 
+    template<size_t N>
+    using bit_array = _bit_array<std::array<uint64_t, (N + 63) / 64>>;
+    using dynamic_bit_array = _bit_array<big_vector<uint64_t>>;
 }
+#pragma GCC pop_options
 #endif // CP_ALGO_STRUCTURES_BIT_ARRAY_HPP

@@ -6,9 +6,7 @@
 #include "../math/combinatorics.hpp"
 #include "../number_theory/modint.hpp"
 #include <ranges>
-#pragma GCC push_options
-#pragma GCC target("avx2")
-
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math {
     template<bool use_bump_alloc = false, int maxn = -1>
     auto facts(auto const& args) {

@@ -6,8 +6,7 @@
 #include "cvector.hpp"
 #include <iostream>
 #include <ranges>
-#pragma GCC push_options
-#pragma GCC target("avx2")
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::fft {
     template<modint_type base>
     struct dft {

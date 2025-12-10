@@ -9,8 +9,7 @@
 #include <vector>
 #include <tuple>
 #include <list>
-#pragma GCC push_options
-#pragma GCC target("avx2")
+CP_ALGO_SIMD_PRAGMA_PUSH
 // operations related to gcd and Euclidean algo
 namespace cp_algo::math::poly::impl {
     template<typename poly>

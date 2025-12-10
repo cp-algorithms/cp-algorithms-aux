@@ -3,9 +3,7 @@
 #include "../random/rng.hpp"
 #include "../math/common.hpp"
 #include "../math/cvector.hpp"
-#pragma GCC push_options
-#pragma GCC target("avx2")
-
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::fft {
     struct dft64 {
         big_vector<cp_algo::math::fft::cvector> cv;

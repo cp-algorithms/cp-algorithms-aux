@@ -12,8 +12,7 @@
 #include <utility>
 #include <vector>
 #include <list>
-#pragma GCC push_options
-#pragma GCC target("avx2")
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math {
     template<typename T>
     struct poly_t {

@@ -8,8 +8,7 @@
 #include <cassert>
 #include <vector>
 #include <array>
-#pragma GCC push_options
-#pragma GCC target("avx2")
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::linalg {
     enum gauss_mode {normal, reverse};
 

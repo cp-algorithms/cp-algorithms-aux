@@ -3,8 +3,7 @@
 #include "../../fft.hpp"
 #include "../../common.hpp"
 #include <cassert>
-#pragma GCC push_options
-#pragma GCC target("avx2")
+CP_ALGO_SIMD_PRAGMA_PUSH
 // operations related to polynomial division
 namespace cp_algo::math::poly::impl {
     auto divmod_slow(auto const& p, auto const& q) {

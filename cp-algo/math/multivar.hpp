@@ -3,8 +3,7 @@
 #include "../util/big_alloc.hpp"
 #include "../number_theory/modint.hpp"
 #include "../math/fft.hpp"
-#pragma GCC push_options
-#pragma GCC target("avx2")
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::fft {
     template<modint_type base>
     struct multivar {

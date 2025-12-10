@@ -4,8 +4,11 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
-#pragma GCC push_options
-#pragma GCC target("avx2")
+#define CP_ALGO_SIMD_PRAGMA_PUSH \
+    _Pragma("GCC push_options") \
+    _Pragma("GCC optimize(\"O3,unroll-loops\")") \
+    _Pragma("GCC target(\"avx2\")")
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo {
     template<typename T, size_t len>
     using simd [[gnu::vector_size(len * sizeof(T))]] = T;

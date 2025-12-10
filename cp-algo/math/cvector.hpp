@@ -6,9 +6,7 @@
 #include "../util/big_alloc.hpp"
 #include <ranges>
 #include <bit>
-#pragma GCC push_options
-#pragma GCC target("avx2")
-
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace stdx = std::experimental;
 namespace cp_algo::math::fft {
     static constexpr size_t flen = 4;

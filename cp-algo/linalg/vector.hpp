@@ -12,8 +12,7 @@
 #include <iterator>
 #include <cassert>
 #include <ranges>
-#pragma GCC push_options
-#pragma GCC target("avx2")
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::linalg {
     template<typename base, class Alloc = big_alloc<base>>
     struct vec: std::basic_string<base, std::char_traits<base>, Alloc> {

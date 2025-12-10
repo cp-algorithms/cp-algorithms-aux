@@ -70,7 +70,7 @@ namespace cp_algo::structures {
         auto operator <=> (_bit_array const& t) const = default;
         
         constexpr _bit_array& xor_hint(_bit_array const& t, size_t hint) {
-            for(size_t i = hint / width; i < std::size(data); i++) {
+            for(size_t i = hint / width; i < words; i++) {
                 data[i] ^= t.data[i];
             }
             return *this;

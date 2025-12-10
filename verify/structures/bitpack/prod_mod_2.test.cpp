@@ -36,9 +36,6 @@ void solve() {
         cin >> row;
         from_string(a[i], row);
     }
-    for(auto &it: b) {
-        it.resize(k);
-    }
     for(int i = 0; i < m; i++) {
         cin >> row;
         from_string(b[i], row);

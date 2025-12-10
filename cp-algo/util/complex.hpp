@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <type_traits>
+#include "simd.hpp"
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo {
     // Custom implementation, since std::complex is UB on non-floating types

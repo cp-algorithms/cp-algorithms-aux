@@ -42,6 +42,12 @@ namespace cp_algo::math {
         return primes;
     }();
 
+    constexpr size_t sqrt_threshold = 1 << 16;
+    const auto sqrt_primes = std::span(
+        begin(base_primes),
+        std::ranges::upper_bound(base_primes, sqrt_threshold)
+    );
+
     constexpr size_t max_wheel_size = 1 << 20;
     struct wheel_t {
         dynamic_bit_array mask;
@@ -62,16 +68,28 @@ namespace cp_algo::math {
         return wheel;
     }
 
-    constexpr size_t sqrt_threshold = 1 << 16;
-    const auto sqrt_primes = std::span(
-        begin(base_primes),
-        std::ranges::upper_bound(base_primes, sqrt_threshold)
-    );
-
-    std::span<uint32_t const> medium_primes = sqrt_primes;
-    std::vector<wheel_t> wheels;
-    
-    void gen_wheels();
+    auto medium_primes = sqrt_primes;
+    const auto wheels = []() {
+        uint32_t product = 64;
+        std::vector<uint32_t> current;
+        std::vector<wheel_t> wheels;
+        for(size_t i = 1; i < size(sqrt_primes); i++) {
+            uint32_t p = sqrt_primes[i];
+            if (product * p > max_wheel_size) {
+                if (size(current) == 1) {
+                    medium_primes = sqrt_primes.subspan(i - 1);
+                    return wheels;
+                }
+                wheels.push_back(make_wheel(current, product));
+                current = {p};
+                product = 64 * p;
+            } else {
+                current.push_back(p);
+                product *= p;
+            }
+        }
+        assert(false);
+    }();
 
     void sieve_dense(auto &prime, uint32_t l, uint32_t r, wheel_t const& wheel) {
         if (l >= r) return;
@@ -127,33 +145,9 @@ namespace cp_algo::math {
         if (l >= r) return;
         while (l < r) {
             prime.reset(l);
-            l += gap210[state] * p;
+            l += p * gap210[state];
             state = state == 47 ? 0 : state + 1;
         }
-    }
-
-    void gen_wheels() {
-        static bool initialized = false;
-        if (initialized) return;
-        uint32_t product = 64;
-        std::vector<uint32_t> current;
-        for(size_t i = 1; i < size(sqrt_primes); i++) {
-            uint32_t p = sqrt_primes[i];
-            if (product * p > max_wheel_size) {
-                if (size(current) == 1) {
-                    medium_primes = sqrt_primes.subspan(i - 1);
-                    initialized = true;
-                    return;
-                }
-                wheels.push_back(make_wheel(current, product));
-                current = {p};
-                product = 64 * p;
-            } else {
-                current.push_back(p);
-                product *= p;
-            }
-        }
-        assert(false);
     }
 
     // Primes smaller than N
@@ -164,8 +158,6 @@ namespace cp_algo::math {
             prime.word(i) = base_prime_bits.word(i);
         }
         cp_algo::checkpoint("init");
-        gen_wheels();
-        cp_algo::checkpoint("gen wheels");
         static constexpr uint32_t dense_block = 1 << 23;
         for(uint32_t start = base_threshold; start < N; start += dense_block) {
             uint32_t r = std::min(start + dense_block, N);

@@ -48,7 +48,7 @@ namespace cp_algo::math {
         uint32_t product = 1;
     };
 
-    inline auto make_wheel(std::vector<uint32_t> primes, uint32_t product) {
+    auto make_wheel(std::vector<uint32_t> primes, uint32_t product) {
         assert(product % 64 == 0);
         wheel_t wheel;
         wheel.product = product;

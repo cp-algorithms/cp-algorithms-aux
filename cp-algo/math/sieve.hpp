@@ -68,8 +68,8 @@ namespace cp_algo::math {
         std::ranges::upper_bound(base_primes, sqrt_threshold)
     );
 
-    inline std::span<uint32_t const> medium_primes = sqrt_primes;
-    inline std::vector<wheel_t> wheels;
+    std::span<uint32_t const> medium_primes = sqrt_primes;
+    std::vector<wheel_t> wheels;
     
     void gen_wheels();
 

@@ -15,7 +15,7 @@ CP_ALGO_BIT_PRAGMA_PUSH
 namespace cp_algo::math {
     using cp_algo::structures::dynamic_bit_array;
 
-    constexpr size_t base_threshold = 1 << 20;
+    constexpr size_t base_threshold = 1 << 21;
     
     constexpr auto to_ord(auto x) {
         return x / 2;
@@ -54,10 +54,10 @@ namespace cp_algo::math {
         std::ranges::upper_bound(base_primes, sqrt_threshold)
     );
 
-    constexpr size_t max_wheel_size = std::min<size_t>(base_threshold, 1 << 20);
+    constexpr size_t max_wheel_size = std::min<size_t>(base_threshold, 1 << 21);
     struct wheel_t {
         dynamic_bit_array mask;
-        uint32_t product = 1;
+        uint32_t product;
     };
 
     auto make_wheel(std::vector<uint32_t> primes, uint32_t product) {
@@ -166,7 +166,7 @@ namespace cp_algo::math {
             prime.word(i) = base_prime_bits.word(i);
         }
         cp_algo::checkpoint("init");
-        static constexpr uint32_t dense_block = 1 << 23;
+        static constexpr uint32_t dense_block = 1 << 24;
         for(uint32_t start = base_threshold; start < N; start += dense_block) {
             uint32_t r = std::min(start + dense_block, N);
             for(auto const& wheel: wheels) {
@@ -175,7 +175,7 @@ namespace cp_algo::math {
             }
         }
         cp_algo::checkpoint("dense sieve");
-        static constexpr uint32_t sparse_block = 1 << 21;
+        static constexpr uint32_t sparse_block = 1 << 22;
         for(uint32_t start = base_threshold; start < N; start += sparse_block) {
             uint32_t r = std::min(start + sparse_block, N);
             for(auto p: medium_primes) {

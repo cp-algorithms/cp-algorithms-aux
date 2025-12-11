@@ -14,13 +14,19 @@ using namespace cp_algo::math;
 void solve() {
     uint32_t N, A, B;
     cin >> N >> A >> B;
-    auto primes = sieve(N + 1);
-    auto cnt = count(primes, N + 1);
+    auto primes = odd_sieve(N);
+    auto cnt = count(primes) + (N >= 2);
     cp_algo::checkpoint("count");
     auto X = cnt < B ? 0 : (cnt - B + A - 1) / A;
     cout << cnt << ' ' << X << endl;
-    for(size_t i = skip(primes, 0, B); i <= N; i = skip(primes, i, A)) {
-        cout << i << ' ';
+    if (X) {
+        if (B == 0) {
+            cout << 2 << ' ';
+        }
+        B = (B - 1 + A) % A;
+    }
+    for(size_t i = skip(primes, 0, B); i < primes.size(); i = skip(primes, i, A)) {
+        cout << to_val(i) << ' ';
     }
     cout << "\n";
     cp_algo::checkpoint("print");

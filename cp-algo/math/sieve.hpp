@@ -17,15 +17,21 @@ namespace cp_algo::math {
 
     constexpr size_t base_threshold = 1 << 20;
     
+    constexpr auto to_ord(auto x) {
+        return x / 2;
+    }
+    constexpr auto to_val(auto x) {
+        return 2 * x + 1;
+    }
+
     const auto base_prime_bits = []() {
         dynamic_bit_array prime(base_threshold);
-        prime.set_all(0xAAAAAAAAAAAAAAAA); // set all odd numbers
-        prime.reset(1);
-        prime.set(2);
-        for(size_t i = 3; i * i < base_threshold; i += 2) {
-            if (prime[i]) {
-                for(size_t j = i * i; j < base_threshold; j += 2 * i) {
-                    prime.reset(j);
+        prime.set_all();
+        prime.reset(to_ord(1));
+        for(size_t i = 3; to_ord(i * i) < base_threshold; i += 2) {
+            if (prime[to_ord(i)]) {
+                for(size_t j = i * i; to_ord(j) < base_threshold; j += 2 * i) {
+                    prime.reset(to_ord(j));
                 }
             }
         }
@@ -33,9 +39,9 @@ namespace cp_algo::math {
     }();
 
     const auto base_primes = []() {
-        cp_algo::big_vector<uint32_t> primes = {2};
-        for(uint32_t i = 3; i < base_threshold; i += 2) {
-            if (base_prime_bits[i]) {
+        cp_algo::big_vector<uint32_t> primes;
+        for(uint32_t i = 3; to_ord(i) < base_threshold; i += 2) {
+            if (base_prime_bits[to_ord(i)]) {
                 primes.push_back(i);
             }
         }
@@ -48,20 +54,20 @@ namespace cp_algo::math {
         std::ranges::upper_bound(base_primes, sqrt_threshold)
     );
 
-    constexpr size_t max_wheel_size = 1 << 20;
+    constexpr size_t max_wheel_size = std::min<size_t>(base_threshold, 1 << 20);
     struct wheel_t {
         dynamic_bit_array mask;
         uint32_t product = 1;
     };
 
     auto make_wheel(std::vector<uint32_t> primes, uint32_t product) {
-        assert(product % 64 == 0);
+        assert(product % (2 * dynamic_bit_array::width) == 0);
         wheel_t wheel;
         wheel.product = product;
-        wheel.mask.resize(product);
+        wheel.mask.resize(product / 2);
         wheel.mask.set_all();
         for(auto p: primes) {
-            for(size_t j = 0; j < wheel.mask.size(); j += p) {
+            for(size_t j = to_ord(p); j < wheel.mask.size(); j += p) {
                 wheel.mask.reset(j);
             }
         }
@@ -70,10 +76,10 @@ namespace cp_algo::math {
 
     auto medium_primes = sqrt_primes;
     const auto wheels = []() {
-        uint32_t product = 64;
+        uint32_t product = 2 * dynamic_bit_array::width;
         std::vector<uint32_t> current;
         std::vector<wheel_t> wheels;
-        for(size_t i = 1; i < size(sqrt_primes); i++) {
+        for(size_t i = 0; i < size(sqrt_primes); i++) {
             uint32_t p = sqrt_primes[i];
             if (product * p > max_wheel_size) {
                 if (size(current) == 1) {
@@ -82,7 +88,7 @@ namespace cp_algo::math {
                 }
                 wheels.push_back(make_wheel(current, product));
                 current = {p};
-                product = 64 * p;
+                product = 2 * dynamic_bit_array::width * p;
             } else {
                 current.push_back(p);
                 product *= p;
@@ -93,8 +99,9 @@ namespace cp_algo::math {
 
     void sieve_dense(auto &prime, uint32_t l, uint32_t r, wheel_t const& wheel) {
         if (l >= r) return;
-        uint32_t wl = l / (uint32_t)dynamic_bit_array::width;
-        uint32_t wr = r / (uint32_t)dynamic_bit_array::width + 1;
+        const auto width = (uint32_t)dynamic_bit_array::width;
+        uint32_t wl = l / width;
+        uint32_t wr = (r + width - 1) / width;
         uint32_t N = (uint32_t)wheel.mask.words;
         for(uint32_t i = wl; i < wr; i += N) {
             auto block = std::min(N, wr - i);
@@ -119,12 +126,12 @@ namespace cp_algo::math {
     }();
 
     constexpr uint8_t gap210[] = {
-        10, 2, 4, 2, 4, 6, 2, 6,
-         4, 2, 4, 6, 6, 2, 6, 4,
-         2, 6, 4, 6, 8, 4, 2, 4,
-         2, 4, 8, 6, 4, 6, 2, 4,
-         6, 2, 6, 6, 4, 2, 4, 6,
-         2, 6, 4, 2, 4, 2, 10, 2
+        5, 1, 2, 1, 2, 3, 1, 3,
+        2, 1, 2, 3, 3, 1, 3, 2,
+        1, 3, 2, 3, 4, 2, 1, 2,
+        1, 2, 4, 3, 2, 3, 1, 2,
+        3, 1, 3, 3, 2, 1, 2, 3,
+        1, 3, 2, 1, 2, 1, 5, 1
     };
 
     constexpr auto state210 = []() {
@@ -150,10 +157,11 @@ namespace cp_algo::math {
         }
     }
 
-    // Primes smaller than N
-    dynamic_bit_array sieve(uint32_t N) {
-        dynamic_bit_array prime(N);
-        prime.set_all(0xAAAAAAAAAAAAAAAA);
+    // Primes smaller or equal than N
+    dynamic_bit_array odd_sieve(uint32_t N) {
+        N++;
+        dynamic_bit_array prime(N / 2);
+        prime.set_all();
         for(size_t i = 0; i < std::min(prime.words, base_prime_bits.words); i++) {
             prime.word(i) = base_prime_bits.word(i);
         }
@@ -163,11 +171,10 @@ namespace cp_algo::math {
             uint32_t r = std::min(start + dense_block, N);
             for(auto const& wheel: wheels) {
                 auto l = start / wheel.product * wheel.product;
-                sieve_dense(prime, l, r, wheel);
+                sieve_dense(prime, to_ord(l), to_ord(r), wheel);
             }
         }
         cp_algo::checkpoint("dense sieve");
-
         static constexpr uint32_t sparse_block = 1 << 21;
         for(uint32_t start = base_threshold; start < N; start += sparse_block) {
             uint32_t r = std::min(start + sparse_block, N);
@@ -175,7 +182,7 @@ namespace cp_algo::math {
                 if(p * p >= r) break;
                 auto k = std::max(start / p, p);
                 if (state210[k % 210] == 0xFF) {k += add210[k % 210];}
-                sieve210(prime, k * p, r, p, state210[k % 210]);
+                sieve210(prime, to_ord(k * p), to_ord(r), p, state210[k % 210]);
             }
         }
         cp_algo::checkpoint("sparse sieve");

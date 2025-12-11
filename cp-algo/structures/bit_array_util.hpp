@@ -67,6 +67,7 @@ namespace cp_algo::structures {
 
     template<typename BitArray>
     constexpr size_t skip(BitArray const& arr, size_t pos = 0, int k = 0) {
+        if (pos >= arr.n) return arr.n;
         size_t word_idx = pos / BitArray::width;
         auto w = arr.word(word_idx) >> (pos % BitArray::width);
         auto popcnt = std::popcount(w);

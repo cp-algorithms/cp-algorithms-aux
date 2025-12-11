@@ -73,7 +73,7 @@ namespace cp_algo::math {
     
     void gen_wheels();
 
-    inline void sieve_dense(auto &prime, uint32_t l, uint32_t r, wheel_t const& wheel) {
+    void sieve_dense(auto &prime, uint32_t l, uint32_t r, wheel_t const& wheel) {
         if (l >= r) return;
         uint32_t wl = l / (uint32_t)dynamic_bit_array::width;
         uint32_t wr = r / (uint32_t)dynamic_bit_array::width + 1;
@@ -123,7 +123,7 @@ namespace cp_algo::math {
     }();
 
     template <class BitArray>
-    inline void sieve210(BitArray &prime, uint32_t l, uint32_t r, uint32_t p, uint8_t state) {
+    void sieve210(BitArray &prime, uint32_t l, uint32_t r, uint32_t p, uint8_t state) {
         if (l >= r) return;
         while (l < r) {
             prime.reset(l);
@@ -132,7 +132,7 @@ namespace cp_algo::math {
         }
     }
 
-    inline void gen_wheels() {
+    void gen_wheels() {
         static bool initialized = false;
         if (initialized) return;
         uint32_t product = 64;
@@ -157,7 +157,7 @@ namespace cp_algo::math {
     }
 
     // Primes smaller than N
-    inline dynamic_bit_array sieve(uint32_t N) {
+    dynamic_bit_array sieve(uint32_t N) {
         dynamic_bit_array prime(N);
         prime.set_all(0xAAAAAAAAAAAAAAAA);
         for(size_t i = 0; i < std::min(prime.words, base_prime_bits.words); i++) {
@@ -175,6 +175,7 @@ namespace cp_algo::math {
             }
         }
         cp_algo::checkpoint("dense sieve");
+
         static constexpr uint32_t sparse_block = 1 << 21;
         for(uint32_t start = base_threshold; start < N; start += sparse_block) {
             uint32_t r = std::min(start + sparse_block, N);

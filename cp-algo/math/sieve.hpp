@@ -1,0 +1,193 @@
+#ifndef CP_ALGO_MATH_SIEVE_HPP
+#define CP_ALGO_MATH_SIEVE_HPP
+#include "../structures/bit_array.hpp"
+#include "../structures/bit_array_util.hpp"
+#include "../util/bit.hpp"
+#include "../util/checkpoint.hpp"
+#include <cstdint>
+#include <cstddef>
+#include <vector>
+#include <span>
+#include <algorithm>
+#include <cassert>
+
+CP_ALGO_BIT_PRAGMA_PUSH
+namespace cp_algo::math {
+    using cp_algo::structures::dynamic_bit_array;
+
+    constexpr size_t base_threshold = 1 << 20;
+    
+    const auto base_prime_bits = []() {
+        dynamic_bit_array prime(base_threshold);
+        prime.set_all(0xAAAAAAAAAAAAAAAA); // set all odd numbers
+        prime.reset(1);
+        prime.set(2);
+        for(size_t i = 3; i * i < base_threshold; i += 2) {
+            if (prime[i]) {
+                for(size_t j = i * i; j < base_threshold; j += 2 * i) {
+                    prime.reset(j);
+                }
+            }
+        }
+        return prime;
+    }();
+
+    const auto base_primes = []() {
+        cp_algo::big_vector<uint32_t> primes = {2};
+        for(uint32_t i = 3; i < base_threshold; i += 2) {
+            if (base_prime_bits[i]) {
+                primes.push_back(i);
+            }
+        }
+        return primes;
+    }();
+
+    constexpr size_t max_wheel_size = 1 << 20;
+    struct wheel_t {
+        dynamic_bit_array mask;
+        uint32_t product = 1;
+    };
+
+    inline auto make_wheel(std::vector<uint32_t> primes, uint32_t product) {
+        assert(product % 64 == 0);
+        wheel_t wheel;
+        wheel.product = product;
+        wheel.mask.resize(product);
+        wheel.mask.set_all();
+        for(auto p: primes) {
+            for(size_t j = 0; j < wheel.mask.size(); j += p) {
+                wheel.mask.reset(j);
+            }
+        }
+        return wheel;
+    }
+
+    constexpr size_t sqrt_threshold = 1 << 16;
+    const auto sqrt_primes = std::span(
+        begin(base_primes),
+        std::ranges::upper_bound(base_primes, sqrt_threshold)
+    );
+
+    inline std::span<uint32_t const> medium_primes = sqrt_primes;
+    inline std::vector<wheel_t> wheels;
+    
+    void gen_wheels();
+
+    inline void sieve_dense(auto &prime, uint32_t l, uint32_t r, wheel_t const& wheel) {
+        if (l >= r) return;
+        uint32_t wl = l / (uint32_t)dynamic_bit_array::width;
+        uint32_t wr = r / (uint32_t)dynamic_bit_array::width + 1;
+        uint32_t N = (uint32_t)wheel.mask.words;
+        for(uint32_t i = wl; i < wr; i += N) {
+            auto block = std::min(N, wr - i);
+            for(uint32_t j = 0; j < block; j++) {
+                prime.word(i + j) &= wheel.mask.word(j);
+            }
+        }
+    }
+
+    constexpr auto add210 = []() {
+        std::array<uint8_t, 210> add;
+        auto good = [&](int x) {
+            return x % 2 && x % 3 && x % 5 && x % 7;
+        };
+        for(int i = 0; i < 210; i++) {
+            add[i] = 1;
+            while (!good(i + add[i])) {
+                add[i]++;
+            }
+        }
+        return add;
+    }();
+
+    constexpr uint8_t gap210[] = {
+        10, 2, 4, 2, 4, 6, 2, 6,
+         4, 2, 4, 6, 6, 2, 6, 4,
+         2, 6, 4, 6, 8, 4, 2, 4,
+         2, 4, 8, 6, 4, 6, 2, 4,
+         6, 2, 6, 6, 4, 2, 4, 6,
+         2, 6, 4, 2, 4, 2, 10, 2
+    };
+
+    constexpr auto state210 = []() {
+        std::array<uint8_t, 210> state;
+        int idx = 0;
+        for(int i = 0; i < 210; i++) {
+            if (i % 2 && i % 3 && i % 5 && i % 7) {
+                state[i] = uint8_t(idx++);
+            } else {
+                state[i] = -1;
+            }
+        }
+        return state;
+    }();
+
+    template <class BitArray>
+    inline void sieve210(BitArray &prime, uint32_t l, uint32_t r, uint32_t p, uint8_t state) {
+        if (l >= r) return;
+        while (l < r) {
+            prime.reset(l);
+            l += gap210[state] * p;
+            state = state == 47 ? 0 : state + 1;
+        }
+    }
+
+    inline void gen_wheels() {
+        static bool initialized = false;
+        if (initialized) return;
+        uint32_t product = 64;
+        std::vector<uint32_t> current;
+        for(size_t i = 1; i < size(sqrt_primes); i++) {
+            uint32_t p = sqrt_primes[i];
+            if (product * p > max_wheel_size) {
+                if (size(current) == 1) {
+                    medium_primes = sqrt_primes.subspan(i - 1);
+                    initialized = true;
+                    return;
+                }
+                wheels.push_back(make_wheel(current, product));
+                current = {p};
+                product = 64 * p;
+            } else {
+                current.push_back(p);
+                product *= p;
+            }
+        }
+        assert(false);
+    }
+
+    // Primes smaller than N
+    inline dynamic_bit_array sieve(uint32_t N) {
+        dynamic_bit_array prime(N);
+        prime.set_all(0xAAAAAAAAAAAAAAAA);
+        for(size_t i = 0; i < std::min(prime.words, base_prime_bits.words); i++) {
+            prime.word(i) = base_prime_bits.word(i);
+        }
+        cp_algo::checkpoint("init");
+        gen_wheels();
+        cp_algo::checkpoint("gen wheels");
+        static constexpr uint32_t dense_block = 1 << 23;
+        for(uint32_t start = base_threshold; start < N; start += dense_block) {
+            uint32_t r = std::min(start + dense_block, N);
+            for(auto const& wheel: wheels) {
+                auto l = start / wheel.product * wheel.product;
+                sieve_dense(prime, l, r, wheel);
+            }
+        }
+        cp_algo::checkpoint("dense sieve");
+        static constexpr uint32_t sparse_block = 1 << 21;
+        for(uint32_t start = base_threshold; start < N; start += sparse_block) {
+            uint32_t r = std::min(start + sparse_block, N);
+            for(auto p: medium_primes) {
+                if(p * p >= r) break;
+                auto k = std::max(start / p, p);
+                if (state210[k % 210] == 0xFF) {k += add210[k % 210];}
+                sieve210(prime, k * p, r, p, state210[k % 210]);
+            }
+        }
+        cp_algo::checkpoint("sparse sieve");
+        return prime;
+    }
+}
+#pragma GCC pop_options
+#endif // CP_ALGO_MATH_SIEVE_HPP

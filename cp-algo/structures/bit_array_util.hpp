@@ -64,6 +64,26 @@ namespace cp_algo::structures {
         }
         return std::min(res, arr.n);
     }
+
+    template<typename BitArray>
+    constexpr size_t skip(BitArray const& arr, size_t pos = 0, int k = 0) {
+        size_t word_idx = pos / BitArray::width;
+        auto w = arr.word(word_idx) >> (pos % BitArray::width);
+        auto popcnt = std::popcount(w);
+        if (popcnt > k) {
+            return pos + cp_algo::kth_set_bit(w, k);
+        }
+        k -= popcnt;
+        while (++word_idx < arr.words) {
+            w = arr.word(word_idx);
+            auto popcnt = std::popcount(w);
+            if (popcnt > k) [[unlikely]] {
+                return word_idx * BitArray::width + cp_algo::kth_set_bit(w, k);
+            }
+            k -= popcnt;
+        }
+        return arr.n;
+    }
 }
 #pragma GCC pop_options
 #endif // CP_ALGO_STRUCTURES_BIT_ARRAY_UTIL_HPP

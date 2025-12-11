@@ -3,7 +3,7 @@
 #include "../util/bit.hpp"
 #include "../util/big_alloc.hpp"
 #include <cassert>
-CP_ALGO_BIT_PRAGMA_PUSH
+CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::structures {
     template<typename C>
     concept Resizable = requires(C& c, std::size_t n) { c.resize(n); };
@@ -43,7 +43,9 @@ namespace cp_algo::structures {
             return data[x];
         }
         constexpr void set_all(word_t val = -1) {
-            for(auto& w: data) {w = val;}
+            for(size_t i = 0; i < words; i++) {
+                data[i] = val;
+            }
         }
         constexpr void reset() {
             set_all(0);

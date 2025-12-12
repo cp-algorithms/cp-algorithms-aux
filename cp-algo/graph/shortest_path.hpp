@@ -41,7 +41,7 @@ namespace cp_algo::graph {
     };
 
     struct spfa_context: shortest_path_context {
-        std::queue<node_index> que;
+        big_queue<node_index> que;
         big_vector<char> flags;
         static constexpr char in_queue = 1;
         static constexpr char invalidated = 2;

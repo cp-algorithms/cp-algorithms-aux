@@ -56,7 +56,7 @@ namespace cp_algo::graph {
             edge_index ep;
             node_index v;
         };
-        std::stack<stack_frame> stack;
+        big_stack<stack_frame> stack;
         stack.push({-1, v0});
         
         while (!empty(stack)) {

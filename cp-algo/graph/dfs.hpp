@@ -46,7 +46,7 @@ namespace cp_algo::graph {
             enum { INIT, PROCESS_EDGES, HANDLE_CHILD } state;
         };
         
-        std::stack<frame> dfs_stack;
+        big_stack<frame> dfs_stack;
         
         for (auto root: g.nodes()) {
             if (context.done) break;

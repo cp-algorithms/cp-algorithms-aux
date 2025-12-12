@@ -11,7 +11,7 @@ namespace cp_algo::graph {
     template<graph_type graph>
     struct tarjan_context: dfs_low_context<graph> {
         using base = dfs_low_context<graph>;
-        std::stack<int> stack;
+        big_stack<int> stack;
         structures::csr<node_index> components;
         
         tarjan_context(graph const& g): base(g) {

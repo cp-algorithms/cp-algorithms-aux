@@ -3,6 +3,8 @@
 
 #include <map>
 #include <deque>
+#include <stack>
+#include <queue>
 #include <vector>
 #include <string>
 #include <cstddef>
@@ -73,5 +75,9 @@ namespace cp_algo {
     template<typename Key, typename Value, typename Compare = std::less<Key>>
     using big_map = std::map<Key, Value, Compare, big_alloc<std::pair<const Key, Value>>>;
     using big_string = big_basic_string<char>;
+    template<typename T>
+    using big_stack = std::stack<T, big_deque<T>>;
+    template<typename T>
+    using big_queue = std::queue<T, big_deque<T>>;
 }
 #endif // CP_ALGO_UTIL_big_alloc_HPP

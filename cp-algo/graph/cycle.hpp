@@ -8,7 +8,7 @@ namespace cp_algo::graph {
     struct cycle_context: dfs_context<graph> {
         using base = dfs_context<graph>;
         using base::base;
-        std::deque<edge_index> cycle;
+        big_deque<edge_index> cycle;
         bool closed = false;
         int v0;
         
@@ -30,7 +30,7 @@ namespace cp_algo::graph {
     };
     
     template<graph_type graph>
-    std::pair<node_index, std::deque<edge_index>> find_cycle(graph const& g) {
+    std::pair<node_index, big_deque<edge_index>> find_cycle(graph const& g) {
         auto context = dfs<cycle_context>(g);
         return {context.v0, context.cycle};
     }

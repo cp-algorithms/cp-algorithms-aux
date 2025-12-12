@@ -45,8 +45,8 @@ namespace cp_algo::graph {
     // Try finding a trail starting from v0
     // may be partial if graph is not Eulerian or disconnected
     template<graph_type graph>
-    std::deque<edge_index> try_euler_trail(graph const& g, node_index v0) {
-        std::deque<edge_index> trail;
+    big_deque<edge_index> try_euler_trail(graph const& g, node_index v0) {
+        big_deque<edge_index> trail;
         enum state { unvisited, visited };
         big_vector<state> state(g.m());
         auto const& adj = g.incidence_lists();
@@ -83,7 +83,7 @@ namespace cp_algo::graph {
         return trail;
     }
     template<graph_type graph>
-    std::optional<std::pair<node_index, std::deque<edge_index>>> euler_trail(graph const& g) {
+    std::optional<std::pair<node_index, big_deque<edge_index>>> euler_trail(graph const& g) {
         auto v0 = euler_start(g);
         if (!v0) {
             return std::nullopt;

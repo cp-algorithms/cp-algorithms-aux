@@ -11,7 +11,7 @@ namespace cp_algo::structures {
     struct eertree {
         eertree(size_t q) {
             q += 2;
-            s = std::string(q, -1);
+            s = big_string(q, -1);
             len = par = link = big_vector(q, 0);
             to.resize(q);
             link[0] = 1;
@@ -65,7 +65,7 @@ namespace cp_algo::structures {
     private:
         big_vector<std::forward_list<int>> to;
         big_vector<int> len, link, par;
-        std::string s;
+        big_string s;
         int n = 1, sz = 2, last = 0;
     };
 }

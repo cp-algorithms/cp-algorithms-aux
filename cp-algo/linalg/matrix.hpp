@@ -29,7 +29,7 @@ namespace cp_algo::linalg {
         matrix(Base &&t): Base(std::move(t)) {}
         
         template<std::ranges::input_range R>
-        matrix(R &&r): Base(std::from_range, std::forward<R>(r)) {}
+        matrix(R &&r): Base(r.begin(), r.end()) {}
 
         size_t n() const {return size(*this);}
         size_t m() const {return n() ? size(row(0)) : 0;}

@@ -8,7 +8,7 @@ namespace cp_algo::graph {
         big_vector<node_index> size, in, up, par;
         
         template<undirected_graph_type graph>
-        heavy_light(graph const& g, node_index root = 0, std::vector<edge_index> const* parents_ptr = nullptr):
+        heavy_light(graph const& g, node_index root = 0, big_vector<edge_index> const* parents_ptr = nullptr):
             size(g.n(), 1), in(g.n()), up(g.n()), par(g.n()) {
             big_vector<node_index> topsort;
             topsort.reserve(g.n());

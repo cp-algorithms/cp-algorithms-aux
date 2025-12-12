@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_STRUCTURES_TREAP_HPP
 #define CP_ALGO_STRUCTURES_TREAP_HPP
+#include "../util/big_alloc.hpp"
 #include "../random/rng.hpp"
 #include "treap/common.hpp"
 #include <array>
@@ -108,7 +109,7 @@ namespace cp_algo::structures::treap {
         }
 
         static treap build(auto const& nodes) {
-            std::vector<treap> st;
+            big_vector<treap> st;
             for(auto cur: nodes) {
                 while(st.size() >= 2 && st[st.size() - 2]->prior > cur->prior) {
                     st.pop_back();

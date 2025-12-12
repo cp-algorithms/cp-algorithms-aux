@@ -2,6 +2,7 @@
 #define CP_ALGO_NUMBER_THEORY_TWO_SQUARES_HPP
 #include "euler.hpp"
 #include "../util/complex.hpp"
+#include "../util/big_alloc.hpp"
 #include <cassert>
 #include <utility>
 #include <vector>
@@ -33,7 +34,7 @@ namespace cp_algo::math {
     }
 
     template<typename Int>
-    std::vector<gaussint<Int>> two_squares_all(Int n) {
+    big_vector<gaussint<Int>> two_squares_all(Int n) {
         if(n == 0) {
             return {0};
         }
@@ -42,9 +43,9 @@ namespace cp_algo::math {
         for(auto p: primes) {
             cnt[p]++;
         }
-        std::vector<gaussint<Int>> res = {1};
+        big_vector<gaussint<Int>> res = {1};
         for(auto [p, c]: cnt) {
-            std::vector<gaussint<Int>> nres;
+            big_vector<gaussint<Int>> nres;
             if(p % 4 == 3) {
                 if(c % 2 == 0) {
                     auto mul = bpow(gaussint<Int>(p), c / 2);
@@ -68,7 +69,7 @@ namespace cp_algo::math {
             }
             res = nres;
         }
-        std::vector<gaussint<Int>> nres;
+        big_vector<gaussint<Int>> nres;
         for(auto p: res) {
             while(p.real() < 0 || p.imag() < 0) {
                 p *= gaussint<Int>(0, 1);

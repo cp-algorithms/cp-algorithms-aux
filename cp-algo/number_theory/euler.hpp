@@ -1,9 +1,10 @@
 #ifndef CP_ALGO_NUMBER_THEORY_EULER_HPP
 #define CP_ALGO_NUMBER_THEORY_EULER_HPP
 #include "factorize.hpp"
+#include "../util/big_alloc.hpp"
 namespace cp_algo::math {
     auto euler_phi(auto m) {
-        auto primes = to<std::vector>(factorize(m));
+        auto primes = to<big_vector>(factorize(m));
         std::ranges::sort(primes);
         auto [from, to] = std::ranges::unique(primes);
         primes.erase(from, to);

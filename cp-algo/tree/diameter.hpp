@@ -1,11 +1,11 @@
 #ifndef CP_ALGO_TREE_DIAMETER_HPP
 #define CP_ALGO_TREE_DIAMETER_HPP
 #include "ascending_dfs.hpp"
+#include "../util/big_alloc.hpp"
 #include "../graph/base.hpp"
 #include <tuple>
 #include <string>
 #include <algorithm>
-
 namespace cp_algo::graph {
     enum class diameter_mode { recover_path, no_recover };
     
@@ -15,7 +15,7 @@ namespace cp_algo::graph {
             int64_t length = 0;
             node_index start = 0;
         };
-        std::vector<up_path> up(g.n());
+        big_vector<up_path> up(g.n());
         for(auto v: g.nodes()) {
             up[v].start = v;
         }

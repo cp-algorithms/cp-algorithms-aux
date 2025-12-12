@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_UTIL_COMPRESS_COORDS_HPP
 #define CP_ALGO_UTIL_COMPRESS_COORDS_HPP
 #include "sort.hpp"
+#include "../util/big_alloc.hpp"
 #include <vector>
 namespace cp_algo {
     // coords is a range of reference_wrapper<T>
@@ -8,7 +9,7 @@ namespace cp_algo {
         using T = std::decay_t<std::unwrap_reference_t<
             std::ranges::range_value_t<decltype(coords)>
         >>;
-        std::vector<T> original;
+        big_vector<T> original;
         if(empty(coords)) {
             return original;
         }

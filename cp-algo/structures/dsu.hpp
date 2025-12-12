@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_STRUCTURES_DSU_HPP
 #define CP_ALGO_STRUCTURES_DSU_HPP
+#include "../util/big_alloc.hpp"
 #include <numeric>
 #include <vector>
 namespace cp_algo::structures {
@@ -17,7 +18,7 @@ namespace cp_algo::structures {
             return a != b;
         }
     private:
-        std::vector<int> par;
+        big_vector<int> par;
     };
     using dsu = disjoint_set_union;
 }

@@ -1,16 +1,17 @@
 #ifndef CP_ALGO_STRUCTURES_SEGMENT_TREE_HPP
 #define CP_ALGO_STRUCTURES_SEGMENT_TREE_HPP
+#include "../util/big_alloc.hpp"
 #include <vector>
 #include <numeric>
 namespace cp_algo::structures {
     template<typename meta>
     struct segtree_t {
         const size_t N;
-        std::vector<meta> _meta;
+        big_vector<meta> _meta;
 
         segtree_t(size_t n): N(n), _meta(4 * N) {}
 
-        segtree_t(std::vector<meta> leafs): N(size(leafs)), _meta(4 * N) {
+        segtree_t(big_vector<meta> leafs): N(size(leafs)), _meta(4 * N) {
             build(leafs);
         }
 

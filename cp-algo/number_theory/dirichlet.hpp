@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_NUMBER_THEORY_DIRICHLET_HPP
 #define CP_ALGO_NUMBER_THEORY_DIRICHLET_HPP
+#include "../util/big_alloc.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <ranges>
@@ -110,7 +111,7 @@ namespace cp_algo::math {
 
     auto Dirichlet_div(auto const& H, auto const& G, int64_t n) {
         auto m = std::size(G);
-        auto F = H | std::views::take(m) | std::ranges::to<std::vector>();
+        auto F = H | std::views::take(m) | std::ranges::to<big_vector>();
         Dirichlet_div_inplace(F, G, n);
         return F;
     }

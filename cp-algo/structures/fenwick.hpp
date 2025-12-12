@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_STRUCTURES_FENWICK_HPP
 #define CP_ALGO_STRUCTURES_FENWICK_HPP
+#include "../util/big_alloc.hpp"
 #include <cassert>
 #include <vector>
 namespace cp_algo::structures {
@@ -20,7 +21,7 @@ namespace cp_algo::structures {
         }
     };
 
-    template<typename T, std::ranges::range Container = std::vector<T>, typename Op = std::plus<T>>
+    template<typename T, std::ranges::range Container = big_vector<T>, typename Op = std::plus<T>>
     struct fenwick {
         Op op;
         size_t n;
@@ -83,7 +84,7 @@ namespace cp_algo::structures {
     auto maxer = [](auto const& a, auto const& b) {
         return std::max(a, b);
     };
-    template<typename T, std::ranges::range Container = std::vector<T>>
+    template<typename T, std::ranges::range Container = big_vector<T>>
     struct fenwick_max: fenwick<T, Container, decltype(maxer)> {
         using fenwick<T, Container, decltype(maxer)>::fenwick;
     };

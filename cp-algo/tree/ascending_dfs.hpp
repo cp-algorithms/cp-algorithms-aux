@@ -1,6 +1,6 @@
 #ifndef CP_ALGO_TREE_ASCENDING_DFS_HPP
 #define CP_ALGO_TREE_ASCENDING_DFS_HPP
-
+#include "../util/big_alloc.hpp"
 #include "../graph/base.hpp"
 #include <cassert>
 #include <vector>
@@ -48,7 +48,7 @@ namespace cp_algo::graph {
     // DFS that uses a precomputed parent-edge array.
     template<undirected_graph_type graph>
     void parent_dfs(graph const& tree, auto const& parent, auto &&callback) {
-        std::vector<int> degree(tree.n());
+        big_vector<int> degree(tree.n());
         node_index root = -1;
         for (auto [v, e] : parent | std::views::enumerate) {
             if (e != -1) {

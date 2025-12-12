@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_STRUCTURES_EERTREE_HPP
 #define CP_ALGO_STRUCTURES_EERTREE_HPP
+#include "../util/big_alloc.hpp"
 #include <forward_list>
 #include <functional>
 #include <iostream>
@@ -11,7 +12,7 @@ namespace cp_algo::structures {
         eertree(size_t q) {
             q += 2;
             s = std::string(q, -1);
-            len = par = link = std::vector(q, 0);
+            len = par = link = big_vector(q, 0);
             to.resize(q);
             link[0] = 1;
             len[1] = -1;
@@ -62,8 +63,8 @@ namespace cp_algo::structures {
             print(std::identity{});
         }
     private:
-        std::vector<std::forward_list<int>> to;
-        std::vector<int> len, link, par;
+        big_vector<std::forward_list<int>> to;
+        big_vector<int> len, link, par;
         std::string s;
         int n = 1, sz = 2, last = 0;
     };

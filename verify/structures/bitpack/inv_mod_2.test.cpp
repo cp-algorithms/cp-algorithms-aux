@@ -14,7 +14,7 @@ bit_array<2 * maxn> a[maxn];
 void solve() {
     size_t n;
     cin >> n;
-    string row;
+    cp_algo::big_string row;
     cp_algo::big_vector<size_t> lead(n);
     for(size_t i = 0; i < n; i++) {
         cin >> row;

@@ -31,7 +31,7 @@ void solve() {
     int n, m, k;
     cin >> n >> m >> k;
     cp_algo::checkpoint("init");
-    string row;
+    cp_algo::big_string row;
     for(int i = 0; i < n; i++) {
         cin >> row;
         from_string(a[i], row);

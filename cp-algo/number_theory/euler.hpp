@@ -4,7 +4,8 @@
 #include "../util/big_alloc.hpp"
 namespace cp_algo::math {
     auto euler_phi(auto m) {
-        auto primes = to<big_vector>(factorize(m));
+        using T = std::decay_t<decltype(m)>;
+        auto primes = to<big_vector<T>>(factorize(m));
         std::ranges::sort(primes);
         auto [from, to] = std::ranges::unique(primes);
         primes.erase(from, to);

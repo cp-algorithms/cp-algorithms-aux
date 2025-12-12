@@ -14,11 +14,11 @@ bit_array<maxn> a[maxn];
 void solve() {
     size_t n, m;
     cin >> n >> m;
-    cp_algo::big_vector<string> As(n);
+    cp_algo::big_vector<cp_algo::big_string> As(n);
     for(size_t i = 0; i < n; i++) {
         cin >> As[i];
     }
-    string bs;
+    cp_algo::big_string bs;
     cin >> bs;
     for(size_t i = 0; i < n; i++) {
         As[i] += bs[i];

@@ -1,5 +1,6 @@
 #ifndef CP_ALGO_UTIL_big_alloc_HPP
 #define CP_ALGO_UTIL_big_alloc_HPP
+#include <set>
 #include <map>
 #include <deque>
 #include <stack>
@@ -9,6 +10,7 @@
 #include <cstddef>
 #include <iostream>
 #include <generator>
+#include <forward_list>
 #if defined(__linux__) || defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #  define CP_ALGO_USE_MMAP 1
 #  include <sys/mman.h>
@@ -23,5 +25,5 @@ return static_cast<T*>(::operator new(padded,std::align_val_t(align)));}void dea
 #if CP_ALGO_USE_MMAP
 if(padded>=MEGABYTE){munmap(p,padded);return;}
 #endif
-::operator delete(p,padded,std::align_val_t(align));}private:static constexpr std::size_t MEGABYTE=1<<20;static constexpr std::size_t round_up(std::size_t x)noexcept{return(x+Align-1)/Align*Align;}};template<typename T>using big_vector=std::vector<T,big_alloc<T>>;template<typename T>using big_basic_string=std::basic_string<T,std::char_traits<T>,big_alloc<T>>;template<typename T>using big_deque=std::deque<T,big_alloc<T>>;template<typename Key,typename Value,typename Compare=std::less<Key>>using big_map=std::map<Key,Value,Compare,big_alloc<std::pair<const Key,Value>>>;using big_string=big_basic_string<char>;template<typename T>using big_stack=std::stack<T,big_deque<T>>;template<typename T>using big_queue=std::queue<T,big_deque<T>>;template<typename T>using big_priority_queue=std::priority_queue<T,big_vector<T>>;template<typename Ref,typename V=void>using big_generator=std::generator<Ref,V,big_alloc<std::byte>>;}namespace std::ranges{template<typename Ref,typename V>elements_of(cp_algo::big_generator<Ref,V>&&)->elements_of<cp_algo::big_generator<Ref,V>&&,cp_algo::big_alloc<std::byte>>;}
+::operator delete(p,padded,std::align_val_t(align));}private:static constexpr std::size_t MEGABYTE=1<<20;static constexpr std::size_t round_up(std::size_t x)noexcept{return(x+Align-1)/Align*Align;}};template<typename T>using big_vector=std::vector<T,big_alloc<T>>;template<typename T>using big_basic_string=std::basic_string<T,std::char_traits<T>,big_alloc<T>>;template<typename T>using big_deque=std::deque<T,big_alloc<T>>;template<typename T>using big_stack=std::stack<T,big_deque<T>>;template<typename T>using big_queue=std::queue<T,big_deque<T>>;template<typename T>using big_priority_queue=std::priority_queue<T,big_vector<T>>;template<typename T>using big_forward_list=std::forward_list<T,big_alloc<T>>;using big_string=big_basic_string<char>;template<typename Key,typename Value,typename Compare=std::less<Key>>using big_map=std::map<Key,Value,Compare,big_alloc<std::pair<const Key,Value>>>;template<typename T,typename Compare=std::less<T>>using big_multiset=std::multiset<T,Compare,big_alloc<T>>;template<typename Ref,typename V=void>using big_generator=std::generator<Ref,V,big_alloc<std::byte>>;}namespace std::ranges{template<typename Ref,typename V>elements_of(cp_algo::big_generator<Ref,V>&&)->elements_of<cp_algo::big_generator<Ref,V>&&,cp_algo::big_alloc<std::byte>>;}
 #endif

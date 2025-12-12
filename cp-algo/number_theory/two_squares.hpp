@@ -39,7 +39,7 @@ namespace cp_algo::math {
             return {0};
         }
         auto primes = factorize(n);
-        std::map<Int, int> cnt;
+        big_map<Int, int> cnt;
         for(auto p: primes) {
             cnt[p]++;
         }

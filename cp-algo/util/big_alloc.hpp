@@ -79,5 +79,7 @@ namespace cp_algo {
     using big_stack = std::stack<T, big_deque<T>>;
     template<typename T>
     using big_queue = std::queue<T, big_deque<T>>;
+    template<typename T>
+    using big_priority_queue = std::priority_queue<T, big_vector<T>>;
 }
 #endif // CP_ALGO_UTIL_big_alloc_HPP

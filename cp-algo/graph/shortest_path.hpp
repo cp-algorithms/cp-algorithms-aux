@@ -20,7 +20,7 @@ namespace cp_algo::graph {
                 return dist > other.dist;
             }
         };
-        std::priority_queue<que_t> pq;
+        big_priority_queue<que_t> pq;
 
         dijkstra_context(int n) : shortest_path_context(n) {}
 
@@ -73,7 +73,7 @@ namespace cp_algo::graph {
             edge_index e;
             node_index v;
         };
-        big_vector<std::basic_string<traverse_edge>> dependents;
+        big_vector<big_basic_string<traverse_edge>> dependents;
 
         deep_spfa_context(int n) : spfa_context(n), dependents(n) {}
 

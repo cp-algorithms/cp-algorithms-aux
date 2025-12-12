@@ -3,7 +3,7 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/structures/fenwick_set.hpp"
 #include "cp-algo/util/compress_coords.hpp"
 
@@ -13,13 +13,13 @@ using cp_algo::structures::fenwick_set;
 void solve() {
     int n, q;
     cin >> n >> q;
-    vector a(n, 0);
-    vector<reference_wrapper<int>> coords;
+    cp_algo::big_vector<int> a(n, 0);
+    cp_algo::big_vector<reference_wrapper<int>> coords;
     for(auto &it: a) {
         cin >> it;
         coords.push_back(ref(it));
     }
-    vector queries(q, pair{0, 0});
+    cp_algo::big_vector<pair<int, int>> queries(q, pair{0, 0});
     for(auto &[t, x]: queries) {
         cin >> t >> x;
         if(t != 2) {

@@ -12,7 +12,7 @@ using point = point_t<int64_t>;
 void solve() {
     int n;
     cin >> n;
-    vector<point> r(n);
+    cp_algo::big_vector<point> r(n);
     for(auto &it: r) {
         it.read();
     }

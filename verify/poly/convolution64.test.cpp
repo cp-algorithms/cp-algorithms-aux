@@ -5,14 +5,14 @@
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
 #include "cp-algo/math/fft64.hpp"
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 
 using namespace std;
 
 void solve() {
     int n, m;
     cin >> n >> m;
-    vector<uint64_t, cp_algo::big_alloc<uint64_t>> a(n), b(m);
+    cp_algo::big_vector<uint64_t> a(n), b(m);
     for(auto &x : a) cin >> x;
     for(auto &x : b) cin >> x;
     cp_algo::checkpoint("read");

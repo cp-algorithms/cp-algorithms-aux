@@ -2,6 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/sort_points_by_argument"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
+#include "cp-algo/util/big_alloc.hpp"
 #include "cp-algo/geometry/point.hpp"
 #include <bits/stdc++.h>
 
@@ -12,7 +13,7 @@ using point = point_t<int64_t>;
 void solve() {
     int n;
     cin >> n;
-    vector<point> pts(n);
+    cp_algo::big_vector<point> pts(n);
     for(auto &r: pts) {
         r.read();
     }

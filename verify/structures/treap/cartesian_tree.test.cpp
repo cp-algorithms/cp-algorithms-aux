@@ -18,12 +18,12 @@ using treap = node_t::treap;
 void solve() {
     istream_iterator<int> input(cin);
     int n = *input++;
-    vector<treap> nodes(n);
+    cp_algo::big_vector<treap> nodes(n);
     for(int i = 0; i < n; i++) {
         nodes[i] = node_t::make_treap(val_meta(i), *input++);
     }
     auto me = node_t::build(nodes);
-    vector<int> p(n, -1);
+    cp_algo::big_vector<int> p(n, -1);
     node_t::exec_on_each(me, [&](auto t) {
         for(auto child: t->children) {
             if(child) {

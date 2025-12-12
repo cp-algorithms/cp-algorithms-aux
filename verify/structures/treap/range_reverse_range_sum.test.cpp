@@ -15,7 +15,7 @@ void solve() {
     istream_iterator<int> input(cin);
     int n = *input++;
     int q = *input++;
-    vector<treap> nodes(n);
+    cp_algo::big_vector<treap> nodes(n);
     generate_n(begin(nodes), n, [&](){
         return node_t::make_treap(meta(*input++));
     });

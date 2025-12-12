@@ -11,8 +11,8 @@ using namespace std;
 void solve() {
     int n;
     cin >> n;
-    vector<reference_wrapper<int>> coords;
-    vector<int> a(n);
+    cp_algo::big_vector<reference_wrapper<int>> coords;
+    cp_algo::big_vector<int> a(n);
     for(auto &it: a) {
         cin >> it;
         coords.push_back(ref(it));
@@ -22,8 +22,8 @@ void solve() {
         int len = 0, last = 0;
         auto operator <=>(longest const&) const = default;
     };
-    cp_algo::structures::fenwick_max me(vector<longest>(n + 1));
-    vector<int> pre(n);
+    cp_algo::structures::fenwick_max me(cp_algo::big_vector<longest>(n + 1));
+    cp_algo::big_vector<int> pre(n);
     for(auto [i, it]: a | views::enumerate) {
         auto [len, last] = me.prefix_fold(it);
         me.update(it, {len + 1, (int)i});
@@ -31,7 +31,7 @@ void solve() {
     }
     auto [len, last] = me.prefix_fold(n);
     cout << len << '\n';
-    vector<int> ans(len);
+    cp_algo::big_vector<int> ans(len);
     while(len--) {
         ans[len] = last;
         last = pre[last];

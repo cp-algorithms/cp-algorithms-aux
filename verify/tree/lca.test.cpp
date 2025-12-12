@@ -3,7 +3,7 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include <iostream>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/tree/hld.hpp"
 #include <bits/stdc++.h>
 
@@ -14,7 +14,7 @@ void solve() {
     int n, q;
     cin >> n >> q;
     graph g(n);
-    vector<edge_index> p(n);
+    cp_algo::big_vector<edge_index> p(n);
     p[0] = -1;
     for(int i = 1; i < n; i++) {
         node_index v;

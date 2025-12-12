@@ -11,7 +11,7 @@ using meta = segtree::metas::chmin_chmax_sum_meta;
 void solve() {
     int n, q;
     cin >> n >> q;
-    vector<meta> a(n);
+    cp_algo::big_vector<meta> a(n);
     for(int i = 0; i < n; i++) {
         int64_t ai;
         cin >> ai;

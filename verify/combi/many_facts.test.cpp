@@ -4,7 +4,7 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/factorials.hpp"
 
 using namespace std;
@@ -13,7 +13,7 @@ using base = cp_algo::math::modint<998244353>;
 void solve() {
     int n;
     cin >> n;
-    vector<base> args(n);
+    cp_algo::big_vector<base> args(n);
     for(auto &x : args) {cin >> x;}
     cp_algo::checkpoint("read");
     auto res = facts<true, 100'000>(args);

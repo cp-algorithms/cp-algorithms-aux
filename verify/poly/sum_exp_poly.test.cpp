@@ -29,8 +29,8 @@ void solve() {
     polyn H = num / den;
     base ans = 0;
 
-    vector<base> id(d+1);
-    vector<int> lp(d+1);
+    cp_algo::big_vector<base> id(d+1);
+    cp_algo::big_vector<int> lp(d+1);
     id[0] = bpow(base(0), d);
     id[1] = 1;
     for(int i = 2; i <= d; i++) {

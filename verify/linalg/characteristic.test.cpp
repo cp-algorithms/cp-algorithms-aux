@@ -4,7 +4,7 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_MAXN 1 << 10
 #include <bits/stdc++.h>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/linalg/frobenius.hpp"
 
 using namespace std;

@@ -3,7 +3,7 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/combinatorics.hpp"
 #include "cp-algo/linalg/matrix.hpp"
 
@@ -19,7 +19,7 @@ void solve() {
     cin >> n >> m;
     matrix<base> a(n);
     int r = 0;
-    vector<int> indeg(n), outdeg(n);
+    cp_algo::big_vector<int> indeg(n), outdeg(n);
     for(int i = 0; i < m; i++) {
         int u, v;
         cin >> u >> v;

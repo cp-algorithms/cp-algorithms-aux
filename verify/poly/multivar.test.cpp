@@ -4,7 +4,7 @@
 #define CP_ALGO_CHECKPOINT
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/multivar.hpp"
 
 using namespace std;
@@ -16,7 +16,7 @@ using base = cp_algo::math::modint<mod>;
 void solve() {
     int k;
     cin >> k;
-    vector<size_t> N(k);
+    cp_algo::big_vector<size_t> N(k);
     for(auto &n: N) cin >> n;
     multivar<base> a(N), b(N);
     a.read();

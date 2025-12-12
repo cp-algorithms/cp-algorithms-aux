@@ -22,7 +22,7 @@ void solve() {
     string s;
     cin >> s;
     eertree me(size(s));
-    vector<int> lasts;
+    cp_algo::big_vector<int> lasts;
     lasts.reserve(size(s));
     for(auto c: s) {
         me.add_letter(c);

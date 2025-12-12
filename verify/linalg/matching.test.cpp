@@ -3,7 +3,7 @@
 #include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/linalg/matrix.hpp"
 
 using namespace std;
@@ -33,7 +33,7 @@ void solve() {
         }
     }
     B = B.inv().second;
-    vector<pair<int, int>> ans;
+    cp_algo::big_vector<pair<int, int>> ans;
     for(size_t i = 0; i < size(pivots); i++) {
         for(size_t j = 0; j < size(pivots); j++) {
             if(T[pivots[i]][pivots[j]] != 0 && B[i][j] != 0) {

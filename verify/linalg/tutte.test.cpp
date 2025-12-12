@@ -33,7 +33,7 @@ void solve() {
         }
     }
     auto [d, Bi] = B.inv();
-    vector<pair<int, int>> ans;
+    cp_algo::big_vector<pair<int, int>> ans;
     for(size_t i = 0; i < size(pivots); i++) {
         for(size_t j = 0; j < size(pivots); j++) {
             if(T[pivots[i]][pivots[j]] != 0 && Bi[i][j] != 0) {

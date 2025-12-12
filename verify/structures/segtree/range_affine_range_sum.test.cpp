@@ -14,7 +14,7 @@ using meta = segtree::metas::affine_meta<base>;
 void solve() {
     int n, q;
     cin >> n >> q;
-    vector<meta> a(n);
+    cp_algo::big_vector<meta> a(n);
     for(int i = 0; i < n; i++) {
         int ai;
         cin >> ai;

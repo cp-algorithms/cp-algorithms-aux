@@ -14,7 +14,7 @@ bit_array<maxn> a[maxn];
 void solve() {
     size_t n, m;
     cin >> n >> m;
-    vector<string> As(n);
+    cp_algo::big_vector<string> As(n);
     for(size_t i = 0; i < n; i++) {
         cin >> As[i];
     }
@@ -24,7 +24,7 @@ void solve() {
         As[i] += bs[i];
         from_string(a[i], As[i]);
     }
-    vector<size_t> lead(n);
+    cp_algo::big_vector<size_t> lead(n);
     auto vars = views::iota((size_t)0, m + 1);
     set<size_t> free(begin(vars), end(vars));
     for(size_t i = 0; i < n; i++) {

@@ -10,7 +10,7 @@ using namespace std;
 void solve() {
     int n, q;
     cin >> n >> q;
-    vector<int64_t> a(n + 1);
+    cp_algo::big_vector<int64_t> a(n + 1);
     for(auto &it: a | views::drop(1)) {cin >> it;}
     cp_algo::structures::fenwick me(move(a));
     for(int i = 0; i < q; i++) {

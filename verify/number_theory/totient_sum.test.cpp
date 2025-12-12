@@ -3,7 +3,7 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include <iostream>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/number_theory/dirichlet.hpp"
 #include "cp-algo/util/big_alloc.hpp"

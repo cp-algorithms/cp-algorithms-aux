@@ -4,7 +4,7 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include <iostream>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/util/checkpoint.hpp"
 #include "cp-algo/math/sieve.hpp"
 #include <bits/stdc++.h>

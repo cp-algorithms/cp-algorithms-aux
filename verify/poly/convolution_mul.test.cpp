@@ -4,7 +4,7 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
-#include "blazingio/blazingio.min.hpp"
+//#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/number_theory/euler.hpp"
 #include "cp-algo/math/fft.hpp"
 
@@ -16,7 +16,7 @@ void solve() {
     int p;
     cin >> p;
     auto g = cp_algo::math::primitive_root(p);
-    vector<int> lg(p);
+    cp_algo::big_vector<int> lg(p);
     int64_t cur = 1;
     for(int i = 0; i < p - 1; i++) {
         lg[cur] = i;
@@ -25,7 +25,7 @@ void solve() {
     }
     cp_algo::checkpoint("find lg");
     base a0, b0, as = 0, bs = 0;
-    vector<base> a(p-1), b(p-1);
+    cp_algo::big_vector<base> a(p-1), b(p-1);
     cin >> a0;
     for(int i = 1; i <= p - 1; i++) {
         cin >> a[lg[i]];

@@ -15,7 +15,7 @@ void solve() {
     size_t n;
     cin >> n;
     string row;
-    vector<size_t> lead(n);
+    cp_algo::big_vector<size_t> lead(n);
     for(size_t i = 0; i < n; i++) {
         cin >> row;
         from_string(a[i], row);

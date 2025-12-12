@@ -26,7 +26,7 @@ void solve() {
     }
     cp_algo::big_vector<size_t> lead(n);
     auto vars = views::iota((size_t)0, m + 1);
-    set<size_t> free(begin(vars), end(vars));
+    cp_algo::big_set<size_t> free(begin(vars), end(vars));
     for(size_t i = 0; i < n; i++) {
         for(size_t j = 0; j < i; j++) {
             if(a[i][lead[j]]) {

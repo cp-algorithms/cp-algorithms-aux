@@ -77,11 +77,15 @@ namespace cp_algo {
     template<typename T> using big_priority_queue = std::priority_queue<T, big_vector<T>>;
     template<typename T> using big_forward_list = std::forward_list<T, big_alloc<T>>;
     using big_string = big_basic_string<char>;
+
     template<typename Key, typename Value, typename Compare = std::less<Key>>
     using big_map = std::map<Key, Value, Compare, big_alloc<std::pair<const Key, Value>>>;
     template<typename T, typename Compare = std::less<T>>
     using big_multiset = std::multiset<T, Compare, big_alloc<T>>;
+    template<typename T, typename Compare = std::less<T>>
+    using big_set = std::set<T, Compare, big_alloc<T>>;
     template<typename Ref, typename V = void>
+
     using big_generator = std::generator<Ref, V, big_alloc<std::byte>>;
 }
 

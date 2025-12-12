@@ -43,7 +43,7 @@ namespace cp_algo::graph {
             return s.length + t.length;
         } else {
             auto collect = [&](up_path v) {
-                std::basic_string<edge_index> path;
+                big_basic_string<edge_index> path;
                 while(v.length) {
                     edge_index ep = (*parents)[v.start];
                     path.push_back(ep);

@@ -19,7 +19,7 @@ int yosupo(int v) {
 }
 
 void solve() {
-    string s;
+    cp_algo::big_string s;
     cin >> s;
     eertree me(size(s));
     cp_algo::big_vector<int> lasts;

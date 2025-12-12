@@ -16,7 +16,7 @@ void solve() {
     int N;
     cin >> N;
     cp_algo::big_vector<polyn> polys(N);
-    multiset<polyn, decltype([](polyn const& a, polyn const& b){
+    cp_algo::big_multiset<polyn, decltype([](polyn const& a, polyn const& b){
         return a.deg() < b.deg();
     })> que = {polyn(1)};
     int D = 0;

@@ -63,7 +63,7 @@ namespace cp_algo::structures {
             print(std::identity{});
         }
     private:
-        big_vector<std::forward_list<int>> to;
+        big_vector<big_forward_list<int>> to;
         big_vector<int> len, link, par;
         big_string s;
         int n = 1, sz = 2, last = 0;

@@ -14,6 +14,7 @@
 CP_ALGO_BIT_PRAGMA_PUSH
 namespace cp_algo::math {
     using cp_algo::structures::dynamic_bit_array;
+    using cp_algo::structures::bit_array;
 
     constexpr size_t base_threshold = 1 << 21;
     
@@ -39,7 +40,7 @@ namespace cp_algo::math {
     }();
 
     const auto base_primes = []() {
-        cp_algo::big_vector<uint32_t> primes;
+        big_vector<uint32_t> primes;
         for(uint32_t i = 3; to_ord(i) < base_threshold; i += 2) {
             if (base_prime_bits[to_ord(i)]) {
                 primes.push_back(i);
@@ -50,7 +51,7 @@ namespace cp_algo::math {
 
     constexpr size_t sqrt_threshold = 1 << 16;
     const auto sqrt_primes = std::span(
-        begin(base_primes),
+        base_primes.begin(),
         std::ranges::upper_bound(base_primes, sqrt_threshold)
     );
 
@@ -60,7 +61,7 @@ namespace cp_algo::math {
         uint32_t product;
     };
 
-    auto make_wheel(std::vector<uint32_t> primes, uint32_t product) {
+    auto make_wheel(big_vector<uint32_t> primes, uint32_t product) {
         assert(product % (2 * dynamic_bit_array::width) == 0);
         wheel_t wheel;
         wheel.product = product;
@@ -77,8 +78,8 @@ namespace cp_algo::math {
     auto medium_primes = sqrt_primes;
     const auto wheels = []() {
         uint32_t product = 2 * dynamic_bit_array::width;
-        std::vector<uint32_t> current;
-        std::vector<wheel_t> wheels;
+        big_vector<uint32_t> current;
+        big_vector<wheel_t> wheels;
         for(size_t i = 0; i < size(sqrt_primes); i++) {
             uint32_t p = sqrt_primes[i];
             if (product * p > max_wheel_size) {

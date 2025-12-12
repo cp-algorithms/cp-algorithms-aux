@@ -111,7 +111,8 @@ namespace cp_algo::math {
 
     auto Dirichlet_div(auto const& H, auto const& G, int64_t n) {
         auto m = std::size(G);
-        auto F = H | std::views::take(m) | std::ranges::to<big_vector>();
+        using elem_t = std::decay_t<decltype(*H.begin())>;
+        big_vector<elem_t> F(H.begin(), H.begin() + m);
         Dirichlet_div_inplace(F, G, n);
         return F;
     }

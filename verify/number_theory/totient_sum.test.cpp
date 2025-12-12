@@ -18,10 +18,10 @@ void solve() {
     cin >> n;
     auto H = floors(n) | views::transform([](int64_t k) {
         return base(k) * base(k + 1) / 2;
-    }) | ranges::to<vector>();
+    }) | ranges::to<cp_algo::big_vector<base>>();
     auto G = floors(n) | views::transform([](int64_t k) {
         return base(k);
-    }) | ranges::to<vector>();
+    }) | ranges::to<cp_algo::big_vector<base>>();
     auto F = Dirichlet_div(H, G, n);
     cout << F.back() << "\n";
 }

@@ -22,7 +22,7 @@ namespace cp_algo::linalg {
         vec(Base const& t): Base(t) {}
         vec(Base &&t): Base(std::move(t)) {}
         vec(size_t n): Base(n, base()) {}
-        vec(auto &&r): Base(std::ranges::to<Base>(r)) {}
+        vec(auto &&r): Base(std::from_range, r) {}
 
         static vec ei(size_t n, size_t i) {
             vec res(n);

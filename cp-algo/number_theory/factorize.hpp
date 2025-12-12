@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_MATH_FACTORIZE_HPP
 #define CP_ALGO_MATH_FACTORIZE_HPP
 #include "primality.hpp"
+#include "../util/big_alloc.hpp"
 #include "../random/rng.hpp"
 #include <generator>
 namespace cp_algo::math {
@@ -34,7 +35,7 @@ namespace cp_algo::math {
         });
     }
     template<typename Int>
-    std::generator<Int> factorize(Int m) {
+    big_generator<Int> factorize(Int m) {
         if(is_prime(m)) {
             co_yield m;
         } else if(m > 1) {
@@ -44,7 +45,7 @@ namespace cp_algo::math {
         }
     }
     template<typename Int>
-    std::generator<Int> divisors_sqrt(Int m) {
+    big_generator<Int> divisors_sqrt(Int m) {
         for(Int i = 1; i * i <= m; i++) {
             if(m % i == 0) {
                 co_yield i;

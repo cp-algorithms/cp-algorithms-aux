@@ -18,7 +18,7 @@ namespace cp_algo::math {
         using base = dynamic_modint<Int>;
         return base::with_mod(m, [&]() -> std::optional<_Int> {
             int sqrtmod = std::max(1, (int)std::sqrt(m) / 2);
-            std::unordered_map<_Int, int> small;
+            big_map<_Int, int> small;
             base cur = a;
             for(int i = 0; i < sqrtmod; i++) {
                 small[cur.getr()] = i;

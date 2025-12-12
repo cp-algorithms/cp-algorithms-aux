@@ -9,6 +9,7 @@
 #include <string>
 #include <cstddef>
 #include <iostream>
+#include <generator>
 
 // Single macro to detect POSIX platforms (Linux, Unix, macOS)
 #if defined(__linux__) || defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
@@ -19,7 +20,7 @@
 #endif
 
 namespace cp_algo {
-    template <typename T, std::size_t Align = 32>
+    template <typename T, size_t Align = 32>
     class big_alloc {
         static_assert( Align >= alignof(void*), "Align must be at least pointer-size");
         static_assert(std::popcount(Align) == 1, "Align must be a power of two");
@@ -81,5 +82,13 @@ namespace cp_algo {
     using big_queue = std::queue<T, big_deque<T>>;
     template<typename T>
     using big_priority_queue = std::priority_queue<T, big_vector<T>>;
+    template<typename Ref, typename V = void>
+    using big_generator = std::generator<Ref, V, big_alloc<std::byte>>;
+}
+
+// Deduction guide to make elements_of with big_generator default to big_alloc
+namespace std::ranges {
+    template<typename Ref, typename V>
+    elements_of(cp_algo::big_generator<Ref, V>&&) -> elements_of<cp_algo::big_generator<Ref, V>&&, cp_algo::big_alloc<std::byte>>;
 }
 #endif // CP_ALGO_UTIL_big_alloc_HPP

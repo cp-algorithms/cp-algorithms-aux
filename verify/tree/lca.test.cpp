@@ -1,6 +1,7 @@
 // @brief Lowest Common Ancestor
 #define PROBLEM "https://judge.yosupo.jp/problem/lca"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/tree/hld.hpp"

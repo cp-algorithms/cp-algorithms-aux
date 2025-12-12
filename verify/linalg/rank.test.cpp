@@ -1,6 +1,7 @@
 // @brief Rank of Matrix
 #define PROBLEM "https://judge.yosupo.jp/problem/matrix_rank"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/linalg/matrix.hpp"

@@ -1,7 +1,7 @@
 // @brief Sqrt Mod
 #define PROBLEM "https://judge.yosupo.jp/problem/sqrt_mod"
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("tune=native")
+#pragma GCC target("avx2")
 #include "cp-algo/number_theory/discrete_sqrt.hpp"
 #include <bits/stdc++.h>
 

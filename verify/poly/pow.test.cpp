@@ -1,6 +1,7 @@
 // @brief Pow of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/pow_of_formal_power_series"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

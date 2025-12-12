@@ -1,6 +1,7 @@
 // @brief Primality Test
 #define PROBLEM "https://judge.yosupo.jp/problem/primality_test"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/number_theory/primality_bases.hpp"

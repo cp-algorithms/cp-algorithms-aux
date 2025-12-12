@@ -1,6 +1,7 @@
 // @brief Adjugate Matrix
 #define PROBLEM "https://judge.yosupo.jp/problem/adjugate_matrix"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/linalg/matrix.hpp"

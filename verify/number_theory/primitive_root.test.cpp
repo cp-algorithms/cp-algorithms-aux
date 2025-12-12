@@ -1,7 +1,7 @@
 // @brief Primitive Root
 #define PROBLEM "https://judge.yosupo.jp/problem/primitive_root"
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("tune=native")
+#pragma GCC target("avx2")
 #include "cp-algo/number_theory/euler.hpp"
 #include <bits/stdc++.h>
 

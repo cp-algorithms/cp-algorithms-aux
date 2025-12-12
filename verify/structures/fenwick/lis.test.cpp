@@ -1,6 +1,7 @@
 // @brief Longest Increasing Subsequence
 #define PROBLEM "https://judge.yosupo.jp/problem/longest_increasing_subsequence"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include "cp-algo/structures/fenwick.hpp"
 #include "cp-algo/util/compress_coords.hpp"
 #include <bits/stdc++.h>

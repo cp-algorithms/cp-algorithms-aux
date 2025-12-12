@@ -1,7 +1,7 @@
 // @brief Matching on General Graph (Tutte matrix)
 #define PROBLEM "https://judge.yosupo.jp/problem/general_matching"
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("tune=native")
+#pragma GCC target("avx2")
 #include "cp-algo/linalg/matrix.hpp"
 #include "cp-algo/random/rng.hpp"
 #include <bits/stdc++.h>

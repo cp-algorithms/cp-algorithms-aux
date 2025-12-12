@@ -1,6 +1,7 @@
 // @brief Tree Diameter (SPFA)
 #define PROBLEM "https://judge.yosupo.jp/problem/tree_diameter"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/graph/shortest_path.hpp"

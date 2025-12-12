@@ -1,6 +1,7 @@
 // @brief Point Add Range Sum
 #define PROBLEM "https://judge.yosupo.jp/problem/point_add_range_sum"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include "cp-algo/structures/fenwick.hpp"
 #include <bits/stdc++.h>
 

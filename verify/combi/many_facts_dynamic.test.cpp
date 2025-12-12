@@ -1,6 +1,7 @@
 // @brief Many Factorials (dynamic Mod)
 #define PROBLEM "https://judge.yosupo.jp/problem/many_factorials"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"

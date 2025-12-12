@@ -1,6 +1,7 @@
 // @brief Counting Spanning Trees (Directed)
 #define PROBLEM "https://judge.yosupo.jp/problem/counting_spanning_tree_directed"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/combinatorics.hpp"

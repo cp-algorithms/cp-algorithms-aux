@@ -1,6 +1,7 @@
 // @brief Inverse Matrix (Mod 2)
 #define PROBLEM "https://judge.yosupo.jp/problem/inverse_matrix_mod_2"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include "cp-algo/structures/bit_array_util.hpp"
 #include <bits/stdc++.h>
 

@@ -1,7 +1,7 @@
 // @brief Eertree
 #define PROBLEM "https://judge.yosupo.jp/problem/eertree"
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("tune=native")
+#pragma GCC target("avx2")
 #include "cp-algo/structures/eertree.hpp"
 #include <bits/stdc++.h>
 

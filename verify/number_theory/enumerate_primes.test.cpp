@@ -1,6 +1,7 @@
 // @brief Enumerate Primes
 #define PROBLEM "https://judge.yosupo.jp/problem/enumerate_primes"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"

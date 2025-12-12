@@ -1,7 +1,7 @@
 // @brief Pow of Matrix
 #define PROBLEM "https://judge.yosupo.jp/problem/pow_of_matrix"
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("tune=native")
+#pragma GCC target("avx2")
 #include "cp-algo/linalg/matrix.hpp"
 #include <bits/stdc++.h>
 

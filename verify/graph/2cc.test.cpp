@@ -1,6 +1,7 @@
 // @brief Two-Edge-Connected Components
 #define PROBLEM "https://judge.yosupo.jp/problem/two_edge_connected_components"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/graph/tarjan.hpp"

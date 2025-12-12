@@ -1,6 +1,7 @@
 // @brief Eulerian Trail (Directed)
 #define PROBLEM "https://judge.yosupo.jp/problem/eulerian_trail_directed"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include "cp-algo/graph/euler.hpp"
 #include <bits/stdc++.h>
 

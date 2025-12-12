@@ -1,6 +1,7 @@
 // @brief Inverse Matrix
 #define PROBLEM "https://judge.yosupo.jp/problem/inverse_matrix"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "cp-algo/linalg/matrix.hpp"
 

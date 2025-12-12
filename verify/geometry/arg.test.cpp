@@ -1,7 +1,7 @@
 // @brief Sort Points by Argument
 #define PROBLEM "https://judge.yosupo.jp/problem/sort_points_by_argument"
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("tune=native")
+#pragma GCC target("avx2")
 #include "cp-algo/geometry/point.hpp"
 #include <bits/stdc++.h>
 

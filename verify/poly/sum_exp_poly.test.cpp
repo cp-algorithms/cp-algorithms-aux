@@ -1,6 +1,7 @@
 // @brief $\sum\limits_{i=0}^\infty r^i i^d$
 #define PROBLEM "https://judge.yosupo.jp/problem/sum_of_exponential_times_polynomial_limit"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #define CP_ALGO_MAXN 1 << 24
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>

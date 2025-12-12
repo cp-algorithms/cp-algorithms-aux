@@ -1,6 +1,7 @@
 // @brief Minimum Spanning Tree
 #define PROBLEM "https://judge.yosupo.jp/problem/minimum_spanning_tree"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include "cp-algo/graph/mst.hpp"
 #include <bits/stdc++.h>
 

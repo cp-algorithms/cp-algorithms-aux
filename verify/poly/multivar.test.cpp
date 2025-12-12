@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/multivariate_convolution"
 #pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
-//#pragma GCC target("avx2")
+#pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/multivar.hpp"

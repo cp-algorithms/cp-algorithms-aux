@@ -1,6 +1,7 @@
 // @brief Kth term of Linearly Recurrent Sequence
 #define PROBLEM "https://judge.yosupo.jp/problem/kth_term_of_linearly_recurrent_sequence"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
 

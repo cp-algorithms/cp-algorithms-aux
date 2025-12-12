@@ -1,6 +1,7 @@
 // @brief Factorize
 #define PROBLEM "https://judge.yosupo.jp/problem/factorize"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #include "cp-algo/number_theory/factorize.hpp"
 #include <bits/stdc++.h>
 

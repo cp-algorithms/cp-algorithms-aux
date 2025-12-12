@@ -1,6 +1,7 @@
 // @brief Convolution mod $10^9+7$
 #define PROBLEM "https://judge.yosupo.jp/problem/convolution_mod_1000000007"
 #pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"

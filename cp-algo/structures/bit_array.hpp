@@ -35,12 +35,8 @@ namespace cp_algo::structures {
         constexpr _bit_array(size_t N): data() {
             resize(N);
         }
-
-        constexpr word_t& word(size_t x) {
-            return data[x];
-        }
-        constexpr word_t word(size_t x) const {
-            return data[x];
+        constexpr auto&& word(this auto&& self, size_t x) {
+            return self.data[x];
         }
         constexpr void set_all(word_t val = -1) {
             for(size_t i = 0; i < words; i++) {

@@ -134,50 +134,50 @@ namespace cp_algo::math {
         uint32_t wl = l / width;
         uint32_t wr = (r + width - 1) / width;
         uint32_t N  = (uint32_t)wheel.mask.words;
-
-        for (uint32_t i = wl; i < wr; i += N) {
-            uint32_t block = std::min(N, wr - i);
-            uint32_t j = 0;
-            for (; j + 4 <= block; j += 4) {
-                auto &p_vec  = vector_cast<u64x4>(prime.word(i + j));
-                auto m_vec = vector_cast<const u64x4>(wheel.mask.word(j));
-                p_vec &= m_vec;
+        auto loop = [&](uint32_t i, uint32_t block) {
+            auto p_ptr = std::assume_aligned<32>(&prime.word(i));
+            auto m_ptr = std::assume_aligned<32>(&wheel.mask.word(0));
+            #pragma GCC unroll coprime
+            for (uint32_t j = 0; j < block; j++) {
+                p_ptr[j] &= m_ptr[j];
             }
-            for (; j < block; j++) {
-                prime.word(i + j) &= wheel.mask.word(j);
-            }
+        };
+        while (wl + N <= wr) {
+            loop(wl, N);
+            wl += N;
         }
+        loop(wl, wr - wl);
     }
 
     template <class BitArray>
     constexpr void sieve210(BitArray& prime, uint32_t l, uint32_t r, size_t i, int state) {
-        static const auto [ord_step, step_sum] = []() {
-            big_vector<std::array<uint32_t, 2 * coprime>> ord_steps(num_primes);
-            big_vector<uint32_t> sums(num_primes);
+        static const auto ord_step = []() {
+            std::array<std::array<uint32_t, 2 * coprime>, num_primes> ord_steps;
             for (uint32_t i = 0; i < size(sqrt_primes); i++) {
                 auto p = sqrt_primes[i];
+                auto &ords = ord_steps[i];
+                auto last = to_ord(p);
                 for(uint32_t j = 0; j < coprime; j++) {
-                    ord_steps[i][j] = to_ord(p * (res210[j] + gap210[j])) - to_ord(p * res210[j]);
-                }
-                sums[i] = std::ranges::fold_left(ord_steps[i], 0u, std::plus{});
-                for(uint32_t j = 0; j < coprime; j++) {
-                    ord_steps[i][j + coprime] = ord_steps[i][j];
+                    auto next = to_ord(p * (res210[j] + gap210[j]));
+                    ords[j] = ords[j + coprime] = next - last;
+                    last = next;
                 }
             }
-            return std::pair{ord_steps, sums};
+            return ord_steps;
         }();
-        while (l + step_sum[i] <= r) {
+        auto advance = [&]() {
+            prime.reset(std::exchange(l, l + ord_step[i][state++]));
+        };
+        uint32_t p = sqrt_primes[i];
+        while (l + p * coprime <= r) {
             #pragma GCC unroll coprime
             for (size_t j = 0; j < coprime; j++) {
-                prime.reset(l);
-                l += ord_step[i][state++];
+                advance();
             }
             state -= coprime;
         }
         while (l < r) {
-            prime.reset(l);
-            l += ord_step[i][state++];
-            state = state == coprime ? 0 : state;
+            advance();
         }
     }
 

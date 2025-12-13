@@ -75,7 +75,7 @@ namespace cp_algo::math {
         return (x / coprime) * period + res210[x % coprime];
     }
 
-    constexpr size_t sqrt_threshold = 1 << 15;
+    constexpr size_t sqrt_threshold = 1 << 16;
     constexpr auto sqrt_prime_bits = []() {
         const int size = sqrt_threshold / 4;
         bit_array<size> prime;
@@ -152,7 +152,7 @@ namespace cp_algo::math {
     template <class BitArray>
     constexpr void sieve210(BitArray& prime, uint32_t l, uint32_t r, size_t i, int state) {
         static const auto ord_step = []() {
-            std::array<std::array<uint32_t, 2 * coprime>, num_primes> ord_steps;
+            big_vector<std::array<uint32_t, 2 * coprime>> ord_steps(num_primes);
             for (uint32_t i = 0; i < size(sqrt_primes); i++) {
                 auto p = sqrt_primes[i];
                 auto &ords = ord_steps[i];

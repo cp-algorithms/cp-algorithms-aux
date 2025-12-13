@@ -188,7 +188,6 @@ namespace cp_algo::math {
         prime.set_all();
         static const auto [wheels, medium_primes_begin] = []() {
             constexpr size_t max_wheel_size = 1 << 21;
-            constexpr uint32_t wheel_threshold = 500;
             uint32_t product = period * dynamic_bit_array::width;
             big_vector<uint32_t> current;
             big_vector<wheel_t> wheels;
@@ -198,7 +197,7 @@ namespace cp_algo::math {
                     wheels.push_back(make_wheel(current, product));
                     current = {p};
                     product = period * dynamic_bit_array::width * p;
-                    if (product > max_wheel_size || p > wheel_threshold) {
+                    if (product > max_wheel_size) {
                         checkpoint("make wheels");
                         return std::pair{wheels, i};
                     }

@@ -115,7 +115,7 @@ namespace cp_algo::math {
     };
 
     constexpr auto make_wheel(big_vector<uint32_t> primes, uint32_t product) {
-        assert(product % (period * dynamic_bit_array::width) == 0);
+        assert(product % period == 0 && product / period * coprime % dynamic_bit_array::width == 0);
         wheel_t wheel;
         wheel.product = product;
         wheel.mask.resize(product / period * coprime);
@@ -187,8 +187,8 @@ namespace cp_algo::math {
         dynamic_bit_array prime(to_ord(N));
         prime.set_all();
         static const auto [wheels, medium_primes_begin] = []() {
-            constexpr size_t max_wheel_size = 1 << 21;
-            uint32_t product = period * dynamic_bit_array::width;
+            constexpr size_t max_wheel_size = 1 << 20;
+            uint32_t product = period * dynamic_bit_array::width / 4;
             big_vector<uint32_t> current;
             big_vector<wheel_t> wheels;
             for(size_t i = 0; i < size(sqrt_primes); i++) {
@@ -196,7 +196,7 @@ namespace cp_algo::math {
                 if (product * p > max_wheel_size) {
                     wheels.push_back(make_wheel(current, product));
                     current = {p};
-                    product = period * dynamic_bit_array::width * p;
+                    product = period * dynamic_bit_array::width / 4 * p;
                     if (product > max_wheel_size) {
                         checkpoint("make wheels");
                         return std::pair{wheels, i};

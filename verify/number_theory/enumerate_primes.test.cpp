@@ -15,19 +15,20 @@ using namespace cp_algo::math;
 void solve() {
     uint32_t N, A, B;
     cin >> N >> A >> B;
-    auto primes = odd_sieve(N);
-    auto cnt = count(primes) + (N >= 2);
+    auto primes = sieve210(N);
+    auto cnt = count(primes) + (N >= 2) + (N >= 3) + (N >= 5) + (N >= 7);
     cp_algo::checkpoint("count");
     auto X = cnt < B ? 0 : (cnt - B + A - 1) / A;
     cout << cnt << ' ' << X << endl;
-    if (X) {
-        if (B == 0) {
-            cout << 2 << ' ';
+    for(uint32_t p: {2u, 3u, 5u, 7u}) {
+        if (B == 0 && X && p <= N) {
+            cout << p << ' ';
+            X--;
         }
         B = (B - 1 + A) % A;
     }
     for(size_t i = skip(primes, 0, B); i < primes.size(); i = skip(primes, i, A)) {
-        cout << to_val(i) << ' ';
+        cout << to_val(uint32_t(i)) << ' ';
     }
     cout << "\n";
     cp_algo::checkpoint("print");

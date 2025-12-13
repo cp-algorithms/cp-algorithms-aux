@@ -109,7 +109,6 @@ namespace cp_algo::math {
         return primes;
     }();
 
-    constexpr size_t max_wheel_size = 1 << 21;
     struct wheel_t {
         dynamic_bit_array mask;
         uint32_t product;
@@ -187,8 +186,9 @@ namespace cp_algo::math {
         N++;
         dynamic_bit_array prime(to_ord(N));
         prime.set_all();
-        constexpr uint32_t wheel_threshold = 500;
         static const auto [wheels, medium_primes_begin] = []() {
+            constexpr size_t max_wheel_size = 1 << 21;
+            constexpr uint32_t wheel_threshold = 500;
             uint32_t product = period * dynamic_bit_array::width;
             big_vector<uint32_t> current;
             big_vector<wheel_t> wheels;

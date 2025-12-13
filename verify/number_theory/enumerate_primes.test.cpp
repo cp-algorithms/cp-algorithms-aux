@@ -15,12 +15,14 @@ using namespace cp_algo::math;
 void solve() {
     uint32_t N, A, B;
     cin >> N >> A >> B;
-    auto primes = sieve210(N);
-    auto cnt = count(primes) + (N >= 2) + (N >= 3) + (N >= 5) + (N >= 7);
+    auto primes = sieve_wheel(N);
+    auto cnt = count(primes) + ranges::fold_left(wheel_primes, 0u,
+        [N](auto sum, auto p) {return sum + (N >= p); }
+    );
     cp_algo::checkpoint("count");
     auto X = cnt < B ? 0 : (cnt - B + A - 1) / A;
     cout << cnt << ' ' << X << endl;
-    for(uint32_t p: {2u, 3u, 5u, 7u}) {
+    for(uint32_t p: wheel_primes) {
         if (B == 0 && X && p <= N) {
             cout << p << ' ';
             X--;

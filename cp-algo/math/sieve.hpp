@@ -16,74 +16,75 @@ namespace cp_algo::math {
     using cp_algo::structures::dynamic_bit_array;
     using cp_algo::structures::bit_array;
 
-    constexpr uint32_t period = 210;
-    constexpr uint32_t coprime = 48;
-    constexpr auto coprime210 = [](auto x) {
-        return x % 2 && x % 3 && x % 5 && x % 7;
+    constexpr auto wheel_primes = std::array{2u, 3u, 5u, 7u};
+    constexpr uint32_t period = std::ranges::fold_left(wheel_primes, 1u, std::multiplies{});
+    constexpr uint32_t coprime = std::ranges::fold_left(wheel_primes, 1u, [](auto a, auto b){ return a * (b - 1); });
+    constexpr auto coprime_wheel = [](auto x) {
+        return std::ranges::all_of(wheel_primes, [x](auto p){ return x % p; });
     };
 
-    // Residues coprime to 210
-    constexpr auto res210 = []() {
+    // Residues coprime to period
+    constexpr auto res_wheel = []() {
         std::array<uint8_t, coprime> res;
         int idx = 0;
         for(uint8_t i = 1; i < period; i += 2) {
-            if (coprime210(i)) {
+            if (coprime_wheel(i)) {
                 res[idx++] = i;
             }
         }
         return res;
     }();
 
-    // Maps residue mod 210 to pre-upper_bound index in res210
-    constexpr auto state210 = []() {
+    // Maps residue mod period to pre-upper_bound index in res_wheel
+    constexpr auto state_wheel = []() {
         std::array<uint8_t, period> state;
         uint8_t idx = 0;
         for(uint8_t i = 0; i < period; i++) {
             state[i] = idx;
-            idx += coprime210(i);
+            idx += coprime_wheel(i);
         }
         return state;
     }();
 
     // Add to reach next coprime residue
-    constexpr auto add210 = []() {
+    constexpr auto add_wheel = []() {
         std::array<uint8_t, period> add;
         for(uint8_t i = 0; i < period; i++) {
             add[i] = 1;
-            while (!coprime210(i + add[i])) {
+            while (!coprime_wheel(i + add[i])) {
                 add[i]++;
             }
         }
         return add;
     }();
 
-    constexpr auto gap210 = []() {
+    constexpr auto gap_wheel = []() {
         std::array<uint8_t, coprime> gap;
         for(uint8_t i = 0; i < coprime; i++) {
-            gap[i] = add210[res210[i]];
+            gap[i] = add_wheel[res_wheel[i]];
         }
         return gap;
     }();
 
     // Convert value to ordinal (index in compressed bit array)
     constexpr uint32_t to_ord(uint32_t x) {
-        return (x / period) * coprime + state210[x % period];
+        return (x / period) * coprime + state_wheel[x % period];
     }
 
     // Convert ordinal to value
     constexpr uint32_t to_val(uint32_t x) {
-        return (x / coprime) * period + res210[x % coprime];
+        return (x / coprime) * period + res_wheel[x % coprime];
     }
 
-    constexpr size_t sqrt_threshold = 1 << 16;
+    constexpr size_t sqrt_threshold = 1 << 15;
     constexpr auto sqrt_prime_bits = []() {
-        const int size = sqrt_threshold / 4;
+        const int size = sqrt_threshold / 2;
         bit_array<size> prime;
         prime.set_all();
         prime.reset(to_ord(1));
-        for(uint32_t i = 11; to_ord(i * i) < size; i += add210[i % period]) {
+        for(uint32_t i = res_wheel[1]; to_ord(i * i) < size; i += add_wheel[i % period]) {
             if (prime[to_ord(i)]) {
-                for(uint32_t k = i; to_ord(i * k) < size; k += add210[k % period]) {
+                for(uint32_t k = i; to_ord(i * k) < size; k += add_wheel[k % period]) {
                     prime.reset(to_ord(i * k));
                 }
             }
@@ -93,7 +94,7 @@ namespace cp_algo::math {
 
     constexpr size_t num_primes = []() {
         size_t cnt = 0;
-        for(uint32_t i = 11; i < sqrt_threshold; i += add210[i % period]) {
+        for(uint32_t i = res_wheel[1]; i < sqrt_threshold; i += add_wheel[i % period]) {
             cnt += sqrt_prime_bits[to_ord(i)];
         }
         return cnt;
@@ -101,7 +102,7 @@ namespace cp_algo::math {
     constexpr auto sqrt_primes = []() {
         std::array<uint32_t, num_primes> primes;
         size_t j = 0;
-        for(uint32_t i = 11; i < sqrt_threshold; i += add210[i % period]) {
+        for(uint32_t i = res_wheel[1]; i < sqrt_threshold; i += add_wheel[i % period]) {
             if (sqrt_prime_bits[to_ord(i)]) {
                 primes[j++] = i;
             }
@@ -121,7 +122,7 @@ namespace cp_algo::math {
         wheel.mask.resize(product / period * coprime);
         wheel.mask.set_all();
         for(auto p: primes) {
-            for (uint32_t k = 1; p * k < product; k += add210[k % period]) {
+            for (uint32_t k = 1; p * k < product; k += add_wheel[k % period]) {
                 wheel.mask.reset(to_ord(p * k));
             }
         }
@@ -150,7 +151,7 @@ namespace cp_algo::math {
     }
 
     template <class BitArray>
-    constexpr void sieve210(BitArray& prime, uint32_t l, uint32_t r, size_t i, int state) {
+    constexpr void sieve_wheel(BitArray& prime, uint32_t l, uint32_t r, size_t i, int state) {
         static const auto ord_step = []() {
             big_vector<std::array<uint32_t, 2 * coprime>> ord_steps(num_primes);
             for (uint32_t i = 0; i < size(sqrt_primes); i++) {
@@ -158,7 +159,7 @@ namespace cp_algo::math {
                 auto &ords = ord_steps[i];
                 auto last = to_ord(p);
                 for(uint32_t j = 0; j < coprime; j++) {
-                    auto next = to_ord(p * (res210[j] + gap210[j]));
+                    auto next = to_ord(p * (res_wheel[j] + gap_wheel[j]));
                     ords[j] = ords[j + coprime] = next - last;
                     last = next;
                 }
@@ -182,13 +183,13 @@ namespace cp_algo::math {
     }
 
     // Primes smaller or equal than N
-    constexpr dynamic_bit_array sieve210(uint32_t N) {
+    constexpr dynamic_bit_array sieve_wheel(uint32_t N) {
         N++;
         dynamic_bit_array prime(to_ord(N));
         prime.set_all();
         static const auto [wheels, medium_primes_begin] = []() {
             constexpr size_t max_wheel_size = 1 << 20;
-            uint32_t product = period * dynamic_bit_array::width / 4;
+            uint32_t product = period * dynamic_bit_array::width >> (size(wheel_primes) - 2);
             big_vector<uint32_t> current;
             big_vector<wheel_t> wheels;
             for(size_t i = 0; i < size(sqrt_primes); i++) {
@@ -196,7 +197,7 @@ namespace cp_algo::math {
                 if (product * p > max_wheel_size) {
                     wheels.push_back(make_wheel(current, product));
                     current = {p};
-                    product = period * dynamic_bit_array::width / 4 * p;
+                    product = (period * dynamic_bit_array::width >> (size(wheel_primes) - 2)) * p;
                     if (product > max_wheel_size) {
                         checkpoint("make wheels");
                         return std::pair{wheels, i};
@@ -224,8 +225,8 @@ namespace cp_algo::math {
                 auto p = sqrt_primes[i];
                 if(p * p >= r) break;
                 auto k = std::max(start / p, p);
-                if (!coprime210(k)) {k += add210[k % 210];}
-                sieve210(prime, to_ord(p * k), to_ord(r), i, state210[k % 210]);
+                if (!coprime_wheel(k)) {k += add_wheel[k % period];}
+                sieve_wheel(prime, to_ord(p * k), to_ord(r), i, state_wheel[k % period]);
             }
         }
         checkpoint("sparse sieve");

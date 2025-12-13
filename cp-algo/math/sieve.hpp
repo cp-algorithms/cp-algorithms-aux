@@ -129,7 +129,7 @@ namespace cp_algo::math {
         return wheel;
     }
 
-    constexpr uint32_t wheel_threshold = 400;
+    constexpr uint32_t wheel_threshold = 500;
     size_t medium_primes_begin;
     const auto wheels = []() {
         uint32_t product = period * dynamic_bit_array::width;
@@ -187,6 +187,7 @@ namespace cp_algo::math {
     template <class BitArray>
     void sieve210(BitArray& prime, uint32_t l, uint32_t r, size_t i, int state) {
         while (l + step_sum[i] <= r) {
+            #pragma GCC unroll coprime
             for (size_t j = 0; j < coprime; j++) {
                 prime.reset(l);
                 l += ord_step[i][state++];

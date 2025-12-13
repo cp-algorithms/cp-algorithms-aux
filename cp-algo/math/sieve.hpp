@@ -17,8 +17,8 @@ namespace cp_algo::math {
     using cp_algo::structures::bit_array;
 
     constexpr auto wheel_primes = std::array{2u, 3u, 5u, 7u};
-    constexpr uint32_t period = std::ranges::fold_left(wheel_primes, 1u, std::multiplies{});
-    constexpr uint32_t coprime = std::ranges::fold_left(wheel_primes, 1u, [](auto a, auto b){ return a * (b - 1); });
+    constexpr uint8_t period = std::ranges::fold_left(wheel_primes, 1u, std::multiplies{});
+    constexpr uint8_t coprime = std::ranges::fold_left(wheel_primes, 1u, [](auto a, auto b){ return a * (b - 1); });
     constexpr auto coprime_wheel = [](auto x) {
         return std::ranges::all_of(wheel_primes, [x](auto p){ return x % p; });
     };
@@ -76,7 +76,7 @@ namespace cp_algo::math {
         return (x / coprime) * period + res_wheel[x % coprime];
     }
 
-    constexpr size_t sqrt_threshold = 1 << 15;
+    constexpr size_t sqrt_threshold = 1 << 16;
     constexpr auto sqrt_prime_bits = []() {
         const int size = sqrt_threshold / 2;
         bit_array<size> prime;
@@ -151,7 +151,7 @@ namespace cp_algo::math {
     }
 
     template <class BitArray>
-    constexpr void sieve_wheel(BitArray& prime, uint32_t l, uint32_t r, size_t i, int state) {
+    constexpr auto sieve_wheel(BitArray& prime, uint32_t l, uint32_t r, size_t i, int state) {
         static const auto ord_step = []() {
             big_vector<std::array<uint32_t, 2 * coprime>> ord_steps(num_primes);
             for (uint32_t i = 0; i < size(sqrt_primes); i++) {
@@ -166,8 +166,9 @@ namespace cp_algo::math {
             }
             return ord_steps;
         }();
+        auto &ords = ord_step[i];
         auto advance = [&]() {
-            prime.reset(std::exchange(l, l + ord_step[i][state++]));
+            prime.reset(std::exchange(l, l + ords[state++]));
         };
         uint32_t p = sqrt_primes[i];
         while (l + p * coprime <= r) {
@@ -180,6 +181,8 @@ namespace cp_algo::math {
         while (l < r) {
             advance();
         }
+        state = state >= coprime ? state - coprime : state;
+        return std::pair{l, state};
     }
 
     // Primes smaller or equal than N
@@ -218,15 +221,21 @@ namespace cp_algo::math {
             }
         }
         checkpoint("dense sieve");
-        static constexpr uint32_t sparse_block = 1 << 24;
+        static constexpr uint32_t sparse_block = 1 << 22;
+        auto [pos, state] = []() {
+            big_vector<uint32_t> pos(num_primes);
+            big_vector<uint8_t> state(num_primes);
+            for (auto [i, p]: sqrt_primes | std::views::enumerate) {
+                pos[i] = to_ord(p * p);
+                state[i] = state_wheel[p % period];
+            }
+            return std::pair{pos, state};
+        }();
         for(uint32_t start = 0; start < N; start += sparse_block) {
-            uint32_t r = std::min(start + sparse_block, N);
+            uint32_t r = to_ord(std::min(start + sparse_block, N));
             for(size_t i = medium_primes_begin; i < size(sqrt_primes); i++) {
-                auto p = sqrt_primes[i];
-                if(p * p >= r) break;
-                auto k = std::max(start / p, p);
-                if (!coprime_wheel(k)) {k += add_wheel[k % period];}
-                sieve_wheel(prime, to_ord(p * k), to_ord(r), i, state_wheel[k % period]);
+                if(state[i] >= r) break;
+                std::tie(pos[i], state[i]) = sieve_wheel(prime, pos[i], r, i, state[i]);
             }
         }
         checkpoint("sparse sieve");

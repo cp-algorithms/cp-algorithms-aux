@@ -1,15 +1,19 @@
 #ifndef CP_ALGO_MATH_BIGINT_HPP
 #define CP_ALGO_MATH_BIGINT_HPP
 #include "../util/big_alloc.hpp"
+#include "../math/fft64.hpp"
 #include <bits/stdc++.h>
 
 namespace cp_algo::math {
     enum base_v {
         x10 = uint64_t(1e18),
-        x16 = uint64_t(0)
+        x16 = uint64_t(1ull << 60)
     };
     template<base_v base = x10>
     struct bigint {
+        static constexpr uint16_t digit_length = base == x10 ? 18 : 15;
+        static constexpr uint16_t sub_base = base == x10 ? 10 : 16;
+        static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e6) : uint32_t(1 << 20);
         big_vector<uint64_t> digits;
         bool negative;
 
@@ -42,18 +46,9 @@ namespace cp_algo::math {
             size_t N = size(other.digits);
             size_t i = 0;
             for (; i < N; i++) {
-                if constexpr (base == x10) {
-                    d_ptr[i] -= o_ptr[i] + carry;
-                    carry = d_ptr[i] >= base;
-                    d_ptr[i] += carry ? uint64_t(base) : 0;
-                } else if constexpr (base == x16) {
-                    auto sub = o_ptr[i] + carry;
-                    auto new_carry = sub ? (d_ptr[i] < sub) : carry;
-                    d_ptr[i] -= sub;
-                    carry = new_carry;
-                } else {
-                    static_assert(base == x10 || base == x16, "Unsupported base");
-                }
+                d_ptr[i] -= o_ptr[i] + carry;
+                carry = d_ptr[i] >= base;
+                d_ptr[i] += carry ? uint64_t(base) : 0;
             }
             if (carry) {
                 N = size(digits);   
@@ -83,18 +78,9 @@ namespace cp_algo::math {
             size_t N = size(other.digits);
             size_t i = 0;
             for (; i < N; i++) {
-                if constexpr (base == x10) {
-                    d_ptr[i] += o_ptr[i] + carry;
-                    carry = d_ptr[i] >= base;
-                    d_ptr[i] -= carry ? uint64_t(base) : 0;
-                } else if constexpr (base == x16) {
-                    auto add = o_ptr[i] + carry;
-                    auto new_carry = add ? (d_ptr[i] >= -add) : carry;
-                    d_ptr[i] += add;
-                    carry = new_carry;
-                } else {
-                    static_assert(base == x10 || base == x16, "Unsupported base");
-                }
+                d_ptr[i] += o_ptr[i] + carry;
+                carry = d_ptr[i] >= base;
+                d_ptr[i] -= carry ? uint64_t(base) : 0;
             }
             if (carry) {
                 N = size(digits);
@@ -117,8 +103,6 @@ namespace cp_algo::math {
             }
             size_t len = size(s);
             assert(len > 0);
-            constexpr auto digit_length = base == x10 ? 18 : base == x16 ? 16 : 0;
-            constexpr auto sub_base = base == x10 ? 10 : base == x16 ? 16 : 0;
             size_t num_digits = (len + digit_length - 1) / digit_length;
             digits.resize(num_digits);
             size_t i = len;
@@ -135,6 +119,68 @@ namespace cp_algo::math {
         }
         bigint operator - (const bigint& other) const {
             return bigint(*this) -= other;
+        }
+        void to_metabase() {
+            auto N = ssize(digits);
+            digits.resize(3 * N);
+            for (auto i = N - 1; i >= 0; i--) {
+                uint64_t val = digits[i];
+                digits[3 * i] = val % meta_base;
+                val /= meta_base;
+                digits[3 * i + 1] = val % meta_base;
+                val /= meta_base;
+                digits[3 * i + 2] = val;
+            }
+        }
+        void from_metabase() {
+            auto N = (ssize(digits) + 2) / 3;
+            digits.resize(3 * N);
+            uint64_t carry = 0;
+            for (int i = 0; i < N; i++) {
+                __uint128_t val = digits[3 * i + 2];
+                val = val * meta_base + digits[3 * i + 1];
+                val = val * meta_base + digits[3 * i];
+                val += carry;
+                digits[i] = uint64_t(val % base);
+                carry = uint64_t(val / base);
+            }
+            digits.resize(N);
+            while (carry) {
+                digits.push_back(carry % base);
+                carry /= base;
+            }
+        }
+        bigint& mul_inplace(auto &&other) {
+            size_t n = size(digits);
+            size_t m = size(other.digits);
+            negative ^= other.negative;
+            if (std::min(n, m) < 128) {
+                big_vector<uint64_t> result(n + m);
+                for (size_t i = 0; i < n; i++) {
+                    uint64_t carry = 0;
+                    for (size_t j = 0; j < m || carry; j++) {
+                        __uint128_t cur = result[i + j] + carry;
+                        if (j < m) {
+                            cur += __uint128_t(digits[i]) * other.digits[j];
+                        }
+                        result[i + j] = uint64_t(cur % base);
+                        carry = uint64_t(cur / base);
+                    }
+                }
+                digits = std::move(result);
+                return normalize();
+            }
+            to_metabase();
+            other.to_metabase();
+            fft::conv64(digits, other.digits);
+            from_metabase();
+            return normalize();
+        }
+        bigint& operator *= (bigint const& other) {
+            return mul_inplace(bigint(other));
+        }
+        bigint operator * (const bigint& other) const {
+            return bigint(*this).mul_inplace(bigint(other));
         }
     };
 
@@ -154,21 +200,19 @@ namespace cp_algo::math {
         if (empty(x.digits)) {
             return out << '0';
         }
-        constexpr auto digit_length = base == x10 ? 18 : base == x16 ? 16 : 0;
-        constexpr auto sub_base = base == x10 ? 10 : base == x16 ? 16 : 0;
         char buf[20];
-        auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), x.digits.back(), sub_base);
+        auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), x.digits.back(), bigint<base>::sub_base);
         if constexpr (base == x16) {
             std::ranges::transform(buf, buf, toupper);
         }
         out << std::string_view(buf, ptr - buf);
         for (auto d: x.digits | std::views::reverse | std::views::drop(1)) {
-            auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), d, sub_base);
+            auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), d, bigint<base>::sub_base);
             if constexpr (base == x16) {
                 std::ranges::transform(buf, buf, toupper);
             }
             auto len = ptr - buf;
-            out << std::string(digit_length - len, '0');
+            out << std::string(bigint<base>::digit_length - len, '0');
             out << std::string_view(buf, len);
         }
         return out;

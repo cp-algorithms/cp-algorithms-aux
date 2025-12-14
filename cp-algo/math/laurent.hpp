@@ -6,31 +6,62 @@
 #include <vector>
 #include <cassert>
 #include <algorithm>
+#include <iterator>
 #include <type_traits>
 #include <bit>
+#include <ranges>
 
 #include "cvector.hpp"
 #include "convolution.hpp"
 
 namespace cp_algo::math {
+    // Evaluation configuration using three boolean flags
+    struct eval_options {
+        // If true: evaluate only k and store it; if false: cache all up to k
+        bool direct = false;
+        // If true: lazy mode (can only use dependees up to current index); if false: eager
+        bool lazy = false;
+        // If true: ask dependees to precache up to needed indices before use
+        bool precache_arguments = false;
+    };
     // Base provider interface for lazy coefficient evaluation
     template<typename T>
     struct provider {
         mutable big_vector<T> cache;
+        mutable int cache_valid = 0; // Number of valid cached coefficients from cache_offset
         mutable int cache_offset = 0; // Index of first cached coefficient
         mutable bool initialized = false;
         mutable bool all_cached = false; // True if all non-zero coeffs are cached
+        // Ensure provider has initialized offset and state
+        void initialize_if_needed() const {
+            if(!initialized) {
+                cache_offset = offset();
+                initialized = true;
+            }
+        }
         
         virtual ~provider() = default;
         virtual int offset() const { return 0; }
         
         // Returns true if this provider requires lazy evaluation (coefficients must be
         // computed in order). False means dependencies can be bulk-cached for FFT.
-        // Examples: multiply needs lazy eval, add/subtract/negate/scale don't.
         virtual bool needs_lazy_eval() const { return false; }
         
         // Compute k-th coefficient lazily without caching
         virtual T coeff_lazy(int k) const = 0;
+        // Compute k-th coefficient directly interface (no cache mutation)
+        // Returns cached value if already available, otherwise delegates to impl.
+        T coeff_direct(int k) const {
+            initialize_if_needed();
+            int idx = k - cache_offset;
+            if(idx < 0) return T(0);
+            if(idx < cache_valid) return cache[idx];
+            return coeff_direct_impl(k);
+        }
+
+    protected:
+        // Implementation hook for direct computation without caching
+        virtual T coeff_direct_impl(int k) const = 0;
         
         // Double the number of known coefficients (or cache all for finite series)
         // Default: use coeff_lazy, but can be overridden for efficiency (e.g., FFT)
@@ -40,16 +71,42 @@ namespace cp_algo::math {
             
             cache.resize(new_size);
             for(int i = old_size; i < new_size; i++) {
-                cache[i] = coeff_lazy(cache_offset + i);
+                cache[i] = coeff(cache_offset + i);
+            }
+            cache_valid = new_size;
+        }
+
+        // Ensure the cache contains coefficients up to index n (inclusive)
+        // Uses provider's preferred strategy: sequential for lazy providers, doubling otherwise.
+        void upcache(int n) const {
+            if(all_cached) return;
+            initialize_if_needed();
+            int idx = n - cache_offset;
+            if(idx < 0) return;
+
+            if(needs_lazy_eval()) {
+                while(idx >= cache_valid && !all_cached) {
+                    int next_k = cache_offset + cache_valid;
+                    if((int)cache.size() <= cache_valid) cache.resize(cache_valid + 1);
+                    cache[cache_valid] = coeff_lazy(next_k);
+                    cache_valid++;
+                }
+            } else {
+                while(idx >= cache_valid && !all_cached) {
+                    double_up();
+                }
             }
         }
         
         // Get coefficient with caching and doubling (default implementation)
         virtual T coeff(int k) const {
-            if(!initialized) {
-                cache_offset = offset();
-                initialized = true;
-            }
+            static constexpr eval_options defaults{};
+            return coeff(k, defaults);
+        }
+
+        // Get coefficient with explicit evaluation options
+        virtual T coeff(int k, eval_options const& opt) const {
+            initialize_if_needed();
             
             int idx = k - cache_offset;
             if(idx < 0) {
@@ -60,30 +117,25 @@ namespace cp_algo::math {
             if(all_cached && idx >= (int)cache.size()) {
                 return T(0);
             }
-            
-            if(needs_lazy_eval()) {
-                // Sequentially extend cache to the requested index
-                while(idx >= (int)cache.size() && !all_cached) {
-                    int next_k = cache_offset + (int)cache.size();
-                    cache.push_back(coeff_lazy(next_k));
-                }
+
+            if(opt.direct) {
+                // Direct evaluation: compute only k and do not mutate cache
+                if(idx < cache_valid) return cache[idx];
+                return coeff_direct(k);
             } else {
-                // Extend cache by doubling until we have enough
-                while(idx >= (int)cache.size() && !all_cached) {
-                    double_up();
+                // Expand cache honoring evaluation mode and provider's lazy requirement
+                if(opt.lazy || needs_lazy_eval()) {
+                    upcache(k);
+                } else {
+                    upcache(k);
                 }
             }
             
-            if(idx < (int)cache.size()) {
+            if(idx < cache_valid) {
                 return cache[idx];
             }
             
             return T(0);
-        }
-
-        // Alias for backwards compatibility
-        T get(int k) const {
-            return coeff(k);
         }
     };
     
@@ -102,6 +154,9 @@ namespace cp_algo::math {
         T coeff_lazy(int k) const override {
             return k == offset ? value : T(0);
         }
+        T coeff_direct_impl(int k) const override {
+            return k == offset ? value : T(0);
+        }
         
         T coeff(int k) const override {
             return coeff_lazy(k);
@@ -111,27 +166,24 @@ namespace cp_algo::math {
     // Polynomial provider - wraps a vector of coefficients
     template<typename T>
     struct polynomial_provider : provider<T> {
-        polynomial_provider(big_vector<T> coeffs, int offset = 0) {
+        polynomial_provider(auto &&coeffs, int offset = 0) {
             // Find first and last non-zero coefficients
             auto non_zero = [](const T& x) { return x != T(0); };
             auto first = std::ranges::find_if(coeffs, non_zero);
-            auto last = std::ranges::find_if(coeffs | std::views::reverse, non_zero);
+            auto last = std::ranges::find_last_if(coeffs, non_zero);
             
             // Extract non-zero range
             if(first != coeffs.end()) {
                 int leading_zeros = first - coeffs.begin();
-                int trailing_zeros = last - coeffs.rbegin();
-                coeffs = big_vector<T>(first, coeffs.end() - trailing_zeros);
+                int trailing_zeros = static_cast<int>(std::ranges::ssize(last)) - 1;
+                this->cache = big_vector<T>(first, coeffs.end() - trailing_zeros);
                 offset += leading_zeros;
-            } else {
-                // All zeros
-                coeffs.clear();
             }
             
             // Initialize cache directly with the coefficients
-            this->cache = std::move(coeffs);
             this->cache_offset = offset;
             this->initialized = true;
+            this->cache_valid = (int)this->cache.size();
             this->all_cached = true;
         }
         
@@ -141,13 +193,20 @@ namespace cp_algo::math {
         
         T coeff_lazy(int k) const override {
             int idx = k - this->cache_offset;
-            if(idx < 0 || idx >= (int)this->cache.size()) {
+            if(idx < 0 || idx >= this->cache_valid) {
                 return T(0);
             }
             return this->cache[idx];
         }
+        T coeff_direct_impl(int k) const override {
+            return coeff_lazy(k);
+        }
         
         T coeff(int k) const override {
+            return coeff_lazy(k);
+        }
+
+        T coeff(int k, eval_options const& /*opt*/) const override {
             return coeff_lazy(k);
         }
     };
@@ -160,6 +219,10 @@ namespace cp_algo::math {
         unary_provider(std::shared_ptr<provider<T>> operand)
             : operand(std::move(operand)) {}
         
+        bool needs_lazy_eval() const override {
+            return operand->needs_lazy_eval();
+        }
+
         virtual T transform(T const& a) const = 0;
         
         int offset() const override {
@@ -169,9 +232,16 @@ namespace cp_algo::math {
         T coeff_lazy(int k) const override {
             return transform(operand->coeff_lazy(k));
         }
+        T coeff_direct_impl(int k) const override {
+            return transform(operand->coeff_direct(k));
+        }
         
         T coeff(int k) const {
             return transform(operand->coeff(k));
+        }
+
+        T coeff(int k, eval_options const& opt) const override {
+            return transform(operand->coeff(k, opt));
         }
     };
     
@@ -183,6 +253,10 @@ namespace cp_algo::math {
         binary_provider(std::shared_ptr<provider<T>> lhs, std::shared_ptr<provider<T>> rhs)
             : lhs(std::move(lhs)), rhs(std::move(rhs)) {}
         
+        bool needs_lazy_eval() const override {
+            return lhs->needs_lazy_eval() || rhs->needs_lazy_eval();
+        }
+
         virtual T combine(T const& a, T const& b) const = 0;
         
         int offset() const override {
@@ -192,9 +266,16 @@ namespace cp_algo::math {
         T coeff_lazy(int k) const override {
             return combine(lhs->coeff_lazy(k), rhs->coeff_lazy(k));
         }
+        T coeff_direct_impl(int k) const override {
+            return combine(lhs->coeff_direct(k), rhs->coeff_direct(k));
+        }
         
         T coeff(int k) const {
             return combine(lhs->coeff(k), rhs->coeff(k));
+        }
+
+        T coeff(int k, eval_options const& opt) const override {
+            return combine(lhs->coeff(k, opt), rhs->coeff(k, opt));
         }
     };
     
@@ -272,6 +353,63 @@ namespace cp_algo::math {
             }
             return result;
         }
+        T coeff_direct_impl(int k) const override {
+            int n = k - offset();
+            if(n < 0) return T(0);
+            T result = T(0);
+            for(int j = 0; j <= n; j++) {
+                int i_l = lhs->offset() + j;
+                int i_r = rhs->offset() + (n - j);
+                auto a = lhs->coeff(i_l);
+                auto b = rhs->coeff(i_r);
+                result += a * b;
+            }
+            return result;
+        }
+
+        T coeff(int k, eval_options const& opt) const override {
+            int n = k - offset();
+            if(n < 0) return T(0);
+
+            if(opt.direct) {
+                T result = T(0);
+                for(int j = 0; j <= n; j++) {
+                    int i_l = lhs->offset() + j;
+                    int i_r = rhs->offset() + (n - j);
+                    if(opt.precache_arguments && !opt.lazy) {
+                        lhs->coeff(i_l);
+                        rhs->coeff(i_r);
+                    }
+                    auto a = (opt.lazy || lhs->needs_lazy_eval())
+                        ? lhs->coeff_lazy(i_l) : lhs->coeff(i_l);
+                    auto b = (opt.lazy || rhs->needs_lazy_eval())
+                        ? rhs->coeff_lazy(i_r) : rhs->coeff(i_r);
+                    result += a * b;
+                }
+                return result;
+            }
+
+            int idx = k - this->cache_offset;
+            if(idx < 0) return T(0);
+            while(idx >= (int)this->cache.size() && !this->all_cached) {
+                if(opt.lazy || needs_lazy_eval()) {
+                    int next_k = this->cache_offset + (int)this->cache.size();
+                    if(opt.precache_arguments && !opt.lazy) {
+                        int n2 = next_k - offset();
+                        int lhs_need = lhs->offset() + n2;
+                        int rhs_need = rhs->offset() + n2;
+                        lhs->upcache(lhs_need);
+                        rhs->upcache(rhs_need);
+                    }
+                    if((int)this->cache.size() <= this->cache_valid) this->cache.resize(this->cache_valid + 1);
+                    this->cache[this->cache_valid] = coeff_lazy(next_k);
+                    this->cache_valid++;
+                } else {
+                    double_up();
+                }
+            }
+            return idx < this->cache_valid ? this->cache[idx] : T(0);
+        }
 
         void double_up() const override {
             int old_size = this->cache.size();
@@ -280,7 +418,9 @@ namespace cp_algo::math {
             // Lazy path: compute the next coefficient sequentially
             if(needs_lazy_eval()) {
                 int k = this->cache_offset + old_size;
-                this->cache.push_back(coeff_lazy(k));
+                if((int)this->cache.size() <= this->cache_valid) this->cache.resize(this->cache_valid + 1);
+                this->cache[this->cache_valid] = coeff_lazy(k);
+                this->cache_valid++;
                 return;
             }
 
@@ -302,6 +442,7 @@ namespace cp_algo::math {
             for(int i = old_size; i < new_size && i < (int)la.size(); i++) {
                 this->cache[i] = la[i];
             }
+            this->cache_valid = new_size;
 
             // If both operands are fully cached and we reached their total length, mark as done
             if(lhs->all_cached && rhs->all_cached) {
@@ -370,6 +511,11 @@ namespace cp_algo::math {
         
         laurent& operator*=(T const& scalar) {
             return *this = *this * scalar;
+        }
+
+        // Coefficient with explicit evaluation options
+        T coeff(int k, eval_options const& opt) const {
+            return impl->coeff(k, opt);
         }
     };
     

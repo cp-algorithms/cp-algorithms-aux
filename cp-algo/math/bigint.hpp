@@ -159,23 +159,17 @@ namespace cp_algo::math {
         char buf[20];
         auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), x.digits.back(), sub_base);
         if constexpr (base == x16) {
-            for (char* p = buf; p != ptr; ++p) {
-                *p = (char)std::toupper(*p);
-            }
+            std::ranges::transform(buf, buf, toupper);
         }
-        buf[ptr - buf] = 0;
-        out << buf;
+        out << std::string_view(buf, ptr - buf);
         for (auto d: x.digits | std::views::reverse | std::views::drop(1)) {
             auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), d, sub_base);
             if constexpr (base == x16) {
-                for (char* p = buf; p != ptr; ++p) {
-                    *p = (char)std::toupper(*p);
-                }
+                std::ranges::transform(buf, buf, toupper);
             }
             auto len = ptr - buf;
             out << std::string(digit_length - len, '0');
-            buf[len] = 0;
-            out << buf;
+            out << std::string_view(buf, len);
         }
         return out;
     }

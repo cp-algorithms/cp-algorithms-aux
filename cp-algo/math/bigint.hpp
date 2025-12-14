@@ -6,7 +6,7 @@
 namespace cp_algo::math {
     enum base_v {
         x10 = uint64_t(1e18),
-        x16 = 0
+        x16 = uint64_t(0)
     };
     template<base_v base = x10>
     struct bigint {
@@ -46,6 +46,13 @@ namespace cp_algo::math {
                     d_ptr[i] -= o_ptr[i] + carry;
                     carry = d_ptr[i] >= base;
                     d_ptr[i] += carry ? uint64_t(base) : 0;
+                } else if constexpr (base == x16) {
+                    auto sub = o_ptr[i] + carry;
+                    auto new_carry = sub ? (d_ptr[i] < sub) : carry;
+                    d_ptr[i] -= sub;
+                    carry = new_carry;
+                } else {
+                    static_assert(base == x10 || base == x16, "Unsupported base");
                 }
             }
             if (carry) {
@@ -80,11 +87,18 @@ namespace cp_algo::math {
                     d_ptr[i] += o_ptr[i] + carry;
                     carry = d_ptr[i] >= base;
                     d_ptr[i] -= carry ? uint64_t(base) : 0;
+                } else if constexpr (base == x16) {
+                    auto add = o_ptr[i] + carry;
+                    auto new_carry = add ? (d_ptr[i] >= -add) : carry;
+                    d_ptr[i] += add;
+                    carry = new_carry;
+                } else {
+                    static_assert(base == x10 || base == x16, "Unsupported base");
                 }
             }
             if (carry) {
                 N = size(digits);
-                for (; i < N && d_ptr[i] == base - 1; i++) {
+                for (; i < N && d_ptr[i] == uint64_t(base) - 1; i++) {
                     d_ptr[i] = 0;
                 }
                 if (i < N) {
@@ -104,10 +118,10 @@ namespace cp_algo::math {
             size_t len = size(s);
             assert(len > 0);
             constexpr auto digit_length = base == x10 ? 18 : base == x16 ? 16 : 0;
+            constexpr auto sub_base = base == x10 ? 10 : base == x16 ? 16 : 0;
             size_t num_digits = (len + digit_length - 1) / digit_length;
             digits.resize(num_digits);
             size_t i = len;
-            constexpr auto sub_base = base == x10 ? 10 : base == x16 ? 16 : 0;
             for (size_t j = 0; j < num_digits - 1; j++) {
                 std::from_chars(s.data() + i - digit_length, s.data() + i, digits[j], sub_base);
                 i -= digit_length;
@@ -140,11 +154,28 @@ namespace cp_algo::math {
         if (empty(x.digits)) {
             return out << '0';
         }
-        if constexpr (base == x10) {
-            out << x.digits.back();
-            for (auto d: x.digits | std::views::reverse | std::views::drop(1)) {
-                out << std::string(18 - size(std::to_string(d)), '0') << d;
+        constexpr auto digit_length = base == x10 ? 18 : base == x16 ? 16 : 0;
+        constexpr auto sub_base = base == x10 ? 10 : base == x16 ? 16 : 0;
+        char buf[20];
+        auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), x.digits.back(), sub_base);
+        if constexpr (base == x16) {
+            for (char* p = buf; p != ptr; ++p) {
+                *p = (char)std::toupper(*p);
             }
+        }
+        buf[ptr - buf] = 0;
+        out << buf;
+        for (auto d: x.digits | std::views::reverse | std::views::drop(1)) {
+            auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), d, sub_base);
+            if constexpr (base == x16) {
+                for (char* p = buf; p != ptr; ++p) {
+                    *p = (char)std::toupper(*p);
+                }
+            }
+            auto len = ptr - buf;
+            out << std::string(digit_length - len, '0');
+            buf[len] = 0;
+            out << buf;
         }
         return out;
     }

@@ -1,19 +1,19 @@
 #ifndef CP_ALGO_MATH_BIGINT_HPP
 #define CP_ALGO_MATH_BIGINT_HPP
 #include "../util/big_alloc.hpp"
-#include "../math/fft64.hpp"
+#include "../math/fft_simple.hpp"
 #include <bits/stdc++.h>
 
 namespace cp_algo::math {
     enum base_v {
-        x10 = uint64_t(1e18),
+        x10 = uint64_t(1e16),
         x16 = uint64_t(1ull << 60)
     };
     template<base_v base = x10>
     struct bigint {
-        static constexpr uint16_t digit_length = base == x10 ? 18 : 15;
+        static constexpr uint16_t digit_length = base == x10 ? 16 : 15;
         static constexpr uint16_t sub_base = base == x10 ? 10 : 16;
-        static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e6) : uint32_t(1 << 20);
+        static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e4) : uint32_t(1 << 15);
         big_vector<uint64_t> digits;
         bool negative;
 
@@ -122,24 +122,27 @@ namespace cp_algo::math {
         }
         void to_metabase() {
             auto N = ssize(digits);
-            digits.resize(3 * N);
+            digits.resize(4 * N);
             for (auto i = N - 1; i >= 0; i--) {
                 uint64_t val = digits[i];
-                digits[3 * i] = val % meta_base;
+                digits[4 * i] = val % meta_base;
                 val /= meta_base;
-                digits[3 * i + 1] = val % meta_base;
+                digits[4 * i + 1] = val % meta_base;
                 val /= meta_base;
-                digits[3 * i + 2] = val;
+                digits[4 * i + 2] = val % meta_base;
+                val /= meta_base;
+                digits[4 * i + 3] = val;
             }
         }
         void from_metabase() {
-            auto N = (ssize(digits) + 2) / 3;
-            digits.resize(3 * N);
+            auto N = (ssize(digits) + 3) / 4;
+            digits.resize(4 * N);
             uint64_t carry = 0;
             for (int i = 0; i < N; i++) {
-                __uint128_t val = digits[3 * i + 2];
-                val = val * meta_base + digits[3 * i + 1];
-                val = val * meta_base + digits[3 * i];
+                __uint128_t val = digits[4 * i + 3];
+                val = val * meta_base + digits[4 * i + 2];
+                val = val * meta_base + digits[4 * i + 1];
+                val = val * meta_base + digits[4 * i];
                 val += carry;
                 digits[i] = uint64_t(val % base);
                 carry = uint64_t(val / base);
@@ -172,7 +175,7 @@ namespace cp_algo::math {
             }
             to_metabase();
             other.to_metabase();
-            fft::conv64(digits, other.digits);
+            fft::conv_simple(digits, other.digits);
             from_metabase();
             return normalize();
         }

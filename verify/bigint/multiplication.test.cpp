@@ -3,7 +3,7 @@
 #pragma GCC optimize("O3,unroll-loops")
 #include <bits/allocator.h>
 #pragma GCC target("avx2")
-#define CP_ALGO_CHECKPOINT
+//#define CP_ALGO_CHECKPOINT
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/bigint.hpp"
@@ -29,5 +29,5 @@ signed main() {
     while(t--) {
         solve();
     }
-    cp_algo::checkpoint<1>();
+    //cp_algo::checkpoint<1>();
 }

@@ -120,6 +120,10 @@ namespace cp_algo::math::fft {
 
     void conv64(auto& a, auto const& b) {
         size_t n = a.size(), m = b.size();
+        if (n == 0 || m == 0) {
+            a.clear();
+            return;
+        }
         size_t N = std::max(flen, std::bit_ceil(n + m - 1) / 2);
         dft64 A(a, N), B(b, N);
         A.dot(B);

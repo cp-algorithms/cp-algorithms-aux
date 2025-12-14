@@ -36,6 +36,10 @@ namespace cp_algo::math::fft {
 
     // Multiplies a and b, assuming perfect precision and no overflow
     void conv_simple(auto& a, auto const& b) {
+        if (empty(a) || empty(b)) {
+            a.clear();
+            return;
+        }
         size_t n = a.size(), m = b.size();
         size_t N = std::max(flen, std::bit_ceil(n + m - 1) / 2);
         dft_simple A(a, N), B(b, N);

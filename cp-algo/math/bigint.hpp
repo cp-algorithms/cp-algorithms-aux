@@ -14,7 +14,7 @@ namespace cp_algo::math {
         static constexpr uint16_t digit_length = base == x10 ? 16 : 15;
         static constexpr uint16_t sub_base = base == x10 ? 10 : 16;
         static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e4) : uint32_t(1 << 15);
-        big_vector<uint64_t> digits;
+        big_basic_string<uint64_t> digits;
         bool negative;
 
         bigint() {}
@@ -95,8 +95,18 @@ namespace cp_algo::math {
             }
             return *this;
         }
-
+        bigint(int64_t x) {
+            negative = x < 0;
+            x = negative ? -x : x;
+            digits = x ? big_basic_string<uint64_t>{uint64_t(x)} : big_basic_string<uint64_t>{};
+        }
         bigint(std::span<char> s): negative(false) {
+            if (size(s) < digit_length) {
+                int64_t val = 0;
+                std::from_chars(s.data(), s.data() + size(s), val, sub_base);
+                *this = bigint(val);
+                return;
+            }
             if (!empty(s) && s[0] == '-') {
                 negative = true;
                 s = s.subspan(1);
@@ -153,25 +163,43 @@ namespace cp_algo::math {
                 carry /= base;
             }
         }
+        bigint& operator *= (int64_t other) {
+            if (other < 0) {
+                negative ^= 1;
+                other = -other;
+            }
+            if (other == 0) {
+                return *this = bigint(0);
+            } else if (other == 1) {
+                return *this;
+            }
+            uint64_t carry = 0;
+            for (auto &d: digits) {
+                __uint128_t val = __uint128_t(d) * other + carry;
+                d = uint64_t(val % base);
+                carry = uint64_t(val / base);
+            }
+            if (carry) {
+                digits.push_back(carry % base);
+                carry /= base;
+            }
+            return *this;
+        }
+        bigint operator * (int64_t other) const {
+            return bigint(*this) *= other;
+        }
+        friend bigint operator * (int64_t lhs, const bigint& rhs) {
+            return bigint(rhs) *= lhs;
+        }
         bigint& mul_inplace(auto &&other) {
-            size_t n = size(digits);
-            size_t m = size(other.digits);
             negative ^= other.negative;
-            if (std::min(n, m) < 128) {
-                big_vector<uint64_t> result(n + m);
-                for (size_t i = 0; i < n; i++) {
-                    uint64_t carry = 0;
-                    for (size_t j = 0; j < m || carry; j++) {
-                        __uint128_t cur = result[i + j] + carry;
-                        if (j < m) {
-                            cur += __uint128_t(digits[i]) * other.digits[j];
-                        }
-                        result[i + j] = uint64_t(cur % base);
-                        carry = uint64_t(cur / base);
-                    }
-                }
-                digits = std::move(result);
-                return normalize();
+            auto n = size(digits), m = size(other.digits);
+            if (n < m) {
+                std::swap(n, m);
+                std::swap(digits, other.digits);
+            }
+            if (m <= 1) {
+                return *this *= int64_t(m == 0 ? 0 : other.digits[0]);
             }
             to_metabase();
             other.to_metabase();
@@ -197,13 +225,25 @@ namespace cp_algo::math {
 
     template<base_v base>
     decltype(std::cout)& operator << (decltype(std::cout) &out, cp_algo::math::bigint<base> const& x) {
+        char buf[16];
+        if (size(x.digits) <= 1) {
+            if (x.negative) {
+                out << '-';
+            }
+            if constexpr (base == x16) {
+                auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), empty(x.digits) ? 0 : x.digits[0], bigint<base>::sub_base);
+                std::ranges::transform(buf, buf, toupper);
+                return out << std::string_view(buf, ptr - buf);
+            } else {
+                return out << (empty(x.digits) ? 0 : x.digits[0]);
+            }
+        }
         if (x.negative) {
             out << '-';
         }
         if (empty(x.digits)) {
             return out << '0';
         }
-        char buf[20];
         auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), x.digits.back(), bigint<base>::sub_base);
         if constexpr (base == x16) {
             std::ranges::transform(buf, buf, toupper);

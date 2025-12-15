@@ -11,13 +11,89 @@ namespace cp_algo::math {
     };
     template<base_v base = x10>
     struct bigint {
+        static constexpr uint64_t Base = uint64_t(base);
         static constexpr uint16_t digit_length = base == x10 ? 16 : 15;
         static constexpr uint16_t sub_base = base == x10 ? 10 : 16;
         static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e4) : uint32_t(1 << 15);
         big_basic_string<uint64_t> digits;
         bool negative;
 
+        auto operator <=> (bigint const& other) const {
+            // Handle zero cases
+            if (digits.empty() && other.digits.empty()) {
+                return std::strong_ordering::equal;
+            }
+            if (digits.empty()) {
+                return other.negative ? std::strong_ordering::greater : std::strong_ordering::less;
+            }
+            if (other.digits.empty()) {
+                return negative ? std::strong_ordering::less : std::strong_ordering::greater;
+            }
+            
+            // Handle sign differences
+            if (negative != other.negative) {
+                return negative ? std::strong_ordering::less : std::strong_ordering::greater;
+            }
+            
+            // Both have the same sign - compare magnitudes
+            if (digits.size() != other.digits.size()) {
+                auto size_cmp = digits.size() <=> other.digits.size();
+                // If both negative, reverse the comparison
+                return negative ? 0 <=> size_cmp : size_cmp;
+            }
+            
+            // Same size, compare digits from most significant to least
+            for (auto i = ssize(digits) - 1; i >= 0; i--) {
+                auto digit_cmp = digits[i] <=> other.digits[i];
+                if (digit_cmp != std::strong_ordering::equal) {
+                    return negative ? 0 <=> digit_cmp : digit_cmp;
+                }
+            }
+            
+            return std::strong_ordering::equal;
+        }
+
         bigint() {}
+
+        bigint(big_basic_string<uint64_t> d, bool neg): digits(std::move(d)), negative(neg) {
+            normalize();
+        }
+
+        bigint& pad_inplace(size_t to_add) {
+            digits.insert(0, to_add, 0);
+            return normalize();
+        }
+        bigint& drop_inplace(size_t to_drop) {
+            digits.erase(0, std::min(to_drop, size(digits)));
+            return normalize();
+        }
+        bigint& take_inplace(size_t to_keep) {
+            digits.erase(std::min(to_keep, size(digits)), std::string::npos);
+            return normalize();
+        }
+        bigint& top_inplace(size_t to_keep) {
+            if (to_keep >= size(digits)) {
+                return pad_inplace(to_keep - size(digits));
+            } else {
+                return drop_inplace(size(digits) - to_keep);
+            }
+        }
+        bigint pad(size_t to_add) const {
+            return bigint{big_basic_string<uint64_t>(to_add, 0) + digits, negative}.normalize();
+        }
+        bigint drop(size_t to_drop) const {
+            return bigint{digits.substr(std::min(to_drop, size(digits))), negative}.normalize();
+        }
+        bigint take(size_t to_keep) const {
+            return bigint{digits.substr(0, std::min(to_keep, size(digits))), negative}.normalize();
+        }
+        bigint top(size_t to_keep) const {
+            if (to_keep >= size(digits)) {
+                return pad(to_keep - size(digits));
+            } else {
+                return drop(size(digits) - to_keep);
+            }
+        }
 
         bigint& normalize() {
             while (!empty(digits) && digits.back() == 0) {
@@ -223,42 +299,38 @@ namespace cp_algo::math {
         return in;
     }
 
-    template<base_v base>
-    decltype(std::cout)& operator << (decltype(std::cout) &out, cp_algo::math::bigint<base> const& x) {
+    template<base_v base, bool fill = true>
+    auto& print_digit(auto &out, uint64_t d) {
         char buf[16];
-        if (size(x.digits) <= 1) {
-            if (x.negative) {
-                out << '-';
-            }
-            if constexpr (base == x16) {
-                auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), empty(x.digits) ? 0 : x.digits[0], bigint<base>::sub_base);
-                std::ranges::transform(buf, buf, toupper);
-                return out << std::string_view(buf, ptr - buf);
-            } else {
-                return out << (empty(x.digits) ? 0 : x.digits[0]);
-            }
+        auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), d, bigint<base>::sub_base);
+        if constexpr (base == x16) {
+            std::ranges::transform(buf, buf, toupper);
         }
+        auto len = ptr - buf;
+        if constexpr (fill) {
+            out << std::string(bigint<base>::digit_length - len, '0');
+        }
+        return out << std::string_view(buf, len);
+    }
+
+    template<bool fill_all = false, base_v base>
+    auto& print_bigint(auto &out, cp_algo::math::bigint<base> const& x) {
         if (x.negative) {
             out << '-';
         }
         if (empty(x.digits)) {
-            return out << '0';
+            return print_digit<base, fill_all>(out, 0);
         }
-        auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), x.digits.back(), bigint<base>::sub_base);
-        if constexpr (base == x16) {
-            std::ranges::transform(buf, buf, toupper);
-        }
-        out << std::string_view(buf, ptr - buf);
+        print_digit<base, fill_all>(out, x.digits.back());
         for (auto d: x.digits | std::views::reverse | std::views::drop(1)) {
-            auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), d, bigint<base>::sub_base);
-            if constexpr (base == x16) {
-                std::ranges::transform(buf, buf, toupper);
-            }
-            auto len = ptr - buf;
-            out << std::string(bigint<base>::digit_length - len, '0');
-            out << std::string_view(buf, len);
+            print_digit<base, true>(out, d);
         }
         return out;
+    }
+
+    template<base_v base>
+    decltype(std::cout)& operator << (decltype(std::cout) &out, cp_algo::math::bigint<base> const& x) {
+        return print_bigint(out, x);
     }
 }
 

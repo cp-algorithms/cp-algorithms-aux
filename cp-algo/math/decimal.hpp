@@ -113,10 +113,46 @@ namespace cp_algo::math {
     };
 
     template<base_v base>
+    auto divmod_fast(bigint<base> const& a, int64_t b) {
+        // Optimized divmod for small divisors that fit in int64_t
+        if (b == 0) {
+            assert(false && "Division by zero");
+        }
+        bool neg_a = a.negative;
+        bool neg_b = b < 0;
+        b = std::abs(b);
+        
+        bigint<base> quotient;
+        uint64_t remainder = 0;
+
+        auto n = ssize(a.digits);
+        for (auto i = n - 1; i >= 0; i--) {
+            __uint128_t val = (__uint128_t)remainder * bigint<base>::Base + a.digits[i];
+            uint64_t q = uint64_t(val / b);
+            remainder = uint64_t(val % b);
+            quotient.digits.push_back(q);
+        }
+        std::ranges::reverse(quotient.digits);
+        quotient.negative = (neg_a ^ neg_b);
+        quotient.normalize();
+        
+        bigint<base> rem{int64_t(remainder)};
+        rem.negative = neg_a;
+        
+        return std::pair{quotient, rem};
+    }
+
+    template<base_v base>
     auto divmod(bigint<base> const& a, bigint<base> const& b) {
         if (a < b) {
             return std::pair{bigint<base>(0), a};
         }
+        // Use fast path if b fits in int64_t
+        if (size(b.digits) == 1) {
+            int64_t b_val = b.negative ? -int64_t(b.digits[0]) : int64_t(b.digits[0]);
+            return divmod_fast(a, b_val);
+        }
+        // General case using decimal arithmetic
         auto A = decimal<base>(a);
         auto B = decimal<base>(b);
         auto d = (A * B.inv(A.magnitude())).trunc();

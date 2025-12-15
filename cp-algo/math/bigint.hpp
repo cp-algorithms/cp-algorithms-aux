@@ -283,6 +283,33 @@ namespace cp_algo::math {
             if (m <= 1) {
                 return *this *= int64_t(m == 0 ? 0 : other.digits[0]);
             }
+            // Small m: use schoolbook long multiplication in base `Base`
+            // Threshold chosen empirically to avoid FFT overhead on small sizes
+            constexpr size_t SMALL_M_THRESHOLD = 32;
+            if (m <= SMALL_M_THRESHOLD) {
+                big_basic_string<uint64_t> res;
+                res.assign(n + m, 0);
+                for (size_t i = 0; i < n; i++) {
+                    if (digits[i] == 0) continue;
+                    uint64_t carry = 0;
+                    for (size_t j = 0; j < m; j++) {
+                        __uint128_t cur = res[i + j]
+                                        + (__uint128_t)digits[i] * other.digits[j]
+                                        + carry;
+                        res[i + j] = uint64_t(cur % Base);
+                        carry = uint64_t(cur / Base);
+                    }
+                    size_t k = i + m;
+                    if (carry) {
+                        uint64_t cur = res[k] + carry;
+                        res[k] = cur % Base;
+                        carry = cur / Base;
+                        k++;
+                    }
+                }
+                digits = std::move(res);
+                return normalize();
+            }
             to_metabase();
             other.to_metabase();
             fft::conv_simple(digits, other.digits);

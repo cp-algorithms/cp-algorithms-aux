@@ -134,9 +134,15 @@ namespace cp_algo::math {
                 if (i < N) {
                     d_ptr[i]--;
                 } else {
-                    d_ptr[0]--;
+                    // Two's complement: flip all digits then add 1
                     for (i = 0; i < N; i++) {
                         d_ptr[i] = base - d_ptr[i] - 1;
+                    }
+                    bool carry = true;
+                    for (i = 0; i < N && carry; i++) {
+                        d_ptr[i]++;
+                        carry = d_ptr[i] >= base;
+                        d_ptr[i] -= carry * base;
                     }
                     negate();
                 }

@@ -155,11 +155,15 @@ namespace cp_algo::math {
         // General case using decimal arithmetic
         auto A = decimal<base>(a);
         auto B = decimal<base>(b);
-        auto d = (A * B.inv(A.magnitude())).trunc();
+        auto d = (A * B.inv(A.magnitude() - B.magnitude() + 1)).round();
         auto r = a - d * b;
         if (r >= b) {
             d += 1;
             r -= b;
+        }
+        if (r < bigint<base>(0)) {
+            d -= 1;
+            r += b;
         }
         return std::pair{d, r};
     }

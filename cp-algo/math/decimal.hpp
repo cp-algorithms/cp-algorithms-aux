@@ -102,7 +102,7 @@ namespace cp_algo::math {
             decimal d(bigint<base>(lead), -ssize(value.digits));
             size_t cur = 2;
             decimal amend = decimal(1) - trunc(cur) * d;
-            while(-amend.magnitude() <= precision) {
+            while(-amend.magnitude() < precision) {
                 d += d * amend;
                 cur = 2 * (1 - amend.magnitude());
                 d = d.trunc(cur);

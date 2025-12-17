@@ -1,6 +1,7 @@
 // @brief Nim Product
 #define PROBLEM "https://judge.yosupo.jp/problem/nim_product_64"
 #pragma GCC optimize("O3,unroll-loops")
+#include <bits/allocator.h>
 #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,pclmul")
 #define CP_ALGO_CHECKPOINT
 #include <iostream>

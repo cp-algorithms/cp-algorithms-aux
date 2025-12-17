@@ -109,12 +109,11 @@ namespace cp_algo::math::nimber {
 
     // Public nimber product via isomorphism (no recursion, no Gauss at runtime)
     [[gnu::always_inline]]
-    inline uint64_t nim_mul(uint64_t a, uint64_t b) {
-        uint64_t pa = nim_to_poly(a);
-        uint64_t pb = nim_to_poly(b);
-        auto prod = clmul(pa, pb);
-        uint64_t red = reduce_mod(prod);
-        return poly_to_nim(red);
+    inline uint64_t nim_product(uint64_t a, uint64_t b) {
+        return poly_to_nim(reduce_mod(clmul(
+            nim_to_poly(a),
+            nim_to_poly(b)
+        )));
     }
 }
 

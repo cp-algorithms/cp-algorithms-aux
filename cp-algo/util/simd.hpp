@@ -19,16 +19,23 @@ CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo {
     template<typename T, size_t len>
     using simd [[gnu::vector_size(len * sizeof(T))]] = T;
+    using u64x8 = simd<uint64_t, 8>;
+    using u32x16 = simd<uint32_t, 16>;
     using i64x4 = simd<int64_t, 4>;
     using u64x4 = simd<uint64_t, 4>;
     using u32x8 = simd<uint32_t, 8>;
+    using u16x16 = simd<uint16_t, 16>;
     using i32x4 = simd<int32_t, 4>;
     using u32x4 = simd<uint32_t, 4>;
+    using u16x8 = simd<uint16_t, 8>;
+    using u16x4 = simd<uint16_t, 4>;
     using i16x4 = simd<int16_t, 4>;
     using u8x32 = simd<uint8_t, 32>;
+    using u8x8 = simd<uint8_t, 8>;
+    using u8x4 = simd<uint8_t, 4>;
     using dx4 = simd<double, 4>;
 
-    dx4 abs(dx4 a) {
+    inline dx4 abs(dx4 a) {
         return dx4{
             std::abs(a[0]),
             std::abs(a[1]),

@@ -3,9 +3,6 @@
 #include "../number_theory/modint.hpp"
 #include "../util/bit.hpp"
 #include "../util/checkpoint.hpp"
-#include <cassert>
-#include <algorithm>
-#include <vector>
 
 namespace cp_algo::math {
     // Recursive FWHT (XOR) transform for size N (power of two)

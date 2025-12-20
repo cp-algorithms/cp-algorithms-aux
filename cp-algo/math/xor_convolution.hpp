@@ -1,6 +1,5 @@
 #ifndef CP_ALGO_MATH_XOR_CONVOLUTION_HPP
 #define CP_ALGO_MATH_XOR_CONVOLUTION_HPP
-#include "../number_theory/modint.hpp"
 #include "../util/bit.hpp"
 #include "../util/checkpoint.hpp"
 

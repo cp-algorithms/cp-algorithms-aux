@@ -71,7 +71,7 @@ namespace cp_algo::math {
         }
 
         // Only use these if you really know what you're doing!
-        static UInt modmod8() {return UInt(8 * modmod());}
+        static uint64_t modmod8() {return uint64_t(8 * modmod());}
         void add_unsafe(UInt t) {r += t;}
         void pseudonormalize() {r = std::min(r, r - modmod8());}
         modint const& normalize() {

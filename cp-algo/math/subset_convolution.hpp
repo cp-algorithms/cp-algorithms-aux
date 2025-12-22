@@ -88,9 +88,10 @@ namespace cp_algo::math {
         };
         auto buffers = std::apply(create_buffers, input_tuple);
         
-        big_vector<uint32_t> counts(N);
-        for(size_t i = 1; i < N; i++) {
-            counts[i] = (uint32_t)std::popcount(i) - 1;
+        checkpoint("alloc buffers");
+        big_vector<uint32_t> counts(2 * bottoms);
+        for(size_t i = 1; i < 2 * bottoms; i++) {
+            counts[i] = (uint32_t)std::popcount(i);
         }
         checkpoint("prepare");
         
@@ -105,12 +106,16 @@ namespace cp_algo::math {
             std::apply([&](auto const&... inps) {
                 std::apply([&](auto&... bufs) {
                     auto init_one = [&](auto const& inp, auto& buf) {
-                        for(size_t i = 1; i < M; i++) {
-                            size_t bottom = (i >> 1) & (bottoms - 1);
-                            if (__builtin_parity(uint32_t((i >> 1) & top))) {
-                                buf[bottom][counts[i]] -= inp[i];
-                            } else {
-                                buf[bottom][counts[i]] += inp[i];
+                        for(size_t i = 0; i < M; i += 2 * bottoms) {
+                            bool parity = __builtin_parity(uint32_t((i >> 1) & top));
+                            size_t limit = std::min(M, i + 2 * bottoms) - i;
+                            uint32_t count = (uint32_t)std::popcount(i) - 1;
+                            for(size_t bottom = (i == 0); bottom < limit; bottom++) {
+                                if (parity) {
+                                    buf[bottom >> 1][count + counts[bottom]] -= inp[i + bottom];
+                                } else {
+                                    buf[bottom >> 1][count + counts[bottom]] += inp[i + bottom];
+                                }
                             }
                         }
                     };
@@ -158,13 +163,16 @@ namespace cp_algo::math {
             
             // Gather results from first buffer
 
-
-            for(size_t i = 1; i < M; i++) {
-                size_t bottom = (i >> 1) & (bottoms - 1);
-                if (__builtin_parity(uint32_t((i >> 1) & top))) {
-                    out[i] -= first_buf[bottom][counts[i]];
-                } else {
-                    out[i] += first_buf[bottom][counts[i]];
+            for(size_t i = 0; i < M; i += 2 * bottoms) {
+                bool parity = __builtin_parity(uint32_t((i >> 1) & top));
+                size_t limit = std::min(M, i + 2 * bottoms) - i;
+                uint32_t count = (uint32_t)std::popcount(i) - 1;
+                for(size_t bottom = (i == 0); bottom < limit; bottom++) {
+                    if (parity) {
+                        out[i + bottom] -= first_buf[bottom >> 1][count + counts[bottom]];
+                    } else {
+                        out[i + bottom] += first_buf[bottom >> 1][count + counts[bottom]];
+                    }
                 }
             }
             checkpoint("gather");

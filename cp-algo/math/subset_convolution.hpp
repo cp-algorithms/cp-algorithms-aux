@@ -16,50 +16,48 @@ namespace cp_algo::math {
     enum transform_dir { forw, inv };
     
     template<auto N, transform_dir direction>
-    inline void or_transform(auto &&a) {
+    inline void xor_transform(auto &&a) {
         [[gnu::assume(N <= 1 << 30)]];
         if constexpr (N <= 32) {
             for(size_t i = 1; i < N; i *= 2) {
                 for(size_t j = 0; j < N; j += 2 * i) {
                     for(size_t k = j; k < j + i; k++) {
                         for(size_t z = 0; z < max_logn; z++) {
-                            if constexpr (direction == forw) {
-                                a[k + i][z] += a[k][z];
-                            } else {
-                                a[k + i][z] -= a[k][z];
-                            }
+                            auto x = a[k][z] + a[k + i][z];
+                            auto y = a[k][z] - a[k + i][z];
+                            a[k][z] = x;
+                            a[k + i][z] = y;
                         }
                     }
                 }
             }
         } else {
             constexpr auto half = N / 2;
-            or_transform<half, direction>(&a[0]);
-            or_transform<half, direction>(&a[half]);
+            xor_transform<half, direction>(&a[0]);
+            xor_transform<half, direction>(&a[half]);
             for (size_t i = 0; i < half; i++) {
                 #pragma GCC unroll max_logn
                 for(size_t z = 0; z < max_logn; z++) {
-                    if constexpr (direction == forw) {
-                        a[i + half][z] += a[i][z];
-                    } else {
-                        a[i + half][z] -= a[i][z];
-                    }
+                    auto x = a[i][z] + a[i + half][z];
+                    auto y = a[i][z] - a[i + half][z];
+                    a[i][z] = x;
+                    a[i + half][z] = y;
                 }
             }
         }
     }
     
     template<transform_dir direction>
-    inline void or_transform(auto &&a, auto n) {
+    inline void xor_transform(auto &&a, auto n) {
         with_bit_floor(n, [&]<auto NN>() {
             assert(NN == n);
-            or_transform<NN, direction>(a);
+            xor_transform<NN, direction>(a);
         });
     }
     
     template<transform_dir direction = forw>
-    inline void or_transform(auto &&a) {
-        or_transform<direction>(a, std::size(a));
+    inline void xor_transform(auto &&a) {
+        xor_transform<direction>(a, std::size(a));
     }
 
     // Generic rank vectors processor with variadic inputs
@@ -76,10 +74,10 @@ namespace cp_algo::math {
         
         auto N = std::size(first_input);
         constexpr size_t K = 4;
-        N = std::max(N, K);
+        N = std::max(N, 2 * K);
         const size_t n = std::bit_width(N) - 1;
-        const size_t T = std::min<size_t>(n - 2, 4);
-        const size_t bottoms = 1 << (n - T);
+        const size_t T = std::min<size_t>(n - 3, 2);
+        const size_t bottoms = 1 << (n - T - 1);
         const auto M = std::size(first_input);
         
         // Create array buffers for each input
@@ -92,28 +90,28 @@ namespace cp_algo::math {
         
         big_vector<uint32_t> counts(N);
         for(size_t i = 1; i < N; i++) {
-            counts[i] = (uint32_t)std::popcount(i);
+            counts[i] = (uint32_t)std::popcount(i) - 1;
         }
         checkpoint("prepare");
         
-        for(size_t top = 0; top < N; top += bottoms) {
+        for(size_t top = 0; top < N / 2; top += bottoms) {
             // Clear all buffers
             std::apply([bottoms](auto&... bufs) {
                 (..., memset(bufs.data(), 0, sizeof(bufs[0]) * bottoms));
             }, buffers);
+            checkpoint("memset");
             
             // Initialize buffers from inputs
             std::apply([&](auto const&... inps) {
                 std::apply([&](auto&... bufs) {
                     auto init_one = [&](auto const& inp, auto& buf) {
-                        for(size_t mask = top; ; mask = (mask - bottoms) & top) {
-                            size_t limit = std::min(M, mask + bottoms) - mask;
-                            uint32_t count = counts[mask / bottoms] - 1;
-                            for(size_t bottom = (mask == 0); bottom < limit; bottom++) {
-                                size_t i = bottom | mask;
-                                buf[bottom][count + counts[bottom]] += inp[i];
+                        for(size_t i = 1; i < M; i++) {
+                            size_t bottom = (i >> 1) & (bottoms - 1);
+                            if (__builtin_parity(uint32_t((i >> 1) & top))) {
+                                buf[bottom][counts[i]] -= inp[i];
+                            } else {
+                                buf[bottom][counts[i]] += inp[i];
                             }
-                            if (!mask) break;
                         }
                     };
                     (init_one(inps, bufs), ...);
@@ -122,7 +120,7 @@ namespace cp_algo::math {
             
             checkpoint("init");
             std::apply([](auto&... bufs) {
-                (..., or_transform(bufs));
+                (..., xor_transform(bufs));
             }, buffers);
             checkpoint("transform");
             
@@ -155,25 +153,24 @@ namespace cp_algo::math {
             
             checkpoint("dot");
             auto& first_buf = std::get<0>(buffers);
-            or_transform<inv>(first_buf);
+            xor_transform<inv>(first_buf);
             checkpoint("transform");
             
             // Gather results from first buffer
-            for(size_t mask = top; mask < N; mask = (mask + bottoms) | top) {
-                bool parity = __builtin_parity(uint32_t(mask ^ top));
-                size_t limit = std::min(M, mask + bottoms) - mask;
-                uint32_t count = counts[mask / bottoms] - 1;
-                for(size_t bottom = (mask == 0); bottom < limit; bottom++) {
-                    size_t i = bottom | mask;
-                    if (parity) {
-                        out[i] -= first_buf[bottom][count + counts[bottom]];
-                    } else {
-                        out[i] += first_buf[bottom][count + counts[bottom]];
-                    }
+
+
+            for(size_t i = 1; i < M; i++) {
+                size_t bottom = (i >> 1) & (bottoms - 1);
+                if (__builtin_parity(uint32_t((i >> 1) & top))) {
+                    out[i] -= first_buf[bottom][counts[i]];
+                } else {
+                    out[i] += first_buf[bottom][counts[i]];
                 }
             }
             checkpoint("gather");
         }
+        const base ni = base(N / 2).inv();
+        for(auto& x : out) {x *= ni;}
         return out;
     }
 
@@ -187,19 +184,13 @@ namespace cp_algo::math {
                 std::decay_t<decltype(a)> res = {};
                 const auto mod = base::mod();
                 const auto imod = math::inv2(-mod);
-                const auto modmod8 = base::modmod8();
                 const auto r4 = u64x4() + uint64_t(-1) % mod + 1;
                 auto add = [&](size_t i) {
                     if constexpr (lgn) for(size_t j = 0; i + j + 1 < lgn; j++) {
                         res[i + j + 1] += (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[j]));
                     }
                 };
-                if constexpr (lgn) for(size_t i = 0; i < lgn / 2; i++) { add(i); }
-                if constexpr (lgn >= 20) {
-                    res[lgn - 1] = res[lgn - 1] >= modmod8 ? res[lgn - 1] - modmod8 : res[lgn - 1];
-                    res[lgn - 2] = res[lgn - 2] >= modmod8 ? res[lgn - 2] - modmod8 : res[lgn - 2];
-                }
-                if constexpr (lgn) for(size_t i = lgn / 2; i < lgn; i++) { add(i); }
+                if constexpr (lgn) for(size_t i = 0; i < lgn; i++) { add(i); }
                 if constexpr (lgn) if constexpr (lgn) for(size_t k = 0; k < lgn; k++) {
                     res[k] = montgomery_reduce(res[k], mod, imod);
                     res[k] = montgomery_mul(res[k], r4, mod, imod);

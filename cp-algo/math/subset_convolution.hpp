@@ -71,10 +71,8 @@ namespace cp_algo::math {
         // Create tuple of input references once
         auto input_tuple = std::forward_as_tuple(inputs...);
         auto const& first_input = std::get<0>(input_tuple);
-        
-        auto out = first_input;
         using base = std::decay_t<decltype(first_input[0])>;
-        std::ranges::fill(out, base(0));
+        big_vector<base> out(std::size(first_input));
         
         auto N = std::size(first_input);
         constexpr size_t K = 4;
@@ -180,7 +178,7 @@ namespace cp_algo::math {
     }
 
     template<typename base>
-    auto subset_convolution(auto const& inpa, auto const& inpb) {
+    big_vector<base> subset_convolution(auto const& inpa, auto const& inpb) {
         auto outpa = on_rank_vectors([](auto &a, auto const& b) {
             std::decay_t<decltype(a)> res = {};
             const auto mod = base::mod();
@@ -212,36 +210,15 @@ namespace cp_algo::math {
     }
 
     template<typename base>
-    auto subset_exp(auto const& inpa) {
-        auto outpa = on_rank_vectors([](auto &p) {
-            std::decay_t<decltype(p)> q = {};
-            const auto mod = base::mod();
-            const auto imod = math::inv2(-mod);
-            const auto r2 = uint32_t(-1) % mod + 1;
-            const auto r4 = uint64_t(-1) % mod + 1;
-            static const auto invs = [&]() {
-                std::array<uint64_t, logn> invs;
-                for(size_t i = 0; i < logn; i++) {
-                    invs[i] = (base(i + 1).inv() * base(r4)).getr();
-                }
-                return invs;
-            }();
-            for(size_t k = 0; k < logn; k++) {
-                q[k] = p[k] = montgomery_mul(p[k], u64x4() + (k + 1) * r2 % mod, mod, imod);
-                for(size_t i = 0; i < k; i++) {
-                    q[k] += (u64x4)_mm256_mul_epu32((__m256i)p[i], (__m256i)q[k - i - 1]);
-                    if (i == logn / 2) {
-                        q[k] = q[k] >= base::modmod8() ? q[k] - base::modmod8() : q[k];
-                    }
-                }
-                q[k] = montgomery_reduce(q[k], mod, imod);
-                q[k] = montgomery_mul(q[k], u64x4() + invs[k], mod, imod);
-                q[k] = q[k] >= mod ? q[k] - mod : q[k];
-            }
-            p = q;
-        }, inpa);
-        outpa[0] = base(1);
-        return outpa;
+    big_vector<base> subset_exp(auto const& inpa) {
+        if (size(inpa) == 1) {
+            return big_vector<base>{1};
+        }
+        size_t N = std::size(inpa);
+        auto out0 = subset_exp<base>(std::span(inpa).first(N / 2));
+        auto out1 = subset_convolution<base>(out0, std::span(inpa).last(N / 2));
+        out0.insert(end(out0), begin(out1), end(out1));
+        return out0;
     }
 }
 #pragma GCC pop_options

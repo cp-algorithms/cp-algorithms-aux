@@ -185,7 +185,6 @@ namespace cp_algo::math {
             std::decay_t<decltype(a)> res = {};
             const auto mod = base::mod();
             const auto imod = math::inv2(-mod);
-            const auto r2 = u64x4() + uint32_t(-1) % mod + 1;
             const auto r4 = u64x4() + uint64_t(-1) % mod + 1;
             for(size_t i = 0; i < logn; i++) {
                 for(size_t j = 0; i + j + 1 < logn; j++) {

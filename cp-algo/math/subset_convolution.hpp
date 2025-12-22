@@ -178,7 +178,7 @@ namespace cp_algo::math {
     }
 
     template<typename base>
-    big_vector<base> subset_convolution(auto const& inpa, auto const& inpb) {
+    big_vector<base> subset_convolution(std::span<base> inpa, std::span<base> inpb) {
         auto outpa = on_rank_vectors([](auto &a, auto const& b) {
             std::decay_t<decltype(a)> res = {};
             const auto mod = base::mod();
@@ -189,7 +189,7 @@ namespace cp_algo::math {
                     res[i + j + 1] += (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[j]));
                 }
                 if (i == logn / 2) {
-                    for(size_t k = logn / 2; k < logn; k++) {
+                    for(size_t k = logn - 2; k < logn; k++) {
                         res[k] = res[k] >= base::modmod8() ? res[k] - base::modmod8() : res[k];
                     }
                 }
@@ -210,7 +210,7 @@ namespace cp_algo::math {
     }
 
     template<typename base>
-    big_vector<base> subset_exp(auto const& inpa) {
+    big_vector<base> subset_exp(std::span<base> inpa) {
         if (size(inpa) == 1) {
             return big_vector<base>{1};
         }

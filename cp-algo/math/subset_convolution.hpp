@@ -19,10 +19,10 @@ namespace cp_algo::math {
     inline void xor_transform(auto &&a) {
         [[gnu::assume(N <= 1 << 30)]];
         if constexpr (N <= 32) {
-            for(size_t i = 1; i < N; i *= 2) {
-                for(size_t j = 0; j < N; j += 2 * i) {
-                    for(size_t k = j; k < j + i; k++) {
-                        for(size_t z = 0; z < max_logn; z++) {
+            for (size_t i = 1; i < N; i *= 2) {
+                for (size_t j = 0; j < N; j += 2 * i) {
+                    for (size_t k = j; k < j + i; k++) {
+                        for (size_t z = 0; z < max_logn; z++) {
                             auto x = a[k][z] + a[k + i][z];
                             auto y = a[k][z] - a[k + i][z];
                             a[k][z] = x;
@@ -32,18 +32,38 @@ namespace cp_algo::math {
                 }
             }
         } else {
-            constexpr auto half = N / 2;
-            xor_transform<half, direction>(&a[0]);
-            xor_transform<half, direction>(&a[half]);
-            for (size_t i = 0; i < half; i++) {
+            auto add = [&](auto &a, auto &b) __attribute__((always_inline)) {
+                auto x = a + b, y = a - b;
+                a = x, b = y;
+            };
+            constexpr auto quar = N / 4;
+
+            for (size_t i = 0; i < (size_t)quar; i++) {
+                auto x0 = a[i + (size_t)quar * 0];
+                auto x1 = a[i + (size_t)quar * 1];
+                auto x2 = a[i + (size_t)quar * 2];
+                auto x3 = a[i + (size_t)quar * 3];
+
                 #pragma GCC unroll max_logn
-                for(size_t z = 0; z < max_logn; z++) {
-                    auto x = a[i][z] + a[i + half][z];
-                    auto y = a[i][z] - a[i + half][z];
-                    a[i][z] = x;
-                    a[i + half][z] = y;
+                for (size_t z = 0; z < max_logn; z++) {
+                    add(x0[z], x2[z]);
+                    add(x1[z], x3[z]);
                 }
+                #pragma GCC unroll max_logn
+                for (size_t z = 0; z < max_logn; z++) {
+                    add(x0[z], x1[z]);
+                    add(x2[z], x3[z]);
+                }
+
+                a[i + (size_t)quar * 0] = x0;
+                a[i + (size_t)quar * 1] = x1;
+                a[i + (size_t)quar * 2] = x2;
+                a[i + (size_t)quar * 3] = x3;
             }
+            xor_transform<quar, direction>(&a[quar * 0]);
+            xor_transform<quar, direction>(&a[quar * 1]);
+            xor_transform<quar, direction>(&a[quar * 2]);
+            xor_transform<quar, direction>(&a[quar * 3]);
         }
     }
     
@@ -183,9 +203,9 @@ namespace cp_algo::math {
     }
 
     template<typename base>
-    big_vector<base> subset_convolution(std::span<base> inpa, std::span<base> inpb) {
+    big_vector<base> subset_convolution(std::span<base> f, std::span<base> g) {
         big_vector<base> outpa;
-        with_bit_floor(std::size(inpa), [&]<auto N>() {
+        with_bit_floor(std::size(f), [&]<auto N>() {
             constexpr size_t lgn = std::bit_width(N) - 1;
             [[gnu::assume(lgn <= max_logn)]];
             outpa = on_rank_vectors([](auto &a, auto const& b) {
@@ -204,11 +224,11 @@ namespace cp_algo::math {
                     res[k] = montgomery_mul(res[k], r4, mod, imod);
                     a[k] = res[k] >= mod ? res[k] - mod : res[k];
                 }
-            }, inpa, inpb);
+            }, f, g);
             
-            outpa[0] = inpa[0] * inpb[0];
-            for(size_t i = 1; i < std::size(inpa); i++) {
-                outpa[i] += inpa[i] * inpb[0] + inpa[0] * inpb[i];
+            outpa[0] = f[0] * g[0];
+            for(size_t i = 1; i < std::size(f); i++) {
+                outpa[i] += f[i] * g[0] + f[0] * g[i];
             }
             checkpoint("fix 0");
         });
@@ -216,44 +236,44 @@ namespace cp_algo::math {
     }
 
     template<typename base>
-    big_vector<base> subset_exp(std::span<base> inpa) {
-        if (size(inpa) == 1) {
+    big_vector<base> subset_exp(std::span<base> g) {
+        if (size(g) == 1) {
             return big_vector<base>{1};
         }
-        size_t N = std::size(inpa);
-        auto out0 = subset_exp(std::span(inpa).first(N / 2));
-        auto out1 = subset_convolution<base>(out0, std::span(inpa).last(N / 2));
+        size_t N = std::size(g);
+        auto out0 = subset_exp(std::span(g).first(N / 2));
+        auto out1 = subset_convolution<base>(out0, std::span(g).last(N / 2));
         out0.insert(end(out0), begin(out1), end(out1));
         cp_algo::checkpoint("extend out");
         return out0;
     }
 
     template<typename base>
-    big_vector<big_vector<base>> subset_compose(big_vector<std::span<base>> fd, std::span<base> inpa) {
-        if (size(inpa) == 1) {
-            big_vector<big_vector<base>> res(size(fd), {base(0)});
-            big_vector<base> pw(size(fd[0]), 1);
-            for (size_t i = 1; i < size(fd[0]); i++) {
-                pw[i] = pw[i - 1] * inpa[0];
+    big_vector<big_vector<base>> subset_compose(std::span<base> f, std::span<base> g, size_t n) {
+        if (size(g) == 1) {
+            size_t M = size(f);
+            big_vector res(n, big_vector<base>{0});
+            big_vector<base> pw(M+1);
+            pw[0] = 1;
+            for (size_t j = 1; j < M; j++) {
+                pw[j] = pw[j - 1] * g[0];
             }
-            for (size_t i = 0; i < size(fd); i++) {
-                for (size_t j = 0; j < size(fd[i]); j++) {
-                    res[i][0] += pw[j] * fd[i][j];
+            for (size_t i = 0; i < n; i++) {
+                for (size_t j = 0; j < M; j++) {
+                    res[i][0] += pw[j] * f[j];
                 }
+                for (size_t j = M; j > i; j--) {
+                    pw[j] = pw[j - 1] * base(j);
+                }
+                pw[i] = 0;
             }
             cp_algo::checkpoint("base case");
             return res;
         }
-        size_t N = std::size(inpa);
-        big_vector<base> fdk(size(fd[0]));
-        for (size_t i = 0; i + 1 < size(fdk); i++) {
-            fdk[i] = fd.back()[i + 1] * base(i + 1);
-        }
-        fd.push_back(fdk);
-        cp_algo::checkpoint("fdk");
-        auto deeper = subset_compose(fd, std::span(inpa).first(N / 2));
-        for(size_t i = 0; i + 1 < size(fd); i++) {
-            auto next = subset_convolution<base>(deeper[i + 1], std::span(inpa).last(N / 2));
+        size_t N = std::size(g);
+        auto deeper = subset_compose(f, std::span(g).first(N / 2), n + 1);
+        for(size_t i = 0; i + 1 < size(deeper); i++) {
+            auto next = subset_convolution<base>(deeper[i + 1], std::span(g).last(N / 2));
             deeper[i].insert(end(deeper[i]), begin(next), end(next));
         }
         deeper.pop_back();
@@ -262,8 +282,59 @@ namespace cp_algo::math {
     }
 
     template<typename base>
-    big_vector<base> subset_compose(std::span<base> f, std::span<base> inpa) {
-        return subset_compose(big_vector{f}, inpa)[0];
+    big_vector<base> subset_compose(std::span<base> f, std::span<base> g) {
+        return subset_compose(f, g, 1)[0];
+    }
+
+    // Transpose of f -> f * g = h
+    template<typename base>
+    big_vector<base> subset_conv_transpose(std::span<base> h, std::span<base> g) {
+        std::ranges::reverse(h);
+        auto res = subset_convolution<base>(h, g);
+        std::ranges::reverse(h);
+        std::ranges::reverse(res);
+        return res;
+    }
+
+    template<typename base>
+    big_vector<base> subset_power_projection(big_vector<big_vector<base>> &&fg, std::span<base> g, size_t M) {
+        if (size(g) == 1) {
+            size_t n = size(fg);
+            big_vector<base> res(M);
+            big_vector<base> pw(M+1);
+            pw[0] = 1;
+            for (size_t j = 1; j < M; j++) {
+                pw[j] = pw[j - 1] * g[0];
+            }
+            for (size_t i = 0; i < size(fg); i++) {
+                for (size_t j = 0; j < M; j++) {
+                    res[j] += pw[j] * fg[i][0];
+                }
+                for (size_t j = M; j > i; j--) {
+                    pw[j] = pw[j - 1] * base(j);
+                }
+                pw[i] = 0;
+            }
+            cp_algo::checkpoint("base case");
+            return res;
+        }
+        size_t N = std::size(g);
+        fg.emplace_back(N / 2);
+        for(auto&& [i, h]: fg | std::views::enumerate | std::views::reverse | std::views::drop(1)) {
+            auto prev = subset_conv_transpose<base>(std::span(h).last(N / 2), std::span(g).last(N / 2));
+            for (size_t j = 0; j < N / 2; j++) {
+                fg[i + 1][j] += prev[j];
+            }
+            fg[i + 1].resize(N / 2);
+        }
+        fg[0].resize(N / 2);
+        cp_algo::checkpoint("decombine");
+        return subset_power_projection(std::move(fg), std::span(g).first(N / 2), M);
+    }
+
+    template<typename base>
+    big_vector<base> subset_power_projection(std::span<base> g, std::span<base> w, size_t M) {
+        return subset_power_projection({{begin(w), end(w)}}, g, M);
     }
 }
 #pragma GCC pop_options

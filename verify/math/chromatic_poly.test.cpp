@@ -49,7 +49,7 @@ void solve() {
     cp_algo::big_vector<base> X(n+1);
     std::ranges::iota(X, 0);
     auto res = polyn::inter(X, Y);
-    res.print(n+1);
+    res.print((int)n+1);
 }
 
 signed main() {

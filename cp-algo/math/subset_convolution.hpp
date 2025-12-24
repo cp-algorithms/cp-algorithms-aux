@@ -253,7 +253,7 @@ namespace cp_algo::math {
         if (size(g) == 1) {
             size_t M = size(f);
             big_vector res(n, big_vector<base>{0});
-            big_vector<base> pw(M+1);
+            big_vector<base> pw(std::max(n, M));
             pw[0] = 1;
             for (size_t j = 1; j < M; j++) {
                 pw[j] = pw[j - 1] * g[0];
@@ -301,7 +301,7 @@ namespace cp_algo::math {
         if (size(g) == 1) {
             size_t n = size(fg);
             big_vector<base> res(M);
-            big_vector<base> pw(M+1);
+            big_vector<base> pw(std::max(n, M));
             pw[0] = 1;
             for (size_t j = 1; j < M; j++) {
                 pw[j] = pw[j - 1] * g[0];

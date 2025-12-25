@@ -8,7 +8,7 @@ import re
 import sys
 
 def minify_cpp(code):
-    # Remove comments while preserving strings
+    # Remove comments while preserving strings and macro continuations
     lines = code.split('\n')
     cleaned_lines = []
     
@@ -51,6 +51,21 @@ def minify_cpp(code):
     
     # Remove multi-line comments (but preserve #line directives content)
     code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    
+    # Handle multi-line macros: join lines that end with backslash
+    lines = code.split('\n')
+    merged_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i].rstrip()
+        # Check if line ends with backslash (macro continuation)
+        while line.endswith('\\') and i + 1 < len(lines):
+            line = line[:-1] + ' ' + lines[i + 1].lstrip()
+            i += 1
+        merged_lines.append(line)
+        i += 1
+    
+    code = '\n'.join(merged_lines)
     
     # Remove empty lines
     code = re.sub(r'\n\s*\n', '\n', code)
@@ -125,7 +140,7 @@ def minify_cpp(code):
     lines = [compress_line(line) for line in code.split('\n')]
     
     # Join lines intelligently: keep preprocessor directives on their own lines,
-    # and keep a newline after them
+    # and ensure a newline after them
     result_lines = []
     for i, line in enumerate(lines):
         if not line:
@@ -138,7 +153,15 @@ def minify_cpp(code):
             # Regular code - try to join with previous line if possible
             if result_lines and not result_lines[-1].startswith('#'):
                 # Previous line is not a preprocessor directive, can join
-                result_lines[-1] += line
+                # But check if previous line looks like a macro invocation (single identifier)
+                prev_line = result_lines[-1]
+                # If previous line is a simple identifier, keep it separate (could be macro use)
+                if prev_line and not any(c in prev_line for c in '();,=[]{}<>+-*/%&|^~'):
+                    # Previous line might be a macro invocation, keep separate
+                    result_lines.append(line)
+                else:
+                    # Safe to join
+                    result_lines[-1] += line
             else:
                 # Previous line is a preprocessor directive or this is first line
                 result_lines.append(line)

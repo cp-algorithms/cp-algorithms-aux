@@ -9,7 +9,8 @@
 #include <algorithm>
 #include <bit>
 #include <cstring>
-CP_ALGO_SIMD_PRAGMA_PUSHnamespace cp_algo::math{const size_t max_logn=20;enum transform_dir{forw,inv};template<auto N,transform_dir direction>inline void xor_transform(auto&&a){[[gnu::assume(N<=1<<30)]];if constexpr(N<=32){for(size_t i=1;i<N;i*=2){for(size_t j=0;j<N;j+=2*i){for(size_t k=j;k<j+i;k++){for(size_t z=0;z<max_logn;z++){auto x=a[k][z]+a[k+i][z];auto y=a[k][z]-a[k+i][z];a[k][z]=x;a[k+i][z]=y;}}}}}else{auto add=[&](auto&a,auto&b)__attribute__((always_inline)){auto x=a+b,y=a-b;a=x,b=y;};constexpr auto quar=N/4;for(size_t i=0;i<(size_t)quar;i++){auto x0=a[i+(size_t)quar*0];auto x1=a[i+(size_t)quar*1];auto x2=a[i+(size_t)quar*2];auto x3=a[i+(size_t)quar*3];
+CP_ALGO_SIMD_PRAGMA_PUSH
+namespace cp_algo::math{const size_t max_logn=20;enum transform_dir{forw,inv};template<auto N,transform_dir direction>inline void xor_transform(auto&&a){[[gnu::assume(N<=1<<30)]];if constexpr(N<=32){for(size_t i=1;i<N;i*=2){for(size_t j=0;j<N;j+=2*i){for(size_t k=j;k<j+i;k++){for(size_t z=0;z<max_logn;z++){auto x=a[k][z]+a[k+i][z];auto y=a[k][z]-a[k+i][z];a[k][z]=x;a[k+i][z]=y;}}}}}else{auto add=[&](auto&a,auto&b)__attribute__((always_inline)){auto x=a+b,y=a-b;a=x,b=y;};constexpr auto quar=N/4;for(size_t i=0;i<(size_t)quar;i++){auto x0=a[i+(size_t)quar*0];auto x1=a[i+(size_t)quar*1];auto x2=a[i+(size_t)quar*2];auto x3=a[i+(size_t)quar*3];
 #pragma GCC unroll max_logn
 for(size_t z=0;z<max_logn;z++){add(x0[z],x2[z]);add(x1[z],x3[z]);}
 #pragma GCC unroll max_logn

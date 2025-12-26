@@ -11,14 +11,18 @@
 #include <cstring>
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math {
-    const size_t max_logn = 20;
+#ifndef CP_ALGO_SUBSET_CONVOLUTION_MAX_LOGN
+#define CP_ALGO_SUBSET_CONVOLUTION_MAX_LOGN 20
+#endif
+    const size_t max_logn = CP_ALGO_SUBSET_CONVOLUTION_MAX_LOGN;
     
     enum transform_dir { forw, inv };
     
     template<auto N, transform_dir direction>
     inline void xor_transform(auto &&a) {
-        [[gnu::assume(N <= 1 << 30)]];
-        if constexpr (N <= 32) {
+        if constexpr (N >> max_logn) {
+            throw std::runtime_error("N too large for xor_transform");
+        } else if constexpr (N <= 32) {
             for (size_t i = 1; i < N; i *= 2) {
                 for (size_t j = 0; j < N; j += 2 * i) {
                     for (size_t k = j; k < j + i; k++) {
@@ -96,7 +100,7 @@ namespace cp_algo::math {
         constexpr size_t K = 4;
         N = std::max(N, 2 * K);
         const size_t n = std::bit_width(N) - 1;
-        const size_t T = std::min<size_t>(n - 3, 2);
+        const size_t T = std::min<size_t>(n - 3, 3);
         const size_t bottoms = 1 << (n - T - 1);
         const auto M = std::size(first_input);
         
@@ -205,33 +209,35 @@ namespace cp_algo::math {
     template<typename base>
     big_vector<base> subset_convolution(std::span<base> f, std::span<base> g) {
         big_vector<base> outpa;
-        with_bit_floor(std::size(f), [&]<auto N>() {
-            constexpr size_t lgn = std::bit_width(N) - 1;
-            [[gnu::assume(lgn <= max_logn)]];
-            outpa = on_rank_vectors([](auto &a, auto const& b) {
-                std::decay_t<decltype(a)> res = {};
-                const auto mod = base::mod();
-                const auto imod = math::inv2(-mod);
-                const auto r4 = u64x4() + uint64_t(-1) % mod + 1;
-                auto add = [&](size_t i) {
-                    if constexpr (lgn) for(size_t j = 0; i + j + 1 < lgn; j++) {
-                        res[i + j + 1] += (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[j]));
-                    }
-                };
-                if constexpr (lgn) for(size_t i = 0; i < lgn; i++) { add(i); }
-                if constexpr (lgn) if constexpr (lgn) for(size_t k = 0; k < lgn; k++) {
-                    res[k] = montgomery_reduce(res[k], mod, imod);
-                    res[k] = montgomery_mul(res[k], r4, mod, imod);
-                    a[k] = res[k] >= mod ? res[k] - mod : res[k];
+        constexpr size_t lgn = max_logn;
+        outpa = on_rank_vectors([](auto &a, auto const& b) {
+            std::decay_t<decltype(a)> res = {};
+            const auto mod = base::mod();
+            const auto imod = math::inv2(-mod);
+            const auto r4 = u64x4() + uint64_t(-1) % mod + 1;
+            auto add = [&](size_t i) {
+                if constexpr (lgn) for(size_t j = 0; i + j + 1 < lgn; j++) {
+                    res[i + j + 1] += (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[j]));
                 }
-            }, f, g);
-            
-            outpa[0] = f[0] * g[0];
-            for(size_t i = 1; i < std::size(f); i++) {
-                outpa[i] += f[i] * g[0] + f[0] * g[i];
+                if constexpr (lgn >= 20) if (i == 15) {
+                    for(size_t k = 0; k < lgn; k++) {
+                        res[k] = res[k] >= base::modmod8() ? res[k] - base::modmod8() : res[k];
+                    }
+                }
+            };
+            if constexpr (lgn) for(size_t i = 0; i < lgn; i++) { add(i); }
+            if constexpr (lgn) if constexpr (lgn) for(size_t k = 0; k < lgn; k++) {
+                res[k] = montgomery_reduce(res[k], mod, imod);
+                res[k] = montgomery_mul(res[k], r4, mod, imod);
+                a[k] = res[k] >= mod ? res[k] - mod : res[k];
             }
-            checkpoint("fix 0");
-        });
+        }, f, g);
+        
+        outpa[0] = f[0] * g[0];
+        for(size_t i = 1; i < std::size(f); i++) {
+            outpa[i] += f[i] * g[0] + f[0] * g[i];
+        }
+        checkpoint("fix 0");
         return outpa;
     }
 

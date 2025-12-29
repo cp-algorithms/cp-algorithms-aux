@@ -3,6 +3,7 @@
 #include <functional>
 #include <cstdint>
 #include <cassert>
+#include <bit>
 namespace cp_algo::math {
 #ifdef CP_ALGO_MAXN
     const int maxn = CP_ALGO_MAXN;
@@ -12,16 +13,17 @@ namespace cp_algo::math {
     const int magic = 64; // threshold for sizes to run the naive algo
 
     auto bpow(auto const& x, auto n, auto const& one, auto op) {
-        if(n == 0) {
+        if (n == 0) {
             return one;
-        } else {
-            auto t = bpow(x, n / 2, one, op);
-            t = op(t, t);
-            if(n % 2) {
-                t = op(t, x);
-            }
-            return t;
         }
+        auto ans = x;
+        for(int j = std::bit_width<uint64_t>(n) - 2; ~j; j--) {
+            ans = op(ans, ans);
+            if((n >> j) & 1) {
+                ans = op(ans, x);
+            }
+        }
+        return ans;
     }
     auto bpow(auto x, auto n, auto ans) {
         return bpow(x, n, ans, std::multiplies{});

@@ -47,7 +47,7 @@ namespace cp_algo::math::poly::impl {
 
     template<typename poly>
     poly powmod_hint(poly const& p, int64_t k, poly const& md, poly const& mdri) {
-        return bpow(p, k, poly(1), [&](auto const& p, auto const& q){
+        return bpow(p % md, k, poly(1), [&](auto const& p, auto const& q){
             return divmod_hint(p * q, md, mdri)[1];
         });
     }

@@ -2,6 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/primality_test"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
+#define CP_ALGO_NUMBER_THEORY_PRIMALITY_BASES_HPP
 #include <iostream>
 //#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/number_theory/primality_bases.hpp"

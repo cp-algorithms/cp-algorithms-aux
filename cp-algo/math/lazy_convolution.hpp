@@ -36,6 +36,34 @@ namespace cp_algo::math {
         cdq(1, n);
         return C;
     }
+
+    template<typename base>
+    auto lazy_multiply(auto &A, base b0, auto &&get_b, size_t n) {
+        big_vector<base> B = {b0};
+        big_vector<base> C(n);
+        C[0] = A[0] * b0;
+        assert(n <= size(A));
+        auto cdq = [&](this auto &&cdq, size_t l, size_t r) -> void {
+            if (r - l == 1) {
+                auto bl = get_b(B, C, l);
+                B.push_back(bl);
+                C[l] += A[l] * B[0] + A[0] * B[l];
+                return;
+            }
+            auto m = (l + r) / 2;
+            cdq(l, m);
+            auto A_pref = std::span(A).subspan(0, r - l);
+            big_vector<base> B_suf(std::from_range, std::span(B).subspan(l, m - l));
+            convolution_prefix(B_suf, A_pref, r - l);
+            B_suf.resize(r - l);
+            for(size_t i = m; i < r; i++) {
+                C[i] += B_suf[i - l];
+            }
+            cdq(m, r);
+        };
+        cdq(1, n);
+        return C;
+    }
 }
 
 #endif // CP_ALGO_MATH_LAZY_MULTIPLY_HPP

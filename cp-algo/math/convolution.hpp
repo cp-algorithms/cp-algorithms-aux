@@ -14,7 +14,12 @@ namespace cp_algo::math {
 // Writes the result into `a`; performs in-place when possible (modint path).
 template<class VecA, class VecB>
 void convolution_prefix(VecA& a, VecB const& b, size_t need) {
-    using T = typename std::decay_t<VecA>::value_type;
+    using T = std::decay_t<decltype(a[0])>;
+    if constexpr (modint_type<T>) {
+        // Use NTT-based truncated multiplication. Works in-place on `a`.
+        fft::mul_truncate(a, b, need);
+        return;
+    }
     size_t na = std::min(need, std::size(a));
     size_t nb = std::min(need, std::size(b));
     a.resize(na);
@@ -24,11 +29,7 @@ void convolution_prefix(VecA& a, VecB const& b, size_t need) {
         a.clear();
         return;
     }
-
-    if constexpr (modint_type<T>) {
-        // Use NTT-based truncated multiplication. Works in-place on `a`.
-        fft::mul_truncate(a, bv, need);
-    } else if constexpr (std::is_same_v<T, fft::point>) {
+    if constexpr (std::is_same_v<T, fft::point>) {
         size_t conv_len = na + nb - 1;
         size_t n = std::bit_ceil(conv_len);
         n = std::max(n, (size_t)fft::flen);

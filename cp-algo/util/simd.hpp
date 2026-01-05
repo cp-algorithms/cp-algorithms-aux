@@ -31,6 +31,7 @@ namespace cp_algo {
     using u16x4 = simd<uint16_t, 4>;
     using i16x4 = simd<int16_t, 4>;
     using u8x32 = simd<uint8_t, 32>;
+    using u8x16 = simd<uint8_t, 16>;
     using u8x8 = simd<uint8_t, 8>;
     using u8x4 = simd<uint8_t, 4>;
     using dx4 = simd<double, 4>;

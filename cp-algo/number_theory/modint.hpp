@@ -25,7 +25,7 @@ namespace cp_algo::math {
         constexpr modint_base(Int2 rr) {
             to_modint().setr(UInt((rr + modmod()) % mod()));
         }
-        modint inv() const {
+        constexpr modint inv() const {
             return bpow(to_modint(), mod() - 2);
         }
         modint operator - () const {

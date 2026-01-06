@@ -402,7 +402,7 @@ namespace cp_algo::math {
             }
             auto A = mulx_sq(z.inv());
             auto B = ones(n+deg()).mulx_sq(z);
-            return semicorr(B, A).mod_xk(n).mulx_sq(z.inv());
+            return inner_corr(B, A).mulx_sq(z.inv());
         }
 
         // res[i] = prod_{1 <= j <= i} 1/(1 - z^j)
@@ -578,8 +578,12 @@ namespace cp_algo::math {
             return a * b.reversed();
         }
 
-        // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
-        static poly_t semicorr(poly_t const& a, poly_t const& b) {
+        // [x^k] (a forward_corr b) = sum_i a{i+k} * b{i}
+        static poly_t forward_corr(poly_t const& a, poly_t const& b) {
+            return corr(a, b).div_xk(b.deg());
+        }
+        // Dot product of b with all substrings of a
+        static poly_t inner_corr(poly_t const& a, poly_t const& b) {
             Vector ra = a.a;
             Vector rb = b.a;
             size_t N = std::bit_ceil(size(ra));
@@ -607,7 +611,7 @@ namespace cp_algo::math {
         }
         
         poly_t shift(T a) const { // P(x + a)
-            return semicorr(invborel(), expx(deg() + 1).mulx(a)).borel();
+            return forward_corr(invborel(), expx(deg() + 1).mulx(a)).borel();
         }
         
         poly_t x2() { // P(x) -> P(x^2)

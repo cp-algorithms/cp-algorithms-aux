@@ -580,7 +580,14 @@ namespace cp_algo::math {
 
         // [x^k] (a semicorr b) = sum_i a{i+k} * b{i}
         static poly_t semicorr(poly_t const& a, poly_t const& b) {
-            return corr(a, b).div_xk(b.deg());
+            Vector ra = a.a;
+            Vector rb = b.a;
+            size_t N = std::bit_ceil(size(ra));
+            std::ranges::reverse(rb);
+            ra.resize(N);
+            rb.resize(N);
+            fft::cyclic_mul(ra, rb, N);
+            return poly_t(ra).substr(b.deg(), a.deg() - b.deg() + 1);
         }
         
         poly_t invborel() const { // ak *= k!

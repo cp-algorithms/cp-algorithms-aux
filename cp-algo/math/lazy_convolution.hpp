@@ -64,6 +64,22 @@ namespace cp_algo::math {
         cdq(1, n);
         return C;
     }
+
+    template<typename base>
+    auto lazy_exp(base p1, auto &&get_p, size_t n) {
+        // Q = exp P
+        // Q' = Q * P'
+        auto Qd = lazy_multiply<base>(base(1), p1, [&](auto &Q, auto &Pd, auto &Qd, size_t k) {
+            auto pdk = get_p(Qd, Pd, k + 1) * base(k + 1);
+            auto qk = Qd[k - 1] * small_inv<base>(k);
+            return std::pair{qk, pdk};
+        }, n);
+        for(size_t i = n - 1; i >= 1; i--) {
+            Qd[i] = Qd[i - 1] * small_inv<base>(i);
+        }
+        Qd[0] = base(1);
+        return Qd;
+    }
 }
 
 #endif // CP_ALGO_MATH_LAZY_MULTIPLY_HPP

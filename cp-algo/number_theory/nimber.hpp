@@ -92,28 +92,35 @@ namespace cp_algo::math::nimber {
         return _mm_clmulepi64_si128(__m128i{a, 0}, __m128i{b, 0}, 0);
     }
 
+    // Reduction table for high bits overflow
+    inline constexpr std::array<uint64_t, 16> RED_OVER = [] {
+        std::array<uint64_t, 16> red{};
+        for (int q = 0; q < 16; ++q) {
+            uint64_t o = q ^ (q >> 1) ^ (q >> 3);
+            red[q] = o ^ (o << 1) ^ (o << 3) ^ (o << 4);
+        }
+        return red;
+    }();
+
     // Reduce modulo x^64 + x^4 + x^3 + x + 1
     [[gnu::always_inline]]
     inline uint64_t reduce_mod(__m128i v) {
-        v[0] ^= v[1] ^ (v[1] << 1) ^ (v[1] << 3) ^ (v[1] << 4);
-        static constexpr auto RED_OVER = [] {
-            std::array<uint64_t, 16> red{};
-            for (int q = 0; q < 16; ++q) {
-                uint64_t o = q ^ (q >> 1) ^ (q >> 3);
-                red[q] = o ^ (o << 1) ^ (o << 3) ^ (o << 4);
-            }
-            return red;
-        }();
-        return v[0] ^ RED_OVER[v[1] >> 60];
+        uint64_t h = v[1];
+        return v[0] ^ h ^ (h << 1) ^ (h << 3) ^ (h << 4) ^ RED_OVER[h >> 60];
+    }
+
+    [[gnu::always_inline]]
+    inline uint64_t f2_64_product(uint64_t a, uint64_t b) {
+        return reduce_mod(clmul(a, b));
     }
 
     // Public nimber product via isomorphism (no recursion, no Gauss at runtime)
     [[gnu::always_inline]]
     inline uint64_t nim_product(uint64_t a, uint64_t b) {
-        return poly_to_nim(reduce_mod(clmul(
+        return poly_to_nim(f2_64_product(
             nim_to_poly(a),
             nim_to_poly(b)
-        )));
+        ));
     }
 }
 

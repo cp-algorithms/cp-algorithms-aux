@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_MATH_KARATSUBA_HPP
 #define CP_ALGO_MATH_KARATSUBA_HPP
 #include "../number_theory/nimber.hpp"
+#include "../number_theory/modint.hpp"
 #include "../util/big_alloc.hpp"
 #include "../util/bit.hpp"
 #include <vector>
@@ -11,14 +12,26 @@
 namespace cp_algo::math {
     constexpr size_t NN = 8;
 
+    template<auto N>
+    void base_conv(auto &&_a, auto &&_b, auto &&_c) {
+        auto a = std::assume_aligned<32>(&_a[0]);
+        auto b = std::assume_aligned<32>(&_b[0]);
+        auto c = std::assume_aligned<32>(&_c[0]);
+        for (size_t i = 0; i < N; i++) {
+            for (size_t j = 0; j < N; j++) {
+                c[i + j] += a[i] * b[j];
+            }
+        }
+    }
+
     // Optimized base case for F2_64: uses 256-bit VPCLMULQDQ
     // Computes 4 products per iteration
     template<size_t N>
     [[gnu::target("avx2,vpclmulqdq")]]
     void base_conv_f2_64(auto &&a, auto &&b, auto &&c) {
         if constexpr (N % 2) {
-            static_assert(N == 1);
-            c[0] = a[0] * b[0];
+            static_assert(N < 2);
+            base_conv<N>(a, b, c);
             return;
         }
         alignas(32) __m128i pr0[2 * N] = {};
@@ -39,14 +52,38 @@ namespace cp_algo::math {
     }
 
     template<auto N>
-    void base_conv(auto &&_a, auto &&_b, auto &&_c) {
-        auto a = std::assume_aligned<32>(&_a[0]);
-        auto b = std::assume_aligned<32>(&_b[0]);
-        auto c = std::assume_aligned<32>(&_c[0]);
-        for (size_t i = 0; i < N; i++) {
-            for (size_t j = 0; j < N; j++) {
-                c[i + j] += a[i] * b[j];
+    void base_conv_modint(auto &&a, auto &&b, auto &&c) {
+        if constexpr (N % 4) {
+            static_assert(N < 4);
+            base_conv<N>(a, b, c);
+            return;
+        }
+        alignas(32) uint64_t pr0[2 * N] = {}, pr1[2 * N] = {};
+        alignas(32) uint64_t pr2[2 * N] = {}, pr3[2 * N] = {};
+        using base = std::decay_t<decltype(a[0])>;
+        for (size_t i = 0; i < N; i += 4) {
+            auto va0 = __m256i() + a[i].getr();
+            auto va1 = __m256i() + a[i + 1].getr();
+            auto va2 = __m256i() + a[i + 2].getr();
+            auto va3 = __m256i() + a[i + 3].getr();
+            size_t j = 0;
+            for (; j + 3 < N; j += 4) {
+                auto vb = (__m256i)u64x4{
+                    b[j].getr(), b[j + 1].getr(), b[j + 2].getr(), b[j + 3].getr()
+                };
+                (__m256i&)pr0[i + j] += _mm256_mul_epu32(va0, vb);
+                (__m256i&)pr1[i + j] += _mm256_mul_epu32(va1, vb);
+                (__m256i&)pr2[i + j] += _mm256_mul_epu32(va2, vb);
+                (__m256i&)pr3[i + j] += _mm256_mul_epu32(va3, vb);
             }
+        }
+        for (size_t i = 0; i < 2 * N - 1; i++) {
+            if (i > 0) {
+                pr2[i] += pr3[i - 1];
+                pr1[i] += pr2[i - 1];
+                pr0[i] += pr1[i - 1];
+            }
+            c[i].setr((typename base::UInt)(pr0[i] % base::mod()));
         }
     }
 
@@ -61,6 +98,8 @@ namespace cp_algo::math {
         if constexpr (N <= NN) {
             if constexpr (std::is_same_v<base, nimber::f2_64>) {
                 base_conv_f2_64<N>(a, b, c);
+            } else if constexpr (modint_type<base>) {
+                base_conv_modint<N>(a, b, c);
             } else {
                 base_conv<N>(a, b, c);
             }

@@ -42,6 +42,121 @@ namespace cp_algo::math::fft {
             std::cout << "\n";
             checkpoint("multivar write");
         }
+        multivar truncated(auto const& new_dim) const {
+            return multivar(*this).truncate_inplace(new_dim);
+        }
+        multivar& truncate_inplace(auto const& new_dim) {
+            big_vector<size_t> nd(begin(new_dim), end(new_dim));
+            assert(nd.size() == dim.size());
+            size_t K = nd.size();
+            for(size_t i = 0; i < K; i++) {
+                assert(nd[i] <= dim[i]);
+            }
+            size_t new_N = std::ranges::fold_left(nd, 1, std::multiplies{});
+            if(new_N == 0) {
+                data.clear();
+                dim = std::move(nd);
+                ranks.clear();
+                N = 0;
+                return *this;
+            }
+            
+            big_vector<size_t> old_stride(K), new_stride(K);
+            old_stride[0] = 1;
+            new_stride[0] = 1;
+            for(size_t i = 1; i < K; i++) {
+                old_stride[i] = old_stride[i - 1] * dim[i - 1];
+                new_stride[i] = new_stride[i - 1] * nd[i - 1];
+            }
+            
+            big_vector<size_t> idx(K);
+            size_t old_pos = 0, new_pos = 0;
+            for(size_t t = 0; t < new_N; t++) {
+                data[new_pos] = data[old_pos];
+                for(size_t d = 0; d < K; d++) {
+                    idx[d]++;
+                    old_pos += old_stride[d];
+                    new_pos += new_stride[d];
+                    if(idx[d] < nd[d]) {
+                        break;
+                    }
+                    idx[d] = 0;
+                    old_pos -= old_stride[d] * nd[d];
+                    new_pos -= new_stride[d] * nd[d];
+                }
+            }
+            
+            data.resize(new_N);
+            dim = std::move(nd);
+            N = new_N;
+            ranks.resize(N);
+            for(auto [i, x]: ranks | std::views::enumerate) {
+                x = rank(i);
+            }
+            return *this;
+        }
+        multivar& extend(auto const& new_dim) {
+            big_vector<size_t> nd(begin(new_dim), end(new_dim));
+            assert(nd.size() == dim.size());
+            size_t K = nd.size();
+            for(size_t i = 0; i < K; i++) {
+                assert(nd[i] >= dim[i]);
+            }
+            size_t new_N = std::ranges::fold_left(nd, 1, std::multiplies{});
+            
+            big_vector<size_t> old_stride(K), new_stride(K);
+            old_stride[0] = 1;
+            new_stride[0] = 1;
+            for(size_t i = 1; i < K; i++) {
+                old_stride[i] = old_stride[i - 1] * dim[i - 1];
+                new_stride[i] = new_stride[i - 1] * nd[i - 1];
+            }
+            
+            data.resize(new_N);
+            
+            // Move elements backwards to avoid overwriting
+            for(size_t old_pos = N; old_pos-- > 0; ) {
+                // Compute multi-index for old_pos in old shape
+                size_t tmp = old_pos;
+                big_vector<size_t> idx(K);
+                for(size_t d = 0; d < K; d++) {
+                    idx[d] = tmp % dim[d];
+                    tmp /= dim[d];
+                }
+                // Compute new position for same multi-index in new shape
+                size_t new_pos = 0;
+                for(size_t d = 0; d < K; d++) {
+                    new_pos += idx[d] * new_stride[d];
+                }
+                // Move element
+                data[new_pos] = data[old_pos];
+            }
+            
+            // Fill remaining positions with zero
+            for(size_t i = 0; i < new_N; i++) {
+                big_vector<size_t> pos(K);
+                size_t tmp = i;
+                bool in_old = true;
+                for(size_t d = 0; d < K; d++) {
+                    pos[d] = tmp % nd[d];
+                    tmp /= nd[d];
+                    if(pos[d] >= dim[d]) {
+                        in_old = false;
+                    }
+                }
+                if(!in_old) {
+                    data[i] = base(0);
+                }
+            }
+            
+            dim = std::move(nd);
+            N = new_N;
+            ranks.resize(N);
+            for(auto [i, x]: ranks | std::views::enumerate) {
+                x = rank(i);
+            }
+            return *this;
+        }
         void mul(multivar<base> const& b) {
             assert(dim == b.dim);
             size_t K = size(dim);

@@ -15,7 +15,7 @@ namespace cp_algo::math {
     // Computes 4 products per iteration
     template<size_t N>
     [[gnu::target("avx2,vpclmulqdq")]]
-    void base_conv_f2_64(uint64_t const* a, uint64_t const* b, uint64_t* c) {
+    void base_conv_f2_64(auto &&a, auto &&b, auto &&c) {
         alignas(32) __m128i pr0[2 * N] = {};
         alignas(32) __m128i pr1[2 * N] = {};
         
@@ -54,37 +54,32 @@ namespace cp_algo::math {
     //   N - Size of input arrays (must be power of 2)
     //   Add, Sub, Mul - Operations for addition, subtraction, and coefficient multiplication
     template<auto N, auto Add, auto Sub, auto Mul>
-    void _karatsuba(auto &&_a, auto &&_b, auto &&_c) {
-        auto a = std::assume_aligned<32>(&_a[0]);
-        auto b = std::assume_aligned<32>(&_b[0]);
-        auto c = std::assume_aligned<32>(&_c[0]);
-        [[gnu::assume(N <= 1<<20)]];
+    void _karatsuba(auto &&a, auto &&b, auto &&c) {
+        [[gnu::assume(N <= 1<<19)]];
         if constexpr (N <= NN) {
             if constexpr (Mul == nimber::f2_64_product) {
                 base_conv_f2_64<N>(a, b, c);
             } else {
-                base_conv<N, Add, Mul>(_a, _b, _c);
+                base_conv<N, Add, Mul>(a, b, c);
             }
         } else {
             constexpr auto h = N / 2;
-            auto a0 = a, a1 = a + h, b0 = b, b1 = b + h;
-            _karatsuba<h, Add, Sub, Mul>(a0, b0, c);
-            _karatsuba<h, Add, Sub, Mul>(a1, b1, c + 2 * h);
+            auto a0 = &a[0], a1 = a0 + h, b0 = &b[0], b1 = b0 + h;
+            auto c0 = &c[0], c1 = c0 + h, c2 = c0 + 2 * h;
+            _karatsuba<h, Add, Sub, Mul>(a0, b0, c0);
+            _karatsuba<h, Add, Sub, Mul>(a1, b1, c2);
             using base = std::decay_t<decltype(a[0])>;
             static big_vector<base> buf(4 * h);
-            auto f = std::assume_aligned<32>(buf.data());
-            auto sum_a = std::assume_aligned<32>(buf.data() + 2 * h);
-            auto sum_b = std::assume_aligned<32>(buf.data() + 3 * h);
+            auto f = &buf[0];
+            auto sum_a = f + 2 * h, sum_b = f + 3 * h;
             for (size_t i = 0; i < h; i++) {
                 sum_a[i] = Add(a0[i], a1[i]);
                 sum_b[i] = Add(b0[i], b1[i]);
             }
             memset(f, 0, sizeof(base) * 2 * h);
             _karatsuba<h, Add, Sub, Mul>(sum_a, sum_b, f);
-            auto c0 = std::assume_aligned<32>(c);
-            auto c1 = c0 + h, c2 = c0 + 2 * h;
             for(size_t i = 0; i < h; i++) {
-                auto &A = c0[i], &B = c1[i], &C = c2[i], &D = c2[i + h];
+                auto A = c0[i], &B = c1[i], &C = c2[i], D = c2[i + h];
                 auto BC = Sub(B, C);
                 B = Sub(Add(BC, f[i]), A);
                 C = Sub(f[i + h], Add(D, BC));

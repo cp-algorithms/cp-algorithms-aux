@@ -16,11 +16,11 @@ using namespace std;
 void solve() {
     size_t n, m;
     cin >> n >> m;
-    cp_algo::big_vector<uint64_t> a(n), b(m);
-    for (auto &x : a) cin >> x;
-    for (auto &x : b) cin >> x;
-    auto c = cp_algo::math::convolution_F2_64(a, b);
-    for (auto x : c) cout << x << " ";
+    cp_algo::big_vector<f2_64> a(n), b(m);
+    for (auto &x : a) cin >> x.r;
+    for (auto &x : b) cin >> x.r;
+    auto c = cp_algo::math::karatsuba(a, b);
+    for (auto x : c) cout << x.r << " ";
     cout << "\n";
 }
 

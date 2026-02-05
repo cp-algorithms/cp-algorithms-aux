@@ -16,6 +16,11 @@ namespace cp_algo::math {
     template<size_t N>
     [[gnu::target("avx2,vpclmulqdq")]]
     void base_conv_f2_64(auto &&a, auto &&b, auto &&c) {
+        if constexpr (N % 2) {
+            static_assert(N == 1);
+            c[0] = a[0] * b[0];
+            return;
+        }
         alignas(32) __m128i pr0[2 * N] = {};
         alignas(32) __m128i pr1[2 * N] = {};
         
@@ -27,24 +32,20 @@ namespace cp_algo::math {
                 (__m256i&)pr1[i + j] ^= _mm256_clmulepi64_epi128(va, vb, 16);
             }
         }
-        if constexpr (N % 2) {
-            static_assert(N == 1);
-            pr0[0] = nimber::clmul(a[0], b[0]);
-        }
-        c[0] = nimber::reduce_mod(pr0[0]);
+        c[0].r = nimber::reduce_mod(pr0[0]);
         for (size_t i = 1; i < 2 * N - 1; i++) {
-            c[i] ^= nimber::reduce_mod(pr0[i] ^ pr1[i - 1]);
+            c[i].r ^= nimber::reduce_mod(pr0[i] ^ pr1[i - 1]);
         }
     }
 
-    template<auto N, auto Add, auto Mul>
+    template<auto N>
     void base_conv(auto &&_a, auto &&_b, auto &&_c) {
         auto a = std::assume_aligned<32>(&_a[0]);
         auto b = std::assume_aligned<32>(&_b[0]);
         auto c = std::assume_aligned<32>(&_c[0]);
         for (size_t i = 0; i < N; i++) {
             for (size_t j = 0; j < N; j++) {
-                c[i + j] = Add(c[i + j], Mul(a[i], b[j]));
+                c[i + j] += a[i] * b[j];
             }
         }
     }
@@ -53,62 +54,55 @@ namespace cp_algo::math {
     // Template parameters:
     //   N - Size of input arrays (must be power of 2)
     //   Add, Sub, Mul - Operations for addition, subtraction, and coefficient multiplication
-    template<auto N, auto Add, auto Sub, auto Mul>
+    template<auto N>
     void _karatsuba(auto &&a, auto &&b, auto &&c) {
         [[gnu::assume(N <= 1<<19)]];
+        using base = std::decay_t<decltype(a[0])>;
         if constexpr (N <= NN) {
-            if constexpr (Mul == nimber::f2_64_product) {
+            if constexpr (std::is_same_v<base, nimber::f2_64>) {
                 base_conv_f2_64<N>(a, b, c);
             } else {
-                base_conv<N, Add, Mul>(a, b, c);
+                base_conv<N>(a, b, c);
             }
         } else {
             constexpr auto h = N / 2;
             auto a0 = &a[0], a1 = a0 + h, b0 = &b[0], b1 = b0 + h;
             auto c0 = &c[0], c1 = c0 + h, c2 = c0 + 2 * h;
-            _karatsuba<h, Add, Sub, Mul>(a0, b0, c0);
-            _karatsuba<h, Add, Sub, Mul>(a1, b1, c2);
-            using base = std::decay_t<decltype(a[0])>;
+            _karatsuba<h>(a0, b0, c0);
+            _karatsuba<h>(a1, b1, c2);
             static big_vector<base> buf(4 * h);
             auto f = &buf[0];
             auto sum_a = f + 2 * h, sum_b = f + 3 * h;
             for (size_t i = 0; i < h; i++) {
-                sum_a[i] = Add(a0[i], a1[i]);
-                sum_b[i] = Add(b0[i], b1[i]);
+                sum_a[i] = a0[i] + a1[i];
+                sum_b[i] = b0[i] + b1[i];
             }
             memset(f, 0, sizeof(base) * 2 * h);
-            _karatsuba<h, Add, Sub, Mul>(sum_a, sum_b, f);
+            _karatsuba<h>(sum_a, sum_b, f);
             for(size_t i = 0; i < h; i++) {
                 auto A = c0[i], &B = c1[i], &C = c2[i], D = c2[i + h];
-                auto BC = Sub(B, C);
-                B = Sub(Add(BC, f[i]), A);
-                C = Sub(f[i + h], Add(D, BC));
+                auto BC = B - C;
+                B = BC + f[i] - A;
+                C = f[i + h] - D - BC;
             }
         }
     }
 
     // Runtime wrapper that deduces N at compile time
     // Resizes inputs to the next power of 2 and result to n + m - 1
-    template<typename Cont, auto Add, auto Sub, auto Mul>
-    Cont karatsuba(auto &a, auto &b) {
+    auto karatsuba(auto &a, auto &b) {
         auto n = std::size(a);
         auto m = std::size(b);
         auto N = std::bit_ceil(std::max(n, m));
         a.resize(N);
         b.resize(N);
-        Cont c(2 * N - 1);
+        using base = std::decay_t<decltype(a[0])>;
+        big_vector<base> c(2 * N - 1);
         with_bit_ceil(N, [&]<auto NN>() {
-            _karatsuba<NN, Add, Sub, Mul>(a, b, c);
+            _karatsuba<NN>(a, b, c);
         });
         c.resize(n + m - 1);
         return c;
-    }
-
-    // Specialization: Convolution over GF(2^64) using Karatsuba
-    // Uses XOR for addition/subtraction and f2_64_product for coefficient multiplication
-    template<typename Cont = big_vector<uint64_t>>
-    Cont convolution_F2_64(auto &a, auto &b) {
-        return karatsuba<Cont, std::bit_xor<>{}, std::bit_xor<>{}, nimber::f2_64_product>(a, b);
     }
 }
 

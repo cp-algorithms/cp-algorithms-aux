@@ -122,6 +122,29 @@ namespace cp_algo::math::nimber {
             nim_to_poly(b)
         ));
     }
+
+    struct f2_64 {
+        uint64_t r;
+
+        operator uint64_t() const {return r;}
+
+        f2_64() = default;
+        f2_64& operator+=(const f2_64 &other) {
+            r ^= other.r;
+            return *this;
+        }
+        f2_64& operator-=(const f2_64 &other) {
+            r ^= other.r;
+            return *this;
+        }
+        f2_64& operator *=(const f2_64 &other) {
+            r = f2_64_product(r, other.r);
+            return *this;
+        }
+        f2_64 operator*(const f2_64 &other) const {return f2_64(*this) *= other;}
+        f2_64 operator+(const f2_64 &other) const {return f2_64(*this) += other;}
+        f2_64 operator-(const f2_64 &other) const {return f2_64(*this) -= other;}
+    };
 }
 
 #endif // CP_ALGO_NUMBER_THEORY_NIMBER_HPP

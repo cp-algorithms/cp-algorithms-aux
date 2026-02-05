@@ -13,6 +13,8 @@
 
 using namespace std;
 
+using cp_algo::math::nimber::f2_64;
+
 void solve() {
     size_t n, m;
     cin >> n >> m;

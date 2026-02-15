@@ -16,9 +16,7 @@ namespace cp_algo::math {
 #endif
     const size_t max_logn = CP_ALGO_SUBSET_CONVOLUTION_MAX_LOGN;
     
-    enum transform_dir { forw, inv };
-    
-    template<auto N, transform_dir direction>
+    template<auto N>
     inline void xor_transform(auto &&a) {
         if constexpr (N >> max_logn) {
             throw std::runtime_error("N too large for xor_transform");
@@ -64,24 +62,22 @@ namespace cp_algo::math {
                 a[i + (size_t)quar * 2] = x2;
                 a[i + (size_t)quar * 3] = x3;
             }
-            xor_transform<quar, direction>(&a[quar * 0]);
-            xor_transform<quar, direction>(&a[quar * 1]);
-            xor_transform<quar, direction>(&a[quar * 2]);
-            xor_transform<quar, direction>(&a[quar * 3]);
+            xor_transform<quar>(&a[quar * 0]);
+            xor_transform<quar>(&a[quar * 1]);
+            xor_transform<quar>(&a[quar * 2]);
+            xor_transform<quar>(&a[quar * 3]);
         }
     }
     
-    template<transform_dir direction>
     inline void xor_transform(auto &&a, auto n) {
         with_bit_floor(n, [&]<auto NN>() {
             assert(NN == n);
-            xor_transform<NN, direction>(a);
+            xor_transform<NN>(a);
         });
     }
     
-    template<transform_dir direction = forw>
     inline void xor_transform(auto &&a) {
-        xor_transform<direction>(a, std::size(a));
+        xor_transform(a, std::size(a));
     }
 
     // Generic rank vectors processor with variadic inputs
@@ -182,7 +178,7 @@ namespace cp_algo::math {
             
             checkpoint("dot");
             auto& first_buf = std::get<0>(buffers);
-            xor_transform<inv>(first_buf);
+            xor_transform(first_buf);
             checkpoint("transform");
             
             // Gather results from first buffer

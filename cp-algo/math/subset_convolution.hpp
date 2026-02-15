@@ -212,17 +212,17 @@ namespace cp_algo::math {
             const auto imod = math::inv2(-mod);
             const auto r4 = u64x4() + uint64_t(-1) % mod + 1;
             auto add = [&](size_t i) {
-                if constexpr (lgn) for(size_t j = 0; i + j + 1 < lgn; j++) {
+                for(size_t j = 0; i + j + 1 < lgn; j++) {
                     res[i + j + 1] += (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[j]));
                 }
                 if constexpr (lgn >= 20) if (i == 15) {
                     for(size_t k = 0; k < lgn; k++) {
-                        res[k] = res[k] >= base::modmod8() ? res[k] - base::modmod8() : res[k];
+                        res[k] -= (res[k] >= base::modmod8()) & base::modmod8();
                     }
                 }
             };
-            if constexpr (lgn) for(size_t i = 0; i < lgn; i++) { add(i); }
-            if constexpr (lgn) if constexpr (lgn) for(size_t k = 0; k < lgn; k++) {
+            for(size_t i = 0; i < lgn; i++) { add(i); }
+            for(size_t k = 0; k < lgn; k++) {
                 res[k] = montgomery_reduce(res[k], mod, imod);
                 res[k] = montgomery_mul(res[k], r4, mod, imod);
                 a[k] = res[k] >= mod ? res[k] - mod : res[k];

@@ -6,7 +6,7 @@
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/multivar.hpp"
+#include "cp-algo/math/multivar_inv.hpp"
 
 using namespace std;
 using namespace cp_algo::math::fft;
@@ -20,22 +20,7 @@ void solve() {
     std::array<size_t, 2> dim{m, n};
     multivar<base> a(dim);
     a.read();
-    size_t degree = 1;
-    multivar<base> b(std::array{1, 1});
-    b.data[0] = a.data[0].inv();
-    while(degree < n + m) {
-        degree *= 2;
-        std::array next_dim{std::min(m, degree), std::min(n, degree)};
-
-        multivar<base> c = a.truncated(next_dim);
-        b.extend(next_dim);
-        c.mul(b);
-        for(auto &x: c.data) {
-            x = -x;
-        }
-        c.data[0] += base(2);
-        b.mul(c);
-    }
+    auto b = multivar_inv(a, dim);
     b.print();
     cp_algo::checkpoint<1>();
 }

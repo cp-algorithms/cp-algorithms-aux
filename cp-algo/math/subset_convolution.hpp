@@ -238,8 +238,49 @@ namespace cp_algo::math {
     }
 
     template<typename base>
+    big_vector<base> subset_div(std::span<base> f, std::span<base> g) {
+        big_vector<base> outpa;
+        constexpr size_t lgn = max_logn;
+        auto f0 = f[0].getr(), gi = g[0].inv().getr();
+        outpa = on_rank_vectors([f0, gi](auto &a, auto const& b) {
+            static const auto mod = base::mod();
+            static const auto imod = math::inv2(-mod);
+            static const auto gir4 = u64x4() + (uint64_t(-1) % mod + 1) * gi % mod;
+            for(size_t k = 0; k < lgn; k++) {
+                for(size_t i = 0; i < k; i++) {
+                    a[k] -= (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[k - 1 - i]));
+                    a[k] = a[k] >= base::modmod() ? a[k] + base::modmod() : a[k];
+                }
+                a[k] -= (u64x4)_mm256_mul_epu32(__m256i() + f0, __m256i(b[k]));
+                a[k] = a[k] >= base::modmod() ? a[k] + base::modmod() : a[k];
+                a[k] = montgomery_reduce(a[k], mod, imod);
+                a[k] = montgomery_mul(a[k], gir4, mod, imod);
+                a[k] = a[k] >= mod ? a[k] - mod : a[k];
+            }
+        }, f, g);
+        outpa[0] = f0 * gi;
+        checkpoint("fix 0");
+        return outpa;
+    }
+
+    template<typename base>
+    big_vector<base> subset_log(std::span<base> g) {
+        if (size(g) == 1) {
+            assert(g[0] == base(1));
+            return big_vector<base>{0};
+        }
+        size_t N = std::size(g);
+        auto out0 = subset_log(std::span(g).first(N / 2));
+        auto out1 = subset_div<base>(std::span(g).last(N / 2), std::span(g).first(N / 2));
+        out0.insert(end(out0), begin(out1), end(out1));
+        cp_algo::checkpoint("extend out");
+        return out0;
+    }
+
+    template<typename base>
     big_vector<base> subset_exp(std::span<base> g) {
         if (size(g) == 1) {
+            assert(g[0] == base(0));
             return big_vector<base>{1};
         }
         size_t N = std::size(g);

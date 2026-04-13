@@ -10,7 +10,6 @@
 #include <string>
 #include <cstddef>
 #include <iostream>
-#include <generator>
 #include <forward_list>
 
 // Single macro to detect POSIX platforms (Linux, Unix, macOS)
@@ -84,15 +83,6 @@ namespace cp_algo {
     using big_multiset = std::multiset<T, Compare, big_alloc<T>>;
     template<typename T, typename Compare = std::less<T>>
     using big_set = std::set<T, Compare, big_alloc<T>>;
-    template<typename Ref, typename V = void>
-
-    using big_generator = std::generator<Ref, V, big_alloc<std::byte>>;
-}
-
-// Deduction guide to make elements_of with big_generator default to big_alloc
-namespace std::ranges {
-    template<typename Ref, typename V>
-    elements_of(cp_algo::big_generator<Ref, V>&&) -> elements_of<cp_algo::big_generator<Ref, V>&&, cp_algo::big_alloc<std::byte>>;
 }
 
 #endif // CP_ALGO_UTIL_big_alloc_HPP

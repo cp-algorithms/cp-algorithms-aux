@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <vector>
 #include <span>
+#include <ranges>
 #include <algorithm>
 #include <cassert>
 

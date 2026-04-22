@@ -1,9 +1,8 @@
 #ifndef CP_ALGO_MATH_FACTORIZE_HPP
 #define CP_ALGO_MATH_FACTORIZE_HPP
 #include "primality.hpp"
-#include "../util/big_alloc.hpp"
+#include "../util/generator.hpp"
 #include "../random/rng.hpp"
-#include <generator>
 namespace cp_algo::math {
     // https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
     template<typename _Int>

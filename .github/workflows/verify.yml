@@ -3,21 +3,17 @@ on:
   push:
     branches:
       - "main"
+  pull_request:
+    branches:
+      - "main"
   workflow_dispatch:
-    inputs:
-      ignore_prev_result:
-        type: boolean
-        default: false
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
-# Allow one concurrent deployment
+# Cancel older runs for the same branch or pull request
 concurrency:
-  group: "pages"
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
@@ -26,6 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Set up competitive-verifier
@@ -85,18 +82,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           fetch-depth: 2147483647
           submodules: recursive
-
-      - name: Restore cached results
-        if: ${{ ! inputs.ignore_prev_result }}
-        uses: actions/cache/restore@v4
-        id: restore-cached-results
-        with:
-          path: ${{github.workspace}}/merged-result.json
-          key: ${{ runner.os }}-verify-result-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-verify-result-
 
       - name: Download verify_files.json
         uses: competitive-verifier/actions/download-verify-artifact@v2
@@ -117,7 +105,6 @@ jobs:
           split-size: ${{ env.SPLIT_SIZE }}
           split-index: ${{ matrix.index }}
           timeout: 1800
-          prev-result: ${{ steps.restore-cached-results.outputs.cache-hit && 'merged-result.json' || ''}}
 
       - name: Upload result artifact
         uses: actions/upload-artifact@v4
@@ -128,12 +115,21 @@ jobs:
 
   docs-and-check:
     runs-on: ubuntu-latest
-    needs: [verify]
-    outputs:
-      upload-pages: ${{steps.upload-pages.outcome == 'success'}}
+    needs: [setup, verify]
+    if: ${{ always() }}
     steps:
+      - name: Check upstream jobs
+        shell: bash
+        run: |
+          if [ "${{ needs.setup.result }}" != "success" ] || [ "${{ needs.verify.result }}" != "success" ]; then
+            echo "setup result: ${{ needs.setup.result }}"
+            echo "verify result: ${{ needs.verify.result }}"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           fetch-depth: 2147483647
           submodules: recursive
   
@@ -183,58 +179,17 @@ jobs:
       - name: Copy custom Jekyll templates
         shell: bash
         run: cp -r .verify-helper/docs/static/* _jekyll/ 2>/dev/null || true
-      - name: Save result
-        uses: actions/cache/save@v4
-        with:
-          path: ${{github.workspace}}/merged-result.json
-          key: ${{ runner.os }}-verify-result-${{ github.sha }}
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: _jekyll
-          destination: _site
-      - name: Upload artifact
-        id: upload-pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - name: Commit minified versions
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Clean up any leftover bundled minified directory from previous runs
-          # (bundled versions should only be in .competitive-verifier/minified-bundled/, not in repo)
-          rm -rf cp-algo/min-bundled
-          
-          # Only commit minified source files, not bundled versions
-          # Bundled versions are generated during CI and used for docs injection,
-          # but we don't store them in the repo to avoid bloat
-          if [ -n "$(git status cp-algo/min/ --porcelain)" ]; then
-            git add cp-algo/min/
-            git commit -m "chore: update minified library versions"
-            git push
-          else
-            echo "No changes to minified versions"
-          fi
 
       - name: Check
         uses: competitive-verifier/actions/check@v2
         with:
           verify-result: ${{ steps.all-artifacts.outputs.artifacts-root }}/Result-*/result.json
-  deploy:
-    if: (success() || failure()) && github.ref == 'refs/heads/main' && needs.docs-and-check.outputs.upload-pages == 'true'
-    needs: docs-and-check
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+
+      - name: Upload merged result for publish
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Merged-Result
+          path: ${{github.workspace}}/merged-result.json
+          if-no-files-found: error
+          retention-days: 3

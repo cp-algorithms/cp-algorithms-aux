@@ -1,0 +1,180 @@
+name: publish
+
+on:
+  workflow_run:
+    workflows:
+      - verify
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-main"
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      current_main: ${{ steps.current_main.outputs.current }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+          fetch-depth: 2147483647
+          submodules: recursive
+
+      - name: Confirm verified commit is still main
+        id: current_main
+        shell: bash
+        run: |
+          git fetch --no-tags origin main
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping stale publish for $(git rev-parse HEAD); main is $(git rev-parse origin/main)."
+          fi
+
+  publish:
+    needs: guard
+    if: needs.guard.outputs.current_main == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      pages: write
+    outputs:
+      upload_pages: ${{ steps.upload_pages.outcome == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2147483647
+          submodules: recursive
+
+      - name: Download verify artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: .artifacts
+
+      - name: Extract bundled
+        shell: bash
+        run: |
+          rm -rf .competitive-verifier/bundled
+          if test -d "$SRCDIR"; then
+            mkdir -p .competitive-verifier/
+            mv "$SRCDIR" .competitive-verifier/bundled
+          else
+            echo "$SRCDIR does not exist."
+          fi
+        env:
+          SRCDIR: .artifacts/Bundled-${{ runner.os }}
+
+      - name: Generate minified versions
+        shell: bash
+        run: python3 .verify-helper/scripts/generate_minified.py
+
+      - name: Set up competitive-verifier
+        uses: adamant-pwn/actions/setup@patch-1
+        with:
+          cache-pip: false
+
+      - name: Docs
+        uses: competitive-verifier/actions/docs@v2
+        with:
+          verify-result: ${{github.workspace}}/.artifacts/Merged-Result/merged-result.json
+          destination: _jekyll
+          write-summary: true
+
+      - name: Inject minified code into documentation
+        shell: bash
+        run: python3 .verify-helper/scripts/inject_minified_docs.py
+
+      - name: Copy custom Jekyll templates
+        shell: bash
+        run: cp -r .verify-helper/docs/static/* _jekyll/ 2>/dev/null || true
+
+      - name: Check
+        uses: competitive-verifier/actions/check@v2
+        with:
+          verify-result: ${{github.workspace}}/.artifacts/Result-*/result.json
+
+      - name: Reconfirm main before publishing
+        id: current_main
+        shell: bash
+        run: |
+          git fetch --no-tags origin main
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "Main moved to $(git rev-parse origin/main); this publish run will not push or deploy."
+          fi
+
+      - name: Commit minified versions
+        id: commit_minified
+        if: steps.current_main.outputs.current == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Bundled minified files are generated for docs only; keep them out of the repo.
+          rm -rf cp-algo/min-bundled
+
+          if [ -n "$(git status cp-algo/min/ --porcelain)" ]; then
+            git add cp-algo/min/
+            git commit -m "chore: update minified library versions"
+            git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes to minified versions"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Pages
+        if: steps.current_main.outputs.current == 'true' && steps.commit_minified.outputs.changed == 'false'
+        uses: actions/configure-pages@v4
+
+      - name: Build with Jekyll
+        if: steps.current_main.outputs.current == 'true' && steps.commit_minified.outputs.changed == 'false'
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: _jekyll
+          destination: _site
+
+      - name: Upload Pages artifact
+        if: steps.current_main.outputs.current == 'true' && steps.commit_minified.outputs.changed == 'false'
+        id: upload_pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: publish
+    if: needs.publish.outputs.upload_pages == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

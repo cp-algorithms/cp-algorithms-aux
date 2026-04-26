@@ -96,6 +96,7 @@ jobs:
       - name: Docs
         uses: competitive-verifier/actions/docs@v2
         with:
+          verify-files: ${{github.workspace}}/.artifacts/${{ runner.os }}-verify-files-json/verify_files.json
           verify-result: ${{github.workspace}}/.artifacts/Merged-Result/merged-result.json
           destination: _jekyll
           write-summary: true

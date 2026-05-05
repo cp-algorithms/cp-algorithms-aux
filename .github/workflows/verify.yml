@@ -120,11 +120,13 @@ jobs:
         uses: adamant-pwn/actions/setup@patch-1
         with:
           cache-pip: true
+
       - name: Use GCC 14.2
         run: |
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
           g++ --version
+
       - name: Verify
         uses: competitive-verifier/actions/verify@v2
         with:
@@ -230,6 +232,31 @@ jobs:
         with:
           path: ${{github.workspace}}/merged-result.json
           key: ${{ runner.os }}-verify-result-${{ github.sha }}
+
+      - name: Configure PR preview base URL
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          {
+            echo 'url: https://lib.cp-algorithms.com'
+            echo 'baseurl: "/${{ github.event.pull_request.number }}"'
+          } >> _jekyll/_config.yml
+
+      - name: Build PR preview with Jekyll
+        if: github.event_name == 'pull_request'
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: _jekyll
+          destination: _site
+
+      - name: Upload PR preview
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.pull_request.number }}
+          path: _site
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload merged result for publish
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

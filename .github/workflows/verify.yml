@@ -7,6 +7,10 @@ on:
     branches:
       - "main"
   workflow_dispatch:
+    inputs:
+      ignore_prev_result:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -86,6 +90,29 @@ jobs:
           fetch-depth: 2147483647
           submodules: recursive
 
+      - name: Restore cached results
+        if: ${{ github.event_name != 'workflow_dispatch' || ! inputs.ignore_prev_result }}
+        uses: actions/cache/restore@v4
+        id: restore-cached-results
+        continue-on-error: true
+        with:
+          path: ${{github.workspace}}/merged-result.json
+          key: ${{ runner.os }}-verify-result-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-verify-result-
+
+      - name: Select cached result
+        id: cached-result
+        shell: bash
+        run: |
+          if [ -f merged-result.json ] && jq -e . merged-result.json >/dev/null; then
+            echo "path=${{ github.workspace }}/merged-result.json" >> "$GITHUB_OUTPUT"
+            echo "Using cached verify result."
+          else
+            rm -f merged-result.json
+            echo "No cached verify result found."
+          fi
+
       - name: Download verify_files.json
         uses: competitive-verifier/actions/download-verify-artifact@v2
 
@@ -94,37 +121,17 @@ jobs:
         with:
           cache-pip: true
 
-      - name: Restore previous verify result
-        id: restore-verify-result
-        uses: actions/cache/restore@v4
-        with:
-          path: .verify-cache/merged-result.json
-          key: competitive-verify-result-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            competitive-verify-result-v1-${{ runner.os }}-
-
       - name: Use GCC 14.2
         run: |
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
           g++ --version
 
-      - name: Select previous verify result
-        id: previous-result
-        shell: bash
-        run: |
-          if [ -f .verify-cache/merged-result.json ]; then
-            echo "path=${{ github.workspace }}/.verify-cache/merged-result.json" >> "$GITHUB_OUTPUT"
-            echo "Using cached verify result from ${{ steps.restore-verify-result.outputs.cache-matched-key }}"
-          else
-            echo "No cached verify result found."
-          fi
-
       - name: Verify
         uses: competitive-verifier/actions/verify@v2
         with:
           destination: ${{runner.temp}}/result.json
-          prev-result: ${{ steps.previous-result.outputs.path }}
+          prev-result: ${{ steps.cached-result.outputs.path }}
           split-size: ${{ env.SPLIT_SIZE }}
           split-index: ${{ matrix.index }}
           timeout: 1800
@@ -208,19 +215,23 @@ jobs:
         with:
           verify-result: ${{ steps.all-artifacts.outputs.artifacts-root }}/Result-*/result.json
 
-      - name: Stage verify result cache
-        if: github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          mkdir -p .verify-cache
-          cp merged-result.json .verify-cache/merged-result.json
-
-      - name: Save verify result cache
-        if: github.ref == 'refs/heads/main'
-        uses: actions/cache/save@v4
+      - name: Check saved result cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/restore@v4
+        id: check-saved-result-cache
+        continue-on-error: true
         with:
-          path: .verify-cache/merged-result.json
-          key: competitive-verify-result-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{github.workspace}}/merged-result.json
+          key: ${{ runner.os }}-verify-result-${{ github.sha }}
+          lookup-only: true
+
+      - name: Save result
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check-saved-result-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ${{github.workspace}}/merged-result.json
+          key: ${{ runner.os }}-verify-result-${{ github.sha }}
 
       - name: Configure PR preview base URL
         if: github.event_name == 'pull_request'

@@ -6,55 +6,26 @@ on:
       - verify
     types:
       - completed
-    branches:
-      - main
 
 permissions:
   contents: read
 
 concurrency:
-  group: "${{ github.workflow }}-main"
+  group: publish-pages
   cancel-in-progress: false
 
 jobs:
-  guard:
+  publish_main:
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-    outputs:
-      current_main: ${{ steps.current_main.outputs.current }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-          persist-credentials: false
-          fetch-depth: 2147483647
-          submodules: recursive
-
-      - name: Confirm verified commit is still main
-        id: current_main
-        shell: bash
-        run: |
-          git fetch --no-tags origin main
-          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
-            echo "current=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "current=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping stale publish for $(git rev-parse HEAD); main is $(git rev-parse origin/main)."
-          fi
-
-  publish:
-    needs: guard
-    if: needs.guard.outputs.current_main == 'true'
-    runs-on: ubuntu-latest
-    permissions:
       actions: read
       contents: write
       pages: write
+      id-token: write
     outputs:
       upload_pages: ${{ steps.upload_pages.outcome == 'success' }}
     steps:
@@ -158,16 +129,70 @@ jobs:
           source: _jekyll
           destination: _site
 
+      - name: Prepare Pages state branch
+        if: steps.current_main.outputs.current == 'true' && steps.commit_minified.outputs.changed == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git fetch --no-tags --depth=1 origin gh-pages:refs/remotes/origin/gh-pages; then
+            git worktree add -B gh-pages _pages refs/remotes/origin/gh-pages
+          else
+            git worktree add --detach _pages
+            git -C _pages switch --orphan gh-pages
+            git -C _pages rm -rf . || true
+          fi
+
+      - name: Publish main site into Pages state
+        if: steps.current_main.outputs.current == 'true' && steps.commit_minified.outputs.changed == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s dotglob nullglob
+
+          for entry in _pages/*; do
+            name="$(basename "$entry")"
+            if [ "$name" = ".git" ]; then
+              continue
+            fi
+            if [[ -d "$entry" && "$name" =~ ^[0-9]+$ ]]; then
+              continue
+            fi
+            rm -rf "$entry"
+          done
+
+          cp -a _site/. _pages/
+          touch _pages/.nojekyll
+          git -C _pages add -A
+
+          if git -C _pages diff --cached --quiet; then
+            echo "No Pages state changes"
+          else
+            git -C _pages commit -m "Publish main site (${{ github.event.workflow_run.head_sha }})"
+            git -C _pages push origin HEAD:gh-pages
+          fi
+
+      - name: Stage Pages artifact
+        if: steps.current_main.outputs.current == 'true' && steps.commit_minified.outputs.changed == 'false'
+        shell: bash
+        run: |
+          rm -rf _pages_artifact
+          mkdir _pages_artifact
+          cp -a _pages/. _pages_artifact/
+          rm -f _pages_artifact/.git
+
       - name: Upload Pages artifact
         if: steps.current_main.outputs.current == 'true' && steps.commit_minified.outputs.changed == 'false'
         id: upload_pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: _pages_artifact
 
-  deploy:
-    needs: publish
-    if: needs.publish.outputs.upload_pages == 'true'
+  deploy_main:
+    needs: publish_main
+    if: needs.publish_main.outputs.upload_pages == 'true'
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -175,6 +200,158 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  publish_preview:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      pull-requests: read
+      pages: write
+      id-token: write
+    outputs:
+      upload_pages: ${{ steps.upload_pages.outcome == 'success' }}
+      preview_url: ${{ steps.preview.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download PR preview artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          pattern: "[0-9]*"
+          path: public
+
+      - name: Get PR number from artifact
+        id: preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t preview_dirs < <(find public -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+          if [ "${#preview_dirs[@]}" -ne 1 ]; then
+            printf 'Expected exactly one PR preview artifact, found %s.\n' "${#preview_dirs[@]}"
+            printf '%s\n' "${preview_dirs[@]}"
+            exit 1
+          fi
+          pr_number="${preview_dirs[0]}"
+          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+          echo "url=https://lib.cp-algorithms.com/$pr_number/" >> "$GITHUB_OUTPUT"
+
+      - name: Check PR state
+        id: pr_state
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = Number('${{ steps.preview.outputs.number }}')
+            const { owner, repo } = context.repo
+            const { data: pull } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber,
+            })
+
+            const workflowSha = context.payload.workflow_run.head_sha
+            core.setOutput('state', pull.state)
+            core.setOutput('head_sha', pull.head.sha)
+            core.setOutput('publish', pull.state === 'open' && pull.head.sha === workflowSha ? 'true' : 'false')
+            core.setOutput('delete', pull.state !== 'open' ? 'true' : 'false')
+
+      - name: Prepare Pages state branch
+        id: pages_state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git fetch --no-tags --depth=1 origin gh-pages:refs/remotes/origin/gh-pages; then
+            git worktree add -B gh-pages _pages refs/remotes/origin/gh-pages
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No gh-pages state branch exists yet; run a main publish before deploying previews."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update PR preview in Pages state
+        id: preview_state
+        if: steps.pages_state.outputs.exists == 'true'
+        shell: bash
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PR_HEAD_SHA: ${{ steps.pr_state.outputs.head_sha }}
+          PR_STATE: ${{ steps.pr_state.outputs.state }}
+          SHOULD_DELETE: ${{ steps.pr_state.outputs.delete }}
+          SHOULD_PUBLISH: ${{ steps.pr_state.outputs.publish }}
+        run: |
+          set -euo pipefail
+          pr_number="${{ steps.preview.outputs.number }}"
+
+          if [ "$SHOULD_PUBLISH" = "true" ]; then
+            rm -rf "_pages/$pr_number"
+            mkdir -p "_pages/$pr_number"
+            cp -a "public/$pr_number/." "_pages/$pr_number/"
+            commit_message="Preview for #$pr_number ($HEAD_SHA) at ${{ steps.preview.outputs.url }}"
+          elif [ "$SHOULD_DELETE" = "true" ]; then
+            if [ ! -d "_pages/$pr_number" ]; then
+              echo "PR #$pr_number is $PR_STATE and no preview directory exists."
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            rm -rf "_pages/$pr_number"
+            commit_message="Delete preview for #$pr_number"
+          else
+            echo "Skipping stale preview for #$pr_number; PR head is $PR_HEAD_SHA and workflow head is $HEAD_SHA."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          touch _pages/.nojekyll
+          git -C _pages add -A "$pr_number" .nojekyll
+          if git -C _pages diff --cached --quiet; then
+            echo "No Pages state changes"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git -C _pages commit -m "$commit_message"
+            git -C _pages push origin HEAD:gh-pages
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stage Pages artifact
+        if: steps.preview_state.outputs.changed == 'true'
+        shell: bash
+        run: |
+          rm -rf _pages_artifact
+          mkdir _pages_artifact
+          cp -a _pages/. _pages_artifact/
+          rm -f _pages_artifact/.git
+
+      - name: Upload Pages artifact
+        if: steps.preview_state.outputs.changed == 'true'
+        id: upload_pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _pages_artifact
+
+  deploy_preview:
+    needs: publish_preview
+    if: needs.publish_preview.outputs.upload_pages == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ needs.publish_preview.outputs.preview_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

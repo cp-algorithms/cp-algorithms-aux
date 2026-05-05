@@ -93,15 +93,38 @@ jobs:
         uses: adamant-pwn/actions/setup@patch-1
         with:
           cache-pip: true
+
+      - name: Restore previous verify result
+        id: restore-verify-result
+        uses: actions/cache/restore@v4
+        with:
+          path: .verify-cache/merged-result.json
+          key: competitive-verify-result-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            competitive-verify-result-v1-${{ runner.os }}-
+
       - name: Use GCC 14.2
         run: |
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
           g++ --version
+
+      - name: Select previous verify result
+        id: previous-result
+        shell: bash
+        run: |
+          if [ -f .verify-cache/merged-result.json ]; then
+            echo "path=${{ github.workspace }}/.verify-cache/merged-result.json" >> "$GITHUB_OUTPUT"
+            echo "Using cached verify result from ${{ steps.restore-verify-result.outputs.cache-matched-key }}"
+          else
+            echo "No cached verify result found."
+          fi
+
       - name: Verify
         uses: competitive-verifier/actions/verify@v2
         with:
           destination: ${{runner.temp}}/result.json
+          prev-result: ${{ steps.previous-result.outputs.path }}
           split-size: ${{ env.SPLIT_SIZE }}
           split-index: ${{ matrix.index }}
           timeout: 1800
@@ -184,6 +207,20 @@ jobs:
         uses: competitive-verifier/actions/check@v2
         with:
           verify-result: ${{ steps.all-artifacts.outputs.artifacts-root }}/Result-*/result.json
+
+      - name: Stage verify result cache
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          mkdir -p .verify-cache
+          cp merged-result.json .verify-cache/merged-result.json
+
+      - name: Save verify result cache
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v4
+        with:
+          path: .verify-cache/merged-result.json
+          key: competitive-verify-result-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Configure PR preview base URL
         if: github.event_name == 'pull_request'

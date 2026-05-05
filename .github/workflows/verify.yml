@@ -7,6 +7,10 @@ on:
     branches:
       - "main"
   workflow_dispatch:
+    inputs:
+      ignore_prev_result:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -86,6 +90,29 @@ jobs:
           fetch-depth: 2147483647
           submodules: recursive
 
+      - name: Restore cached results
+        if: ${{ github.event_name != 'workflow_dispatch' || ! inputs.ignore_prev_result }}
+        uses: actions/cache/restore@v4
+        id: restore-cached-results
+        continue-on-error: true
+        with:
+          path: ${{github.workspace}}/merged-result.json
+          key: ${{ runner.os }}-verify-result-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-verify-result-
+
+      - name: Select cached result
+        id: cached-result
+        shell: bash
+        run: |
+          if [ -f merged-result.json ] && jq -e . merged-result.json >/dev/null; then
+            echo "path=${{ github.workspace }}/merged-result.json" >> "$GITHUB_OUTPUT"
+            echo "Using cached verify result."
+          else
+            rm -f merged-result.json
+            echo "No cached verify result found."
+          fi
+
       - name: Download verify_files.json
         uses: competitive-verifier/actions/download-verify-artifact@v2
 
@@ -102,6 +129,7 @@ jobs:
         uses: competitive-verifier/actions/verify@v2
         with:
           destination: ${{runner.temp}}/result.json
+          prev-result: ${{ steps.cached-result.outputs.path }}
           split-size: ${{ env.SPLIT_SIZE }}
           split-index: ${{ matrix.index }}
           timeout: 1800
@@ -184,6 +212,24 @@ jobs:
         uses: competitive-verifier/actions/check@v2
         with:
           verify-result: ${{ steps.all-artifacts.outputs.artifacts-root }}/Result-*/result.json
+
+      - name: Check saved result cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/restore@v4
+        id: check-saved-result-cache
+        continue-on-error: true
+        with:
+          path: ${{github.workspace}}/merged-result.json
+          key: ${{ runner.os }}-verify-result-${{ github.sha }}
+          lookup-only: true
+
+      - name: Save result
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check-saved-result-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ${{github.workspace}}/merged-result.json
+          key: ${{ runner.os }}-verify-result-${{ github.sha }}
 
       - name: Upload merged result for publish
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

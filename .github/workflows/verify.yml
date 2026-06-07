@@ -32,6 +32,9 @@ jobs:
       - name: Set up competitive-verifier
         uses: adamant-pwn/actions/setup@patch-1
         with:
+          # Floor pins the first release without the malicious polyfill.io
+          # script (removed in competitive-verifier 4.1.2).
+          package: "competitive-verifier>=4.1.2"
           cache-pip: true
 
       # Initialize your own environment for resolving.
@@ -119,6 +122,9 @@ jobs:
       - name: Set up competitive-verifier
         uses: adamant-pwn/actions/setup@patch-1
         with:
+          # Floor pins the first release without the malicious polyfill.io
+          # script (removed in competitive-verifier 4.1.2).
+          package: "competitive-verifier>=4.1.2"
           cache-pip: true
       - name: Use GCC 14.2
         run: |
@@ -188,6 +194,9 @@ jobs:
       - name: Set up competitive-verifier
         uses: adamant-pwn/actions/setup@patch-1
         with:
+          # Floor pins the first release without the malicious polyfill.io
+          # script (removed in competitive-verifier 4.1.2).
+          package: "competitive-verifier>=4.1.2"
           cache-pip: true
 
       - name: Merge results

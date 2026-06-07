@@ -1,0 +1,19 @@
+<!--
+  Local override of competitive_verifier_resources/_includes/head-custom.html.
+
+  The released competitive-verifier (<= 3.3.1) ships this include with a first
+  line of:
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  The polyfill.io domain was sold in 2024 and now serves malicious payloads
+  (redirects / fake prompts). competitive-verifier has already removed this line
+  on its main branch; this override drops it until a fixed release is used.
+
+  The polyfill is unnecessary: MathJax 3, highlight.js and the theme all target
+  browsers with native ES6. The remaining lines are identical to upstream so the
+  page is otherwise unchanged. competitive-verifier copies user static files over
+  the bundled ones, so this file replaces the vulnerable include at build time.
+-->
+<link rel="stylesheet" href="{{ "/assets/css/default.css" | relative_url }}">
+{% include highlight/highlight_header.html %}
+{% include mathjax/mathjax.html %}
+{% include head-custom2.html %}

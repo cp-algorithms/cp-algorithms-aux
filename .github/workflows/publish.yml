@@ -89,7 +89,7 @@ jobs:
         run: python3 .verify-helper/scripts/generate_minified.py
 
       - name: Set up competitive-verifier
-        uses: adamant-pwn/actions/setup@patch-1
+        uses: competitive-verifier/actions/setup@v2
         with:
           # Floor pins the first release without the malicious polyfill.io
           # script (removed in competitive-verifier 4.1.2).

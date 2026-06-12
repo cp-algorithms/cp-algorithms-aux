@@ -64,14 +64,15 @@ namespace cp_algo::math::poly::impl {
     // computes product of linfrac on [L, R)
     auto convergent(auto L, auto R) {
         using poly = decltype(L)::value_type;
-        if(R == next(L)) {
+        if(L == R) {
+            return linfrac<poly>{};
+        } else if(R == next(L)) {
             return linfrac(*L);
         } else {
+            // split so that both halves have approximately equal total degree
             int s = std::transform_reduce(L, R, 0, std::plus{}, std::mem_fn(&poly::deg));
-            auto M = L;
-            for(int c = M->deg(); 2 * c <= s; M++) {
-                c += next(M)->deg();
-            }
+            auto M = next(L);
+            for(int c = L->deg(); next(M) != R && 2 * c < s; c += M->deg(), ++M) {}
             return convergent(L, M) * convergent(M, R);
         }
     }

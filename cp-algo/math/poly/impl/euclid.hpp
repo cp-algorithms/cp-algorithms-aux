@@ -69,8 +69,10 @@ namespace cp_algo::math::poly::impl {
         } else if(R == next(L)) {
             return linfrac(*L);
         } else {
-            auto M = L;
-            std::advance(M, std::distance(L, R) / 2);
+            // split so that both halves have approximately equal total degree
+            int s = std::transform_reduce(L, R, 0, std::plus{}, std::mem_fn(&poly::deg));
+            auto M = next(L);
+            for(int c = L->deg(); next(M) != R && 2 * c < s; c += M->deg(), ++M) {}
             return convergent(L, M) * convergent(M, R);
         }
     }

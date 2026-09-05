@@ -609,9 +609,17 @@ namespace cp_algo::math {
             }
             return res;
         }
+
+        poly_t apply_diff(poly_t const& g) const { // g(D) * f(x)
+            return forward_corr(invborel(), g).borel();
+        }
         
-        poly_t shift(T a) const { // P(x + a)
-            return forward_corr(invborel(), expx(deg() + 1).mulx(a)).borel();
+        poly_t shift(T a) const { // f(x + a) = e^{aD} * f(x)
+            return apply_diff(expx(deg() + 1).mulx(a));
+        }
+
+        poly_t prefix_sum() const { // g'(x) = (D / (e^D-1)) f(x)
+            return apply_diff(expx(deg() + 2).div_xk(1).inv(deg() + 1)).integr();
         }
         
         poly_t x2() { // P(x) -> P(x^2)

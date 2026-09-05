@@ -1,12 +1,11 @@
-// @brief Find Linear Recurrence
-#define PROBLEM "https://judge.yosupo.jp/problem/find_linear_recurrence"
+// @brief Prefix Sum of Polynomial
+#define PROBLEM "https://judge.yosupo.jp/problem/prefix_sum_of_polynomial"
 #pragma GCC optimize("O3,unroll-loops")
-//#include <bits/allocator.h>
 #pragma GCC target("avx2")
-#include <iostream>
+#define CP_ALGO_MAXN ((1 << 19) + 1)
+#include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly.hpp"
-#include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::math;
@@ -18,12 +17,10 @@ using polyn = poly_t<base>;
 void solve() {
     int n;
     cin >> n;
-    polyn::Vector a(n);
-    for(auto &it: a) {cin >> it;}
-    auto Q = polyn(a).min_rec(n);
-    int d = Q.deg();
-    cout << d << endl;
-    (-Q / Q[d]).reverse().div_xk(1).print(d);
+    polyn::Vector f(n);
+    for(auto &x : f) cin >> x;
+    polyn(f).prefix_sum().print(n + 1);
+
 }
 
 signed main() {

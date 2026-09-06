@@ -2,9 +2,11 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/bell_number"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
+
+#include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/series.hpp"
 #include "cp-algo/math/poly/transform.hpp"
-#include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::math;

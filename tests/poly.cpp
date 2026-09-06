@@ -20,6 +20,13 @@ P naive_mul(P const& a, P const& b, size_t n) {
     return c;
 }
 int main() {
+    // Check Newton doubling at odd lengths and either side of a power of two.
+    for(int n: {31, 32, 33, 63, 64, 65, 127, 128, 129, 255, 256, 257, 513, 1025}) {
+        auto p = random_poly(n);
+        for(auto &x: p.a) {x = rng() % T::mod();}
+        p.a[0] = 17;
+        assert(naive_mul(p, inv(p, n), n) == P(1));
+    }
     for(int n: {0, 1, 2, 3, 7, 63, 64, 65, 127, 128, 129, 257, 513}) {
         P a = random_poly(n), b = random_poly(n);
         auto c = naive_mul(a, b, 2 * n);

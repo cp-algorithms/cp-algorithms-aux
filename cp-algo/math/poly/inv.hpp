@@ -5,41 +5,41 @@ CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::poly::impl {
     template<typename poly>
     poly& inv_inplace(poly& p, size_t n) {
-        using poly_t = std::decay_t<poly>;
-        using base = poly_t::base;
+        using base = poly::base;
         if(n == 0) {
             p.a.clear();
             return p;
         }
         assert(p[0] != base(0));
-        if(n == 1) {
-            return p = base(1) / p[0];
+        if(n < magic) {
+            typename poly::Vector q(n);
+            q[0] = base(1) / p[0];
+            for(size_t i = 1; i < n; i++) {
+                for(size_t j = 1; j <= std::min(i, p.a.size() - 1); j++) {
+                    q[i] -= p.a[j] * q[i - j];
+                }
+                q[i] *= q[0];
+            }
+            return p = std::move(q);
         }
-        // P(x) = q0(x^2) + x q1(x^2).
-        auto [q0, q1] = p.bisect(n);
-
-        size_t N = fft::com_size((n + 1) / 2, (n + 1) / 2);
-
-        auto q0f = fft::dft<base>(q0.a, N);
-        auto q1f = fft::dft<base>(q1.a, N);
-
-        // Q(x)*Q(-x) = Q0(x^2)^2 - x^2 Q1(x^2)^2
-        auto qq = poly_t(q0f * q0f) - poly_t(q1f * q1f).mul_xk_inplace(1);
-
-        inv_inplace(qq, (n + 1) / 2);
-        auto qqf = fft::dft<base>(qq.a, N);
-
-        typename poly::Vector A, B;
-        A.resize(((n + 1) / 2 + fft::flen - 1) / fft::flen * fft::flen);
-        B.resize(((n + 1) / 2 + fft::flen - 1) / fft::flen * fft::flen);
-        q0f.mul(qqf, A, (n + 1) / 2);
-        q1f.mul_inplace(qqf, B, (n + 1) / 2);
-        p.a.resize(n + 1);
-        for(size_t i = 0; i < n; i += 2) {
-            p.a[i] = A[i / 2];
-            p.a[i + 1] = -B[i / 2];
+        size_t m = std::bit_floor(size_t(magic - 1));
+        auto q = p.mod_xk(m);
+        inv_inplace(q, m);
+        for(; m < n; m *= 2) {
+            size_t k = std::min(2 * m, n);
+            typename poly::Vector error((k + fft::flen - 1) / fft::flen * fft::flen);
+            auto Q = fft::dft<base>(q.a, m);
+            {
+                auto P = fft::dft<base>(p.a | std::views::take(k), m);
+                // Wrapping modulo x^(2m) + factor^(2m) only changes the discarded low half.
+                P.mul(Q, error, k);
+            }
+            auto E = fft::dft<base>(error | std::views::drop(m) | std::views::take(k - m), m);
+            Q.mul_inplace(E, error, k - m);
+            q.a.resize(k);
+            for(size_t i = m; i < k; i++) {q.a[i] = -error[i - m];}
         }
-        p.a.pop_back();
+        p = std::move(q);
         p.normalize();
         return p;
     }

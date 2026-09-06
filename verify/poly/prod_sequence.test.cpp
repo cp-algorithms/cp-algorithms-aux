@@ -16,10 +16,7 @@ using polyn = poly_t<base>;
 void solve() {
     int N;
     cin >> N;
-    cp_algo::big_vector<polyn> polys(N);
-    cp_algo::big_multiset<polyn, decltype([](polyn const& a, polyn const& b){
-        return a.deg() < b.deg();
-    })> que = {polyn(1)};
+    vector<optional<polyn>> prod;
     int D = 0;
     for(int i = 0; i < N; i++) {
         int d;
@@ -27,16 +24,21 @@ void solve() {
         D += d;
         polyn::Vector a(d + 1);
         for(auto &it: a) {cin >> it;}
-        que.insert(polyn(std::move(a)));
+        polyn p(std::move(a));
+        // Merge products of comparable sizes as they arrive.
+        while(true) {
+            auto k = std::bit_width(size_t(std::max(0, p.deg())));
+            if(k >= prod.size()) {prod.resize(k + 1);}
+            if(!prod[k]) {prod[k] = std::move(p); break;}
+            p *= *prod[k];
+            prod[k].reset();
+        }
     }
-    while(que.size() > 1) {
-        auto A = *begin(que);
-        que.erase(begin(que));
-        auto B = *begin(que);
-        que.erase(begin(que));
-        que.insert(A * B);
+    polyn ans(1);
+    for(auto &p: prod) {
+        if(p) {ans *= *p;}
     }
-    begin(que)->print(D + 1);
+    ans.print(D + 1);
 }
 
 signed main() {

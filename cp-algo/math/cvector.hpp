@@ -118,123 +118,155 @@ namespace cp_algo::math::fft {
             checkpoint("dot");
         }
         // normalize=false leaves the inverse-transform scale for the caller.
+        // Only the first count coefficients are promised; the rest are unspecified.
         template<bool partial = true, bool normalize = true>
-        void ifft() {
+        void ifft(size_t count = SIZE_MAX) {
             size_t n = size();
-            if constexpr (!partial) {
-                prepare_roots(n / 4);
-                point pi(0, 1);
-                exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
-                    k *= 4;
-                    point v1 = conj(rt);
-                    point v2 = v1 * v1;
-                    point v3 = v1 * v2;
-                    auto A = get(k);
-                    auto B = get(k + 1);
-                    auto C = get(k + 2);
-                    auto D = get(k + 3);
-                    set(k, (A + B) + (C + D));
-                    set(k + 2, ((A + B) - (C + D)) * v2);
-                    set(k + 1, ((A - B) - pi * (C - D)) * v1);
-                    set(k + 3, ((A - B) + pi * (C - D)) * v3);
-                });
-            }
-            bool parity = std::countr_zero(n) % 2;
-            if(parity) {
-                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
-                    k *= 2 * flen;
-                    vpoint cvrt = {vz + real(rt), vz - imag(rt)};
-                    auto B = at(k) - at(k + flen);
-                    at(k) += at(k + flen);
-                    at(k + flen) = B * cvrt;
-                });
-            }
+            if(count == 0) {return;}
+            count = std::min(n, (std::min(count, n) + flen - 1) / flen * flen);
+            auto transform = [&]<bool prune>() {
+                if constexpr (!partial) {
+                    prepare_roots(n / 4);
+                    point pi(0, 1);
+                    exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
+                        k *= 4;
+                        point v1 = conj(rt);
+                        point v2 = v1 * v1;
+                        point v3 = v1 * v2;
+                        auto A = get(k);
+                        auto B = get(k + 1);
+                        auto C = get(k + 2);
+                        auto D = get(k + 3);
+                        set(k, (A + B) + (C + D));
+                        set(k + 2, ((A + B) - (C + D)) * v2);
+                        set(k + 1, ((A - B) - pi * (C - D)) * v1);
+                        set(k + 3, ((A - B) + pi * (C - D)) * v3);
+                    });
+                }
+                bool parity = std::countr_zero(n) % 2;
+                if(parity) {
+                    exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
+                        k *= 2 * flen;
+                        vpoint cvrt = {vz + real(rt), vz - imag(rt)};
+                        auto B = at(k) - at(k + flen);
+                        at(k) += at(k + flen);
+                        at(k + flen) = B * cvrt;
+                    });
+                }
 
-            for(size_t leaf = 3 * flen; leaf < n; leaf += 4 * flen) {
-                size_t level = std::countr_one(leaf + 3);
-                for(size_t lvl = 4 + parity; lvl <= level; lvl += 2) {
-                    size_t i = (1 << lvl) / 4;
-                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) __attribute__((always_inline)) {
-                        k <<= lvl;
-                        vpoint v1 = {vz + real(rt), vz - imag(rt)};
-                        vpoint v2 = v1 * v1;
-                        vpoint v3 = v1 * v2;
-                        for(size_t j = k; j < k + i; j += flen) {
-                            auto A = at(j);
-                            auto B = at(j + i);
-                            auto C = at(j + 2 * i);
-                            auto D = at(j + 3 * i);
-                            at(j) = ((A + B) + (C + D));
-                            at(j + 2 * i) = ((A + B) - (C + D)) * v2;
-                            at(j +     i) = ((A - B) - vi(C - D)) * v1;
-                            at(j + 3 * i) = ((A - B) + vi(C - D)) * v3;
-                        }
-                    });
+                for(size_t leaf = 3 * flen; leaf < n; leaf += 4 * flen) {
+                    size_t level = std::countr_one(leaf + 3);
+                    for(size_t lvl = 4 + parity; lvl <= level; lvl += 2) {
+                        size_t i = (1 << lvl) / 4;
+                        exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) __attribute__((always_inline)) {
+                            k <<= lvl;
+                            vpoint v1 = {vz + real(rt), vz - imag(rt)};
+                            vpoint v2 = v1 * v1;
+                            vpoint v3 = v1 * v2;
+                            for(size_t j = k; j < k + (prune ? std::min(count, i) : i); j += flen) {
+                                auto A = at(j);
+                                auto B = at(j + i);
+                                auto C = at(j + 2 * i);
+                                auto D = at(j + 3 * i);
+                                at(j) = ((A + B) + (C + D));
+                                if(!prune || j - k + 2 * i < count) {at(j + 2 * i) = ((A + B) - (C + D)) * v2;}
+                                if(!prune || j - k + i < count) {at(j + i) = ((A - B) - vi(C - D)) * v1;}
+                                if(!prune || j - k + 3 * i < count) {at(j + 3 * i) = ((A - B) + vi(C - D)) * v3;}
+                            }
+                        });
+                    }
                 }
-            }
-            checkpoint("ifft");
-            if constexpr(normalize) {
-                auto scale = vz + ftype(partial ? flen : 1) / ftype(n);
-                for(size_t k = 0; k < n; k += flen) {
-                    set(k, get<vpoint>(k) * scale);
+                checkpoint("ifft");
+                if constexpr(normalize) {
+                    auto scale = vz + ftype(partial ? flen : 1) / ftype(n);
+                    for(size_t k = 0; k < count; k += flen) {
+                        set(k, get<vpoint>(k) * scale);
+                    }
                 }
-            }
+            };
+            // Branching costs more than it saves for nearly full transforms.
+            if(count <= n / 4) {transform.template operator()<true>();}
+            else {transform.template operator()<false>();}
         }
+        // Coefficients at indices >= nonzero must be zero. All evaluations are returned.
+        // partial controls the four-lane layout, independently of prefix pruning.
         template<bool partial = true>
-        void fft() {
+        void fft(size_t nonzero = SIZE_MAX) {
             size_t n = size();
-            bool parity = std::countr_zero(n) % 2;
-            for(size_t leaf = 0; leaf < n; leaf += 4 * flen) {
-                size_t level = std::countr_zero(n + leaf);
-                level -= level % 2 != parity;
-                for(size_t lvl = level; lvl >= 4; lvl -= 2) {
-                    size_t i = (1 << lvl) / 4;
-                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) __attribute__((always_inline)) {
-                        k <<= lvl;
-                        vpoint v1 = {vz + real(rt), vz + imag(rt)};
-                        vpoint v2 = v1 * v1;
-                        vpoint v3 = v1 * v2;
-                        for(size_t j = k; j < k + i; j += flen) {
-                            auto A = at(j);
-                            auto B = at(j + i) * v1;
-                            auto C = at(j + 2 * i) * v2;
-                            auto D = at(j + 3 * i) * v3;
-                            at(j)         = (A + C) + (B + D);
-                            at(j + i)     = (A + C) - (B + D);
-                            at(j + 2 * i) = (A - C) + vi(B - D);
-                            at(j + 3 * i) = (A - C) - vi(B - D);
-                        }
+            if(nonzero == 0) {return;}
+            nonzero = std::min(n, (std::min(nonzero, n) + flen - 1) / flen * flen);
+            auto transform = [&]<bool prune>() {
+                bool parity = std::countr_zero(n) % 2;
+                for(size_t leaf = 0; leaf < n; leaf += 4 * flen) {
+                    size_t level = std::countr_zero(n + leaf);
+                    level -= level % 2 != parity;
+                    for(size_t lvl = level; lvl >= 4; lvl -= 2) {
+                        size_t i = (1 << lvl) / 4;
+                        exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) __attribute__((always_inline)) {
+                            k <<= lvl;
+                            vpoint v1 = {vz + real(rt), vz + imag(rt)};
+                            vpoint v2 = v1 * v1;
+                            vpoint v3 = v1 * v2;
+                            auto run = [&]<int terms>(size_t lo, size_t hi) __attribute__((always_inline)) {
+                                for(size_t j = k + lo; j < k + hi; j += flen) {
+                                    auto A = at(j);
+                                    if constexpr(terms == 1) {
+                                        at(j + i) = at(j + 2 * i) = at(j + 3 * i) = A;
+                                    } else {
+                                        auto B = at(j + i) * v1;
+                                        auto C = vpoint{}, D = vpoint{};
+                                        if constexpr(terms > 2) {C = at(j + 2 * i) * v2;}
+                                        if constexpr(terms > 3) {D = at(j + 3 * i) * v3;}
+                                        at(j)         = (A + C) + (B + D);
+                                        at(j + i)     = (A + C) - (B + D);
+                                        at(j + 2 * i) = (A - C) + vi(B - D);
+                                        at(j + 3 * i) = (A - C) - vi(B - D);
+                                    }
+                                }
+                            };
+                            if constexpr(!prune) {run.template operator()<4>(0, i);}
+                            else {
+                                size_t q = nonzero >> (lvl - 2), tail = nonzero & (i - 1);
+                                if(q >= 4) {run.template operator()<4>(0, i);}
+                                else if(q == 3) {run.template operator()<4>(0, tail); run.template operator()<3>(tail, i);}
+                                else if(q == 2) {run.template operator()<3>(0, tail); run.template operator()<2>(tail, i);}
+                                else if(q == 1) {run.template operator()<2>(0, tail); run.template operator()<1>(tail, i);}
+                                else {run.template operator()<1>(0, tail);}
+                            }
+                        });
+                    }
+                }
+                if(parity) {
+                    exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
+                        k *= 2 * flen;
+                        vpoint vrt = {vz + real(rt), vz + imag(rt)};
+                        auto t = at(k + flen) * vrt;
+                        at(k + flen) = at(k) - t;
+                        at(k) += t;
                     });
                 }
-            }
-            if(parity) {
-                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
-                    k *= 2 * flen;
-                    vpoint vrt = {vz + real(rt), vz + imag(rt)};
-                    auto t = at(k + flen) * vrt;
-                    at(k + flen) = at(k) - t;
-                    at(k) += t;
-                });
-            }
-            if constexpr (!partial) {
-                prepare_roots(n / 4);
-                point pi(0, 1);
-                exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
-                    k *= 4;
-                    point v1 = rt;
-                    point v2 = v1 * v1;
-                    point v3 = v1 * v2;
-                    auto A = get(k);
-                    auto B = get(k + 1) * v1;
-                    auto C = get(k + 2) * v2;
-                    auto D = get(k + 3) * v3;
-                    set(k, (A + C) + (B + D));
-                    set(k + 1, (A + C) - (B + D));
-                    set(k + 2, (A - C) + pi * (B - D));
-                    set(k + 3, (A - C) - pi * (B - D));
-                });
-            }
-            checkpoint("fft");
+                if constexpr (!partial) {
+                    prepare_roots(n / 4);
+                    point pi(0, 1);
+                    exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
+                        k *= 4;
+                        point v1 = rt;
+                        point v2 = v1 * v1;
+                        point v3 = v1 * v2;
+                        auto A = get(k);
+                        auto B = get(k + 1) * v1;
+                        auto C = get(k + 2) * v2;
+                        auto D = get(k + 3) * v3;
+                        set(k, (A + C) + (B + D));
+                        set(k + 1, (A + C) - (B + D));
+                        set(k + 2, (A - C) + pi * (B - D));
+                        set(k + 3, (A - C) - pi * (B - D));
+                    });
+                }
+                checkpoint("fft");
+            };
+            if(nonzero <= n / 4) {transform.template operator()<true>();}
+            else {transform.template operator()<false>();}
         }
         static constexpr size_t pre_evals = 1 << 16;
         static const std::array<size_t, pre_evals> eval_args;

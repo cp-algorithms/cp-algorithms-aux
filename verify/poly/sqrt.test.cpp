@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/sqrt_of_formal_power_series"
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/poly/sqrt.hpp"
+#include "cp-algo/math/poly/series/sqrt.hpp"
 #include "cp-algo/math/poly/series.hpp"
 
 using namespace std;

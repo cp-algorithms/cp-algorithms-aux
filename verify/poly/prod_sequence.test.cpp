@@ -18,6 +18,7 @@ void solve() {
     cin >> N;
     vector<optional<polyn>> prod;
     int D = 0;
+    base scalar = 1;
     for(int i = 0; i < N; i++) {
         int d;
         cin >> d;
@@ -25,6 +26,7 @@ void solve() {
         polyn::Vector a(d + 1);
         for(auto &it: a) {cin >> it;}
         polyn p(std::move(a));
+        if(p.deg() == 0) {scalar *= p[0]; continue;}
         // Merge products of comparable sizes as they arrive.
         while(true) {
             auto k = std::bit_width(size_t(std::max(0, p.deg())));
@@ -38,6 +40,7 @@ void solve() {
     for(auto &p: prod) {
         if(p) {ans *= *p;}
     }
+    if(scalar != base(1)) {ans *= scalar;}
     ans.print(D + 1);
 }
 

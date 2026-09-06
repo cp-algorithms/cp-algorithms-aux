@@ -4,7 +4,7 @@
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/poly/series.hpp"
+#include "cp-algo/math/poly/series/log.hpp"
 
 using namespace std;
 using namespace cp_algo::math;

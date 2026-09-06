@@ -1,6 +1,6 @@
-#ifndef CP_ALGO_MATH_POLY_INV_HPP
-#define CP_ALGO_MATH_POLY_INV_HPP
-#include "base.hpp"
+#ifndef CP_ALGO_MATH_POLY_SERIES_INV_HPP
+#define CP_ALGO_MATH_POLY_SERIES_INV_HPP
+#include "../base.hpp"
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::poly::impl {
     template<typename poly>
@@ -53,4 +53,4 @@ namespace cp_algo::math {
     }
 }
 #pragma GCC pop_options
-#endif // CP_ALGO_MATH_POLY_INV_HPP
+#endif // CP_ALGO_MATH_POLY_SERIES_INV_HPP

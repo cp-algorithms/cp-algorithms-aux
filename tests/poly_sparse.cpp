@@ -1,6 +1,6 @@
 #include "cp-algo/math/poly/sparse.hpp"
 #include "cp-algo/math/poly/series.hpp"
-#include "cp-algo/math/poly/sqrt.hpp"
+#include "cp-algo/math/poly/series/sqrt.hpp"
 #include <random>
 #include <iostream>
 using namespace cp_algo::math;

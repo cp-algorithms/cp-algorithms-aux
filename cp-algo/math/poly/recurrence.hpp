@@ -73,8 +73,8 @@ namespace cp_algo::math {
             }
             k /= 2;
         }
-        size_t n = Q.a.size();
-        P *= inv(std::move(Q), n);
+        size_t n = size_t(k) + 1;
+        P.mul_truncate(inv(std::move(Q), n), n);
         return P[(int)k];
     }
 }

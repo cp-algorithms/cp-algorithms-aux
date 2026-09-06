@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_MATH_POLY_TRANSFORM_HPP
 #define CP_ALGO_MATH_POLY_TRANSFORM_HPP
 #include "calculus.hpp"
-#include "inv.hpp"
+#include "series/inv.hpp"
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math {
     // Multiply coefficient k by c^k, i.e. substitute cx for x.

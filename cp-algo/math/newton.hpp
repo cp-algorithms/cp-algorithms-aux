@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_MATH_NEWTON_HPP
 #define CP_ALGO_MATH_NEWTON_HPP
 
-#include "poly/inv.hpp"
+#include "poly/series/inv.hpp"
 
 namespace cp_algo::math {
     template<typename base>

@@ -1,6 +1,6 @@
 #ifndef CP_ALGO_MATH_POLY_IMPL_DIV_HPP
 #define CP_ALGO_MATH_POLY_IMPL_DIV_HPP
-#include "../inv.hpp"
+#include "../series/inv.hpp"
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::poly::impl {
     template<typename T>
@@ -27,9 +27,13 @@ namespace cp_algo::math::poly::impl {
         if(std::min(n, q.deg()) < magic) {
             return divmod_slow(std::move(p), q);
         }
-        auto d = p.reversed().mod_xk(n + 1);
-        d.mul_truncate(qri.mod_xk(n + 1), n + 1).reverse(n + 1);
-        p -= d * q;
+        poly_t<T> d(typename poly_t<T>::Vector(p.a.rbegin(), p.a.rbegin() + n + 1));
+        d.mul_truncate(qri, n + 1).reverse(n + 1);
+        // Only coefficients below deg(q) survive in the remainder.
+        auto low = d.mod_xk(q.deg());
+        low.mul_truncate(q, q.deg());
+        p.mod_xk_inplace(q.deg());
+        p -= low;
         return {std::move(d), std::move(p)};
     }
 }

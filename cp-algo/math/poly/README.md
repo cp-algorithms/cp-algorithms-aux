@@ -5,7 +5,7 @@ coefficient access, slicing, shifts by powers of x, reversal and single-point
 evaluation. Algorithms are free functions in `cp_algo::math`:
 
 ```cpp
-#include "cp-algo/math/poly/series.hpp"
+#include "cp-algo/math/poly/series/exp.hpp"
 using namespace cp_algo::math;
 using mint = modint<998244353>;
 using polyn = poly_t<mint>;
@@ -18,12 +18,12 @@ p = exp(std::move(p), 100);       // reuse p's storage where possible
 | Header | Operations |
 | --- | --- |
 | `base.hpp` | Representation, arithmetic, coefficient operations |
-| `inv.hpp` | Inverse modulo x^n |
+| `series/inv.hpp` | Inverse modulo x^n |
 | `div.hpp` | Division, remainder, `divmod` |
 | `calculus.hpp` | `deriv`, `integr` |
-| `series.hpp` | Truncated `log`, `exp`, `pow` |
-| `sqrt.hpp` | Truncated square root |
-| `sparse.hpp` | `inv_sparse`, `log_sparse`, `exp_sparse`, `pow_sparse`, `sqrt_sparse` |
+| `series/{log,exp,pow}.hpp` | Truncated `log`, `exp`, `pow`; `series.hpp` includes all three |
+| `series/sqrt.hpp` | Truncated square root |
+| `sparse/{inv,log,exp,pow,sqrt}.hpp` | Sparse algorithms; `sparse.hpp` includes all five |
 | `euclid.hpp` | `gcd`, `inv_mod`, `resultant` |
 | `recurrence.hpp` | `min_rec`, `kth_rec`, intervals of inverse coefficients |
 | `eval.hpp` | Multipoint `eval`, `inter`, `to_newton` |
@@ -31,6 +31,10 @@ p = exp(std::move(p), 100);       // reuse p's storage where possible
 | `transform.hpp` | Taylor shift, Borel transforms, correlations, prefix sum |
 | `powmod.hpp` | Powers modulo a polynomial or x^m - 1 |
 | `compose.hpp` | Composition |
+
+The `series/` directory groups finite power-series operations, and `sparse/` groups
+their sparse counterparts. The root holds representation, polynomial arithmetic,
+evaluation, recurrence and transformation algorithms.
 
 `../poly.hpp` includes all finite-polynomial algorithms. Include `div.hpp` when
 using polynomial `/` or `%`. Helpers for Euclidean algorithms and series inversion
@@ -73,14 +77,18 @@ auto e = exp(fps<mint>(polyn({0, 1}))); // coefficients of e^x
 ```
 
 Addition, subtraction, multiplication, division, derivative, integral, logarithm
-and exponential are lazy. Modular multiplication, inverse, logarithm and exponential use
+and exponential are lazy. `pow(p, k)` supports nonnegative integer powers, including
+leading zeros and zero generators. It discovers only as many leading coefficients
+as the requested output needs; exponent zero never evaluates the input. Power
+uses `p q' = k p' q`, retaining the product strategy for known polynomial inputs.
+ Modular multiplication, inverse, logarithm and exponential use
 relaxed block convolution, taking O(n log² n) arithmetic work through coefficient
 n. They retain O(n) coefficients per expression node. Small blocks and non-modint
 products use quadratic multiplication. FPS constructed from a polynomial remember
 that their input is fully known. Products with at most 16 nonzero positive-degree
 terms use a sparse recurrence. Other known inputs use semi-relaxed convolution,
 caching their FFT prefixes and computing only the needed middle products.
-The same path is used by `inv`, `log`, and `exp` when their input is known. Two
+The same path is used by `inv`, `log`, `exp`, and `pow` when their input is known. Two
 generator-backed inputs still use fully relaxed multiplication. Neither convolution
 path reads unknown coefficients ahead.
 Known polynomial caches stay immutable; queries beyond their degree return zero.
@@ -112,7 +120,7 @@ x^-1 coefficient because its antiderivative needs a logarithmic term.
 ## Verification
 
 ```sh
-oj-verify run -j 1 verify/poly/*.test.cpp
+oj-verify run -j 1 $(rg --files verify/poly -g '*.test.cpp')
 oj-verify run -j 1 verify/fps/*.test.cpp
 g++ -std=c++23 -O2 -I. tests/poly.cpp -o /tmp/poly-properties
 /tmp/poly-properties
@@ -120,9 +128,12 @@ g++ -std=c++23 -O2 -I. tests/fps.cpp -o /tmp/fps-properties
 /tmp/fps-properties
 g++ -std=c++23 -O2 -I. tests/poly_sparse.cpp -o /tmp/poly-sparse-properties
 /tmp/poly-sparse-properties
+g++ -std=c++23 -O2 -I. tests/poly_series.cpp -o /tmp/poly-series-properties
+/tmp/poly-series-properties
 ```
 
-This version of `oj-verify` takes files; expand directory globs in the shell.
+This version of `oj-verify` takes files. The `rg` command includes the sparse
+verifiers in `verify/poly/sparse/`. Expand other directory globs in the shell.
 It skips files whose dependencies have already been verified. A fresh checkout
 with an empty timestamp cache forces execution; cached official inputs and
 checkers can be reused. Keep before/after builds in separate directories because
@@ -143,3 +154,18 @@ order, and records wall time, CPU time, and executable hashes. It uses a blockin
 wait so timeout polling does not round short timings up. Timings include
 input/output. Keep correctness validation separate: square roots and randomized
 algorithms may legitimately produce different correct outputs.
+
+## Finite-series algorithms
+
+Dense exponential and square root maintain the result and its reciprocal across
+Newton doublings, using only the necessary middle and low products. The final
+step is truncated to the requested precision and skips the unused reciprocal
+update. Logarithm solves `p*q = p'` in two halves with a half-length inverse.
+Retained transforms belong to unchanged coefficient buffers; reduced product
+coefficients are transformed again before use in another modular product.
+
+Interpolation evaluates the derivative on the existing product tree and uses
+`bulk_invs` for its scalar weights. Its remainder-tree algorithm is unchanged.
+Polynomial division extracts only the leading reversed slice and recovers only
+coefficients below the divisor's degree in the remainder. Recurrence queries also
+truncate their final inverse and product to the requested coefficient.

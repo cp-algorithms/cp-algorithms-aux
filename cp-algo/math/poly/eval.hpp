@@ -26,11 +26,11 @@ namespace cp_algo::math::poly::impl {
         }
     }
     template<typename T>
-    poly_t<T> inter(poly_t<T> const& p, big_vector<poly_t<T>> const& tree, int v, auto l, auto r) {
-        if(r - l == 1) {return *l / p[0];}
+    poly_t<T> inter(big_vector<poly_t<T>> const& tree, int v, auto l, auto r) {
+        if(r - l == 1) {return *l;}
         auto m = l + (r - l) / 2;
-        auto a = inter(p % tree[2 * v], tree, 2 * v, l, m);
-        auto b = inter(p % tree[2 * v + 1], tree, 2 * v + 1, m, r);
+        auto a = inter(tree, 2 * v, l, m);
+        auto b = inter(tree, 2 * v + 1, m, r);
         return std::move(a) * tree[2 * v + 1] + std::move(b) * tree[2 * v];
     }
     template<typename T>
@@ -62,7 +62,11 @@ namespace cp_algo::math {
         if(x.empty()) {return {};}
         big_vector<poly_t<T>> tree(4 * x.size());
         poly::impl::build(tree, 1, begin(x), end(x));
-        return poly::impl::inter(deriv(tree[1]), tree, 1, begin(y), end(y));
+        big_vector<T> values(x.size());
+        poly::impl::eval(deriv(tree[1]), tree, 1, begin(x), end(x), begin(values));
+        auto weights = bulk_invs<T>(values);
+        for(size_t i = 0; i < y.size(); i++) {weights[i] *= y[i];}
+        return poly::impl::inter(tree, 1, begin(weights), end(weights));
     }
     // Convert to the basis 1, (x-p[0]), (x-p[0])(x-p[1]), ... .
     template<typename T>

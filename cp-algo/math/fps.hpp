@@ -188,6 +188,7 @@ namespace cp_algo::math {
         template<typename U> friend fps<U> inv(fps<U>);
         template<typename U> friend fps<U> log(fps<U>);
         template<typename U> friend fps<U> exp(fps<U>);
+        template<typename U> friend fps<U> pow(fps<U>, int64_t);
         template<bool weighted = false, typename F>
         fps with_product(F make) const {
             if(data->mode == state::fixed) {
@@ -289,6 +290,51 @@ namespace cp_algo::math {
                 product.append(pn, res);
                 return res;
             });
+        });
+    }
+    // Nonnegative integer power. Leading zeros are discovered only as needed.
+    template<typename T>
+    fps<T> pow(fps<T> p, int64_t k) {
+        if(k < 0) {throw std::domain_error("FPS power needs a nonnegative exponent");}
+        if(k == 0) {return T(1);}
+        if(k == 1) {return p;}
+        auto unit = [k](fps<T> a) {
+            return a.template with_product<true>([a, k](auto weighted) {
+                return a.with_product([a, k, weighted = std::move(weighted)](auto product) mutable {
+                    return fps<T>([a, k, weighted = std::move(weighted), product = std::move(product),
+                                   ci = T(0), c0 = T(0)](size_t n, auto const&) mutable {
+                        if(n == 0) {
+                            ci = T(1) / a[0];
+                            c0 = bpow(a[0], k);
+                            product.append(a[0], 0);
+                            weighted.append(0, c0);
+                            return c0;
+                        }
+                        // p*(x q') = k*(x p')*q; the unknown endpoint is n*p[0]*q[n].
+                        T an = a[n], pn = T(n) * an;
+                        T res = fps_detail::div_int(
+                            (T(k) * (weighted.pending(n) + pn * c0) - product.pending(n)) * ci, n);
+                        product.append(an, T(n) * res);
+                        weighted.append(pn, res);
+                        return res;
+                    });
+                });
+            });
+        };
+        return fps<T>([p, k, unit, shift = size_t(0), result = std::optional<fps<T>>{}]
+                      (size_t n, auto const&) mutable {
+            if(!result) {
+                // shift*k > n implies a zero coefficient, and avoids overflow/lookahead.
+                while(shift <= n / uint64_t(k) && p[shift] == T(0)) {shift++;}
+                if(shift > n / uint64_t(k)) {return T(0);}
+                if(p.data->mode == fps<T>::state::fixed) {
+                    auto const& c = p.data->cache;
+                    result.emplace(unit(fps<T>(poly_t<T>(big_vector<T>(begin(c) + shift, end(c))))));
+                } else {
+                    result.emplace(unit(fps<T>([p, shift](size_t i, auto const&) {return p[i + shift];})));
+                }
+            }
+            return (*result)[n - shift * uint64_t(k)];
         });
     }
 }

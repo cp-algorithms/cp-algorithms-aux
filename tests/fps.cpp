@@ -55,7 +55,45 @@ template<typename T> void products() {
         }
     }
 }
+template<typename T> void powers() {
+    using P = poly_t<T>;
+    std::mt19937 rng(713);
+    for(int n: {0, 1, 2, 31, 32, 33, 63, 64, 65, 127, 128, 129, 257}) {
+        for(int shift: {0, 1, 7, n}) {
+            typename P::Vector a(n);
+            for(int i = shift; i < n; i++) {a[i] = 1 + rng() % (T::mod() - 1);}
+            for(int64_t k: {0LL, 1LL, 2LL, 7LL, 65LL, 1000000000000000000LL}) {
+                P input(a), want = pow(input, k, n);
+                auto fixed = pow(fps<T>(input), k);
+                size_t allowed = 0, calls = 0;
+                auto generated = fps<T>([&](size_t i, auto const&) {
+                    assert(i == calls++ && i <= allowed);
+                    return i < a.size() ? a[i] : T(0);
+                });
+                auto lazy = pow(generated, k);
+                for(size_t i = 0; i < size_t(n); i++) {
+                    allowed = i;
+                    assert(fixed[i] == want[int(i)] && lazy[i] == want[int(i)]);
+                }
+                assert(fixed.prefix(n) == want && lazy.prefix(n) == want);
+                if(k == 0) {assert(calls == 0);}
+            }
+        }
+    }
+    // Known sparse factors exercise both sides of the product dispatch cutoff.
+    for(int terms: {1, 16, 17}) {
+        typename P::Vector a(401);
+        a[0] = 3;
+        for(int j = 1; j <= terms; j++) {a[j * 19] = j + 7;}
+        assert(pow(fps<T>(P(a)), 123456789).prefix(521) == pow(P(a), 123456789, 521));
+    }
+    bool threw = false;
+    try {pow(fps<T>(T(1)), -1);} catch(std::domain_error const&) {threw = true;}
+    assert(threw);
+}
 int main() {
+    powers<modint<998244353>>();
+    powers<modint<1000000007>>();
     products<modint<998244353>>();
     products<modint<1000000007>>();
     products<long long>();

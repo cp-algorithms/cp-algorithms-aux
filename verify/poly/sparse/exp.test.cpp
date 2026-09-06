@@ -5,7 +5,7 @@
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/poly/sparse.hpp"
+#include "cp-algo/math/poly/sparse/exp.hpp"
 using namespace std;
 using namespace cp_algo::math;
 using base = modint<998244353>;

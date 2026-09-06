@@ -1,8 +1,10 @@
 // @brief Polynomial Root Finding
 #define PROBLEM "https://judge.yosupo.jp/problem/polynomial_root_finding"
+
+#include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/euclid.hpp"
 #include "cp-algo/math/poly/powmod.hpp"
-#include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::math;
@@ -36,10 +38,11 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector f(n+1);
-    copy_n(istream_iterator<base>(cin), n+1, begin(f));
-    polyn res = find_roots(f);
-    cout << res.deg() + 1 << "\n";
-    res.print();
+    for(auto &it: f) {cin >> it;}
+    auto res = find_roots(f);
+    cout << res.size() << "\n";
+    for(auto &it: res) {cout << it << ' ';}
+    cout << "\n";
 }
 
 signed main() {

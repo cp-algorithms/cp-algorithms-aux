@@ -71,11 +71,11 @@ namespace cp_algo::math::fft {
             checkpoint("dft init");
             if(n) {
                 if(partial) {
-                    A.fft(std::min(n, std::size(a)));
-                    B.fft(std::min(n, std::size(a)));
+                    A.fft();
+                    B.fft();
                 } else {
-                    A.template fft<false>(std::min(n, std::size(a)));
-                    B.template fft<false>(std::min(n, std::size(a)));
+                    A.template fft<false>();
+                    B.template fft<false>();
                 }
             }
         }
@@ -187,9 +187,9 @@ namespace cp_algo::math::fft {
             }
             dot(C, D);
             // Normalize during recovery to avoid another pass over the buffers.
-            A.template ifft<true, false>(std::min(k, n));
-            B.template ifft<true, false>(std::min(k, n));
-            C.template ifft<true, false>(std::min(k, n));
+            A.template ifft<true, false>();
+            B.template ifft<true, false>();
+            C.template ifft<true, false>();
             recover_mod<false>(C, res, k);
         }
         void mul_inplace(auto &&B, auto& res, size_t k) {

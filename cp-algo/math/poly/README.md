@@ -132,8 +132,6 @@ g++ -std=c++23 -O2 -I. tests/poly_series.cpp -o /tmp/poly-series-properties
 /tmp/poly-series-properties
 g++ -std=c++23 -O2 -I. tests/power.cpp -o /tmp/power-properties
 /tmp/power-properties
-g++ -std=c++23 -O2 -I. tests/fft_prefix.cpp -o /tmp/fft-prefix-properties
-/tmp/fft-prefix-properties
 ```
 
 This version of `oj-verify` takes files. The `rg` command includes the sparse
@@ -167,17 +165,6 @@ step is truncated to the requested precision and skips the unused reciprocal
 update. Logarithm solves `p*q = p'` in two halves with a half-length inverse.
 Retained transforms belong to unchanged coefficient buffers; reduced product
 coefficients are transformed again before use in another modular product.
-
-The complex FFT accepts a known zero tail on forward transforms and a requested
-coefficient prefix on inverse transforms. The DFT wrapper supplies these bounds
-for short Newton corrections. Prefixes of at most one quarter of the transform
-use pruned butterflies; larger prefixes retain the full kernel. Forward pruning
-still returns every evaluation, so existing spectrum reuse and products work
-unchanged. This is input/output pruning, not a full TFT/ITFT with fewer evaluations.
-
-The usual zero-padded second coefficient half is already packed into imaginary
-components. In particular, balanced power-of-two operands do not leave half the
-complex slots zero. The extra pruning primarily helps short correction products.
 
 Interpolation evaluates the derivative on the existing product tree and uses
 `bulk_invs` for its scalar weights. Its remainder-tree algorithm is unchanged.

@@ -24,6 +24,7 @@ namespace cp_algo::math::fft {
         cvector(size_t n) {
             n = std::max(flen, std::bit_ceil(n));
             r.resize(n / flen);
+            prepare_roots(n / 16);
             checkpoint("cvector create");
         }
 
@@ -64,6 +65,8 @@ namespace cp_algo::math::fft {
                 return eval_point(n - 2) * point(0, 1);
             } else if(n / 4 < pre_evals) {
                 return evalp[n / 4];
+            } else if(n / 4 - pre_evals < extra.size()) {
+                return extra[n / 4 - pre_evals];
             } else {
                 return polar<ftype>(1., std::numbers::pi / (ftype)std::bit_floor(n) * (ftype)eval_arg(n));
             }
@@ -114,10 +117,12 @@ namespace cp_algo::math::fft {
             });
             checkpoint("dot");
         }
-        template<bool partial = true>
+        // normalize=false leaves the inverse-transform scale for the caller.
+        template<bool partial = true, bool normalize = true>
         void ifft() {
             size_t n = size();
             if constexpr (!partial) {
+                prepare_roots(n / 4);
                 point pi(0, 1);
                 exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
                     k *= 4;
@@ -168,11 +173,10 @@ namespace cp_algo::math::fft {
                 }
             }
             checkpoint("ifft");
-            for(size_t k = 0; k < n; k += flen) {
-                if constexpr (partial) {
-                    set(k, get<vpoint>(k) /= vz + ftype(n / flen));
-                } else {
-                    set(k, get<vpoint>(k) /= vz + ftype(n));
+            if constexpr(normalize) {
+                auto scale = vz + ftype(partial ? flen : 1) / ftype(n);
+                for(size_t k = 0; k < n; k += flen) {
+                    set(k, get<vpoint>(k) * scale);
                 }
             }
         }
@@ -213,6 +217,7 @@ namespace cp_algo::math::fft {
                 });
             }
             if constexpr (!partial) {
+                prepare_roots(n / 4);
                 point pi(0, 1);
                 exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
                     k *= 4;
@@ -234,7 +239,21 @@ namespace cp_algo::math::fft {
         static constexpr size_t pre_evals = 1 << 16;
         static const std::array<size_t, pre_evals> eval_args;
         static const std::array<point, pre_evals> evalp;
+    private:
+        static big_vector<point> extra;
+        // Keep the usual table small; cache additional roots for large transforms.
+        static void prepare_roots(size_t n) {
+            if(n <= pre_evals + extra.size()) {return;}
+            size_t old = extra.size();
+            extra.resize(std::bit_ceil(n) - pre_evals);
+            for(size_t i = old; i < extra.size(); i++) {
+                size_t j = 4 * (i + pre_evals);
+                extra[i] = polar<ftype>(1., std::numbers::pi / (ftype)std::bit_floor(j) * (ftype)eval_arg(j));
+            }
+        }
     };
+
+    big_vector<point> cvector::extra;
 
     const std::array<size_t, cvector::pre_evals> cvector::eval_args = []() {
         std::array<size_t, pre_evals> res = {};

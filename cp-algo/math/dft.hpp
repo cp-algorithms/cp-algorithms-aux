@@ -45,7 +45,7 @@ namespace cp_algo::math::fft {
             au = montgomery_mul(au, mul, mod, imod);
             au = au >= base::mod() ? au - base::mod() : au;
             auto ai = to_double(i64x4(au >= base::mod() / 2 ? au - base::mod() : au));
-            auto quo = round(ai / split());
+            auto quo = round(ai * (1.0 / split()));
             return std::pair{ai - quo * split(), quo};
         }
 
@@ -143,11 +143,13 @@ namespace cp_algo::math::fft {
             }
         }
 
-        // Round the three convolutions and undo coefficient twisting.
+        // Round the convolutions and undo twisting, optionally including the inverse-FFT scale.
+        template<bool normalized = true>
         void recover_mod(auto &&C, auto &res, size_t k) {
             size_t check = (k + flen - 1) / flen * flen;
             assert(res.size() >= check);
             size_t n = A.size();
+            auto scale = vz + ftype(flen) / ftype(n);
             auto const splitsplit = base(split() * split()).getr();
             base b2x32 = bpow(base(2), 32);
             base b2x64 = bpow(base(2), 64);
@@ -160,9 +162,13 @@ namespace cp_algo::math::fft {
             u64x4 step4 = u64x4{} + (bpow(ifactor, 4) * b2x32).getr();
             u64x4 stepn = u64x4{} + (bpow(ifactor, n) * b2x32).getr();
             for(size_t i = 0; i < std::min(n, k); i += flen) {
-                auto [Ax, Ay] = A.at(i);
-                auto [Bx, By] = B.at(i);
-                auto [Cx, Cy] = C.at(i);
+                auto get = [&](auto const& x) {
+                    if constexpr(normalized) {return x.at(i);}
+                    else {return x.at(i) * scale;}
+                };
+                auto [Ax, Ay] = get(A);
+                auto [Bx, By] = get(B);
+                auto [Cx, Cy] = get(C);
                 do_recover_iter(i, Ax, Bx, Cx, cur, splitsplit, res);
                 if(i + n < k) {
                     do_recover_iter(i + n, Ay, By, Cy, montgomery_mul(cur, stepn, mod, imod), splitsplit, res);
@@ -180,10 +186,11 @@ namespace cp_algo::math::fft {
                 return;
             }
             dot(C, D);
-            A.ifft();
-            B.ifft();
-            C.ifft();
-            recover_mod(C, res, k);
+            // Normalize during recovery to avoid another pass over the buffers.
+            A.template ifft<true, false>();
+            B.template ifft<true, false>();
+            C.template ifft<true, false>();
+            recover_mod<false>(C, res, k);
         }
         void mul_inplace(auto &&B, auto& res, size_t k) {
             mul(B.A, B.B, res, k);

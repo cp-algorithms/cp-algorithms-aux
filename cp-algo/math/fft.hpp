@@ -37,14 +37,43 @@ namespace cp_algo::math::fft {
         auto n = std::max(flen, std::bit_ceil(
             std::min(k, std::size(a)) + std::min(k, std::size(b)) - 1
         ) / 2);
+        size_t as = std::min(k, std::size(a)), bs = std::min(k, std::size(b));
+        size_t tail = as + bs - 1 - n;
+        // Correct a short wrapped tail instead of doubling the FFT size.
+        if(tail <= 32 && as <= n && bs <= n) {
+            std::array<base, 32> high{};
+            for(size_t i = 0; i < tail; i++) {
+                for(size_t j = n + i - bs + 1; j < as; j++) {
+                    high[i] += a[j] * b[n + i - j];
+                }
+            }
+            auto A = dft<base>(a | std::views::take(k), n / 2);
+            auto B = dft<base>(b | std::views::take(k), n / 2);
+            a.resize((k + flen - 1) / flen * flen);
+            A.mul_inplace(B, a, std::min(k, n));
+            auto wrap = bpow(dft<base>::factor, n);
+            for(size_t i = 0; i < tail; i++) {
+                a[i] += wrap * high[i];
+                if(n + i < k) {a[n + i] = high[i];}
+            }
+            a.resize(k);
+            return;
+        }
         auto A = dft<base>(a | std::views::take(k), n);
-        auto B = dft<base>(b | std::views::take(k), n);
-        a.resize((k + flen - 1) / flen * flen);
-        A.mul_inplace(B, a, k);
+        if(std::data(a) == std::data(b)) {
+            a.resize((k + flen - 1) / flen * flen);
+            A.mul(A, a, k);
+        } else {
+            auto B = dft<base>(b | std::views::take(k), n);
+            a.resize((k + flen - 1) / flen * flen);
+            A.mul_inplace(B, a, k);
+        }
         a.resize(k);
     }
 
     // store mod x^n-k in first half, x^n+k in second half
+    // inverse reconstructs the halves with k = 1/(2 * forward_k).
+    template<bool inverse = false>
     void mod_split(auto &&x, size_t n, auto k) {
         using base = std::decay_t<decltype(k)>;
         dft<base>::init();
@@ -63,21 +92,29 @@ namespace cp_algo::math::fft {
                 x[n + i + 2].getr(),
                 x[n + i + 3].getr()
             };
-            xr = montgomery_mul(xr, cur, dft<base>::mod, dft<base>::imod);
-            xr = xr >= base::mod() ? xr - base::mod() : xr;
+            if constexpr(!inverse) {
+                xr = montgomery_mul(xr, cur, dft<base>::mod, dft<base>::imod);
+                xr = xr >= base::mod() ? xr - base::mod() : xr;
+            }
             auto t = xr;
             xr = xl - t;
             xl += t;
             xl = xl >= base::mod() ? xl - base::mod() : xl;
             xr = xr >= base::mod() ? xr + base::mod() : xr;
+            if constexpr(inverse) {
+                xl = (xl + (xl & 1) * base::mod()) >> 1;
+                xr = montgomery_mul(xr, cur, dft<base>::mod, dft<base>::imod);
+                xr = xr >= base::mod() ? xr - base::mod() : xr;
+            }
             for(size_t k = 0; k < flen; k++) {
                 x[i + k].setr(typename base::UInt(xl[k]));
                 x[n + i + k].setr(typename base::UInt(xr[k]));
             }
         }
-        cp_algo::checkpoint("mod split");
+        cp_algo::checkpoint(inverse ? "mod join" : "mod split");
     }
-    void cyclic_mul(auto &a, auto &&b, size_t k) {
+    // zero_upper skips arithmetic on the known zero padding in the first split.
+    void cyclic_mul(auto &a, auto &&b, size_t k, bool zero_upper = false) {
         assert(std::popcount(k) == 1);
         assert(std::size(a) == std::size(b) && std::size(a) == k);
         using base = std::decay_t<decltype(a[0])>;
@@ -91,8 +128,13 @@ namespace cp_algo::math::fft {
         }
         k /= 2;
         auto factor = bpow(dft<base>::factor, k);
-        mod_split(a, k, factor);
-        mod_split(b, k, factor);
+        if(zero_upper) {
+            std::ranges::copy(std::span(a).first(k), begin(a) + k);
+            std::ranges::copy(std::span(b).first(k), begin(b) + k);
+        } else {
+            mod_split(a, k, factor);
+            mod_split(b, k, factor);
+        }
         auto la = std::span(a).first(k);
         auto lb = std::span(b).first(k);
         auto ra = std::span(a).last(k);
@@ -103,12 +145,7 @@ namespace cp_algo::math::fft {
         A.mul_inplace(B, ra, k);
         base i2 = base(2).inv();
         factor = factor.inv() * i2;
-        for(size_t i = 0; i < k; i++) {
-            auto t = (a[i] + a[i + k]) * i2;
-            a[i + k] = (a[i] - a[i + k]) * factor;
-            a[i] = t;
-        }
-        cp_algo::checkpoint("mod join");
+        mod_split<true>(a, k, factor);
     }
     auto make_copy(auto &&x) {
         return x;
@@ -126,9 +163,10 @@ namespace cp_algo::math::fft {
         if(N > (1 << 20)) {
             N--;
             size_t NN = std::bit_ceil(N);
+            bool zero_upper = std::max(size(a), size(b)) <= NN / 2;
             a.resize(NN);
             b.resize(NN);
-            cyclic_mul(a, b, NN);
+            cyclic_mul(a, b, NN, zero_upper);
             a.resize(N);
         } else {
             mul_truncate(a, b, N - 1);

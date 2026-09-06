@@ -156,16 +156,27 @@ namespace cp_algo::linalg {
         matrix operator *(matrix const& b) const {
             assert(m() == b.n());
             matrix res(n(), b.m());
-            for(size_t i = 0; i < n(); i++) {
-                for(size_t j = 0; j < m(); j++) {
-                    res[i].add_scaled(b[j], row(i)[j]);
+            constexpr size_t block = 32;
+            for(size_t first = 0; first < m(); first += block) {
+                size_t last = std::min(first + block, m());
+                for(size_t i = 0; i < n(); i++) {
+                    for(size_t j = first; j < last; j++) {
+                        res[i].add_scaled(b[j], row(i)[j]);
+                    }
                 }
             }
-            return res.normalize();
+            res.normalize();
+            return res;
         }
 
         vec_t apply(vec_t const& x) const {
-            return (matrix(1, x) * *this)[0];
+            assert(x.size() == n());
+            vec_t res(m());
+            for(size_t i = 0; i < n(); i++) {
+                res.add_scaled(row(i), x[i]);
+            }
+            res.normalize();
+            return res;
         }
 
         matrix pow(uint64_t k) const {
@@ -199,8 +210,24 @@ namespace cp_algo::linalg {
         }
         template<gauss_mode mode = normal>
         matrix& gauss() {
-            for(size_t i = 0; i < n(); i++) {
-                eliminate<mode>(i);
+            constexpr size_t block = 32;
+            for(size_t first = 0; first < n(); first += block) {
+                size_t last = std::min(first + block, n());
+                // Reduce the pivot block before applying it to the other rows.
+                for(size_t i = first; i < last; i++) {
+                    row(i).normalize();
+                    for(size_t j = mode == normal ? i + 1 : first; j < last; j++) {
+                        if(j != i) row(j).reduce_by(row(i));
+                    }
+                }
+                if constexpr(mode == reverse) {
+                    // Later pivots may have changed earlier rows in this block.
+                    for(size_t i = first; i < last; i++) row(i).normalize();
+                }
+                for(size_t j = mode == normal ? last : 0; j < n(); j++) {
+                    if(j >= first && j < last) continue;
+                    for(size_t i = first; i < last; i++) row(j).reduce_by(row(i));
+                }
             }
             return normalize();
         }

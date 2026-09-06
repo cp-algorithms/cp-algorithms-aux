@@ -30,9 +30,9 @@ namespace cp_algo::linalg {
                     if(std::ranges::count(y | std::views::take(n), base(0)) == int(n)) {
                         return polyn(typename polyn::Vector(begin(y) + n, end(y)));
                     } else {
-                        basis_init.push_back(x);
-                        basis.push_back(y);
-                        x = A.apply(x);
+                        basis_init.push_back(std::move(x));
+                        basis.push_back(std::move(y));
+                        x = A.apply(basis_init.back());
                     }
                 }
             };
@@ -61,8 +61,8 @@ namespace cp_algo::linalg {
                 }
                 basis[i].normalize();
             }
-            auto T = matrix(basis_init);
-            auto Tinv = matrix(basis);
+            auto T = matrix(std::move(basis_init));
+            auto Tinv = matrix(std::move(basis));
             std::ignore = Tinv.sort_classify(n);
             for(size_t i = 0; i < n; i++) {
                 Tinv[i] = vec_t(
@@ -78,23 +78,31 @@ namespace cp_algo::linalg {
     template<typename base>
     auto with_frobenius(matrix<base> const& A, auto &&callback) {
         auto [T, Tinv, charps] = frobenius_form<full>(A);
-        big_vector<matrix<base>> blocks;
-        for(auto charp: charps) {
-            matrix<base> block(charp.deg());
+        // Apply each diagonal block to its rows of T without forming S.
+        matrix<base> ST(A.n());
+        size_t start = 0;
+        for(auto const& charp: charps) {
+            size_t d = charp.deg();
             auto xk = callback(charp);
-            for(size_t i = 0; i < block.n(); i++) {
-                std::ranges::copy(xk.a, begin(block[i]));
-                xk = xk.mul_xk(1) % charp;
+            for(size_t i = 0; i < d; i++) {
+                for(size_t j = 0; j < xk.a.size(); j++) {
+                    ST[start + i].add_scaled(T[start + j], xk[j]);
+                }
+                if(i + 1 < d) {
+                    xk = xk.mul_xk(1) % charp;
+                }
             }
-            blocks.push_back(block);
+            start += d;
         }
-        auto S = matrix<base>::block_diagonal(blocks);
-        return Tinv * S * T;
+        return Tinv * ST.normalize();
     }
 
     template<typename base>
     auto frobenius_pow(matrix<base> const& A, uint64_t k) {
         return with_frobenius(A, [k](auto const& charp) {
+            if(charp.deg() == 1) {
+                return math::poly_t<base>(bpow(-charp[0] / charp[1], k));
+            }
             return math::powmod(math::poly_t<base>::xk(1), k, charp);
         });
     }

@@ -36,7 +36,7 @@ namespace cp_algo::linalg {
         auto operator *(base t) const {
             return *this | std::views::transform([t](auto x) {return x * t;});
         }
-        auto operator *=(base t) {
+        vec& operator *=(base t) {
             for(auto &it: *this) {
                 it *= t;
             }
@@ -132,7 +132,10 @@ namespace cp_algo::linalg {
                 for(; i < n; i++) {
                     (*this)[i].add_unsafe(b[i].getr_direct() * scale.getr());
                 }
-                if(++counter == 4) {
+                // Eight canonical products keep the accumulator below 16 * mod^2.
+                // Montgomery residues can be wider, so retain four updates there.
+                size_t period = base::remod() == base::mod() && base::mod() < (1LL << 30) ? 8 : 4;
+                if(++counter == period) {
                     for(auto &it: *this) {
                         it.pseudonormalize();
                     }

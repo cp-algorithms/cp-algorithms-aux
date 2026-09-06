@@ -7,6 +7,28 @@ using namespace cp_algo::math;
 template<int mod> void convolution_boundaries() {
     using T = modint<mod>;
     std::mt19937 rng(42);
+    // In-place small squares and shorter aliased prefixes, including truncation.
+    for(size_t n = 1; n <= 32; n++) {
+        big_vector<T> a(n);
+        for(auto &v: a) {v = rng() % mod;}
+        for(size_t m = 0; m <= n; m++) {
+            big_vector<T> c(n + m);
+            for(size_t i = 0; i < n; i++) {
+                for(size_t j = 0; j < m; j++) {c[i + j] += a[i] * a[j];}
+            }
+            for(size_t k = 0; k <= n + m + 2; k++) {
+                auto x = a, want = c;
+                want.resize(m ? k : 0);
+                fft::mul_truncate(x, std::span(x).first(m), k);
+                assert(x == want);
+                if(m == n) {
+                    x = a;
+                    fft::mul_truncate(x, x, k);
+                    assert(x == want);
+                }
+            }
+        }
+    }
     for(int n: {64, 65, 66, 79, 80, 81, 97, 127, 128, 129, 130, 145, 257, 513}) {
         for(int m: {64, 65, 66, 79, 97, 127, 128, 129, 257}) {
             big_vector<T> a(n), b(m), c(n + m - 1);

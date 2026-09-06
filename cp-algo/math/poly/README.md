@@ -130,6 +130,8 @@ g++ -std=c++23 -O2 -I. tests/poly_sparse.cpp -o /tmp/poly-sparse-properties
 /tmp/poly-sparse-properties
 g++ -std=c++23 -O2 -I. tests/poly_series.cpp -o /tmp/poly-series-properties
 /tmp/poly-series-properties
+g++ -std=c++23 -O2 -I. tests/power.cpp -o /tmp/power-properties
+/tmp/power-properties
 ```
 
 This version of `oj-verify` takes files. The `rg` command includes the sparse
@@ -169,3 +171,24 @@ Interpolation evaluates the derivative on the existing product tree and uses
 Polynomial division extracts only the leading reversed slice and recovers only
 coefficients below the divisor's degree in the remainder. Recurrence queries also
 truncate their final inverse and product to the requested coefficient.
+
+## Powering and squaring
+
+`powmod` and `powmod_circular` preserve the FFT squaring shortcut when the
+operation squares one operand. Small self-products also avoid a temporary
+copy and combine symmetric coefficient pairs. Polynomial modular powers
+remain binary: windowing did not consistently improve their measured consumers.
+
+The dense matrix `pow` method uses three-bit windows, precomputing odd powers
+when the exponent's bit pattern makes this cheaper than binary powering.
+This mechanism is also available explicitly:
+
+```cpp
+auto result = bpow<3>(value, exponent, identity, operation);
+```
+
+The overloads with an explicit identity accept a compile-time window from 1 to 6.
+Ordinary `bpow` remains binary by default; windowing needs extra stored values
+and does not uniformly help inexpensive scalar multiplication. The two-argument
+`bpow(value, exponent)` retains its existing interface and binary algorithm.
+Both algorithms require a nonnegative exponent fitting in 64 bits.

@@ -17,7 +17,9 @@ namespace cp_algo::math {
         assert(k >= 0 && m > 0);
         p = circular_closure(std::move(p), m);
         return bpow(p, k, poly_t<T>(1), [m](auto const& a, auto const& b) {
-            return circular_closure(a * b, m);
+            auto product = a;
+            product *= &a == &b ? product : b;
+            return circular_closure(std::move(product), m);
         });
     }
     // Nonnegative integer power modulo a nonzero polynomial.
@@ -30,7 +32,9 @@ namespace cp_algo::math {
         if(md == poly_t<T>::xk(d) - poly_t<T>(1)) {return powmod_circular(std::move(p), k, d);}
         auto mdri = inv(md.reversed(), d + 1);
         return bpow(p % md, k, poly_t<T>(1), [&](auto const& a, auto const& b) {
-            auto [q, r] = poly::impl::divmod_hint(a * b, md, mdri);
+            auto product = a;
+            product *= &a == &b ? product : b;
+            auto [q, r] = poly::impl::divmod_hint(std::move(product), md, mdri);
             return r;
         });
     }

@@ -5,8 +5,22 @@ CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::fft {
     void mul_slow(auto &a, auto const& b, size_t k) {
         if(!std::empty(a) && std::data(a) == std::data(b)) {
-            auto copy = big_vector<std::decay_t<decltype(b[0])>>(begin(b), end(b));
-            return mul_slow(a, copy, k);
+            using base = std::decay_t<decltype(a[0])>;
+            size_t n = std::min(k, std::size(a)), m = std::min(k, std::size(b));
+            if(!m) {a.clear(); return;}
+            a.resize(k);
+            // Descending output only reads original coefficients at indices <=j.
+            for(size_t j = k; j-- > 0;) {
+                base sum = 0;
+                size_t lo = j >= n ? j + 1 - n : 0, hi = std::min(j + 1, m);
+                for(size_t i = lo; i < hi; i++) {
+                    if(n == m && i > j - i) {break;}
+                    auto term = a[i] * a[j - i];
+                    sum += n == m && i != j - i ? term + term : term;
+                }
+                a[j] = sum;
+            }
+            return;
         }
         if(std::empty(a) || std::empty(b)) {
             a.clear();

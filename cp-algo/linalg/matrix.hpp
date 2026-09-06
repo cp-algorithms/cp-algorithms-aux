@@ -170,7 +170,7 @@ namespace cp_algo::linalg {
 
         matrix pow(uint64_t k) const {
             assert(n() == m());
-            return bpow(*this, k, eye(n()));
+            return bpow<3>(*this, k, eye(n()));
         }
 
         matrix& normalize() {

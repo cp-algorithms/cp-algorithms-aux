@@ -2,8 +2,9 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/product_of_polynomial_sequence"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly/base.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/base.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -25,7 +26,7 @@ void solve() {
         cin >> d;
         D += d;
         polyn::Vector a(d + 1);
-        copy_n(istream_iterator<base>(cin), d + 1, begin(a));
+        for(auto &it: a) {cin >> it;}
         que.insert(polyn(std::move(a)));
     }
     while(que.size() > 1) {

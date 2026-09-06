@@ -3,9 +3,10 @@
 #define CP_ALGO_MAXN 1 << 20
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly/series.hpp"
-#include "cp-algo/math/poly/transform.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/combinatorics.hpp"
+#include "cp-algo/math/poly/base.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -14,19 +15,34 @@ const int mod = 998244353;
 using base = modint<mod>;
 using polyn = poly_t<base>;
 
-// TODO: Use single-convolution approach
 void solve() {
     int n, m, c;
     cin >> n >> m >> c;
     polyn::Vector a(n);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
-    polyn A = polyn(std::move(a));
-    polyn Q = pow(polyn({1, -1}), n, n + 1);
-    A -= ((A * Q).div_xk(n).mod_xk(m) * inv(Q, m)).mod_xk(m).mul_xk(n);
-    A = A.reverse(n + m);
-    polyn kernel = mulx(shift(pow(polyn({1, -1}), c, n), 1), -1);
-    auto R = (A.div_xk(n - 1) * kernel) + (A.mod_xk(n - 1) * kernel).div_xk(n - 1);
-    R.div_xk(1).reverse(m).print(m);
+    for(auto &it: a) {cin >> it;}
+
+    // f(x) = prod_j(x-j) * sum_i (-1)^(n-1-i) f(i) / (i! (n-1-i)! (x-i)).
+    // The sums for consecutive x are one convolution with coefficients 1/j of log(1/(1-x)).
+    auto weighted = polyn::Vector(std::from_range, views::iota(0, n) | views::transform([&](int i) {
+        base v = a[i] * rfact<base>(i) * rfact<base>(n - 1 - i);
+        return (n - 1 - i) & 1 ? -v : v;
+    }));
+    auto denominators = views::iota(c - n + 1, c + m) | views::transform([](int x) {
+        return base(x) == base(0) ? base(1) : base(x);
+    });
+    auto log_segment = bulk_invs<base>(denominators);
+    for(int z: {n - 1 - c, n - 1 - c + mod}) {
+        if(0 <= z && z < ssize(log_segment)) {log_segment[z] = 0;}
+    }
+    auto shifted = polyn(std::move(weighted)) * polyn(log_segment);
+
+    base product = ranges::fold_left(views::iota(0, n), base(1), [c](base p, int i) {return p * base(c - i);});
+    for(int i = 0, x = c; i < m; i++, x = (x + 1) % mod) {
+        cout << (x < n ? a[x] : shifted[n - 1 + i] * product) << ' ';
+        base next = base(x) + 1;
+        product = next == base(n) ? fact<base>(n) : product * next * log_segment[i];
+    }
+    cout << '\n';
 }
 
 signed main() {

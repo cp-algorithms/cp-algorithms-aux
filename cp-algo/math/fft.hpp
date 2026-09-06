@@ -60,7 +60,7 @@ namespace cp_algo::math::fft {
             return;
         }
         auto A = dft<base>(a | std::views::take(k), n);
-        if(std::data(a) == std::data(b)) {
+        if(as == bs && std::data(a) == std::data(b)) {
             a.resize((k + flen - 1) / flen * flen);
             A.mul(A, a, k);
         } else {

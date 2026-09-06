@@ -33,6 +33,20 @@ template<int mod> void convolution_boundaries() {
             fft::mul_truncate(x, x, k);
             assert(x == want);
         }
+        // Sharing the first coefficient does not make a shorter prefix a square.
+        for(size_t m: {size_t(31), size_t(64), size_t(n - 1)}) {
+            m = std::min(m, a.size());
+            big_vector<T> product(a.size() + m - 1);
+            for(size_t i = 0; i < a.size(); i++) {
+                for(size_t j = 0; j < m; j++) {product[i + j] += a[i] * a[j];}
+            }
+            for(size_t k: {size_t(63), size_t(n), product.size(), product.size() + 7}) {
+                auto x = a, want = product;
+                want.resize(k);
+                fft::mul_truncate(x, std::span(x).first(m), k);
+                assert(x == want);
+            }
+        }
     }
 }
 

@@ -2,8 +2,9 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/polynomial_taylor_shift"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly/transform.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/transform.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -16,7 +17,7 @@ void solve() {
     int n, c;
     cin >> n >> c;
     polyn::Vector a(n);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
+    for(auto &it: a) {cin >> it;}
     shift(polyn(std::move(a)), c).print(n);
 }
 signed main() {

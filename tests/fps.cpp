@@ -1,0 +1,103 @@
+#include "cp-algo/math/fps.hpp"
+#include "cp-algo/math/poly.hpp"
+#include <random>
+#include <iostream>
+using namespace cp_algo;
+using namespace cp_algo::math;
+template<typename T> void products() {
+    using P = poly_t<T>;
+    std::mt19937 rng(42);
+    for(int m: {0, 1, 2, 63, 64, 65, 127, 128, 129, 257}) {
+        typename P::Vector a(521), b(m), want(a.size() + b.size());
+        for(auto &x: a) {x = rng() % 11;}
+        for(auto &x: b) {x = rng() % 11;}
+        for(size_t i = 0; i < a.size(); i++) {
+            for(size_t j = 0; j < b.size(); j++) {want[i + j] += a[i] * b[j];}
+        }
+        size_t called = 0, allowed = 0;
+        fps<T> dynamic([&](size_t n, auto const&) {
+            assert(n == called++ && n <= allowed);
+            return n < a.size() ? a[n] : T(0);
+        });
+        fps<T> fixed{P(b)};
+        auto left = fixed * dynamic, right = dynamic * P(b);
+        auto temporary = fps<T>(P(b)) * dynamic;
+        assert(fixed[1000000] == T(0));
+        assert(fixed.prefix(m + 100) == P(b));
+        fixed = fps<T>();
+        for(size_t n = 0; n < want.size() + 10; n++) {
+            allowed = n;
+            T expected = n < want.size() ? want[n] : T(0);
+            assert(left[n] == expected && right[n] == expected && temporary[n] == expected);
+        }
+        assert(called <= want.size() + 10);
+        assert(left.prefix(17) == P(typename P::Vector(want.begin(), want.begin() + 17)));
+        fps<T> dynamic_b([&](size_t n, auto const&) {return n < b.size() ? b[n] : T(0);});
+        auto full = dynamic * dynamic_b;
+        assert(full.prefix(want.size()) == P(want));
+    }
+    // The changing input depends on the preceding output; lookahead would form a cycle.
+    for(bool known: {false, true}) {
+        P kernel({1, 2, 3});
+        fps<T> product;
+        fps<T> input([&](size_t n, auto const&) {return n ? product[n - 1] : T(1);});
+        fps<T> factor = known ? fps<T>(kernel) : fps<T>([kernel](size_t n, auto const&) {
+            return kernel[int(n)];
+        });
+        product = factor * input;
+        typename P::Vector a, expected;
+        for(size_t n = 0; n < 20; n++) {
+            a.push_back(n ? expected.back() : T(1));
+            T c = 0;
+            for(size_t j = 0; j <= std::min(n, size_t(2)); j++) {c += kernel.a[j] * a[n - j];}
+            expected.push_back(c);
+            assert(product[n] == c);
+        }
+    }
+}
+int main() {
+    products<modint<998244353>>();
+    products<modint<1000000007>>();
+    products<long long>();
+    using T = modint<998244353>;
+    using P = poly_t<T>;
+    std::mt19937 rng(7);
+    for(int m: {1, 2, 63, 64, 65, 129, 257}) {
+        P::Vector a(m);
+        for(auto &x: a) {x = rng() % T::mod();}
+        a[0] = 1;
+        for(int kind = 0; kind < 3; kind++) {
+            a[0] = kind == 2 ? 0 : 1;
+            size_t allowed = 0, calls = 0;
+            fps<T> changing([&](size_t n, auto const&) {
+                assert(n == calls++ && n <= allowed);
+                return n < a.size() ? a[n] : T(0);
+            });
+            fps<T> known{P(a)};
+            auto apply = [kind](auto p) {return kind == 0 ? inv(p) : kind == 1 ? log(p) : exp(p);};
+            auto semi = apply(known), full = apply(changing);
+            P expected = kind == 0 ? inv(P(a), 521) : kind == 1 ? log(P(a), 521) : exp(P(a), 521);
+            for(size_t n = 0; n < 521; n++) {
+                allowed = n;
+                assert(semi[n] == expected[int(n)] && full[n] == expected[int(n)]);
+            }
+            assert(calls == 521);
+        }
+    }
+    fps<T> cycle;
+    cycle = fps<T>([&](size_t n, auto const&) {return cycle[n + 1];});
+    for(int attempt = 0; attempt < 2; attempt++) {
+        bool rejected = false;
+        try {(void)cycle[0];} catch(std::logic_error const&) {rejected = true;}
+        assert(rejected);
+    }
+    int attempts = 0;
+    fps<T> retry([&](size_t n, auto const& prev) {
+        if(n == 3 && attempts++ == 0) {throw std::runtime_error("retry");}
+        return prev.empty() ? T(1) : prev.back() + T(1);
+    });
+    bool rejected = false;
+    try {(void)retry[5];} catch(std::runtime_error const&) {rejected = true;}
+    assert(rejected && retry[2] == T(3) && retry[5] == T(6));
+    std::cout << "FPS fixed, dynamic, cached, and causal products passed\n";
+}

@@ -59,6 +59,7 @@ fps<mint> fibonacci([](size_t n, auto const& prev) {
 auto product = fibonacci * fibonacci;
 auto first = product.prefix(100); // finite poly_t<mint>
 auto later = product[10000];      // extend the same caches
+auto filtered = fibonacci * polyn({1, 2, 3}); // one known input
 
 auto e = exp(fps<mint>(polyn({0, 1}))); // coefficients of e^x
 ```
@@ -67,8 +68,14 @@ Addition, subtraction, multiplication, division, derivative, integral, logarithm
 and exponential are lazy. Modular multiplication, inverse, logarithm and exponential use
 relaxed block convolution, taking O(n log² n) arithmetic work through coefficient
 n. They retain O(n) coefficients per expression node. Small blocks and non-modint
-products use quadratic multiplication. Finite-polynomial algorithms remain the
-preferred path when the final precision is known.
+products use quadratic multiplication. FPS constructed from a polynomial remember
+that their input is fully known. Products with such an input use semi-relaxed
+convolution, caching its FFT prefixes and computing only the needed middle products.
+The same path is used by `inv`, `log`, and `exp` when their input is known. Two
+generator-backed inputs still use fully relaxed multiplication. Neither convolution
+path reads unknown coefficients ahead.
+Known polynomial caches stay immutable; queries beyond their degree return zero.
+Finite-polynomial algorithms remain the preferred path when the final precision is known.
 
 Generators receive their previously computed coefficients and must be causal.
 Handles share caches and are not thread-safe. Invalid inverse/log/exp constants
@@ -97,6 +104,8 @@ oj-verify run -j 1 verify/poly/*.test.cpp
 oj-verify run -j 1 verify/fps/*.test.cpp
 g++ -std=c++23 -O2 -I. tests/poly.cpp -o /tmp/poly-properties
 /tmp/poly-properties
+g++ -std=c++23 -O2 -I. tests/fps.cpp -o /tmp/fps-properties
+/tmp/fps-properties
 ```
 
 This version of `oj-verify` takes files; expand directory globs in the shell.

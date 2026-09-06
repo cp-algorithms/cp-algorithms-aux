@@ -1,7 +1,8 @@
 // @brief Division of Polynomials
 #define PROBLEM "https://judge.yosupo.jp/problem/division_of_polynomials"
-#include "cp-algo/math/poly/div.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/div.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -14,8 +15,8 @@ void solve() {
     int n, m;
     cin >> n >> m;
     polyn::Vector a(n), b(m);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
-    copy_n(istream_iterator<base>(cin), m, begin(b));
+    for(auto &it: a) {cin >> it;}
+    for(auto &it: b) {cin >> it;}
     auto [q, r] = divmod(polyn(std::move(a)), polyn(std::move(b)));
     cout << q.deg() + 1 << ' ' << r.deg() + 1 << "\n";
     q.print();

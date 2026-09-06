@@ -4,8 +4,8 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/fft64.hpp"
-//#include "blazingio/blazingio.min.hpp"
 
 using namespace std;
 

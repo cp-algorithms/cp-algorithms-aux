@@ -4,6 +4,7 @@
 #include "poly/div.hpp"
 #include "poly/series.hpp"
 #include "poly/sqrt.hpp"
+#include "poly/sparse.hpp"
 #include "poly/euclid.hpp"
 #include "poly/recurrence.hpp"
 #include "poly/transform.hpp"

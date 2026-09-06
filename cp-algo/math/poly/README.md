@@ -23,6 +23,7 @@ p = exp(std::move(p), 100);       // reuse p's storage where possible
 | `calculus.hpp` | `deriv`, `integr` |
 | `series.hpp` | Truncated `log`, `exp`, `pow` |
 | `sqrt.hpp` | Truncated square root |
+| `sparse.hpp` | `inv_sparse`, `log_sparse`, `exp_sparse`, `pow_sparse`, `sqrt_sparse` |
 | `euclid.hpp` | `gcd`, `inv_mod`, `resultant` |
 | `recurrence.hpp` | `min_rec`, `kth_rec`, intervals of inverse coefficients |
 | `eval.hpp` | Multipoint `eval`, `inter`, `to_newton` |
@@ -45,6 +46,13 @@ local directly rather than returning `p.mod_xk_inplace(n)` by value.
 zero; truncation to zero coefficients returns zero. Polynomial coefficients must
 form a suitable field for division, and calculus requires invertible integer
 denominators. FFT-based multiplication uses the existing modular SIMD backend.
+
+Sparse algorithms accept the same `poly_t<T>` and return a dense truncated result.
+They collect the nonzero input coefficients and use O(nk) recurrences for k nonzero
+terms. Use them for sparse coefficients, even when the degree is large. As with
+finite-polynomial calculus, set `CP_ALGO_MAXN` above the requested precision for
+the cached integer inverses. These tables require a fixed modulus at least as
+large as `CP_ALGO_MAXN`, with the requested precision below the characteristic.
 
 ## Lazy FPS and Laurent series
 
@@ -69,12 +77,16 @@ and exponential are lazy. Modular multiplication, inverse, logarithm and exponen
 relaxed block convolution, taking O(n log² n) arithmetic work through coefficient
 n. They retain O(n) coefficients per expression node. Small blocks and non-modint
 products use quadratic multiplication. FPS constructed from a polynomial remember
-that their input is fully known. Products with such an input use semi-relaxed
-convolution, caching its FFT prefixes and computing only the needed middle products.
+that their input is fully known. Products with at most 16 nonzero positive-degree
+terms use a sparse recurrence. Other known inputs use semi-relaxed convolution,
+caching their FFT prefixes and computing only the needed middle products.
 The same path is used by `inv`, `log`, and `exp` when their input is known. Two
 generator-backed inputs still use fully relaxed multiplication. Neither convolution
 path reads unknown coefficients ahead.
 Known polynomial caches stay immutable; queries beyond their degree return zero.
+Lazy calculus reuses cached integer inverses within `CP_ALGO_MAXN` for fixed
+moduli large enough for the table. It keeps ordinary division for dynamic/small
+moduli and beyond the table so requests can continue growing.
 Finite-polynomial algorithms remain the preferred path when the final precision is known.
 
 Generators receive their previously computed coefficients and must be causal.
@@ -106,6 +118,8 @@ g++ -std=c++23 -O2 -I. tests/poly.cpp -o /tmp/poly-properties
 /tmp/poly-properties
 g++ -std=c++23 -O2 -I. tests/fps.cpp -o /tmp/fps-properties
 /tmp/fps-properties
+g++ -std=c++23 -O2 -I. tests/poly_sparse.cpp -o /tmp/poly-sparse-properties
+/tmp/poly-sparse-properties
 ```
 
 This version of `oj-verify` takes files; expand directory globs in the shell.

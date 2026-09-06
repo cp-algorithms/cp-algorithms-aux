@@ -62,6 +62,43 @@ int main() {
     using T = modint<998244353>;
     using P = poly_t<T>;
     std::mt19937 rng(7);
+    for(int terms: {0, 1, 15, 16, 17}) {
+        P::Vector a(401);
+        a[0] = 1;
+        for(int j = 1; j <= terms; j++) {a[j * 19] = rng() % T::mod();}
+        auto input = fps<T>(P(a));
+        auto stream = fps<T>([](size_t n, auto const&) {return T(n + 1);});
+        P::Vector b(521);
+        for(size_t i = 0; i < b.size(); i++) {b[i] = T(i + 1);}
+        assert((input * stream).prefix(521) == (P(a) * P(b)).mod_xk(521));
+        assert(inv(input).prefix(521) == inv(P(a), 521));
+        assert(log(input).prefix(521) == log(P(a), 521));
+        a[0] = 0;
+        assert(exp(fps<T>(P(a))).prefix(521) == exp(P(a), 521));
+    }
+    // The cached divisor table is finite; lazy evaluation may continue beyond it.
+    fps<T> ones([](size_t, auto const&) {return T(1);});
+    auto integral = integr(ones), logarithm = log(fps<T>(P({1, 1})));
+    auto exponential = exp(fps<T>(P({0, 1})));
+    T factorial = 1;
+    for(size_t n = 1; n <= size_t(maxn) + 1; n++) {
+        factorial *= T(n);
+        if(n + 1 >= size_t(maxn)) {
+            assert(integral[n] == T(1) / T(n));
+            assert(logarithm[n] == T(n % 2 ? 1 : -1) / T(n));
+            assert(exponential[n] * factorial == T(1));
+        }
+    }
+    auto integer_integral = integr(fps<long long>([](size_t, auto const&) {return 6LL;}));
+    assert(integer_integral[2] == 3 && integer_integral[4] == 1);
+    auto check_integral = []<typename U>() {
+        auto q = integr(fps<U>([](size_t, auto const&) {return U(1);}));
+        assert(q[2] == U(1) / U(2));
+    };
+    check_integral.template operator()<modint<17>>();
+    for(int mod: {101, 103}) {
+        dynamic_modint<>::with_mod(mod, [&] {check_integral.template operator()<dynamic_modint<>>();});
+    }
     for(int m: {1, 2, 63, 64, 65, 129, 257}) {
         P::Vector a(m);
         for(auto &x: a) {x = rng() % T::mod();}

@@ -1,12 +1,22 @@
 #ifndef CP_ALGO_MATH_FPS_HPP
 #define CP_ALGO_MATH_FPS_HPP
 #include "poly/base.hpp"
+#include "combinatorics.hpp"
 #include <functional>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::fps_detail {
+    template<typename T>
+    T div_int(T a, size_t n) {
+        if constexpr(requires {typename std::integral_constant<int64_t, T::mod()>;}) {
+            if constexpr(T::mod() >= maxn) {
+                if(n < size_t(maxn)) {return a * small_inv<T>(n);}
+            }
+        }
+        return a / T(n);
+    }
     // Tile pairs of positive indices by the highest power of two in their minimum.
     // A completed block contributes only to future coefficients: O(n log^2 n) in total.
     template<typename T>
@@ -42,6 +52,40 @@ namespace cp_algo::math::fps_detail {
                 add(a, b);
                 if(start != len) {add(b, a);}
             }
+            return res;
+        }
+    };
+    // A known sparse factor contributes only at its nonzero positive degrees.
+    template<typename T, bool weighted = false>
+    struct sparse_product {
+        static constexpr size_t limit = magic / 4;
+        std::vector<std::pair<size_t, T>> a;
+        big_vector<T> b;
+        size_t next = size_t(-1);
+        T sum = T(0), a0 = T(0);
+        explicit sparse_product(std::span<T const> p) {
+            for(size_t j = 1; j < p.size(); j++) {
+                if(p[j] != T(0)) {a.emplace_back(j, weighted ? T(j) * p[j] : p[j]);}
+                if(a.size() > limit) {break;}
+            }
+        }
+        T pending(size_t n) {
+            if(next != n) {
+                next = n;
+                sum = T(0);
+                for(auto [j, x]: a) {
+                    if(j >= n) {break;}
+                    sum += x * b[n - j];
+                }
+            }
+            return sum;
+        }
+        T append(T an, T bn) {
+            size_t n = b.size();
+            if(!n) {a0 = an;}
+            T res = pending(n) + an * (n ? b[0] : bn);
+            if(n) {res += a0 * bn;}
+            b.push_back(bn);
             return res;
         }
     };
@@ -147,6 +191,8 @@ namespace cp_algo::math {
         template<bool weighted = false, typename F>
         fps with_product(F make) const {
             if(data->mode == state::fixed) {
+                auto sparse = fps_detail::sparse_product<T, weighted>(data->cache);
+                if(sparse.a.size() <= sparse.limit) {return make(std::move(sparse));}
                 return make(fps_detail::semi_relaxed_product<T, weighted>(data->cache));
             }
             return make(fps_detail::relaxed_product<T>{});
@@ -210,7 +256,7 @@ namespace cp_algo::math {
     }
     template<typename T>
     fps<T> integr(fps<T> p) {
-        return fps<T>([p](size_t n, auto const&) {return n ? p[n - 1] / T(n) : T(0);});
+        return fps<T>([p](size_t n, auto const&) {return n ? fps_detail::div_int(p[n - 1], n) : T(0);});
     }
     template<typename T>
     fps<T> log(fps<T> p) {
@@ -224,7 +270,7 @@ namespace cp_algo::math {
                 }
                 T pn = p[n], qn = T(n) * pn - product.pending(n);
                 product.append(pn, qn);
-                return qn / T(n);
+                return fps_detail::div_int(qn, n);
             });
         });
     }
@@ -239,7 +285,7 @@ namespace cp_algo::math {
                     return T(1);
                 }
                 T pn = T(n) * p[n];
-                T res = (product.pending(n) + pn) / T(n);
+                T res = fps_detail::div_int(product.pending(n) + pn, n);
                 product.append(pn, res);
                 return res;
             });

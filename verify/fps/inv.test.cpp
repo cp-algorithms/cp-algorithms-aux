@@ -1,10 +1,10 @@
-// @brief Bell Number
-#define PROBLEM "https://judge.yosupo.jp/problem/bell_number"
+// @brief Lazy FPS: Inv of Power Series
+#define PROBLEM "https://judge.yosupo.jp/problem/inv_of_formal_power_series"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly/series.hpp"
-#include "cp-algo/math/poly/transform.hpp"
 #include <bits/stdc++.h>
+//#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/fps.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -16,7 +16,9 @@ using polyn = poly_t<base>;
 void solve() {
     int n;
     cin >> n;
-    invborel(exp((expx<base>(n+1) - polyn(1)), n+1)).print(n+1);
+    polyn::Vector a(n);
+    for(auto &it: a) {cin >> it;}
+    inv(fps<base>(polyn(std::move(a)))).prefix(n).print(n);
 }
 
 signed main() {

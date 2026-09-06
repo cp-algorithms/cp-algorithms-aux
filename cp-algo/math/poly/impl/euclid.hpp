@@ -1,7 +1,8 @@
 #ifndef CP_ALGO_MATH_POLY_IMPL_EUCLID_HPP
 #define CP_ALGO_MATH_POLY_IMPL_EUCLID_HPP
 #include "../../affine.hpp"
-#include "../../fft.hpp"
+#include "../div.hpp"
+#include <optional>
 #include <functional>
 #include <algorithm>
 #include <numeric>
@@ -24,8 +25,9 @@ namespace cp_algo::math::poly::impl {
         if(B.deg() < (int)m) {
             return {};
         }
-        auto [ai, R] = A.divmod(B);
-        std::tie(A, B) = {B, R};
+        auto [ai, R] = divmod(A, B);
+        A = std::move(B);
+        B = std::move(R);
         std::list a = {ai};
         auto T = -linfrac(ai).adj();
 
@@ -49,16 +51,17 @@ namespace cp_algo::math::poly::impl {
         std::list<poly_t> ak;
         big_vector<linfrac<poly_t>> trs;
         while(!B.is_zero()) {
-            auto [a0, R] = A.divmod(B);
-            ak.push_back(a0);
+            auto [a0, R] = divmod(A, B);
             trs.push_back(-linfrac(a0).adj());
-            std::tie(A, B) = {B, R};
+            ak.push_back(std::move(a0));
+            A = std::move(B);
+            B = std::move(R);
 
             auto [a, Tr] = half_gcd(A, B);
             ak.splice(end(ak), a);
-            trs.push_back(Tr);
+            trs.push_back(std::move(Tr));
         }
-        return {ak, std::accumulate(rbegin(trs), rend(trs), linfrac<poly_t>{}, std::multiplies{})};
+        return {std::move(ak), std::accumulate(rbegin(trs), rend(trs), linfrac<poly_t>{}, std::multiplies{})};
     }
 
     // computes product of linfrac on [L, R)
@@ -98,7 +101,7 @@ namespace cp_algo::math::poly::impl {
         if(q.deg() != 0) {
             return std::nullopt;
         }
-        return Tr.b / q[0];
+        return std::move(Tr.b) / q[0];
     }
 }
 #pragma GCC pop_options

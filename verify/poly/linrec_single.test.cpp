@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/kth_term_of_linearly_recurrent_sequence"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/recurrence.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -19,8 +19,8 @@ void solve() {
     copy_n(istream_iterator<base>(cin), d, begin(a));
     copy_n(istream_iterator<base>(cin), d, begin(c));
     polyn Q = polyn(1) - polyn(c).mul_xk_inplace(1);
-    polyn P = (polyn(a) * Q).mod_xk_inplace(d);
-    cout << polyn::kth_rec_inplace(P, Q, k) << endl;
+    polyn P = (polyn(std::move(a)) * Q).mod_xk_inplace(d);
+    cout << kth_rec(std::move(P), std::move(Q), k) << endl;
 }
 
 signed main() {

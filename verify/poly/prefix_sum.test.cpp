@@ -5,7 +5,7 @@
 #define CP_ALGO_MAXN ((1 << 19) + 1)
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/transform.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -19,7 +19,7 @@ void solve() {
     cin >> n;
     polyn::Vector f(n);
     for(auto &x : f) cin >> x;
-    polyn(f).prefix_sum().print(n + 1);
+    prefix_sum(polyn(std::move(f))).print(n + 1);
 
 }
 

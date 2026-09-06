@@ -1,0 +1,86 @@
+#ifndef CP_ALGO_MATH_POLY_COMPOSE_HPP
+#define CP_ALGO_MATH_POLY_COMPOSE_HPP
+#include "series.hpp"
+#include "transform.hpp"
+CP_ALGO_SIMD_PRAGMA_PUSH
+namespace cp_algo::math {
+    // compute A(B(x)) mod x^n in O(n^2)
+    template<typename T>
+    poly_t<T> compose(poly_t<T> const& A, poly_t<T> const& B, int n) {
+        if(n <= 0) {return {};}
+        int q = (int)std::sqrt(n);
+        big_vector<poly_t<T>> Bk(q);
+        auto Bq = pow(B, q, n);
+        Bk[0] = poly_t<T>(T(1));
+        for(int i = 1; i < q; i++) {
+            Bk[i] = (Bk[i - 1] * B).mod_xk(n);
+        }
+        poly_t<T> Bqk(1);
+        poly_t<T> ans;
+        for(int i = 0; i <= A.deg() / q; i++) {
+            poly_t<T> cur;
+            for(int j = 0; j < q; j++) {
+                cur += Bk[j] * A[i * q + j];
+            }
+            ans += (Bqk * cur).mod_xk(n);
+            Bqk = (Bqk * Bq).mod_xk(n);
+        }
+        return ans;
+    }
+
+    // compute A(B(x)) mod x^n in O(sqrt(pqn log^3 n))
+    // preferrable when p = deg A and q = deg B
+    // are much less than n
+    template<typename T>
+    poly_t<T> compose_large(poly_t<T> A, poly_t<T> B, int n) {
+        if(n <= 0) {return {};}
+        if(B[0] != T(0)) {
+            return compose_large(shift(std::move(A), B[0]), B - B[0], n);
+        }
+
+        A.mod_xk_inplace(n);
+        int q = (int)std::sqrt(n);
+        auto [B0, B1] = std::make_pair(B.mod_xk(q), B.div_xk(q));
+
+        B0 = B0.div_xk(1);
+        big_vector<poly_t<T>> pw(A.deg() + 1);
+        auto getpow = [&](int k) -> poly_t<T> const& {
+            return pw[k].is_zero() ? pw[k] = pow(B0, k, n - k) : pw[k];
+        };
+
+        std::function<poly_t<T>(poly_t<T> const&, int, int)> compose_dac = [&getpow, &compose_dac](poly_t<T> const& f, int m, int N) {
+            if(f.deg() <= 0) {
+                return f;
+            }
+            int k = m / 2;
+            auto [f0, f1] = std::make_pair(f.mod_xk(k), f.div_xk(k));
+            auto [A, B] = std::make_pair(compose_dac(f0, k, N), compose_dac(f1, m - k, N - k));
+            return (A + (B.mod_xk(N - k) * getpow(k).mod_xk(N - k)).mul_xk(k)).mod_xk(N);
+        };
+
+        int r = n / q;
+        auto Ar = deriv(A, r);
+        auto AB0 = compose_dac(Ar, Ar.deg() + 1, n);
+
+        auto Bd = deriv(B0.mul_xk(1));
+
+        poly_t<T> ans = T(0);
+
+        big_vector<poly_t<T>> B1p(r + 1);
+        B1p[0] = poly_t<T>(T(1));
+        for(int i = 1; i <= r; i++) {
+            B1p[i] = (B1p[i - 1] * B1.mod_xk(n - i * q)).mod_xk(n - i * q);
+        }
+        while(r >= 0) {
+            ans += (AB0.mod_xk(n - r * q) * rfact<T>(r) * B1p[r]).mul_xk(r * q).mod_xk(n);
+            r--;
+            if(r >= 0) {
+                AB0 = (integr(AB0 * Bd) + A[r] * fact<T>(r)).mod_xk(n);
+            }
+        }
+
+        return ans;
+    }
+}
+#pragma GCC pop_options
+#endif // CP_ALGO_MATH_POLY_COMPOSE_HPP

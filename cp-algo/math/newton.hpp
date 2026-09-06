@@ -1,7 +1,7 @@
 #ifndef CP_ALGO_MATH_NEWTON_HPP
 #define CP_ALGO_MATH_NEWTON_HPP
 
-#include "poly.hpp"
+#include "poly/inv.hpp"
 
 namespace cp_algo::math {
     template<typename base>
@@ -12,10 +12,11 @@ namespace cp_algo::math {
             // f -= F(f) / F'(f)
             auto [Ff, Fdf] = FFd(f, 2 * len);
             Ff.div_xk_inplace(len);
-            Ff.mul_truncate(Fdf.inv_inplace(len), len);
+            Ff.mul_truncate(inv(std::move(Fdf), len), len);
             f -= Ff.mul_xk_inplace(len);
         }
-        return f.mod_xk_inplace(n);
+        f.mod_xk_inplace(n);
+        return f;
     }
 }
 

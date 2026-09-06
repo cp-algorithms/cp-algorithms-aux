@@ -1,6 +1,6 @@
 // @brief Polynomial Interpolation
 #define PROBLEM "https://judge.yosupo.jp/problem/polynomial_interpolation"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/eval.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -16,7 +16,7 @@ void solve() {
     polyn::Vector x(n), y(n);
     copy_n(istream_iterator<base>(cin), n, begin(x));
     copy_n(istream_iterator<base>(cin), n, begin(y));
-    polyn::inter(x, y).print(n);
+    inter(x, y).print(n);
 }
 
 signed main() {

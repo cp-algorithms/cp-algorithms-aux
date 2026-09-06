@@ -4,7 +4,7 @@
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
 //#include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/inv.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -18,7 +18,7 @@ void solve() {
     cin >> n;
     polyn::Vector a(n);
     for(auto &it: a) {cin >> it;}
-    polyn(a).inv_inplace(n).print(n);
+    inv(polyn(std::move(a)), n).print(n);
 }
 
 signed main() {

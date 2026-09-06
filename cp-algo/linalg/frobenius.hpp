@@ -1,6 +1,6 @@
 #ifndef CP_ALGO_LINALG_FROBENIUS_HPP
 #define CP_ALGO_LINALG_FROBENIUS_HPP
-#include "../math/poly.hpp"
+#include "../math/poly/powmod.hpp"
 #include "matrix.hpp"
 #include <algorithm>
 #include <vector>
@@ -95,7 +95,7 @@ namespace cp_algo::linalg {
     template<typename base>
     auto frobenius_pow(matrix<base> const& A, uint64_t k) {
         return with_frobenius(A, [k](auto const& charp) {
-            return math::poly_t<base>::xk(1).powmod(k, charp);
+            return math::powmod(math::poly_t<base>::xk(1), k, charp);
         });
     }
 };

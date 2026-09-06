@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/product_of_polynomial_sequence"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/base.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -26,7 +26,7 @@ void solve() {
         D += d;
         polyn::Vector a(d + 1);
         copy_n(istream_iterator<base>(cin), d + 1, begin(a));
-        que.insert(polyn(a));
+        que.insert(polyn(std::move(a)));
     }
     while(que.size() > 1) {
         auto A = *begin(que);

@@ -1,0 +1,78 @@
+#ifndef CP_ALGO_MATH_POLY_EVAL_HPP
+#define CP_ALGO_MATH_POLY_EVAL_HPP
+#include "div.hpp"
+#include "calculus.hpp"
+CP_ALGO_SIMD_PRAGMA_PUSH
+namespace cp_algo::math::poly::impl {
+    template<typename T>
+    void build(big_vector<poly_t<T>> &tree, int v, auto l, auto r) {
+        if(r - l == 1) {
+            tree[v] = typename poly_t<T>::Vector{-*l, 1};
+        } else {
+            auto m = l + (r - l) / 2;
+            build(tree, 2 * v, l, m);
+            build(tree, 2 * v + 1, m, r);
+            tree[v] = tree[2 * v] * tree[2 * v + 1];
+        }
+    }
+    template<typename T>
+    void eval(poly_t<T> const& p, big_vector<poly_t<T>> const& tree, int v, auto l, auto r, auto out) {
+        if(r - l == 1) {
+            *out = p.eval(*l);
+        } else {
+            auto m = l + (r - l) / 2;
+            eval(p % tree[2 * v], tree, 2 * v, l, m, out);
+            eval(p % tree[2 * v + 1], tree, 2 * v + 1, m, r, out + (m - l));
+        }
+    }
+    template<typename T>
+    poly_t<T> inter(poly_t<T> const& p, big_vector<poly_t<T>> const& tree, int v, auto l, auto r) {
+        if(r - l == 1) {return *l / p[0];}
+        auto m = l + (r - l) / 2;
+        auto a = inter(p % tree[2 * v], tree, 2 * v, l, m);
+        auto b = inter(p % tree[2 * v + 1], tree, 2 * v + 1, m, r);
+        return std::move(a) * tree[2 * v + 1] + std::move(b) * tree[2 * v];
+    }
+    template<typename T>
+    poly_t<T> to_newton(poly_t<T> p, big_vector<poly_t<T>> const& tree, int v, size_t l, size_t r) {
+        if(r - l == 1) {return p;}
+        size_t m = l + (r - l) / 2;
+        auto [q, rem] = divmod(std::move(p), tree[2 * v]);
+        auto a = to_newton(std::move(rem), tree, 2 * v, l, m);
+        auto b = to_newton(std::move(q), tree, 2 * v + 1, m, r);
+        a += b.mul_xk_inplace(m - l);
+        return a;
+    }
+}
+namespace cp_algo::math {
+    // Evaluate at each point, preserving the order and length of x.
+    template<typename T>
+    big_vector<T> eval(poly_t<T> const& p, big_vector<T> const& x) {
+        big_vector<T> res(x.size());
+        if(x.empty() || p.is_zero()) {return res;}
+        big_vector<poly_t<T>> tree(4 * x.size());
+        poly::impl::build(tree, 1, begin(x), end(x));
+        poly::impl::eval(p, tree, 1, begin(x), end(x), begin(res));
+        return res;
+    }
+    // Interpolate at distinct x[i], with values y[i].
+    template<typename T>
+    poly_t<T> inter(big_vector<T> const& x, big_vector<T> const& y) {
+        assert(x.size() == y.size());
+        if(x.empty()) {return {};}
+        big_vector<poly_t<T>> tree(4 * x.size());
+        poly::impl::build(tree, 1, begin(x), end(x));
+        return poly::impl::inter(deriv(tree[1]), tree, 1, begin(y), end(y));
+    }
+    // Convert to the basis 1, (x-p[0]), (x-p[0])(x-p[1]), ... .
+    template<typename T>
+    poly_t<T> to_newton(poly_t<T> f, big_vector<T> const& p) {
+        assert(f.deg() < (int)p.size());
+        if(p.empty() || f.is_zero()) {return f;}
+        big_vector<poly_t<T>> tree(4 * p.size());
+        poly::impl::build(tree, 1, begin(p), end(p));
+        return poly::impl::to_newton(std::move(f), tree, 1, 0, p.size());
+    }
+}
+#pragma GCC pop_options
+#endif // CP_ALGO_MATH_POLY_EVAL_HPP

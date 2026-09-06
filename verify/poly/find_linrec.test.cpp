@@ -5,7 +5,7 @@
 #pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/recurrence.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -20,7 +20,7 @@ void solve() {
     cin >> n;
     polyn::Vector a(n);
     for(auto &it: a) {cin >> it;}
-    auto Q = polyn(a).min_rec(n);
+    auto Q = min_rec(polyn(std::move(a)), n);
     int d = Q.deg();
     cout << d << endl;
     (-Q / Q[d]).reverse().div_xk(1).print(d);

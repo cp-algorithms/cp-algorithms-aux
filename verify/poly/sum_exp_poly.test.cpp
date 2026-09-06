@@ -3,7 +3,8 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #define CP_ALGO_MAXN 1 << 24
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/div.hpp"
+#include "cp-algo/math/combinatorics.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

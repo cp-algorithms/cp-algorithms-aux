@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/conversion_from_monomial_basis_to_newton_basis"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/eval.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -18,7 +18,7 @@ void solve() {
     polyn::Vector a(n), p(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
     copy_n(istream_iterator<base>(cin), n, begin(p));
-    polyn(a).to_newton(p).print(n);
+    to_newton(polyn(std::move(a)), p).print(n);
 }
 
 signed main() {

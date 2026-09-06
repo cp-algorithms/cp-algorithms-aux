@@ -5,7 +5,7 @@
 #pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/euclid.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -21,7 +21,7 @@ void solve() {
     polyn::Vector a(n), b(m);
     for(auto &it: a) {cin >> it;}
     for(auto &it: b) {cin >> it;}
-    auto res = polyn(a).inv_mod(polyn(b));
+    auto res = inv_mod(polyn(std::move(a)), polyn(b));
     if(res) {
         cout << res->deg() + 1 << endl;
         res->print();

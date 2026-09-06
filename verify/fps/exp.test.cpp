@@ -1,9 +1,8 @@
-// @brief Bell Number
-#define PROBLEM "https://judge.yosupo.jp/problem/bell_number"
+// @brief Lazy FPS: Exp of Power Series
+#define PROBLEM "https://judge.yosupo.jp/problem/exp_of_formal_power_series"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly/series.hpp"
-#include "cp-algo/math/poly/transform.hpp"
+#include "cp-algo/math/fps.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -16,7 +15,9 @@ using polyn = poly_t<base>;
 void solve() {
     int n;
     cin >> n;
-    invborel(exp((expx<base>(n+1) - polyn(1)), n+1)).print(n+1);
+    polyn::Vector a(n);
+    copy_n(istream_iterator<base>(cin), n, begin(a));
+    exp(fps<base>(polyn(std::move(a)))).prefix(n).print(n);
 }
 
 signed main() {

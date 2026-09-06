@@ -1,6 +1,6 @@
 // @brief Sqrt of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/sqrt_of_formal_power_series"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/sqrt.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include <bits/stdc++.h>
 
@@ -16,7 +16,7 @@ void solve() {
     cin >> n;
     polyn::Vector a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
-    auto res = polyn(a).sqrt(n);
+    auto res = sqrt(polyn(std::move(a)), n);
     if(res) {
         res->print(n);
     } else {

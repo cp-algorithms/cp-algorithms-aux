@@ -4,7 +4,7 @@
 #pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/chirpz.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -19,7 +19,7 @@ void solve() {
     cin >> n >> a >> r;
     polyn::Vector y(n);
     for(auto &it: y) {cin >> it;}
-    polyn(y).chirpz_inverse(r, n).mulx(base(a).inv()).print(n);
+    mulx(chirpz_inverse(polyn(std::move(y)), r, n), base(a).inv()).print(n);
 }
 
 signed main() {

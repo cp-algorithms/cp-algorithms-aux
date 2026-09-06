@@ -3,7 +3,8 @@
 #define CP_ALGO_MAXN 1 << 20
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/series.hpp"
+#include "cp-algo/math/poly/transform.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -19,12 +20,12 @@ void solve() {
     cin >> n >> m >> c;
     polyn::Vector a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
-    polyn A = polyn(a);
-    polyn Q = polyn({1, -1}).pow(n, n + 1);
-    A -= ((A * Q).div_xk(n).mod_xk(m) * Q.inv(m)).mod_xk(m).mul_xk(n);
+    polyn A = polyn(std::move(a));
+    polyn Q = pow(polyn({1, -1}), n, n + 1);
+    A -= ((A * Q).div_xk(n).mod_xk(m) * inv(Q, m)).mod_xk(m).mul_xk(n);
     A = A.reverse(n + m);
-    polyn shift = polyn({1, -1}).pow(c, n).shift(1).mulx(-1);
-    auto R = (A.div_xk(n - 1) * shift) + (A.mod_xk(n - 1) * shift).div_xk(n - 1);
+    polyn kernel = mulx(shift(pow(polyn({1, -1}), c, n), 1), -1);
+    auto R = (A.div_xk(n - 1) * kernel) + (A.mod_xk(n - 1) * kernel).div_xk(n - 1);
     R.div_xk(1).reverse(m).print(m);
 }
 

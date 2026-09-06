@@ -1,0 +1,218 @@
+#ifndef CP_ALGO_MATH_DFT_HPP
+#define CP_ALGO_MATH_DFT_HPP
+#include "../number_theory/modint.hpp"
+#include "../util/checkpoint.hpp"
+#include "../random/rng.hpp"
+#include "cvector.hpp"
+#include <iostream>
+#include <ranges>
+CP_ALGO_SIMD_PRAGMA_PUSH
+namespace cp_algo::math::fft {
+    // Twist coefficients by a random factor, split near sqrt(mod), and pack pairs of halves.
+    template<modint_type base>
+    struct dft {
+        cvector A, B;
+        static base factor, ifactor;
+        using Int2 = base::Int2;
+        static bool _init;
+        static int split() {
+            static const int splt = int(std::sqrt(base::mod())) + 1;
+            return splt;
+        }
+        static uint32_t mod, imod;
+
+        static void init() {
+            if(!_init) {
+                factor = 1 + random::rng() % (base::mod() - 1);
+                ifactor = base(1) / factor;
+                mod = base::mod();
+                imod = -inv2<uint32_t>(base::mod());
+                _init = true;
+            }
+        }
+
+        static std::pair<vftype, vftype>
+        do_split(auto const& a, size_t idx, u64x4 mul) {
+            if(idx >= std::size(a)) {
+                return std::pair{vftype(), vftype()};
+            }
+            u64x4 au = {
+                idx < std::size(a) ? a[idx].getr() : 0,
+                idx + 1 < std::size(a) ? a[idx + 1].getr() : 0,
+                idx + 2 < std::size(a) ? a[idx + 2].getr() : 0,
+                idx + 3 < std::size(a) ? a[idx + 3].getr() : 0
+            };
+            au = montgomery_mul(au, mul, mod, imod);
+            au = au >= base::mod() ? au - base::mod() : au;
+            auto ai = to_double(i64x4(au >= base::mod() / 2 ? au - base::mod() : au));
+            auto quo = round(ai / split());
+            return std::pair{ai - quo * split(), quo};
+        }
+
+        dft(size_t n): A(n), B(n) {init();}
+        dft(auto const& a, size_t n, bool partial = true): A(n), B(n) {
+            init();
+            base b2x32 = bpow(base(2), 32);
+            u64x4 cur = {
+                (bpow(factor, 1) * b2x32).getr(),
+                (bpow(factor, 2) * b2x32).getr(),
+                (bpow(factor, 3) * b2x32).getr(),
+                (bpow(factor, 4) * b2x32).getr()
+            };
+            u64x4 step4 = u64x4{} + (bpow(factor, 4) * b2x32).getr();
+            u64x4 stepn = u64x4{} + (bpow(factor, n) * b2x32).getr();
+            for(size_t i = 0; i < std::min(n, std::size(a)); i += flen) {
+                auto [rai, qai] = do_split(a, i, cur);
+                auto [rani, qani] = do_split(a, n + i, montgomery_mul(cur, stepn, mod, imod));
+                A.at(i) = vpoint(rai, rani);
+                B.at(i) = vpoint(qai, qani);
+                cur = montgomery_mul(cur, step4, mod, imod);
+            }
+            checkpoint("dft init");
+            if(n) {
+                if(partial) {
+                    A.fft();
+                    B.fft();
+                } else {
+                    A.template fft<false>();
+                    B.template fft<false>();
+                }
+            }
+        }
+        static void do_dot_iter(point rt, vpoint& Cv, vpoint& Dv, vpoint const& Av, vpoint const& Bv, vpoint& AC, vpoint& AD, vpoint& BC, vpoint& BD) {
+            AC += Av * Cv; AD += Av * Dv;
+            BC += Bv * Cv; BD += Bv * Dv;
+            real(Cv) = rotate_right(real(Cv));
+            imag(Cv) = rotate_right(imag(Cv));
+            real(Dv) = rotate_right(real(Dv));
+            imag(Dv) = rotate_right(imag(Dv));
+            auto cx = real(Cv)[0], cy = imag(Cv)[0];
+            auto dx = real(Dv)[0], dy = imag(Dv)[0];
+            real(Cv)[0] = cx * real(rt) - cy * imag(rt);
+            imag(Cv)[0] = cx * imag(rt) + cy * real(rt);
+            real(Dv)[0] = dx * real(rt) - dy * imag(rt);
+            imag(Dv)[0] = dx * imag(rt) + dy * real(rt);
+        }
+
+        // Multiply split evaluations; Cout collects the mixed low/high terms.
+        template<bool overwrite = true, bool partial = true>
+        void dot(auto const& C, auto const& D, auto &Aout, auto &Bout, auto &Cout) const {
+            cvector::exec_on_evals<1>(A.size() / flen, [&](size_t k, point rt) __attribute__((always_inline)) {
+                k *= flen;
+                vpoint AC, AD, BC, BD;
+                AC = AD = BC = BD = vz;
+                auto Cv = C.at(k), Dv = D.at(k);
+                if constexpr(partial) {
+                    auto [Ax, Ay] = A.at(k);
+                    auto [Bx, By] = B.at(k);
+                    for (size_t i = 0; i < flen; i++) {
+                        vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};
+                        do_dot_iter(rt, Cv, Dv, Av, Bv, AC, AD, BC, BD);
+                    }
+                } else {
+                    AC = A.at(k) * Cv;
+                    AD = A.at(k) * Dv;
+                    BC = B.at(k) * Cv;
+                    BD = B.at(k) * Dv;
+                }
+                if constexpr (overwrite) {
+                    Aout.at(k) = AC;
+                    Cout.at(k) = AD + BC;
+                    Bout.at(k) = BD;
+                } else {
+                    Aout.at(k) += AC;
+                    Cout.at(k) += AD + BC;
+                    Bout.at(k) += BD;
+                }
+            });
+            checkpoint("dot");
+        }
+
+        void dot(auto &&C, auto const& D) {
+            dot(C, D, A, B, C);
+        }
+
+        static void do_recover_iter(size_t idx, auto A, auto B, auto C, auto mul, uint64_t splitsplit, auto &res) {
+            auto A0 = lround(A), A1 = lround(C), A2 = lround(B);
+            auto Ai = A0 + A1 * split() + A2 * splitsplit + uint64_t(base::modmod());
+            auto Au = montgomery_reduce(u64x4(Ai), mod, imod);
+            Au = montgomery_mul(Au, mul, mod, imod);
+            Au = Au >= base::mod() ? Au - base::mod() : Au;
+            for(size_t j = 0; j < flen; j++) {
+                res[idx + j].setr(typename base::UInt(Au[j]));
+            }
+        }
+
+        // Round the three convolutions and undo coefficient twisting.
+        void recover_mod(auto &&C, auto &res, size_t k) {
+            size_t check = (k + flen - 1) / flen * flen;
+            assert(res.size() >= check);
+            size_t n = A.size();
+            auto const splitsplit = base(split() * split()).getr();
+            base b2x32 = bpow(base(2), 32);
+            base b2x64 = bpow(base(2), 64);
+            u64x4 cur = {
+                (bpow(ifactor, 2) * b2x64).getr(),
+                (bpow(ifactor, 3) * b2x64).getr(),
+                (bpow(ifactor, 4) * b2x64).getr(),
+                (bpow(ifactor, 5) * b2x64).getr()
+            };
+            u64x4 step4 = u64x4{} + (bpow(ifactor, 4) * b2x32).getr();
+            u64x4 stepn = u64x4{} + (bpow(ifactor, n) * b2x32).getr();
+            for(size_t i = 0; i < std::min(n, k); i += flen) {
+                auto [Ax, Ay] = A.at(i);
+                auto [Bx, By] = B.at(i);
+                auto [Cx, Cy] = C.at(i);
+                do_recover_iter(i, Ax, Bx, Cx, cur, splitsplit, res);
+                if(i + n < k) {
+                    do_recover_iter(i + n, Ay, By, Cy, montgomery_mul(cur, stepn, mod, imod), splitsplit, res);
+                }
+                cur = montgomery_mul(cur, step4, mod, imod);
+            }
+            checkpoint("recover mod");
+        }
+
+        void mul(auto &&C, auto const& D, auto &res, size_t k) {
+            assert(A.size() == C.size());
+            size_t n = A.size();
+            if(!n) {
+                res = {};
+                return;
+            }
+            dot(C, D);
+            A.ifft();
+            B.ifft();
+            C.ifft();
+            recover_mod(C, res, k);
+        }
+        void mul_inplace(auto &&B, auto& res, size_t k) {
+            mul(B.A, B.B, res, k);
+        }
+        void mul(auto const& B, auto& res, size_t k) {
+            mul(cvector(B.A), B.B, res, k);
+        }
+        big_vector<base> operator *= (dft &B) {
+            big_vector<base> res(2 * A.size());
+            mul_inplace(B, res, 2 * A.size());
+            return res;
+        }
+        big_vector<base> operator *= (dft const& B) {
+            big_vector<base> res(2 * A.size());
+            mul(B, res, 2 * A.size());
+            return res;
+        }
+        auto operator * (dft const& B) const {
+            return dft(*this) *= B;
+        }
+
+        point operator [](int i) const {return A.get(i);}
+    };
+    template<modint_type base> base dft<base>::factor = 1;
+    template<modint_type base> base dft<base>::ifactor = 1;
+    template<modint_type base> bool dft<base>::_init = false;
+    template<modint_type base> uint32_t dft<base>::mod = {};
+    template<modint_type base> uint32_t dft<base>::imod = {};
+
+}
+#pragma GCC pop_options
+#endif // CP_ALGO_MATH_DFT_HPP

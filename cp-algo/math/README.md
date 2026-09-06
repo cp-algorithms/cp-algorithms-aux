@@ -1,3 +1,8 @@
+For the current polynomial API, lazy FPS, and Laurent series, see
+[poly/README.md](poly/README.md).
+
+Historical judge timings (not a benchmark of the current implementation):
+
 Verified on https://judge.yosupo.jp:
 - N = 500'000:
   - Convolution, 440ms (https://judge.yosupo.jp/submission/85695)

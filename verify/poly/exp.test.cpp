@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/exp_of_formal_power_series"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/series.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -17,7 +17,7 @@ void solve() {
     cin >> n;
     polyn::Vector a(n);
     copy_n(istream_iterator<base>(cin), n, begin(a));
-    polyn(a).exp_inplace(n).print(n);
+    exp(polyn(std::move(a)), n).print(n);
 }
 
 signed main() {

@@ -2,7 +2,7 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/consecutive_terms_of_linear_recurrent_sequence"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/recurrence.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -19,10 +19,10 @@ void solve() {
     polyn::Vector a(d), c(d);
     copy_n(istream_iterator<base>(cin), d, begin(a));
     copy_n(istream_iterator<base>(cin), d, begin(c));
-    polyn A = polyn(a);
+    polyn A = polyn(std::move(a));
     polyn Q = polyn::xk(0) - polyn(c).mul_xk(1);
     polyn P = (A * Q).mod_xk(d);
-    (P * Q.inv(k - d, M + d)).div_xk(d).print(M);
+    (P * inv(Q, k - d, M + d)).div_xk(d).print(M);
 }
 
 signed main() {

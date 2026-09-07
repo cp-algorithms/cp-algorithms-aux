@@ -56,7 +56,7 @@ template<typename T> void accumulation_boundaries() {
         }
         return P(std::move(c));
     };
-    for(size_t terms: {0, 1, 7, 8, 9, 15, 16, 17, 31}) {
+    for(size_t terms: {0, 1, 5, 6, 7, 8, 9, 15, 16, 17, 31}) {
         typename P::Vector a(terms+1, T::mod()-1);
         a[0] = 1;
         P p(a);

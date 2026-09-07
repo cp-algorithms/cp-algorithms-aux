@@ -43,7 +43,7 @@ namespace cp_algo::math::poly::impl {
         typename poly_t<T>::Vector q(n);
         q[0] = 1;
         if constexpr(T::bits <= 32) {
-            if(T::mod() < (1 << 30) && terms.size() >= 8 && terms.size() <= 16) {
+            if(T::mod() < (1 << 30) && terms.size() >= 6 && terms.size() <= 16) {
                 for(size_t t = 0; t < terms.size(); t++) {weights[t] *= terms[t].second;}
                 for(size_t i = 1; i < n; i++) {
                     uint64_t plain = 0, weighted = 0;

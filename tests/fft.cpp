@@ -126,5 +126,24 @@ int main() {
             assert(a[i] == expected);
         }
     }
+    // The signed recovery lift can exceed mod^2 in magnitude for small primes.
+    // Fix the twist to reproduce a negative lift that the old offset mishandled.
+    using U = modint<65537>;
+    fft::dft<U>::init();
+    auto saved_factor = fft::dft<U>::factor, saved_ifactor = fft::dft<U>::ifactor;
+    fft::dft<U>::factor = U(58071);
+    fft::dft<U>::ifactor = U(58071).inv();
+    size_t n = 1 << 19;
+    big_vector<U> a(n);
+    for(size_t i = 0; i < n; i++) {a[i] = i % 2 ? U(-1) : U(1);}
+    auto b = a;
+    fft::mul(a, b);
+    for(size_t i = 0; i < a.size(); i++) {
+        U expected = i < n ? i + 1 : 2 * n - 1 - i;
+        if(i % 2) {expected = -expected;}
+        assert(a[i] == expected);
+    }
+    fft::dft<U>::factor = saved_factor;
+    fft::dft<U>::ifactor = saved_ifactor;
     std::cout << "FFT and large convolution properties passed\n";
 }

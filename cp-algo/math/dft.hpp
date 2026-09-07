@@ -79,21 +79,6 @@ namespace cp_algo::math::fft {
                 }
             }
         }
-        static void do_dot_iter(point rt, vpoint& Cv, vpoint& Dv, vpoint const& Av, vpoint const& Bv, vpoint& AC, vpoint& AD, vpoint& BC, vpoint& BD) {
-            AC += Av * Cv; AD += Av * Dv;
-            BC += Bv * Cv; BD += Bv * Dv;
-            real(Cv) = rotate_right(real(Cv));
-            imag(Cv) = rotate_right(imag(Cv));
-            real(Dv) = rotate_right(real(Dv));
-            imag(Dv) = rotate_right(imag(Dv));
-            auto cx = real(Cv)[0], cy = imag(Cv)[0];
-            auto dx = real(Dv)[0], dy = imag(Dv)[0];
-            real(Cv)[0] = cx * real(rt) - cy * imag(rt);
-            imag(Cv)[0] = cx * imag(rt) + cy * real(rt);
-            real(Dv)[0] = dx * real(rt) - dy * imag(rt);
-            imag(Dv)[0] = dx * imag(rt) + dy * real(rt);
-        }
-
         // Multiply split evaluations; Cout collects the mixed low/high terms.
         template<bool overwrite = true, bool partial = true>
         void dot(auto const& C, auto const& D, auto &Aout, auto &Bout, auto &Cout) const {
@@ -105,10 +90,24 @@ namespace cp_algo::math::fft {
                 if constexpr(partial) {
                     auto [Ax, Ay] = A.at(k);
                     auto [Bx, By] = B.at(k);
-                    for (size_t i = 0; i < flen; i++) {
+                    // Precompute wrapped coefficients, then select each rotation with SIMD shuffles.
+                    vpoint vrt = {vz + real(rt), vz + imag(rt)};
+                    auto Cr = Cv * vrt, Dr = Dv * vrt;
+                    auto iter = [&]<int i>() __attribute__((always_inline)) {
+                        auto wrap = [&](vftype original, vftype rotated) {
+                            if constexpr(i == 0) {return original;}
+                            else {return __builtin_shufflevector(rotated, original, 4 - i, 5 - i, 6 - i, 7 - i);}
+                        };
+                        vpoint Cw = {wrap(real(Cv), real(Cr)), wrap(imag(Cv), imag(Cr))};
+                        vpoint Dw = {wrap(real(Dv), real(Dr)), wrap(imag(Dv), imag(Dr))};
                         vpoint Av = {vz + Ax[i], vz + Ay[i]}, Bv = {vz + Bx[i], vz + By[i]};
-                        do_dot_iter(rt, Cv, Dv, Av, Bv, AC, AD, BC, BD);
-                    }
+                        AC += Av * Cw; AD += Av * Dw;
+                        BC += Bv * Cw; BD += Bv * Dw;
+                    };
+                    iter.template operator()<0>();
+                    iter.template operator()<1>();
+                    iter.template operator()<2>();
+                    iter.template operator()<3>();
                 } else {
                     AC = A.at(k) * Cv;
                     AD = A.at(k) * Dv;

@@ -176,7 +176,9 @@ truncate their final inverse and product to the requested coefficient.
 
 `powmod` and `powmod_circular` preserve the FFT squaring shortcut when the
 operation squares one operand. Small self-products also avoid a temporary
-copy and combine symmetric coefficient pairs. Polynomial modular powers
+copy and combine symmetric coefficient pairs. Short wrapped-tail products and
+recursive large convolutions also reuse a square's direct transforms and
+modular splits. Polynomial modular powers
 remain binary: windowing did not consistently improve their measured consumers.
 
 The dense matrix `pow` method uses three-bit windows, precomputing odd powers

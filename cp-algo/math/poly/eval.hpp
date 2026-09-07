@@ -17,8 +17,8 @@ namespace cp_algo::math::poly::impl {
     }
     template<typename T>
     void eval(poly_t<T> const& p, big_vector<poly_t<T>> const& tree, int v, auto l, auto r, auto out) {
-        if(r - l == 1) {
-            *out = p.eval(*l);
+        if(r - l <= 32) {
+            for(; l != r; ++l, ++out) {*out = p.eval(*l);}
         } else {
             auto m = l + (r - l) / 2;
             eval(p % tree[2 * v], tree, 2 * v, l, m, out);

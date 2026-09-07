@@ -14,7 +14,8 @@ namespace cp_algo::math {
         if(shift % 2) {return std::nullopt;}
         if(shift) {
             p.div_xk_inplace(shift);
-            auto ans = sqrt(std::move(p), n - shift / 2);
+            // The unit square root is only constrained modulo x^(n-shift).
+            auto ans = sqrt(std::move(p), n - shift);
             if(ans) {ans->mul_xk_inplace(shift / 2);}
             return ans;
         }

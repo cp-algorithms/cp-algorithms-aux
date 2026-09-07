@@ -168,9 +168,17 @@ coefficients are transformed again before use in another modular product.
 
 Interpolation evaluates the derivative on the existing product tree and uses
 `bulk_invs` for its scalar weights. Its remainder-tree algorithm is unchanged.
+Evaluation finishes small subtrees with Horner evaluation. First derivatives
+use direct coefficient scaling, avoiding factorial tables. Geometric
+interpolation builds its product coefficients in linear time from the inverse
+prefix products already used for its weights; it also supports a ratio whose
+order equals the number of interpolation nodes.
 Polynomial division extracts only the leading reversed slice and recovers only
 coefficients below the divisor's degree in the remainder. Recurrence queries also
 truncate their final inverse and product to the requested coefficient.
+After removing a leading factor x^(2s), square root computes only the n-2s
+constrained coefficients of the unit root. Sparse power and square root share
+precomputed term weights in their coefficient recurrence.
 
 ## Powering and squaring
 

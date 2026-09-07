@@ -9,6 +9,13 @@ namespace cp_algo::math {
     poly_t<T> deriv(poly_t<T> p, int k = 1) {
         assert(k >= 0);
         if(k > p.deg()) {return k == 0 ? p : poly_t<T>{};}
+        if(k == 0) {return p;}
+        if(k == 1) {
+            for(int i = 1; i <= p.deg(); i++) {p.a[i - 1] = T(i) * p.a[i];}
+            p.a.pop_back();
+            p.normalize();
+            return p;
+        }
         for(int i = k; i <= p.deg(); i++) {
             p.a[i - k] = fact<T>(i) * rfact<T>(i - k) * p.a[i];
         }

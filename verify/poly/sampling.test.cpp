@@ -34,7 +34,12 @@ void solve() {
     for(int z: {n - 1 - c, n - 1 - c + mod}) {
         if(0 <= z && z < ssize(log_segment)) {log_segment[z] = 0;}
     }
-    auto shifted = polyn(std::move(weighted)) * polyn(log_segment);
+    // Only [n-1,n+m-1) is read; cyclic wrap reaches at most index n-2.
+    auto shifted = log_segment;
+    size_t length = std::max(fft::flen, std::bit_ceil(shifted.size()));
+    shifted.resize(length);
+    weighted.resize(length);
+    fft::cyclic_mul(shifted, weighted, length);
 
     base product = ranges::fold_left(views::iota(0, n), base(1), [c](base p, int i) {return p * base(c - i);});
     for(int i = 0, x = c; i < m; i++, x = (x + 1) % mod) {

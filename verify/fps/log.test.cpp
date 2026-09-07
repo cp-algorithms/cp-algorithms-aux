@@ -2,8 +2,9 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/log_of_formal_power_series"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/fps.hpp"
 #include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/fps.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -16,7 +17,7 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector a(n);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
+    for(auto &x: a) {cin >> x;}
     log(fps<base>(polyn(std::move(a)))).prefix(n).print(n);
 }
 

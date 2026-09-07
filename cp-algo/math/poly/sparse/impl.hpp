@@ -18,12 +18,16 @@ namespace cp_algo::math::poly::impl {
         auto terms = sparse_terms(p, n, shift);
         T a0inv = T(1) / p.a[shift];
         for(auto &[j, a]: terms) {a *= a0inv;}
+        std::vector<T> weights;
+        for(auto [j, a]: terms) {weights.push_back((k + T(1)) * T(j));}
         typename poly_t<T>::Vector q(n);
         q[0] = 1;
         for(size_t i = 1; i < n; i++) {
-            for(auto [j, a]: terms) {
+            T index = T(i);
+            for(size_t t = 0; t < terms.size(); t++) {
+                auto [j, a] = terms[t];
                 if(j > i) {break;}
-                q[i] += a * q[i - j] * ((k + T(1)) * T(j) - T(i));
+                q[i] += a * q[i - j] * (weights[t] - index);
             }
             q[i] *= small_inv<T>(i);
         }

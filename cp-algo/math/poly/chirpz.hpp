@@ -58,7 +58,17 @@ namespace poly::impl {
             znk *= zn;
         }
         p = chirpz(std::move(p), z, n);
-        p *= poly::impl::geometric_product(z, n);
+        // q-binomial coefficients, using distinctness of 1,z,...,z^(n-1).
+        typename poly_t<T>::Vector product(n);
+        T numerator = 1, triangle = 1, power = 1, backwards = bpow(z, n), iz = z.inv();
+        for(int k = 0; k < n; k++) {
+            product[k] = numerator * triangle * pos[k];
+            numerator *= T(1) - backwards;
+            backwards *= iz;
+            triangle *= -power;
+            power *= z;
+        }
+        p.mul_truncate(poly_t<T>(std::move(product)), n);
         p.mod_xk_inplace(n).reverse(n);
         return p;
     }

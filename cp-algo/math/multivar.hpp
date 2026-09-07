@@ -3,6 +3,7 @@
 #include "../util/big_alloc.hpp"
 #include "../number_theory/modint.hpp"
 #include "../math/fft.hpp"
+#include "subset_convolution.hpp"
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::fft {
     template<modint_type base>
@@ -192,6 +193,7 @@ namespace cp_algo::math::fft {
                 data[0] *= b.data[0];
                 return;
             }
+            if(mul_subset(b)) {return;}
             big_vector<dft<base>> A, B;
             size_t M = std::max(flen, std::bit_ceil(2 * N - 1) / 2);
             for(size_t i = 0; i < K; i++) {
@@ -228,6 +230,56 @@ namespace cp_algo::math::fft {
                 }
                 checkpoint("store");
             }
+        }
+    private:
+        bool mul_subset(multivar const& b) {
+            // The SIMD subset product accumulates at most 20 ranks in 64-bit lanes.
+            if constexpr(base::bits > 32 || max_logn < 3 || max_logn > 20) {return false;}
+            if(N < 64 || base::mod() % 2 == 0 || base::mod() >= (1 << 30)) {return false;}
+            size_t bits = 0, threes = 0;
+            for(auto n: dim) {
+                if(n < 1 || n > 3) {return false;}
+                bits += n - 1;
+                threes += n == 3;
+            }
+            if(bits > max_logn || threes > 7) {return false;}
+            if(!threes) {
+                data = subset_convolution<base const>(data, b.data);
+                return true;
+            }
+            // Embed x^3=0 via x=u+v, u^2=v^2=0: x^2 maps to 2uv.
+            // Each ternary axis expands 3 coefficients to 4; cap total expansion at (4/3)^7.
+            size_t M = size_t(1) << bits;
+            big_vector<size_t> index(M);
+            big_vector<uint8_t> degree(M);
+            size_t block = 1, stride = 1;
+            for(auto n: dim) {
+                for(size_t mask = 1; mask < (size_t(1) << (n - 1)); mask++) {
+                    size_t rank = std::popcount(mask);
+                    for(size_t j = 0; j < block; j++) {
+                        index[mask * block + j] = index[j] + rank * stride;
+                        degree[mask * block + j] = degree[j] + (rank == 2);
+                    }
+                }
+                block <<= n - 1;
+                stride *= n;
+            }
+            std::array<base, 8> weight, iweight;
+            weight[0] = iweight[0] = 1;
+            base half = base(2).inv();
+            for(size_t i = 1; i <= threes; i++) {
+                weight[i] = weight[i-1] * base(2);
+                iweight[i] = iweight[i-1] * half;
+            }
+            big_vector<base> f(M), g(M);
+            for(size_t i = 0; i < M; i++) {
+                f[i] = data[index[i]] * weight[degree[i]];
+                g[i] = b.data[index[i]] * weight[degree[i]];
+            }
+            auto h = subset_convolution<base>(f, g);
+            // Equivalent Boolean representatives agree, so repeated stores are harmless.
+            for(size_t i = 0; i < M; i++) {data[index[i]] = h[i] * iweight[degree[i]];}
+            return true;
         }
     };
 }

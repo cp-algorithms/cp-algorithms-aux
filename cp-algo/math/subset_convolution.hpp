@@ -202,8 +202,9 @@ namespace cp_algo::math {
         return out;
     }
 
-    template<typename base>
-    big_vector<base> subset_convolution(std::span<base> f, std::span<base> g) {
+    template<typename value_type>
+    big_vector<std::remove_const_t<value_type>> subset_convolution(std::span<value_type> f, std::span<value_type> g) {
+        using base = std::remove_const_t<value_type>;
         big_vector<base> outpa;
         constexpr size_t lgn = max_logn;
         outpa = on_rank_vectors([](auto &a, auto const& b) {

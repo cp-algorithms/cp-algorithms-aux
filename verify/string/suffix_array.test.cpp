@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cstdint>
 #include <numeric>
 #include <vector>
 
@@ -18,28 +19,34 @@ int main() {
     std::cin >> s;
     std::ranges::reverse(s);
     int n = (int)s.size();
-    cp_algo::big_vector<int> len(2 * n + 1), link(2 * n + 1), pos(2 * n + 1);
+    // Ordinary state i represents the prefix of length i; clones follow state n.
+    struct clone_data { int len, pos; };
+    std::vector<clone_data> clones;
+    clones.reserve(n);
+    cp_algo::big_vector<int> link(2 * n + 1);
+    auto length = [&](int v) { return v <= n ? v : clones[v - n - 1].len; };
+    auto position = [&](int v) { return v <= n ? v : clones[v - n - 1].pos; };
     using transitions = std::array<int, 26>;
-    cp_algo::big_vector<transitions> to(len.size());
+    cp_algo::big_vector<transitions> to;
+    to.reserve(link.size());
+    to.resize(n + 1);
     cp_algo::checkpoint("init");
-    int last = 0, size = 1;
+    int last = 0;
     for(char c: s) {
         int x = c - 'a', p = last;
-        last = size++;
-        len[last] = pos[last] = len[p] + 1;
+        ++last;
         for(; !to[p][x]; p = link[p]) {
             to[p][x] = last;
         }
         int q = to[p][x];
         if(q != last) {
-            if(len[q] == len[p] + 1) {
+            if(length(q) == length(p) + 1) {
                 link[last] = q;
             } else {
-                int clone = size++;
+                int clone = n + 1 + (int)clones.size();
+                clones.push_back({length(p) + 1, position(q)});
                 link[clone] = link[q];
-                pos[clone] = pos[q];
-                to[clone] = to[q];
-                len[clone] = len[p] + 1;
+                to.push_back(to[q]);
                 link[last] = link[q] = clone;
                 for(; to[p][x] == q; p = link[p]) {
                     to[p][x] = clone;
@@ -47,22 +54,23 @@ int main() {
             }
         }
     }
+    int size = n + 1 + (int)clones.size();
+    to = decltype(to){};
     cp_algo::checkpoint("build");
     // Store the suffix-link tree compactly, with each node's children in letter order.
-    struct edge { int child; char letter; };
+    // Child IDs fit in 24 bits; the high byte stores the incoming letter.
     cp_algo::big_vector<int> offset(size + 1);
-    cp_algo::big_vector<edge> edges(size - 1);
+    cp_algo::big_vector<uint32_t> edges(size - 1);
     for(int i = 1; i < size; i++) {
         offset[link[i]]++;
     }
     std::partial_sum(offset.begin(), offset.end(), offset.begin());
     for(int i = 1; i < size; i++) {
         int p = link[i];
-        edges[--offset[p]] = {i, s[pos[i] - len[p] - 1]};
+        edges[--offset[p]] = (uint32_t(s[position(i) - length(p) - 1] - 'a') << 24) | i;
     }
     for(int i = 0; i < size; i++) {
-        std::sort(edges.begin() + offset[i], edges.begin() + offset[i + 1],
-                  [](edge a, edge b) { return a.letter < b.letter; });
+        std::sort(edges.begin() + offset[i], edges.begin() + offset[i + 1]);
     }
     cp_algo::checkpoint("tree");
     std::vector<int> stack{0}, answer;
@@ -70,11 +78,11 @@ int main() {
     while(!stack.empty()) {
         int u = stack.back();
         stack.pop_back();
-        if(u && len[u] == pos[u]) {
-            answer.push_back(n - pos[u]);
+        if(u && u <= n) {
+            answer.push_back(n - u);
         }
         for(int j = offset[u + 1]; j > offset[u];) {
-            stack.push_back(edges[--j].child);
+            stack.push_back(edges[--j] & 0xFFFFFF);
         }
     }
     cp_algo::checkpoint("dfs");

@@ -1,7 +1,8 @@
 #ifndef CP_ALGO_STRUCTURES_EERTREE_HPP
 #define CP_ALGO_STRUCTURES_EERTREE_HPP
 #include "../util/big_alloc.hpp"
-#include <forward_list>
+#include "stack_union.hpp"
+#include <array>
 #include <functional>
 #include <iostream>
 #include <vector>
@@ -13,7 +14,8 @@ namespace cp_algo::structures {
             q += 2;
             s = big_string(q, -1);
             len = par = link = big_vector(q, 0);
-            to.resize(q);
+            to = stack_union<int>((int)q);
+            to.reserve((int)q);
             link[0] = 1;
             len[1] = -1;
         }
@@ -26,6 +28,7 @@ namespace cp_algo::structures {
         }
         
         int get(int v, int c) const {
+            if(v < 2 && c == char(c)) return root_to[v][(unsigned char)c];
             for(int cu: to[v]) {
                 if(char(cu) == c) {
                     return cu >> 8;
@@ -38,14 +41,16 @@ namespace cp_algo::structures {
             c -= 'a';
             s[n++] = c;
             last = get_link(last);
-            if(!get(last, c)) {
-                int u = get(get_link(link[last]), c);
-                link[sz] = u;
-                par[sz] = last;
-                len[sz] = len[last] + 2;
-                to[last].emplace_front((sz++ << 8) | c);
+            int v = get(last, c);
+            if(!v) {
+                v = sz++;
+                link[v] = get(get_link(link[last]), c);
+                par[v] = last;
+                len[v] = len[last] + 2;
+                to.push(last, (v << 8) | c);
+                if(last < 2) root_to[last][(unsigned char)c] = v;
             }
-            last = get(last, c);
+            last = v;
         }
         int sufpal(auto &&adjust) const {
             return adjust(last);
@@ -63,7 +68,9 @@ namespace cp_algo::structures {
             print(std::identity{});
         }
     private:
-        big_vector<big_forward_list<int>> to;
+        // Cache the two hot roots; other transitions stay in compact lists.
+        std::array<std::array<int, 256>, 2> root_to{};
+        stack_union<int> to;
         big_vector<int> len, link, par;
         big_string s;
         int n = 1, sz = 2, last = 0;

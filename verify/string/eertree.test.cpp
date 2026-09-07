@@ -2,6 +2,8 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/eertree"
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
+#include <iostream>
+#include "blazingio/blazingio.min.hpp"
 #include "cp-algo/structures/eertree.hpp"
 #include <bits/stdc++.h>
 
@@ -19,7 +21,7 @@ int yosupo(int v) {
 }
 
 void solve() {
-    cp_algo::big_string s;
+    std::string s;
     cin >> s;
     eertree me(size(s));
     cp_algo::big_vector<int> lasts;
@@ -29,7 +31,8 @@ void solve() {
         lasts.push_back(me.sufpal(yosupo));
     }
     me.print(yosupo);
-    ranges::copy(lasts, ostream_iterator<int>(cout, " "));
+    for(int v: lasts) cout << v << ' ';
+    cout << '\n';
 }
 
 signed main() {

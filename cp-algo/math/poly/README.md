@@ -186,7 +186,10 @@ precomputed term weights in their coefficient recurrence.
 operation squares one operand. Small self-products also avoid a temporary
 copy and combine symmetric coefficient pairs. Short wrapped-tail products and
 recursive large convolutions also reuse a square's direct transforms and
-modular splits. Polynomial modular powers
+modular splits. Large convolutions with a much shorter operand use overlap-add
+and reuse that operand's FFT across blocks. Multivariate inversion uses the
+univariate reciprocal when its target has at most one axis longer than one.
+Polynomial modular powers
 remain binary: windowing did not consistently improve their measured consumers.
 
 The dense matrix `pow` method uses three-bit windows, precomputing odd powers

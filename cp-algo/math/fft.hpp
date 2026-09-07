@@ -177,12 +177,37 @@ namespace cp_algo::math::fft {
     void cyclic_mul(auto &a, auto const& b, size_t k) {
         return cyclic_mul(a, make_copy(b), k);
     }
+    namespace impl {
+        // Overlap-add for a short fixed operand; every block reuses its transform.
+        void mul_unbalanced(auto &a, auto const& b) {
+            using base = std::decay_t<decltype(a[0])>;
+            auto x = std::span<base const>(a), y = std::span<base const>(b);
+            if(x.size() < y.size()) {std::swap(x, y);}
+            constexpr size_t length = 1 << 15;
+            size_t step = length - y.size() + 1;
+            auto fixed = dft<base>(y, length / 2);
+            std::decay_t<decltype(a)> result(x.size() + y.size() - 1);
+            big_vector<base> work(length);
+            for(size_t start = 0; start < x.size(); start += step) {
+                size_t count = std::min(step, x.size() - start);
+                auto block = dft<base>(x.subspan(start, count), length / 2);
+                size_t need = count + y.size() - 1;
+                block.mul(fixed, work, need);
+                for(size_t i = 0; i < need; i++) {result[start + i] += work[i];}
+            }
+            a = std::move(result);
+        }
+    }
     void mul(auto &a, auto &&b) {
         if(std::empty(a) || std::empty(b)) {a.clear(); return;}
         bool square = std::data(a) == std::data(b) && std::size(a) == std::size(b);
         if(!square && std::data(a) == std::data(b)) {
             auto copy = make_copy(b);
             return mul(a, copy);
+        }
+        size_t small = std::min(size(a), size(b)), large = std::max(size(a), size(b));
+        if(small >= magic && small <= 4096 && large >= (1 << 20) && large / small >= 64) {
+            return impl::mul_unbalanced(a, b);
         }
         size_t N = size(a) + size(b);
         if(N > (1 << 20)) {
@@ -199,6 +224,10 @@ namespace cp_algo::math::fft {
     }
     void mul(auto &a, auto const& b) {
         if(std::empty(a) || std::empty(b)) {a.clear(); return;}
+        size_t small = std::min(size(a), size(b)), large = std::max(size(a), size(b));
+        if(small >= magic && small <= 4096 && large >= (1 << 20) && large / small >= 64) {
+            return impl::mul_unbalanced(a, b);
+        }
         size_t N = size(a) + size(b);
         if(N > (1 << 20)) {
             if(std::data(a) == std::data(b) && std::size(a) == std::size(b)) {mul(a, a);}

@@ -42,6 +42,24 @@ namespace cp_algo::math::poly::impl {
         for(auto [j, a]: terms) {weights.push_back((k + T(1)) * T(j));}
         typename poly_t<T>::Vector q(n);
         q[0] = 1;
+        if constexpr(T::bits <= 32) {
+            if(T::mod() < (1 << 30) && terms.size() >= 8 && terms.size() <= 16) {
+                for(size_t t = 0; t < terms.size(); t++) {weights[t] *= terms[t].second;}
+                for(size_t i = 1; i < n; i++) {
+                    uint64_t plain = 0, weighted = 0;
+                    for(size_t t = 0; t < terms.size(); t++) {
+                        auto [j, a] = terms[t];
+                        if(j > i) {break;}
+                        auto v = q[i-j].getr();
+                        plain += uint64_t(a.getr()) * v;
+                        weighted += uint64_t(weights[t].getr()) * v;
+                    }
+                    // Each sum has at most sixteen products below 2^60.
+                    q[i] = (T(weighted % T::mod()) - T(i) * T(plain % T::mod())) * small_inv<T>(i);
+                }
+                return q;
+            }
+        }
         for(size_t i = 1; i < n; i++) {
             T index = T(i);
             for(size_t t = 0; t < terms.size(); t++) {

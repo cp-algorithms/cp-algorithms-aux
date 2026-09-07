@@ -6,7 +6,7 @@ namespace cp_algo::math::poly::impl {
     template<typename T>
     std::array<poly_t<T>, 2> divmod_slow(poly_t<T> p, poly_t<T> const& q) {
         poly_t<T> d;
-        auto qi = q.lead().inv();
+        auto qi = q.lead() == T(1) ? T(1) : q.lead().inv();
         while(p.deg() >= q.deg()) {
             d.a.push_back(p.lead() * qi);
             if(d.lead() != T(0)) {

@@ -90,7 +90,9 @@ namespace cp_algo::math::poly::impl {
         if(R2.is_zero()) {
             return poly(1);
         }
-        auto [a, Tr] = full_gcd<false>(R1, R2);
+        auto [a, Tr] = half_gcd(R1, R2);
+        // The stopping degree bound needs at most one quotient beyond the halfway point.
+        if(!R2.is_zero()) {a.push_back(divmod(R1, R2)[0]);}
         a.emplace_back();
         auto pref = begin(a);
         // An exact finite expansion can end before the degree bound is crossed.

@@ -56,13 +56,20 @@ template<typename T> void accumulation_boundaries() {
         }
         return P(std::move(c));
     };
-    for(size_t terms: {0, 1, 15, 16, 17, 31}) {
+    for(size_t terms: {0, 1, 7, 8, 9, 15, 16, 17, 31}) {
         typename P::Vector a(terms+1, T::mod()-1);
         a[0] = 1;
         P p(a);
         assert(mul(p, inv_sparse(p, n)) == P(1));
         auto l = log_sparse(p, n);
         assert(mul(p, deriv(l)).mod_xk(n-1) == deriv(p).mod_xk(n-1));
+        for(int64_t k: {int64_t(2), int64_t(7), int64_t(1000000000000000000)}) {
+            auto q = pow_sparse(p, k, n);
+            assert(q[0] == T(1));
+            assert(mul(p, deriv(q)).mod_xk(n-1) == (mul(deriv(p), q) * T(k)).mod_xk(n-1));
+        }
+        auto root = sqrt_sparse(p, n);
+        assert(root && mul(*root, *root) == p.mod_xk(n));
         p.a[0] = 0;
         auto e = exp_sparse(p, n);
         assert(e[0] == T(1));

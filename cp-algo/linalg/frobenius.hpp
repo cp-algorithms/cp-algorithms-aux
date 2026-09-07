@@ -104,6 +104,7 @@ namespace cp_algo::linalg {
 
     template<typename base>
     auto frobenius_pow(matrix<base> const& A, uint64_t k) {
+        if(k <= 2) return A.pow(k);
         return with_frobenius(A, [k](auto const& charp) {
             if(charp.deg() == 1) {
                 return math::poly_t<base>(bpow(-charp[0] / charp[1], k));

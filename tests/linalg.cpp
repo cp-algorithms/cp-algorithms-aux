@@ -42,11 +42,18 @@ void check_accumulation() {
 
 template<gauss_mode mode, typename M>
 void check_gauss(M a) {
+    size_t rank = 0;
+    if constexpr(mode == normal) rank = a.rank();
     M b = a;
     for(size_t i = 0; i < a.n(); i++) a.template eliminate<mode>(i);
     a.normalize();
     b.template gauss<mode>();
     assert(a == b);
+    if constexpr(mode == normal) {
+        assert(rank == size_t(std::ranges::count_if(a, [](auto const& row) {
+            return std::ranges::any_of(row, [](auto const& x) {return x != typename M::base(0);});
+        })));
+    }
 }
 
 void check_blocks() {

@@ -266,7 +266,11 @@ namespace cp_algo::linalg {
             if(n() > m()) {
                 return T().rank();
             }
-            return size(matrix(*this).echelonize()[0]);
+            auto A = *this;
+            A.gauss();
+            return std::ranges::count_if(A, [&](auto &row) {
+                return row.find_pivot().first < m();
+            });
         }
 
         base det() const {

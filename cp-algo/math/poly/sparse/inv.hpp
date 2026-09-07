@@ -14,10 +14,7 @@ namespace cp_algo::math {
         typename poly_t<T>::Vector q(n);
         q[0] = a0inv;
         for(size_t i = 1; i < n; i++) {
-            for(auto [j, a]: terms) {
-                if(j > i) {break;}
-                q[i] += a * q[i - j];
-            }
+            q[i] = poly::impl::sparse_dot<T>(terms, q, i);
         }
         return q;
     }

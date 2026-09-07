@@ -6,7 +6,7 @@ namespace cp_algo::math {
     // GCD, without normalizing the leading coefficient.
     template<typename T>
     poly_t<T> gcd(poly_t<T> a, poly_t<T> b) {
-        poly::impl::full_gcd(a, b);
+        poly::impl::full_gcd<false, false>(a, b);
         return a;
     }
     // Inverse modulo q, or nullopt when p and q are not coprime.

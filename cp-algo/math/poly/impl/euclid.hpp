@@ -18,7 +18,7 @@ namespace cp_algo::math::poly::impl {
         std::list<std::decay_t<poly>>,
         linfrac<std::decay_t<poly>>>;
 
-    template<typename poly>
+    template<bool quotients = true, typename poly>
     gcd_result<poly> half_gcd(poly &&A, poly &&B) {
         assert(A.deg() >= B.deg());
         size_t m = size(A.a) / 2;
@@ -28,11 +28,12 @@ namespace cp_algo::math::poly::impl {
         auto [ai, R] = divmod(A, B);
         A = std::move(B);
         B = std::move(R);
-        std::list a = {ai};
+        std::list<std::decay_t<poly>> a;
+        if constexpr(quotients) {a.push_back(ai);}
         auto T = -linfrac(ai).adj();
 
         auto advance = [&](size_t k) {
-            auto [ak, Tk] = half_gcd(A.div_xk(k), B.div_xk(k));
+            auto [ak, Tk] = half_gcd<quotients>(A.div_xk(k), B.div_xk(k));
             a.splice(end(a), ak);
             T.prepend(Tk);
             return Tk;
@@ -45,23 +46,27 @@ namespace cp_algo::math::poly::impl {
         }
         return {std::move(a), std::move(T)};
     }
-    template<typename poly>
+    template<bool extended = true, bool quotients = true, typename poly>
     gcd_result<poly> full_gcd(poly &&A, poly &&B) {
         using poly_t = std::decay_t<poly>;
         std::list<poly_t> ak;
         big_vector<linfrac<poly_t>> trs;
         while(!B.is_zero()) {
             auto [a0, R] = divmod(A, B);
-            trs.push_back(-linfrac(a0).adj());
-            ak.push_back(std::move(a0));
+            if constexpr(extended) {trs.push_back(-linfrac(a0).adj());}
+            if constexpr(quotients) {ak.push_back(std::move(a0));}
             A = std::move(B);
             B = std::move(R);
 
-            auto [a, Tr] = half_gcd(A, B);
+            auto [a, Tr] = half_gcd<quotients>(A, B);
             ak.splice(end(ak), a);
-            trs.push_back(std::move(Tr));
+            if constexpr(extended) {trs.push_back(std::move(Tr));}
         }
-        return {std::move(ak), std::accumulate(rbegin(trs), rend(trs), linfrac<poly_t>{}, std::multiplies{})};
+        if constexpr(extended) {
+            return {std::move(ak), std::accumulate(rbegin(trs), rend(trs), linfrac<poly_t>{}, std::multiplies{})};
+        } else {
+            return {std::move(ak), {}};
+        }
     }
 
     // computes product of linfrac on [L, R)
@@ -85,10 +90,11 @@ namespace cp_algo::math::poly::impl {
         if(R2.is_zero()) {
             return poly(1);
         }
-        auto [a, Tr] = full_gcd(R1, R2);
+        auto [a, Tr] = full_gcd<false>(R1, R2);
         a.emplace_back();
         auto pref = begin(a);
-        for(int delta = (int)d - a.front().deg(); delta >= 0; pref++) {
+        // An exact finite expansion can end before the degree bound is crossed.
+        for(int delta = (int)d - a.front().deg(); next(pref) != end(a) && delta >= 0; pref++) {
             delta -= pref->deg() + next(pref)->deg();
         }
         return convergent(begin(a), pref).a;
@@ -97,7 +103,7 @@ namespace cp_algo::math::poly::impl {
     template<typename poly>
     std::optional<poly> inv_mod(poly p, poly q) {
         assert(!q.is_zero());
-        auto [a, Tr] = full_gcd(q, p);
+        auto [a, Tr] = full_gcd<true, false>(q, p);
         if(q.deg() != 0) {
             return std::nullopt;
         }

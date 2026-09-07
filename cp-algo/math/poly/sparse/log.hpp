@@ -13,10 +13,7 @@ namespace cp_algo::math {
         // Store x * log(p)' first, so the convolution has an unweighted kernel.
         for(size_t i = 1; i < n; i++) {
             q[i] = T(i) * p[int(i)];
-            for(auto [j, a]: terms) {
-                if(j > i) {break;}
-                q[i] -= a * q[i - j];
-            }
+            q[i] -= poly::impl::sparse_dot<T>(terms, q, i);
         }
         for(size_t i = 1; i < n; i++) {q[i] *= small_inv<T>(i);}
         return q;

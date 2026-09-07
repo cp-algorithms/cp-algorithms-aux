@@ -12,6 +12,26 @@ namespace cp_algo::math::poly::impl {
         }
         return terms;
     }
+    template<typename T>
+    T sparse_dot(auto const& terms, typename poly_t<T>::Vector const& q, size_t i) {
+        if constexpr(T::bits <= 32) {
+            // Sixteen products below 2^60 have a sum strictly below 2^64.
+            if(T::mod() < (1 << 30) && terms.size() <= 16) {
+                uint64_t sum = 0;
+                for(auto [j, a]: terms) {
+                    if(j > i) {break;}
+                    sum += uint64_t(a.getr()) * q[i-j].getr();
+                }
+                return T(sum % T::mod());
+            }
+        }
+        T sum = 0;
+        for(auto [j, a]: terms) {
+            if(j > i) {break;}
+            sum += a * q[i-j];
+        }
+        return sum;
+    }
     // For q = (p / p[shift])^k, use p q' = k p' q after removing x^shift.
     template<typename T>
     poly_t<T> pow_sparse_unit(poly_t<T> const& p, T k, size_t n, size_t shift) {

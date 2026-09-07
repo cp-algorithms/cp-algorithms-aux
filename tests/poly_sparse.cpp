@@ -46,8 +46,35 @@ void check() {
         }
     }
 }
+template<typename T> void accumulation_boundaries() {
+    using P = poly_t<T>;
+    constexpr size_t n = 80;
+    auto mul = [](P const& a, P const& b) {
+        typename P::Vector c(n);
+        for(size_t i = 0; i < a.a.size(); i++) {
+            for(size_t j = 0; j < b.a.size() && i+j < n; j++) {c[i+j] += a.a[i] * b.a[j];}
+        }
+        return P(std::move(c));
+    };
+    for(size_t terms: {0, 1, 15, 16, 17, 31}) {
+        typename P::Vector a(terms+1, T::mod()-1);
+        a[0] = 1;
+        P p(a);
+        assert(mul(p, inv_sparse(p, n)) == P(1));
+        auto l = log_sparse(p, n);
+        assert(mul(p, deriv(l)).mod_xk(n-1) == deriv(p).mod_xk(n-1));
+        p.a[0] = 0;
+        auto e = exp_sparse(p, n);
+        assert(e[0] == T(1));
+        assert(mul(deriv(p), e).mod_xk(n-1) == deriv(e));
+    }
+}
 int main() {
     check<modint<998244353>>();
     check<modint<1000000007>>();
+    accumulation_boundaries<modint<998244353>>();
+    accumulation_boundaries<modint<2013265921>>();
+    accumulation_boundaries<modint<998244353LL>>();
+    dynamic_modint<>::with_mod(998244353, [] {accumulation_boundaries<dynamic_modint<>>();});
     std::cout << "Sparse polynomial properties passed\n";
 }

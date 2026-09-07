@@ -1,0 +1,98 @@
+name: Delete PR Preview
+
+on:
+  pull_request_target:
+    types:
+      - closed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-pages
+  cancel-in-progress: false
+
+jobs:
+  delete_pr_preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    outputs:
+      upload_pages: ${{ steps.upload_pages.outcome == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Prepare Pages state branch
+        id: state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git fetch --no-tags --depth=1 origin gh-pages:refs/remotes/origin/gh-pages; then
+            git worktree add -B gh-pages _pages refs/remotes/origin/gh-pages
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No gh-pages branch exists yet; nothing to delete."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Delete PR preview from Pages state
+        id: delete_preview
+        if: steps.state.outputs.exists == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr_number="${{ github.event.pull_request.number }}"
+
+          if [ ! -d "_pages/$pr_number" ]; then
+            echo "Preview directory _pages/$pr_number does not exist."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          rm -rf "_pages/$pr_number"
+          git -C _pages add -A "$pr_number"
+
+          if git -C _pages diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git -C _pages commit -m "Delete preview for #$pr_number"
+            git -C _pages push origin HEAD:gh-pages
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stage Pages artifact
+        if: steps.delete_preview.outputs.changed == 'true'
+        shell: bash
+        run: |
+          rm -rf _pages_artifact
+          mkdir _pages_artifact
+          cp -a _pages/. _pages_artifact/
+          rm -f _pages_artifact/.git
+
+      - name: Upload Pages artifact
+        if: steps.delete_preview.outputs.changed == 'true'
+        id: upload_pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _pages_artifact
+
+  deploy_after_delete:
+    needs: delete_pr_preview
+    if: needs.delete_pr_preview.outputs.upload_pages == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://lib.cp-algorithms.com/
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

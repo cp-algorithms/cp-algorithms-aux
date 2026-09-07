@@ -121,8 +121,14 @@ namespace cp_algo::linalg {
                 assert(Base::size() == b.size());
                 size_t n = size(*this);
                 u64x4 scaler = u64x4() + scale.getr();
-                if (is_aligned(&(*this)[0]) && is_aligned(&b[0])) // verify we're not in SSO
-                for(i -= i % 4; i + 3 < n; i += 4) {
+                bool aligned = is_aligned(&(*this)[0]) && is_aligned(&b[0]);
+                if(aligned) i -= i % 4;
+                bool reduce = ++counter == accumulation_period();
+                if(reduce) {
+                    counter = 0;
+                    for(size_t j = 0; j < i; j++) (*this)[j].pseudonormalize();
+                }
+                if(aligned) for(; i + 3 < n; i += 4) {
                     auto &ai = vector_cast<u64x4>((*this)[i]);
                     auto bi = vector_cast<u64x4 const>(b[i]);
 #ifdef __AVX2__
@@ -130,17 +136,11 @@ namespace cp_algo::linalg {
 #else
                     ai += scaler * bi;
 #endif
+                    if(reduce) ai = shrink(ai);
                 }
                 for(; i < n; i++) {
                     (*this)[i].add_unsafe(b[i].getr_direct() * scale.getr());
-                }
-                // Eight canonical products keep the accumulator below 16 * mod^2.
-                // Montgomery residues can be wider, so retain four updates there.
-                if(++counter == accumulation_period()) {
-                    for(auto &it: *this) {
-                        it.pseudonormalize();
-                    }
-                    counter = 0;
+                    if(reduce) (*this)[i].pseudonormalize();
                 }
             }
         }
@@ -156,6 +156,8 @@ namespace cp_algo::linalg {
     private:
         template<typename, typename> friend struct matrix;
         static size_t accumulation_period() {
+            // Eight canonical products keep the accumulator below 16 * mod^2.
+            // Montgomery residues can be wider, so retain four updates there.
             return base::remod() == base::mod() && base::mod() < (1LL << 30) ? 8 : 4;
         }
         static u64x4 mul(u64x4 a, u64x4 b) {

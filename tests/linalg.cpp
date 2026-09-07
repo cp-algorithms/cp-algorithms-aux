@@ -18,9 +18,12 @@ void check_accumulation() {
         }
         for(size_t t = 0; t < 1000; t++) {
             base scale = t % 2 ? base::mod() - 1 : rng() % base::mod();
-            a.add_scaled(b, scale);
+            auto source = b;
+            size_t first = t % 3 ? 0 : t % (n + 1);
+            std::fill_n(begin(source), first, base(0));
+            a.add_scaled(source, scale, first);
             for(size_t i = 0; i < n; i++) {
-                expected[i] = (expected[i] + __uint128_t(b[i].getr()) * scale.getr()) % base::mod();
+                expected[i] = (expected[i] + __uint128_t(source[i].getr()) * scale.getr()) % base::mod();
             }
             // Mix partial and full normalization without resetting the update sequence.
             if(n && t % 7 == 0) {

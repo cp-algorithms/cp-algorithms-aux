@@ -1,11 +1,11 @@
 // @brief Biconnected Components
 #define PROBLEM "https://judge.yosupo.jp/problem/biconnected_components"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/graph/tarjan.hpp"
-#include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::graph;

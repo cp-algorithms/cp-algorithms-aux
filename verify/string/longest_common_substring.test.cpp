@@ -1,10 +1,10 @@
 // @brief Longest Common Substring
 #define PROBLEM "https://judge.yosupo.jp/problem/longest_common_substring"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include "cp-algo/util/checkpoint.hpp"
-#include <bits/stdc++.h>
 #include "cp-algo/util/big_alloc.hpp"
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"

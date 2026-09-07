@@ -1,12 +1,12 @@
 // @brief Find Linear Recurrence
 #define PROBLEM "https://judge.yosupo.jp/problem/find_linear_recurrence"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 //#include <bits/allocator.h>
 #pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/recurrence.hpp"
-#include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::math;

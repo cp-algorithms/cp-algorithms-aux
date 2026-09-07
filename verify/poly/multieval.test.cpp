@@ -1,8 +1,8 @@
 // @brief Multipoint Evaluation
 #define PROBLEM "https://judge.yosupo.jp/problem/multipoint_evaluation"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/eval.hpp"
 

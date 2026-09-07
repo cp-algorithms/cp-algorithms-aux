@@ -1,9 +1,9 @@
 // @brief Log of Power Series (Sparse)
 #define PROBLEM "https://judge.yosupo.jp/problem/log_of_formal_power_series_sparse"
 #define CP_ALGO_MAXN (1 << 20)
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/sparse/log.hpp"
 using namespace std;

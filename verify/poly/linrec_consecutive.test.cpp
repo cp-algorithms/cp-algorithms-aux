@@ -1,8 +1,8 @@
 // @brief Consecutive Terms of Linear Recursion
 #define PROBLEM "https://judge.yosupo.jp/problem/consecutive_terms_of_linear_recurrent_sequence"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/recurrence.hpp"
 

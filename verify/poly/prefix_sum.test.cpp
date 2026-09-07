@@ -1,9 +1,9 @@
 // @brief Prefix Sum of Polynomial
 #define PROBLEM "https://judge.yosupo.jp/problem/prefix_sum_of_polynomial"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #define CP_ALGO_MAXN ((1 << 19) + 1)
-#include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/transform.hpp"
 

@@ -1,10 +1,10 @@
 // @brief Bernoulli Number
 #define PROBLEM "https://judge.yosupo.jp/problem/bernoulli_number"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include "cp-algo/math/poly/series.hpp"
 #include "cp-algo/math/poly/transform.hpp"
-#include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 
 using namespace std;

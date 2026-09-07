@@ -1,8 +1,8 @@
 // @brief Product of Polynomial Sequence
 #define PROBLEM "https://judge.yosupo.jp/problem/product_of_polynomial_sequence"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/base.hpp"
 

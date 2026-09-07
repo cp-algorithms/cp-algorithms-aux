@@ -1,9 +1,9 @@
 // @brief Shift of Sampling Points of Polynomial
 #define PROBLEM "https://judge.yosupo.jp/problem/shift_of_sampling_points_of_polynomial"
 #define CP_ALGO_MAXN 1 << 20
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/combinatorics.hpp"
 #include "cp-algo/math/poly/base.hpp"
@@ -23,10 +23,11 @@ void solve() {
 
     // f(x) = prod_j(x-j) * sum_i (-1)^(n-1-i) f(i) / (i! (n-1-i)! (x-i)).
     // The sums for consecutive x are one convolution with coefficients 1/j of log(1/(1-x)).
-    auto weighted = polyn::Vector(std::from_range, views::iota(0, n) | views::transform([&](int i) {
+    polyn::Vector weighted(n);
+    for(int i = 0; i < n; i++) {
         base v = a[i] * rfact<base>(i) * rfact<base>(n - 1 - i);
-        return (n - 1 - i) & 1 ? -v : v;
-    }));
+        weighted[i] = (n - 1 - i) & 1 ? -v : v;
+    }
     auto denominators = views::iota(c - n + 1, c + m) | views::transform([](int x) {
         return base(x) == base(0) ? base(1) : base(x);
     });

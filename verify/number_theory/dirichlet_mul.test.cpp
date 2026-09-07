@@ -1,5 +1,6 @@
 // @brief Dirichlet Convolution and Prefix Sums
 #define PROBLEM "https://judge.yosupo.jp/problem/dirichlet_convolution_and_prefix_sums"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
@@ -9,7 +10,6 @@
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/number_theory/dirichlet.hpp"
 #include "cp-algo/util/checkpoint.hpp"
-#include <bits/stdc++.h>
 
 using namespace std;
 using namespace cp_algo::math;

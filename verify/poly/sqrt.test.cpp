@@ -1,5 +1,6 @@
 // @brief Sqrt of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/sqrt_of_formal_power_series"
+#pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
 #include "cp-algo/math/poly/series/sqrt.hpp"

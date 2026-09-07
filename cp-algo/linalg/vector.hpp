@@ -12,6 +12,8 @@
 #include <iterator>
 #include <cassert>
 #include <ranges>
+#include <array>
+#include <cstring>
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::linalg {
     template<typename base, class Alloc = big_alloc<base>>
@@ -134,8 +136,7 @@ namespace cp_algo::linalg {
                 }
                 // Eight canonical products keep the accumulator below 16 * mod^2.
                 // Montgomery residues can be wider, so retain four updates there.
-                size_t period = base::remod() == base::mod() && base::mod() < (1LL << 30) ? 8 : 4;
-                if(++counter == period) {
+                if(++counter == accumulation_period()) {
                     for(auto &it: *this) {
                         it.pseudonormalize();
                     }
@@ -153,6 +154,70 @@ namespace cp_algo::linalg {
             return (*this)[i].normalize();
         }
     private:
+        template<typename, typename> friend struct matrix;
+        static size_t accumulation_period() {
+            return base::remod() == base::mod() && base::mod() < (1LL << 30) ? 8 : 4;
+        }
+        static u64x4 mul(u64x4 a, u64x4 b) {
+#ifdef __AVX2__
+            return u64x4(_mm256_mul_epu32(__m256i(a), __m256i(b)));
+#else
+            return a * b;
+#endif
+        }
+        static u64x4 shrink(u64x4 a) {
+            auto b = a - (u64x4() + base::modmod8());
+            return a < b ? a : b;
+        }
+        // Two source contributions to two distinct rows; sources must be normalized.
+        static void add_scaled_pair(modint_vec &x, modint_vec &y, Base const& p, Base const& q,
+                                    std::array<base, 4> c, size_t first = 0) {
+            if(std::ranges::find(c, base(0)) != c.end()) {
+                x.add_scaled(p, c[0], first); x.add_scaled(q, c[1], first);
+                y.add_scaled(p, c[2], first); y.add_scaled(q, c[3], first);
+                return;
+            }
+            size_t n = x.size();
+            assert(y.size() == n && p.size() == n && q.size() == n && first <= n);
+            size_t period = accumulation_period();
+            auto prepare = [&](modint_vec &a) {
+                // A pair must not cross the accumulator's reduction boundary.
+                if(a.counter + 2 > period) {
+                    for(auto &v: a) v.pseudonormalize();
+                    a.counter = 0;
+                }
+                a.counter += 2;
+                if(a.counter != period) return false;
+                a.counter = 0;
+                for(size_t i = 0; i < first; i++) a[i].pseudonormalize();
+                return true;
+            };
+            bool nx = prepare(x), ny = prepare(y);
+            auto * __restrict__ dx = x.data();
+            auto * __restrict__ dy = y.data();
+            auto const * __restrict__ sp = p.data();
+            auto const * __restrict__ sq = q.data();
+            uint64_t xp = c[0].getr(), xq = c[1].getr(), yp = c[2].getr(), yq = c[3].getr();
+            u64x4 xp4 = u64x4() + xp, xq4 = u64x4() + xq;
+            u64x4 yp4 = u64x4() + yp, yq4 = u64x4() + yq;
+            size_t i = first;
+            for(; i + 4 <= n; i += 4) {
+                u64x4 vx, vy, vp, vq;
+                std::memcpy(&vx, dx + i, sizeof vx); std::memcpy(&vy, dy + i, sizeof vy);
+                std::memcpy(&vp, sp + i, sizeof vp); std::memcpy(&vq, sq + i, sizeof vq);
+                vx += mul(xp4, vp) + mul(xq4, vq);
+                vy += mul(yp4, vp) + mul(yq4, vq);
+                if(nx) vx = shrink(vx);
+                if(ny) vy = shrink(vy);
+                std::memcpy(dx + i, &vx, sizeof vx); std::memcpy(dy + i, &vy, sizeof vy);
+            }
+            for(; i < n; i++) {
+                dx[i].add_unsafe(xp * sp[i].getr_direct() + xq * sq[i].getr_direct());
+                dy[i].add_unsafe(yp * sp[i].getr_direct() + yq * sq[i].getr_direct());
+                if(nx) dx[i].pseudonormalize();
+                if(ny) dy[i].pseudonormalize();
+            }
+        }
         size_t counter = 0;
     };
 }

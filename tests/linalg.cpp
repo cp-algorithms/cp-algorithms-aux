@@ -73,6 +73,48 @@ void check_blocks() {
     }
 }
 
+size_t paired_products = 0, paired_gauss = 0;
+
+template<typename base, typename row = modint_vec<base>>
+void check_pairs() {
+    using M = matrix<base, row>;
+    std::mt19937 rng(623);
+    std::array<size_t, 3> shapes[] = {
+        {0, 0, 0}, {3, 0, 0}, {2, 9, 0}, {1, 7, 9}, {2, 9, 1},
+        {3, 7, 7}, {4, 8, 4}, {5, 9, 5}, {8, 16, 17}, {9, 31, 31},
+        {32, 33, 35}, {33, 65, 129}
+    };
+    for(auto [n, m, k]: shapes) for(int type = 0; type < 3; type++) {
+        M a(n, m), b(m, k), expected(n, b.m());
+        for(auto &x: a.elements()) x = type == 1 ? base(-1) : base(rng());
+        for(auto &x: b.elements()) x = type == 1 ? base(-1) : base(rng());
+        if(type == 2) {
+            for(auto &x: a.elements()) if(rng() % 3) x = 0;
+            for(auto &x: b.elements()) if(rng() % 3) x = 0;
+        }
+        for(size_t i = 0; i < n; i++)
+        for(size_t j = 0; j < m; j++)
+        for(size_t t = 0; t < b.m(); t++) expected[i][t] += a[i][j] * b[j][t];
+        assert(a * b == expected);
+        paired_products++;
+    }
+    for(size_t n: {1, 2, 3, 31, 32, 33, 65})
+    for(size_t m: {0, 1, 3, 5, 33, 66, 101}) {
+        M a(n, m);
+        row source(m);
+        for(auto &x: source) x = rng();
+        for(size_t i = 0; i < n; i++) {
+            for(auto &x: a[i]) x = rng();
+            // Leave different deferred-reduction counts in adjacent rows.
+            for(size_t j = 0; j < i % 13; j++) a[i].add_scaled(source, base(-1));
+            if(i % 3 == 0 && m) a[i].normalize(i % m);
+        }
+        check_gauss<normal>(a);
+        check_gauss<reverse>(a);
+        paired_gauss += 2;
+    }
+}
+
 int main() {
     check_accumulation<modint<998244353LL>>();
     check_accumulation<modint<1000000007LL>>();
@@ -92,5 +134,15 @@ int main() {
     assert(y.size() == 5);
     for(size_t j = 0; j < y.size(); j++) assert(y[j] == 40 + 6 * int64_t(j));
     check_blocks();
+    check_pairs<modint<998244353LL>>();
+    check_pairs<modint<1000000007LL>>();
+    check_pairs<modint<1073741789LL>>();
+    check_pairs<modint<998244353LL>, vec<modint<998244353LL>>>();
+    for(int64_t p: {998244353LL, 1000000007LL, 1073741789LL}) {
+        dynamic_modint<int64_t>::with_mod(p, [] {
+            check_pairs<dynamic_modint<int64_t>>();
+        });
+    }
+    std::cout << paired_products << " paired products and " << paired_gauss << " mixed-state Gaussian comparisons passed\n";
     std::cout << "96 accumulation cases, 936 Gaussian comparisons and rectangular application passed\n";
 }

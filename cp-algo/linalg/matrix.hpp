@@ -159,7 +159,19 @@ namespace cp_algo::linalg {
             constexpr size_t block = 32;
             for(size_t first = 0; first < m(); first += block) {
                 size_t last = std::min(first + block, m());
-                for(size_t i = 0; i < n(); i++) {
+                size_t i = 0;
+                for(; i + 1 < n(); i += 2) {
+                    size_t j = first;
+                    for(; j + 1 < last; j += 2) {
+                        add_scaled_pair(res[i], res[i + 1], b[j], b[j + 1],
+                            {row(i)[j], row(i)[j + 1], row(i + 1)[j], row(i + 1)[j + 1]});
+                    }
+                    if(j < last) {
+                        res[i].add_scaled(b[j], row(i)[j]);
+                        res[i + 1].add_scaled(b[j], row(i + 1)[j]);
+                    }
+                }
+                for(; i < n(); i++) {
                     for(size_t j = first; j < last; j++) {
                         res[i].add_scaled(b[j], row(i)[j]);
                     }
@@ -226,7 +238,14 @@ namespace cp_algo::linalg {
                 }
                 for(size_t j = mode == normal ? last : 0; j < n(); j++) {
                     if(j >= first && j < last) continue;
-                    for(size_t i = first; i < last; i++) row(j).reduce_by(row(i));
+                    bool pair = j + 1 < n() && j + 1 != first;
+                    size_t i = first;
+                    if(pair) for(; i + 1 < last; i += 2) reduce_pair(j, i);
+                    for(; i < last; i++) {
+                        row(j).reduce_by(row(i));
+                        if(pair) row(j + 1).reduce_by(row(i));
+                    }
+                    j += pair;
                 }
             }
             return normalize();
@@ -327,6 +346,37 @@ namespace cp_algo::linalg {
                 }
             }
             return std::array{pivots, free};
+        }
+    private:
+        static void add_scaled_pair(vec_t &x, vec_t &y, vec_t const& p, vec_t const& q,
+                                    std::array<base, 4> c, size_t first = 0) {
+            if constexpr(requires { vec_t::add_scaled_pair(x, y, p, q, c, first); }) {
+                vec_t::add_scaled_pair(x, y, p, q, c, first);
+            } else {
+                x.add_scaled(p, c[0], first); x.add_scaled(q, c[1], first);
+                y.add_scaled(p, c[2], first); y.add_scaled(q, c[3], first);
+            }
+        }
+        // Fuse two sequential reductions, accounting for the first one's effect
+        // on the second pivot before updating either destination row.
+        void reduce_pair(size_t dst, size_t src) {
+            auto &p = row(src), &q = row(src + 1);
+            auto [u, pu] = p.find_pivot();
+            auto [v, qv] = q.find_pivot();
+            if(u == m() || v == m()) {
+                for(size_t j = dst; j < dst + 2; j++) {
+                    row(j).reduce_by(p); row(j).reduce_by(q);
+                }
+                return;
+            }
+            auto scales = [&](vec_t &a) {
+                base s = -a.normalize(u) * pu;
+                base t = -(a.normalize(v) + s * p[v]) * qv;
+                return std::array{s, t};
+            };
+            auto a = scales(row(dst)), b = scales(row(dst + 1));
+            add_scaled_pair(row(dst), row(dst + 1), p, q,
+                            {a[0], a[1], b[0], b[1]}, std::min(u, v));
         }
     };
     template<typename base_t>

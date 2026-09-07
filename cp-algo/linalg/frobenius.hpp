@@ -11,7 +11,6 @@ namespace cp_algo::linalg {
     auto frobenius_form(auto const& A) {
         using matrix = std::decay_t<decltype(A)>;
         using vec_t = matrix::vec_t;
-        using base = typename matrix::base;
         using base = matrix::base;
         using polyn = math::poly_t<base>;
         assert(A.n() == A.m());
@@ -22,7 +21,9 @@ namespace cp_algo::linalg {
             size_t start = size(basis);
             auto generate_block = [&](auto x) {
                 while(true) {
-                    vec_t y = x | vec_t::ei(n + 1, size(basis));
+                    vec_t y(2 * n + 1);
+                    std::ranges::copy(x, begin(y));
+                    y[n + size(basis)] = 1;
                     for(auto &it: basis) {
                         y.reduce_by(it);
                     }
@@ -30,9 +31,13 @@ namespace cp_algo::linalg {
                     if(std::ranges::count(y | std::views::take(n), base(0)) == int(n)) {
                         return polyn(typename polyn::Vector(begin(y) + n, end(y)));
                     } else {
-                        basis_init.push_back(std::move(x));
                         basis.push_back(std::move(y));
-                        x = A.apply(basis_init.back());
+                        if constexpr(mode == full) {
+                            basis_init.push_back(std::move(x));
+                            x = A.apply(basis_init.back());
+                        } else {
+                            x = A.apply(x);
+                        }
                     }
                 }
             };
@@ -69,7 +74,7 @@ namespace cp_algo::linalg {
                     Tinv[i] | std::views::drop(n) | std::views::take(n)
                 ) * (base(1) / Tinv[i][i]);
             }
-            return std::tuple{T, Tinv, charps};
+            return std::tuple{std::move(T), std::move(Tinv), std::move(charps)};
         } else {
             return charps;
         }

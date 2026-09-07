@@ -82,7 +82,8 @@ void check_pairs() {
     std::array<size_t, 3> shapes[] = {
         {0, 0, 0}, {3, 0, 0}, {2, 9, 0}, {1, 7, 9}, {2, 9, 1},
         {3, 7, 7}, {4, 8, 4}, {5, 9, 5}, {8, 16, 17}, {9, 31, 31},
-        {32, 33, 35}, {33, 65, 129}
+        {32, 33, 35}, {33, 65, 129}, {3, 127, 5}, {5, 128, 7},
+        {7, 129, 9}, {129, 257, 3}
     };
     for(auto [n, m, k]: shapes) for(int type = 0; type < 3; type++) {
         M a(n, m), b(m, k), expected(n, b.m());
@@ -96,6 +97,11 @@ void check_pairs() {
         for(size_t j = 0; j < m; j++)
         for(size_t t = 0; t < b.m(); t++) expected[i][t] += a[i][j] * b[j][t];
         assert(a * b == expected);
+        auto at = a.T();
+        assert(at.n() == a.m());
+        if(a.m()) assert(at.m() == a.n());
+        for(size_t i = 0; i < a.n(); i++)
+        for(size_t j = 0; j < a.m(); j++) assert(at[j][i] == a[i][j]);
         paired_products++;
     }
     for(size_t n: {1, 2, 3, 31, 32, 33, 65})
@@ -143,6 +149,6 @@ int main() {
             check_pairs<dynamic_modint<int64_t>>();
         });
     }
-    std::cout << paired_products << " paired products and " << paired_gauss << " mixed-state Gaussian comparisons passed\n";
+    std::cout << paired_products << " products/transposes and " << paired_gauss << " mixed-state Gaussian comparisons passed\n";
     std::cout << "96 accumulation cases, 936 Gaussian comparisons and rectangular application passed\n";
 }

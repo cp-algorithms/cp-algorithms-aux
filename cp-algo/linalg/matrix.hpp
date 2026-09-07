@@ -48,7 +48,7 @@ namespace cp_algo::linalg {
         auto elements() const {return *this | std::views::join;}
 
         matrix operator-() const {
-            return *this | std::views::transform([](auto x) {return vec_t(-x);});
+            return *this | std::views::transform([](auto const& x) {return vec_t(-x);});
         }
         matrix& operator+=(matrix const& t) {
             for(auto [a, b]: std::views::zip(elements(), t.elements())) {
@@ -145,9 +145,12 @@ namespace cp_algo::linalg {
 
         matrix T() const {
             matrix res(m(), n());
-            for(size_t i = 0; i < n(); i++) {
-                for(size_t j = 0; j < m(); j++) {
-                    res[j][i] = row(i)[j];
+            constexpr size_t block = 128;
+            for(size_t first = 0; first < m(); first += block) {
+                size_t last = std::min(first + block, m());
+                for(size_t i = 0; i < n(); i++) {
+                    auto const& src = row(i);
+                    for(size_t j = first; j < last; j++) res[j][i] = src[j];
                 }
             }
             return res;
@@ -240,7 +243,7 @@ namespace cp_algo::linalg {
                     if(j >= first && j < last) continue;
                     bool pair = j + 1 < n() && j + 1 != first;
                     size_t i = first;
-                    if(pair) for(; i + 1 < last; i += 2) reduce_pair(j, i);
+                    if(pair) for(; i + 1 < last; i += 2) reduce_pair<mode>(j, i);
                     for(; i < last; i++) {
                         row(j).reduce_by(row(i));
                         if(pair) row(j + 1).reduce_by(row(i));
@@ -298,7 +301,7 @@ namespace cp_algo::linalg {
             auto [pivots, free] = A.template echelonize<reverse>();
             matrix sols(size(free), m());
             for(size_t j = 0; j < size(pivots); j++) {
-                base scale = base(1) / A[j][pivots[j]];
+                base scale = A[j].find_pivot().second;
                 for(size_t i = 0; i < size(free); i++) {
                     sols[i][pivots[j]] = A[j][free[i]] * scale;
                 }
@@ -345,7 +348,7 @@ namespace cp_algo::linalg {
                     free.push_back(j);
                 }
             }
-            return std::array{pivots, free};
+            return std::array{std::move(pivots), std::move(free)};
         }
     private:
         static void add_scaled_pair(vec_t &x, vec_t &y, vec_t const& p, vec_t const& q,
@@ -359,6 +362,7 @@ namespace cp_algo::linalg {
         }
         // Fuse two sequential reductions, accounting for the first one's effect
         // on the second pivot before updating either destination row.
+        template<gauss_mode mode>
         void reduce_pair(size_t dst, size_t src) {
             auto &p = row(src), &q = row(src + 1);
             auto [u, pu] = p.find_pivot();
@@ -371,7 +375,10 @@ namespace cp_algo::linalg {
             }
             auto scales = [&](vec_t &a) {
                 base s = -a.normalize(u) * pu;
-                base t = -(a.normalize(v) + s * p[v]) * qv;
+                base t = -a.normalize(v);
+                // Reverse elimination has already cleared p[v] within the pivot block.
+                if constexpr(mode == normal) t -= s * p[v];
+                t *= qv;
                 return std::array{s, t};
             };
             auto a = scales(row(dst)), b = scales(row(dst + 1));

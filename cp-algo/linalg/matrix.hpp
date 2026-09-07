@@ -284,6 +284,35 @@ namespace cp_algo::linalg {
             return res;
         }
 
+        // Pfaffian of an alternating matrix over a field.
+        base pfaffian() const {
+            assert(n() == m() && n() % 2 == 0);
+            matrix b = *this;
+            base res = 1;
+            for(size_t i = 1; i < n(); i++) {
+                for(size_t j = i + 1; j < n() && b[i].normalize(i - 1) == base(0); j++) {
+                    if(b[j].normalize(i - 1) != base(0)) {
+                        std::swap(b[i], b[j]);
+                        for(size_t k = i; k < n(); k++) {
+                            std::swap(b[k][i], b[k][j]);
+                        }
+                        res = -res;
+                    }
+                }
+                b[i].normalize();
+                if(i % 2) {
+                    res *= -b[i][i - 1];
+                    if(res == base(0)) return res;
+                }
+                if(b[i][i - 1] == base(0)) continue;
+                base inv = base(1) / b[i][i - 1];
+                for(size_t j = i + 1; j < n(); j++) {
+                    b[j].add_scaled(b[i], -b[j].normalize(i - 1) * inv, i);
+                }
+            }
+            return res;
+        }
+
         std::pair<base, matrix> inv() const {
             assert(n() == m());
             matrix b = *this | eye(n());

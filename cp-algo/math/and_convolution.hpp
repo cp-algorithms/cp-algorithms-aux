@@ -11,16 +11,27 @@ namespace cp_algo::math {
     void and_transform(auto &&a) {
         if constexpr (N == 1) {
             return;
+        } else if constexpr (N == 2) {
+            if constexpr (direction == forward) a[0] += a[1];
+            else a[0] -= a[1];
         } else {
-            constexpr auto half = N / 2;
-            and_transform<half, direction>(&a[0]);
-            and_transform<half, direction>(&a[half]);
-            for (uint32_t i = 0; i < half; i++) {
+            constexpr auto q = N / 4;
+            for (size_t j = 0; j < 4; j++) {
+                and_transform<q, direction>(&a[j * q]);
+            }
+            auto combine = [](auto x, auto y) {
                 if constexpr (direction == forward) {
-                    a[i] += a[i + half];
+                    return x + y;
                 } else {
-                    a[i] -= a[i + half];
+                    return x - y;
                 }
+            };
+            for (size_t i = 0; i < q; i++) {
+                auto x0 = combine(a[i], a[i + q]);
+                auto x2 = combine(a[i + 2 * q], a[i + 3 * q]);
+                a[i] = combine(x0, x2);
+                a[i + q] = combine(a[i + q], a[i + 3 * q]);
+                a[i + 2 * q] = x2;
             }
         }
     }

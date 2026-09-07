@@ -96,7 +96,7 @@ namespace cp_algo::math {
         constexpr size_t K = 4;
         N = std::max(N, 2 * K);
         const size_t n = std::bit_width(N) - 1;
-        const size_t T = std::min<size_t>(n - 3, 3);
+        const size_t T = std::min<size_t>(n - 3, 2);
         const size_t bottoms = 1 << (n - T - 1);
         const auto M = std::size(first_input);
         
@@ -206,8 +206,8 @@ namespace cp_algo::math {
     big_vector<std::remove_const_t<value_type>> subset_convolution(std::span<value_type> f, std::span<value_type> g) {
         using base = std::remove_const_t<value_type>;
         big_vector<base> outpa;
-        constexpr size_t lgn = max_logn;
-        outpa = on_rank_vectors([](auto &a, auto const& b) {
+        const size_t lgn = std::min<size_t>(max_logn, std::bit_width(f.size()) - 1);
+        outpa = on_rank_vectors([lgn](auto &a, auto const& b) {
             std::decay_t<decltype(a)> res = {};
             const auto mod = base::mod();
             const auto imod = math::inv2(-mod);
@@ -216,14 +216,14 @@ namespace cp_algo::math {
                 for(size_t j = 0; i + j + 1 < lgn; j++) {
                     res[i + j + 1] += (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[j]));
                 }
-                if constexpr (lgn >= 20) if (i == 15) {
+                if (i == 15) {
                     for(size_t k = 0; k < lgn; k++) {
                         res[k] -= (res[k] >= base::modmod8()) & base::modmod8();
                     }
                 }
             };
             for(size_t i = 0; i < lgn; i++) { add(i); }
-            for(size_t k = 0; k < lgn; k++) {
+            for(size_t k = 0; k < max_logn; k++) {
                 res[k] = montgomery_reduce(res[k], mod, imod);
                 res[k] = montgomery_mul(res[k], r4, mod, imod);
                 a[k] = res[k] >= mod ? res[k] - mod : res[k];
@@ -242,24 +242,30 @@ namespace cp_algo::math {
     big_vector<base> subset_div(std::span<base> f, std::span<base> g) {
         big_vector<base> outpa;
         constexpr size_t lgn = max_logn;
-        auto f0 = f[0].getr(), gi = g[0].inv().getr();
-        outpa = on_rank_vectors([f0, gi](auto &a, auto const& b) {
-            static const auto mod = base::mod();
-            static const auto imod = math::inv2(-mod);
-            static const auto gir4 = u64x4() + (uint64_t(-1) % mod + 1) * gi % mod;
+        auto inv = g[0].inv();
+        auto f0 = (f[0] * inv).getr(), gi = inv.getr();
+        const auto mod = base::mod();
+        const auto imod = math::inv2(-mod);
+        const auto gir4 = u64x4() + (uint64_t(-1) % mod + 1) * gi % mod;
+        // Eight products and the subsequent Montgomery reduction fit below 2^64.
+        const size_t period = mod < (1u << 30) ? 8 : 1;
+        const uint64_t bound = uint64_t(period * base::modmod());
+        outpa = on_rank_vectors([=](auto &a, auto const& b) {
             for(size_t k = 0; k < lgn; k++) {
                 for(size_t i = 0; i < k; i++) {
                     a[k] -= (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[k - 1 - i]));
-                    a[k] = a[k] >= base::modmod() ? a[k] + base::modmod() : a[k];
+                    if(i % period == period - 1 || i + 1 == k) {
+                        a[k] = a[k] >= bound ? a[k] + bound : a[k];
+                    }
                 }
                 a[k] -= (u64x4)_mm256_mul_epu32(__m256i() + f0, __m256i(b[k]));
-                a[k] = a[k] >= base::modmod() ? a[k] + base::modmod() : a[k];
+                a[k] = a[k] >= bound ? a[k] + bound : a[k];
                 a[k] = montgomery_reduce(a[k], mod, imod);
                 a[k] = montgomery_mul(a[k], gir4, mod, imod);
                 a[k] = a[k] >= mod ? a[k] - mod : a[k];
             }
         }, f, g);
-        outpa[0] = f0 * gi;
+        outpa[0] = f0;
         checkpoint("fix 0");
         return outpa;
     }
@@ -297,7 +303,7 @@ namespace cp_algo::math {
         if (size(g) == 1) {
             size_t M = size(f);
             big_vector res(n, big_vector<base>{0});
-            big_vector<base> pw(std::max(n, M));
+            big_vector<base> pw(std::max(n, M) + 1);
             pw[0] = 1;
             for (size_t j = 1; j < M; j++) {
                 pw[j] = pw[j - 1] * g[0];
@@ -345,7 +351,7 @@ namespace cp_algo::math {
         if (size(g) == 1) {
             size_t n = size(fg);
             big_vector<base> res(M);
-            big_vector<base> pw(std::max(n, M));
+            big_vector<base> pw(std::max(n, M) + 1);
             pw[0] = 1;
             for (size_t j = 1; j < M; j++) {
                 pw[j] = pw[j - 1] * g[0];

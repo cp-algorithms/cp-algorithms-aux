@@ -21,12 +21,13 @@ namespace cp_algo::linalg {
             size_t start = size(basis);
             auto generate_block = [&](auto x) {
                 while(true) {
-                    vec_t y(2 * n + 1);
-                    std::ranges::copy(x, begin(y));
-                    y[n + size(basis)] = 1;
+                    vec_t y = x;
+                    y.reserve(2 * n + 1);
                     for(auto &it: basis) {
+                        y.resize(it.size());
                         y.reduce_by(it);
                     }
+                    y.push_back(1); // Earlier basis vectors have zero in this coordinate.
                     y.normalize();
                     if(std::ranges::count(y | std::views::take(n), base(0)) == int(n)) {
                         return polyn(typename polyn::Vector(begin(y) + n, end(y)));
@@ -60,6 +61,7 @@ namespace cp_algo::linalg {
         }
         // Find transform matrices while we're at it...
         if constexpr (mode == full) {
+            for(auto &row: basis) row.resize(2 * n + 1);
             for(size_t i = 0; i < n; i++) {
                 for(size_t j = i + 1; j < n; j++) {
                     basis[i].reduce_by(basis[j]);

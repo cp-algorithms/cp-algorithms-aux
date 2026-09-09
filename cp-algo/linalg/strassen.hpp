@@ -14,7 +14,6 @@ namespace cp_algo::linalg::impl {
             uint32_t *data;
             size_t stride;
             uint32_t* operator[](size_t i) const {return data + i * stride;}
-            view at(size_t i, size_t j) const {return {data + i * stride + j, stride};}
         };
         static u64x4 mul(u64x4 a, u64x4 b) {
 #ifdef __AVX2__
@@ -24,11 +23,21 @@ namespace cp_algo::linalg::impl {
 #endif
         }
         static u64x4 shrink(u64x4 x) {
-            // x < 16*mod^2; subtraction puts the comparison in the signed range.
-            auto y = x - uint64_t(8) * mod * mod;
-            return i64x4(y) < 0 ? x : y;
+            // x < 4*mod*2^32; reduce the high word modulo 2*mod.
+            auto words = u32x8(x);
+            auto bound = u32x8(u64x4() + (uint64_t(2) * mod << 32));
+#ifdef __AVX2__
+            return u64x4(_mm256_min_epu32(__m256i(words), __m256i(words - bound)));
+#else
+            return u64x4(words < words - bound ? words : words - bound);
+#endif
         }
+        template<size_t dim = 0>
         [[gnu::noinline]] static void leaf(view a, view b, view c, size_t n, size_t m, size_t k) {
+            if constexpr(dim) {
+                n = m = k = dim;
+                a.stride = b.stride = c.stride = dim;
+            }
             for(size_t i = 0; i < n; i += 4) {
                 for(size_t j = 0; j < k; j += 8) {
                     u64x4 acc[4][2]{};
@@ -37,19 +46,17 @@ namespace cp_algo::linalg::impl {
                         for(size_t z = first; z < first + 8; z++) {
                             u64x4 x;
                             std::memcpy(&x, b[z] + j, sizeof x);
-                            u64x4 y = x >> 32;
-                            for(size_t t = 0; t < 4; t++) {
-                                // Broadcast 32 bits: mul uses the low half of each 64-bit lane.
-                                u64x4 scale = u64x4(u32x8() + a[i + t][z]);
-                                acc[t][0] += mul(scale, x);
-                                acc[t][1] += mul(scale, y);
-                            }
+                            u64x4 scales[4];
+                            for(size_t t = 0; t < 4; t++) scales[t] = u64x4(u32x8() + a[i + t][z]);
+                            for(size_t t = 0; t < 4; t++) acc[t][0] += mul(scales[t], x);
+                            x >>= 32;
+                            for(size_t t = 0; t < 4; t++) acc[t][1] += mul(scales[t], x);
                         }
                         for(auto &row: acc) for(auto &x: row) x = shrink(x);
                     }
                     for(size_t t = 0; t < 4; t++) {
                         constexpr uint32_t inv = math::inv2(uint32_t(-mod));
-                        // x < 8*mod^2, so Montgomery reduction yields a value below 3*mod.
+                        // x < 2*mod*2^32, so Montgomery reduction yields a value below 3*mod.
                         for(auto &x: acc[t]) x = montgomery_reduce(x, mod, inv);
                         u32x8 out = u32x8(acc[t][0] | (acc[t][1] << 32));
                         out = out < out - mod ? out : out - mod;
@@ -61,29 +68,33 @@ namespace cp_algo::linalg::impl {
         }
         // c = a +/- b; c may alias a.
         template<bool subtract = false>
-        static void combine(view a, view b, view c, size_t n, size_t m) {
-            for(size_t i = 0; i < n; i++) for(size_t j = 0; j < m; j += 8) {
+        static void combine(uint32_t *a, uint32_t *b, uint32_t *c, size_t n, size_t m) {
+            for(size_t j = 0; j < n * m; j += 8) {
                 u32x8 x, y;
-                std::memcpy(&x, a[i] + j, sizeof x);
-                std::memcpy(&y, b[i] + j, sizeof y);
+                std::memcpy(&x, a + j, sizeof x);
+                std::memcpy(&y, b + j, sizeof y);
                 u32x8 z = subtract ? x + mod - y : x + y;
                 z = z < z - mod ? z : z - mod;
-                std::memcpy(c[i] + j, &z, sizeof z);
+                std::memcpy(c + j, &z, sizeof z);
             }
         }
-        [[gnu::noinline]] static void multiply(view a, view b, view c, size_t n, size_t m, size_t k,
+        static bool can_split(size_t n, size_t m, size_t k) {
+            return std::min({n, m, k}) > 64 && n % 16 == 0 && m % 16 == 0 && k % 16 == 0;
+        }
+        [[gnu::noinline]] static void multiply(uint32_t *a, uint32_t *b, uint32_t *c, size_t n, size_t m, size_t k,
                                               uint32_t *work) {
             // Every leaf dimension must remain a multiple of eight.
-            if(std::min({n, m, k}) <= 64 || n % 16 || m % 16 || k % 16) {
-                leaf(a, b, c, n, m, k);
+            if(!can_split(n, m, k)) {
+                if(n == 64 && m == 64 && k == 64) leaf<64>({a, m}, {b, k}, {c, k}, n, m, k);
+                else leaf({a, m}, {b, k}, {c, k}, n, m, k);
                 return;
             }
             n /= 2; m /= 2; k /= 2;
-            view s{work, m}, t{work + n * m, k}, p{work + n * m + m * k, k};
+            auto s = work, t = s + n * m, p = t + m * k;
             work += n * m + m * k + n * k;
-            auto a00 = a, a01 = a.at(0, m), a10 = a.at(n, 0), a11 = a.at(n, m);
-            auto b00 = b, b01 = b.at(0, k), b10 = b.at(m, 0), b11 = b.at(m, k);
-            auto c00 = c, c01 = c.at(0, k), c10 = c.at(n, 0), c11 = c.at(n, k);
+            auto a00 = a, a01 = a + n * m, a10 = a + 2 * n * m, a11 = a + 3 * n * m;
+            auto b00 = b, b01 = b + m * k, b10 = b + 2 * m * k, b11 = b + 3 * m * k;
+            auto c00 = c, c01 = c + n * k, c10 = c + 2 * n * k, c11 = c + 3 * n * k;
 
             // Winograd's schedule uses seven products and fifteen additions.
             multiply(a00, b00, c11, n, m, k, work); // P1
@@ -108,6 +119,39 @@ namespace cp_algo::linalg::impl {
             multiply(s, t, p, n, m, k, work); // P7
             combine(c10, p, c10, n, k); combine(c11, p, c11, n, k); // C10, C11
         }
+        static u32x8 encode(u32x8 x) {
+            // Scale by 2^32 with a fixed reciprocal; its quotient is off by at most one.
+            constexpr uint32_t scale = (uint64_t(1) << 32) % mod;
+            constexpr uint32_t quotient = (uint64_t(scale) << 32) / mod;
+            auto packed = u64x4(x), q = u64x4() + quotient;
+            auto lo = mul(packed, q) >> 32, hi = mul(packed >> 32, q);
+            auto approx = u32x8(lo | (hi & (~uint64_t(0) << 32)));
+            auto out = x * scale - approx * mod;
+            return out < out - mod ? out : out - mod;
+        }
+        // Copy between matrix rows and contiguous recursive quadrants.
+        template<bool unpack = false, class matrix>
+        static void copy(matrix &a, uint32_t *ptr, size_t n, size_t m, size_t depth,
+                         size_t row = 0, size_t col = 0) {
+            if(depth) {
+                n /= 2; m /= 2;
+                for(size_t q = 0; q < 4; q++) {
+                    copy<unpack>(a, ptr + q * n * m, n, m, depth - 1,
+                                 row + q / 2 * n, col + q % 2 * m);
+                }
+                return;
+            }
+            if(col >= a.m()) return;
+            size_t width = std::min(m, a.m() - col);
+            for(size_t i = row; i < std::min(row + n, a.n()); i++) {
+                auto data = a[i].data() + col;
+                auto packed = ptr + (i - row) * m;
+                for(size_t j = 0; j < width; j++) {
+                    if constexpr(unpack) data[j].setr(packed[j]);
+                    else packed[j] = uint32_t(data[j].getr());
+                }
+            }
+        }
         template<class matrix>
         static matrix product(matrix const& a, matrix const& b) {
             auto pad = [](size_t x) {return (x + 31) / 32 * 32;};
@@ -122,18 +166,20 @@ namespace cp_algo::linalg::impl {
                                        : (large.resize(count), large.data());
             auto bp = ap + n * m, cp = bp + m * k;
             auto scratch = cp + n * k;
-            // Only A is scaled by 2^32; each leaf's Montgomery reduction removes it.
-            for(size_t i = 0; i < a.n(); i++) for(size_t j = 0; j < a.m(); j++) {
-                ap[i * m + j] = uint32_t((uint64_t(a[i][j].getr()) << 32) % mod);
+            // A, B, and C must use the same depth, including rectangular products.
+            size_t depth = 0;
+            for(size_t x = n, y = m, z = k; can_split(x, y, z); x /= 2, y /= 2, z /= 2) depth++;
+            copy(a, ap, n, m, depth); copy(b, bp, m, k, depth);
+            // Only A is scaled; each leaf's Montgomery reduction removes the factor.
+            for(size_t i = 0; i < n * m; i += 8) {
+                u32x8 x;
+                std::memcpy(&x, ap + i, sizeof x);
+                x = encode(x);
+                std::memcpy(ap + i, &x, sizeof x);
             }
-            for(size_t i = 0; i < b.n(); i++) for(size_t j = 0; j < b.m(); j++) {
-                bp[i * k + j] = uint32_t(b[i][j].getr());
-            }
-            multiply({ap, m}, {bp, k}, {cp, k}, n, m, k, scratch);
+            multiply(ap, bp, cp, n, m, k, scratch);
             matrix res(a.n(), b.m());
-            for(size_t i = 0; i < res.n(); i++) for(size_t j = 0; j < res.m(); j++) {
-                res[i][j].setr(cp[i * k + j]);
-            }
+            copy<true>(res, cp, n, k, depth);
             return res;
         }
     };

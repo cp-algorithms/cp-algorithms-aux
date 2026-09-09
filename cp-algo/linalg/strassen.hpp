@@ -113,7 +113,11 @@ namespace cp_algo::linalg::impl {
         static matrix product(matrix const& a, matrix const& b) {
             auto pad = [](size_t x) {return (x + 31) / 32 * 32;};
             size_t n = pad(a.n()), m = pad(a.m()), k = pad(b.m());
-            big_vector<uint32_t> ap(n * m), bp(m * k), cp(n * k);
+            // Each recursion level needs a quarter as much scratch; children reuse it.
+            size_t entries = n * m + m * k + n * k;
+            big_vector<uint32_t> storage(entries + entries / 3);
+            auto ap = storage.data(), bp = ap + n * m, cp = bp + m * k;
+            auto scratch = cp + n * k;
             // Only A is scaled by 2^32; each leaf's Montgomery reduction removes it.
             for(size_t i = 0; i < a.n(); i++) for(size_t j = 0; j < a.m(); j++) {
                 ap[i * m + j] = uint32_t((uint64_t(a[i][j].getr()) << 32) % mod);
@@ -121,9 +125,7 @@ namespace cp_algo::linalg::impl {
             for(size_t i = 0; i < b.n(); i++) for(size_t j = 0; j < b.m(); j++) {
                 bp[i * k + j] = uint32_t(b[i][j].getr());
             }
-            // Each level needs a quarter as much scratch; all seven children reuse it.
-            big_vector<uint32_t> scratch((n * m + m * k + n * k) / 3);
-            multiply({ap.data(), m}, {bp.data(), k}, {cp.data(), k}, n, m, k, scratch.data());
+            multiply({ap, m}, {bp, k}, {cp, k}, n, m, k, scratch);
             matrix res(a.n(), b.m());
             for(size_t i = 0; i < res.n(); i++) for(size_t j = 0; j < res.m(); j++) {
                 res[i][j].setr(cp[i * k + j]);

@@ -160,7 +160,7 @@ namespace cp_algo::linalg {
         matrix operator *(matrix const& b) const {
             assert(m() == b.n());
             if constexpr(impl::use_strassen<vec_t>) {
-                if(std::min({n(), m(), b.m()}) >= 512) {
+                if(std::min({n(), m(), b.m()}) >= (base::bits <= 32 ? 64 : 512)) {
                     return impl::strassen_product<base::mod()>::product(*this, b);
                 }
             }

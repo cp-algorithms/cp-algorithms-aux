@@ -65,9 +65,9 @@ namespace cp_algo::linalg {
         }
         void print() const {
             for(auto &it: *this) {
-                std::cout << it << " ";
+                std::cout << it << ' ';
             }
-            std::cout << "\n";
+            std::cout << '\n';
         }
         static vec random(size_t n) {
             vec res(n);
@@ -221,6 +221,15 @@ namespace cp_algo::linalg {
             }
         }
         size_t counter = 0;
+    };
+
+    // Narrow residues use ordinary modular updates; packed products need no wide rows.
+    template<typename base> requires (base::bits <= 32)
+    struct modint_vec<base>: vec<base> {
+        using Base = vec<base>;
+        using Base::Base;
+        modint_vec(Base const& t): Base(t) {}
+        modint_vec(Base &&t): Base(std::move(t)) {}
     };
 }
 #pragma GCC pop_options

@@ -3,6 +3,7 @@
 #include "../random/rng.hpp"
 #include "../math/common.hpp"
 #include "vector.hpp"
+#include "strassen.hpp"
 #include <iostream>
 #include <optional>
 #include <cassert>
@@ -158,6 +159,11 @@ namespace cp_algo::linalg {
 
         matrix operator *(matrix const& b) const {
             assert(m() == b.n());
+            if constexpr(impl::use_strassen<vec_t>) {
+                if(std::min({n(), m(), b.m()}) >= 512) {
+                    return impl::strassen_product<base::mod()>::product(*this, b);
+                }
+            }
             matrix res(n(), b.m());
             constexpr size_t block = 32;
             for(size_t first = 0; first < m(); first += block) {

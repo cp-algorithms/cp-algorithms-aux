@@ -1,0 +1,40 @@
+#ifndef CP_ALGO_LINALG_BLOCK_INVERSE_HPP
+#define CP_ALGO_LINALG_BLOCK_INVERSE_HPP
+#include "matrix.hpp"
+namespace cp_algo::linalg {
+    // Schur-complement inversion, suited to large matrices with invertible leading blocks.
+    // Singular leading blocks fall back to Gaussian elimination, which can be faster there.
+    template<class base, class row>
+    std::pair<base, matrix<base, row>> block_inverse(matrix<base, row> const& A) {
+        assert(A.n() == A.m());
+        using matrix = linalg::matrix<base, row>;
+        if constexpr(impl::use_strassen<row>) {
+            if(A.n() >= 128) {
+                auto lo = std::views::take(A.n() / 2);
+                auto hi = std::views::drop(A.n() / 2);
+                auto [da, ai] = block_inverse(matrix(A.submatrix(lo, lo)));
+                if(da != base(0)) {
+                    matrix b = A.submatrix(lo, hi), c = A.submatrix(hi, lo), d = A.submatrix(hi, hi);
+                    b.normalize(); c.normalize(); d.normalize();
+                    auto mul = [](matrix const& x, matrix const& y) {
+                        return impl::strassen_product<base::mod()>::product(x, y);
+                    };
+                    auto u = mul(ai, b), v = mul(c, ai);
+                    d -= mul(v, b); // Schur complement D - C A^-1 B.
+                    auto [ds, si] = block_inverse(d);
+                    if(ds == base(0)) return {0, {}};
+                    auto r = mul(u, si), t = mul(si, v);
+                    ai += mul(r, v);
+                    matrix res(A.n());
+                    res.assign_submatrix(lo, lo, ai);
+                    res.assign_submatrix(lo, hi, -r);
+                    res.assign_submatrix(hi, lo, -t);
+                    res.assign_submatrix(hi, hi, si);
+                    return {da * ds, std::move(res)};
+                }
+            }
+        }
+        return A.inv();
+    }
+}
+#endif // CP_ALGO_LINALG_BLOCK_INVERSE_HPP

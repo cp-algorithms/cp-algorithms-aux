@@ -223,13 +223,86 @@ namespace cp_algo::linalg {
         size_t counter = 0;
     };
 
-    // Narrow residues use ordinary modular updates; packed products need no wide rows.
+    // Narrow rows keep canonical residues; small batches accumulate in wide registers.
     template<typename base> requires (base::bits <= 32)
     struct modint_vec<base>: vec<base> {
         using Base = vec<base>;
         using Base::Base;
         modint_vec(Base const& t): Base(t) {}
         modint_vec(Base &&t): Base(std::move(t)) {}
+
+        void add_scaled(Base const& b, base scale, size_t first = 0) override {
+            if(scale == base(0)) return;
+            if(&b == this) Base::add_scaled(b, scale, first);
+            else add_scaled_batch<1, 1>({this}, {&b}, {scale}, first);
+        }
+    private:
+        template<typename, typename> friend struct matrix;
+        static constexpr size_t batch_size = 8;
+        static constexpr bool use_simd = [] {
+            if constexpr(requires {
+                std::integral_constant<uint32_t, base::mod()>{};
+                std::integral_constant<uint32_t, base::remod()>{};
+            }) {
+                return sizeof(base) == sizeof(uint32_t) && base::mod() > 1 &&
+                    base::mod() % 2 && base::mod() < (1U << 30) && base::remod() == base::mod();
+            } else return false;
+        }();
+        static u64x4 mul(u64x4 a, u64x4 b) {
+#ifdef __AVX2__
+            return u64x4(_mm256_mul_epu32(__m256i(a), __m256i(b)));
+#else
+            return low32(a) * low32(b);
+#endif
+        }
+        // Sources are normalized and do not alias the distinct destination rows.
+        template<size_t count, size_t rows>
+        static void add_scaled_batch(std::array<modint_vec*, rows> const& dst,
+                                     std::array<Base const*, count> const& src,
+                                     std::array<base, rows * count> const& c, size_t first = 0) {
+            static_assert(count <= batch_size && (rows == 1 || rows == 2));
+            if constexpr(use_simd) {
+                constexpr uint32_t mod = base::mod(), inv = math::inv2(uint32_t(-mod));
+                std::array<uint32_t, rows * count> scale;
+                for(size_t t = 0; t < rows * count; t++) {
+                    scale[t] = uint32_t((uint64_t(c[t].getr()) << 32) % mod);
+                }
+                auto * __restrict__ dx = dst[0]->data();
+                auto * __restrict__ dy = rows == 2 ? dst[1]->data() : nullptr;
+                size_t n = dst[0]->size();
+                for(; first + 8 <= n; first += 8) {
+                    u64x4 acc[rows][2]{};
+#pragma GCC unroll 1
+                    for(size_t t = 0; t < count; t++) {
+                        u64x4 p;
+                        std::memcpy(&p, src[t]->data() + first, sizeof p);
+                        auto q = p >> 32;
+                        for(size_t row = 0; row < rows; row++) {
+                            auto v = u64x4(u32x8() + scale[row * count + t]);
+                            acc[row][0] += mul(p, v); acc[row][1] += mul(q, v);
+                        }
+                    }
+                    for(size_t row = 0; row < rows; row++) {
+                        // At most eight products: reduction gives <3*mod, then add the old residue.
+                        for(auto &v: acc[row]) v = montgomery_reduce(v, mod, inv);
+                        auto *out = (row ? dy : dx) + first;
+                        u32x8 old;
+                        std::memcpy(&old, out, sizeof old);
+                        auto z = old + u32x8(acc[row][0] | (acc[row][1] << 32));
+                        z = z < z - 2 * mod ? z : z - 2 * mod;
+                        z = z < z - mod ? z : z - mod;
+                        std::memcpy(out, &z, sizeof z);
+                    }
+                }
+            }
+            for(size_t t = 0; t < count; t++) for(size_t row = 0; row < rows; row++) {
+                dst[row]->Base::add_scaled(*src[t], c[row * count + t], first);
+            }
+        }
+        static void add_scaled_pair(modint_vec &x, modint_vec &y, Base const& p, Base const& q,
+                                    std::array<base, 4> c, size_t first = 0) {
+            add_scaled_batch<2, 2>({&x, &y}, {&p, &q}, c, first);
+        }
     };
 }
 #pragma GCC pop_options

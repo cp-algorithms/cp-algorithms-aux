@@ -165,12 +165,30 @@ namespace cp_algo::linalg {
                 }
             }
             matrix res(n(), b.m());
+            if constexpr(requires { requires vec_t::use_simd; }) {
+                if(n() == 1) {
+                    res[0] = b.apply(row(0));
+                    return res;
+                }
+            }
             constexpr size_t block = 32;
             for(size_t first = 0; first < m(); first += block) {
                 size_t last = std::min(first + block, m());
                 size_t i = 0;
                 for(; i + 1 < n(); i += 2) {
                     size_t j = first;
+                    if constexpr(requires { requires vec_t::use_simd; }) {
+                        constexpr size_t batch = vec_t::batch_size;
+                        if(b.m() >= 8) for(; j + batch <= last; j += batch) {
+                            std::array<typename vec_t::Base const*, batch> src;
+                            std::array<base, 2 * batch> c;
+                            for(size_t t = 0; t < batch; t++) {
+                                src[t] = &b[j + t];
+                                c[t] = row(i)[j + t]; c[batch + t] = row(i + 1)[j + t];
+                            }
+                            vec_t::template add_scaled_batch<batch, 2>({&res[i], &res[i + 1]}, src, c);
+                        }
+                    }
                     for(; j + 1 < last; j += 2) {
                         add_scaled_pair(res[i], res[i + 1], b[j], b[j + 1],
                             {row(i)[j], row(i)[j + 1], row(i + 1)[j], row(i + 1)[j + 1]});
@@ -193,9 +211,17 @@ namespace cp_algo::linalg {
         vec_t apply(vec_t const& x) const {
             assert(x.size() == n());
             vec_t res(m());
-            for(size_t i = 0; i < n(); i++) {
-                res.add_scaled(row(i), x[i]);
+            size_t i = 0;
+            if constexpr(requires { requires vec_t::use_simd; }) {
+                constexpr size_t batch = vec_t::batch_size;
+                for(; i + batch <= n(); i += batch) {
+                    std::array<typename vec_t::Base const*, batch> src;
+                    std::array<base, batch> c;
+                    for(size_t t = 0; t < batch; t++) {src[t] = &row(i + t); c[t] = x[i + t];}
+                    vec_t::template add_scaled_batch<batch, 1>({&res}, src, c);
+                }
             }
+            for(; i < n(); i++) res.add_scaled(row(i), x[i]);
             res.normalize();
             return res;
         }
@@ -249,6 +275,10 @@ namespace cp_algo::linalg {
                     if(j >= first && j < last) continue;
                     bool pair = j + 1 < n() && j + 1 != first;
                     size_t i = first;
+                    if constexpr(requires { requires vec_t::use_simd; }) {
+                        constexpr size_t batch = vec_t::batch_size;
+                        if(pair) for(; i + batch <= last; i += batch) reduce_batch<mode, batch>(j, i);
+                    }
                     if(pair) for(; i + 1 < last; i += 2) reduce_pair<mode>(j, i);
                     for(; i < last; i++) {
                         row(j).reduce_by(row(i));
@@ -398,6 +428,37 @@ namespace cp_algo::linalg {
                 x.add_scaled(p, c[0], first); x.add_scaled(q, c[1], first);
                 y.add_scaled(p, c[2], first); y.add_scaled(q, c[3], first);
             }
+        }
+        // Determine the sequential pivot coefficients before updating the full rows.
+        template<gauss_mode mode, size_t count>
+        void reduce_batch(size_t dst, size_t src) {
+            static_assert(count <= 8);
+            std::array<typename vec_t::Base const*, count> sources;
+            std::array<size_t, count> pivots;
+            std::array<base, count> inverses;
+            size_t first = m();
+            for(size_t t = 0; t < count; t++) {
+                sources[t] = &row(src + t);
+                auto [p, inv] = row(src + t).find_pivot();
+                pivots[t] = p; inverses[t] = p < m() ? inv : base(0);
+                first = std::min(first, p);
+            }
+            if(first == m()) return;
+            std::array<base, 2 * count> c{};
+            for(size_t r = 0; r < 2; r++) for(size_t t = 0; t < count; t++) {
+                if(pivots[t] == m()) continue;
+                base value = row(dst + r).normalize(pivots[t]);
+                if constexpr(mode == normal) {
+                    // Fewer than eight canonical products fit in a 64-bit accumulator.
+                    uint64_t sum = value.getr();
+                    for(size_t h = 0; h < t; h++) {
+                        sum += uint64_t(c[r * count + h].getr()) * (*sources[h])[pivots[t]].getr();
+                    }
+                    value.setr(sum % base::mod());
+                }
+                c[r * count + t] = -value * inverses[t];
+            }
+            vec_t::template add_scaled_batch<count, 2>({&row(dst), &row(dst + 1)}, sources, c, first);
         }
         // Fuse two sequential reductions, accounting for the first one's effect
         // on the second pivot before updating either destination row.

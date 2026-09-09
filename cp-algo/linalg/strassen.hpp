@@ -115,8 +115,13 @@ namespace cp_algo::linalg::impl {
             size_t n = pad(a.n()), m = pad(a.m()), k = pad(b.m());
             // Each recursion level needs a quarter as much scratch; children reuse it.
             size_t entries = n * m + m * k + n * k;
-            big_vector<uint32_t> storage(entries + entries / 3);
-            auto ap = storage.data(), bp = ap + n * m, cp = bp + m * k;
+            // Small products avoid repeated mmap/madvise setup for temporary storage.
+            std::vector<uint32_t> small;
+            big_vector<uint32_t> large;
+            size_t count = entries + entries / 3;
+            auto ap = count < (1 << 21) ? (small.resize(count), small.data())
+                                       : (large.resize(count), large.data());
+            auto bp = ap + n * m, cp = bp + m * k;
             auto scratch = cp + n * k;
             // Only A is scaled by 2^32; each leaf's Montgomery reduction removes it.
             for(size_t i = 0; i < a.n(); i++) for(size_t j = 0; j < a.m(); j++) {

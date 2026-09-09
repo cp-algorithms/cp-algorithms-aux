@@ -71,47 +71,43 @@ namespace cp_algo::linalg::impl {
                 std::memcpy(c[i] + j, &z, sizeof z);
             }
         }
-        [[gnu::noinline]] static void multiply(view a, view b, view c, size_t n, size_t m, size_t k) {
+        [[gnu::noinline]] static void multiply(view a, view b, view c, size_t n, size_t m, size_t k,
+                                              uint32_t *work) {
             // Every leaf dimension must remain a multiple of eight.
             if(std::min({n, m, k}) <= 64 || n % 16 || m % 16 || k % 16) {
                 leaf(a, b, c, n, m, k);
                 return;
             }
             n /= 2; m /= 2; k /= 2;
-            big_vector<uint32_t> sb(n * m), tb(m * k), pb(n * k);
-            view s{sb.data(), m}, t{tb.data(), k}, p{pb.data(), k};
+            view s{work, m}, t{work + n * m, k}, p{work + n * m + m * k, k};
+            work += n * m + m * k + n * k;
             auto a00 = a, a01 = a.at(0, m), a10 = a.at(n, 0), a11 = a.at(n, m);
             auto b00 = b, b01 = b.at(0, k), b10 = b.at(m, 0), b11 = b.at(m, k);
             auto c00 = c, c01 = c.at(0, k), c10 = c.at(n, 0), c11 = c.at(n, k);
-            auto copy = [&](view to) {for(size_t i = 0; i < n; i++) std::copy_n(p[i], k, to[i]);};
 
-            combine(a00, a11, s, n, m); combine(b00, b11, t, m, k);
-            multiply(s, t, p, n, m, k); // (A00 + A11)(B00 + B11)
-            copy(c00); copy(c11);
+            // Winograd's schedule uses seven products, fifteen additions, and one copy.
+            multiply(a00, b00, c00, n, m, k, work); // P1
+            for(size_t i = 0; i < n; i++) std::copy_n(c00[i], k, c11[i]);
+            multiply(a01, b10, c01, n, m, k, work); // P2
+            combine(c00, c01, c00, n, k); // C00 = P1 + P2
 
-            combine(a10, a11, s, n, m);
-            multiply(s, b00, p, n, m, k); // (A10 + A11)B00
-            copy(c10); combine<true>(c11, p, c11, n, k);
+            combine(a10, a11, s, n, m); combine<true>(b01, b00, t, m, k); // S1, T1
+            multiply(s, t, c01, n, m, k, work); // P5
+            combine<true>(s, a00, s, n, m); combine<true>(b11, t, t, m, k); // S2, T2
+            multiply(s, t, c10, n, m, k, work); // P6
+            combine(c11, c10, c10, n, k); // U2 = P1 + P6
 
-            combine<true>(b01, b11, t, m, k);
-            multiply(a00, t, p, n, m, k); // A00(B01 - B11)
-            copy(c01); combine(c11, p, c11, n, k);
+            combine<true>(a01, s, s, n, m); // S4
+            multiply(s, b11, p, n, m, k, work); // P3
+            combine(c10, c01, c11, n, k); // U4 = U2 + P5
+            combine(c11, p, c01, n, k); // C01 = U4 + P3
 
-            combine<true>(b10, b00, t, m, k);
-            multiply(a11, t, p, n, m, k); // A11(B10 - B00)
-            combine(c00, p, c00, n, k); combine(c10, p, c10, n, k);
-
-            combine(a00, a01, s, n, m);
-            multiply(s, b11, p, n, m, k); // (A00 + A01)B11
-            combine<true>(c00, p, c00, n, k); combine(c01, p, c01, n, k);
-
-            combine<true>(a10, a00, s, n, m); combine(b00, b01, t, m, k);
-            multiply(s, t, p, n, m, k); // (A10 - A00)(B00 + B01)
-            combine(c11, p, c11, n, k);
-
-            combine<true>(a01, a11, s, n, m); combine(b10, b11, t, m, k);
-            multiply(s, t, p, n, m, k); // (A01 - A11)(B10 + B11)
-            combine(c00, p, c00, n, k);
+            combine<true>(t, b10, t, m, k); // T4
+            multiply(a11, t, p, n, m, k, work); // P4
+            combine<true>(c10, p, c10, n, k);
+            combine<true>(a00, a10, s, n, m); combine<true>(b11, b01, t, m, k); // S3, T3
+            multiply(s, t, p, n, m, k, work); // P7
+            combine(c10, p, c10, n, k); combine(c11, p, c11, n, k); // C10, C11
         }
         template<class matrix>
         static matrix product(matrix const& a, matrix const& b) {
@@ -125,7 +121,9 @@ namespace cp_algo::linalg::impl {
             for(size_t i = 0; i < b.n(); i++) for(size_t j = 0; j < b.m(); j++) {
                 bp[i * k + j] = uint32_t(b[i][j].getr());
             }
-            multiply({ap.data(), m}, {bp.data(), k}, {cp.data(), k}, n, m, k);
+            // Each level needs a quarter as much scratch; all seven children reuse it.
+            big_vector<uint32_t> scratch((n * m + m * k + n * k) / 3);
+            multiply({ap.data(), m}, {bp.data(), k}, {cp.data(), k}, n, m, k, scratch.data());
             matrix res(a.n(), b.m());
             for(size_t i = 0; i < res.n(); i++) for(size_t j = 0; j < res.m(); j++) {
                 res[i][j].setr(cp[i * k + j]);

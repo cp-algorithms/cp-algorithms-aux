@@ -85,11 +85,10 @@ namespace cp_algo::linalg::impl {
             auto b00 = b, b01 = b.at(0, k), b10 = b.at(m, 0), b11 = b.at(m, k);
             auto c00 = c, c01 = c.at(0, k), c10 = c.at(n, 0), c11 = c.at(n, k);
 
-            // Winograd's schedule uses seven products, fifteen additions, and one copy.
-            multiply(a00, b00, c00, n, m, k, work); // P1
-            for(size_t i = 0; i < n; i++) std::copy_n(c00[i], k, c11[i]);
-            multiply(a01, b10, c01, n, m, k, work); // P2
-            combine(c00, c01, c00, n, k); // C00 = P1 + P2
+            // Winograd's schedule uses seven products and fifteen additions.
+            multiply(a00, b00, c11, n, m, k, work); // P1
+            multiply(a01, b10, c00, n, m, k, work); // P2
+            combine(c00, c11, c00, n, k); // C00 = P1 + P2
 
             combine(a10, a11, s, n, m); combine<true>(b01, b00, t, m, k); // S1, T1
             multiply(s, t, c01, n, m, k, work); // P5

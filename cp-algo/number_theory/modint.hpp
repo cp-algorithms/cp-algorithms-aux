@@ -21,9 +21,14 @@ namespace cp_algo::math {
         constexpr static UInt2 modmod() {
             return UInt2(mod()) * mod();
         }
+        constexpr static UInt mod_normalize(Int2 rr) {
+            Int2 m = Int2(mod());
+            rr %= m;
+            return UInt(rr + (rr < 0 ? m : 0));
+        }
         constexpr modint_base() = default;
         constexpr modint_base(Int2 rr) {
-            to_modint().setr(UInt((rr + modmod()) % mod()));
+            to_modint().setr(mod_normalize(rr));
         }
         constexpr modint inv() const {
             return bpow(to_modint(), mod() - 2);
@@ -92,9 +97,11 @@ namespace cp_algo::math {
     concept modint_type = std::is_base_of_v<modint_base<modint, typename modint::Int>, modint>;
     template<modint_type modint>
     decltype(std::cin)& operator >> (decltype(std::cin) &in, modint &x) {
-        typename modint::UInt r;
+        int64_t r;
         auto &res = in >> r;
-        x.setr(r);
+        if(res) {
+            x = modint(r);
+        }
         return res;
     }
     template<modint_type modint>

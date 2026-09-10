@@ -44,7 +44,6 @@ namespace cp_algo {
                                 PROT_READ | PROT_WRITE,
                                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
                 madvise(raw, padded, MADV_HUGEPAGE);
-                madvise(raw, padded, MADV_POPULATE_WRITE);
                 return static_cast<T*>(raw);
             }
 #endif

@@ -209,14 +209,30 @@ namespace cp_algo::math::fft {
         if(small >= magic && small <= 4096 && large >= (1 << 20) && large / small >= 64) {
             return impl::mul_unbalanced(a, b);
         }
+        using base = std::decay_t<decltype(a[0])>;
         size_t N = size(a) + size(b);
         if(N > (1 << 20)) {
             N--;
             size_t NN = std::bit_ceil(N);
             bool zero_upper = std::max(size(a), size(b)) <= NN / 2;
             a.resize(NN);
-            if(!square) {b.resize(NN);}
-            cyclic_mul(a, b, NN, zero_upper);
+            // Compute the negative branch before the positive branch consumes the inputs.
+            // Only the result needs the upper half; b never needs duplicated padding.
+            if(zero_upper && !square) {
+                size_t half = NN / 2;
+                b.resize(half);
+                auto lo = std::span(a).first(half), hi = std::span(a).last(half);
+                {
+                    auto A = dft<base>(lo, half / 2);
+                    auto B = dft<base>(b, half / 2);
+                    A.mul_inplace(B, hi, half);
+                }
+                cyclic_mul(lo, b, half);
+                mod_split<true>(a, half, (base(2) * bpow(dft<base>::factor, half)).inv());
+            } else {
+                if(!square) {b.resize(NN);}
+                cyclic_mul(a, b, NN, zero_upper);
+            }
             a.resize(N);
         } else {
             mul_truncate(a, b, N - 1);

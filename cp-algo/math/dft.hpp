@@ -50,7 +50,11 @@ namespace cp_algo::math::fft {
         }
 
         dft(size_t n): A(n), B(n) {init();}
-        dft(auto const& a, size_t n, bool partial = true): A(n), B(n) {
+        dft(auto const& a, size_t n, bool partial = true): A(0), B(0) {
+            // Construct split coefficients once instead of zeroing both buffers first.
+            A.r.clear(); B.r.clear();
+            size_t blocks = std::max(flen, std::bit_ceil(n)) / flen;
+            A.r.reserve(blocks); B.r.reserve(blocks);
             init();
             base b2x32 = bpow(base(2), 32);
             u64x4 cur = {
@@ -64,10 +68,11 @@ namespace cp_algo::math::fft {
             for(size_t i = 0; i < std::min(n, std::size(a)); i += flen) {
                 auto [rai, qai] = do_split(a, i, cur);
                 auto [rani, qani] = do_split(a, n + i, montgomery_mul(cur, stepn, mod, imod));
-                A.at(i) = vpoint(rai, rani);
-                B.at(i) = vpoint(qai, qani);
+                A.r.emplace_back(rai, rani);
+                B.r.emplace_back(qai, qani);
                 cur = montgomery_mul(cur, step4, mod, imod);
             }
+            A.r.resize(blocks); B.r.resize(blocks);
             checkpoint("dft init");
             if(n) {
                 if(partial) {

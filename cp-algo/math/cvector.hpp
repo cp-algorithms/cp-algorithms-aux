@@ -150,28 +150,7 @@ namespace cp_algo::math::fft {
                 });
             }
 
-            for(size_t leaf = 3 * flen; leaf < n; leaf += 4 * flen) {
-                size_t level = std::countr_one(leaf + 3);
-                for(size_t lvl = 4 + parity; lvl <= level; lvl += 2) {
-                    size_t i = (1 << lvl) / 4;
-                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) __attribute__((always_inline)) {
-                        k <<= lvl;
-                        vpoint v1 = {vz + real(rt), vz - imag(rt)};
-                        vpoint v2 = v1 * v1;
-                        vpoint v3 = v1 * v2;
-                        for(size_t j = k; j < k + i; j += flen) {
-                            auto A = at(j);
-                            auto B = at(j + i);
-                            auto C = at(j + 2 * i);
-                            auto D = at(j + 3 * i);
-                            at(j) = ((A + B) + (C + D));
-                            at(j + 2 * i) = ((A + B) - (C + D)) * v2;
-                            at(j +     i) = ((A - B) - vi(C - D)) * v1;
-                            at(j + 3 * i) = ((A - B) + vi(C - D)) * v3;
-                        }
-                    });
-                }
-            }
+            transform<true>(n, parity);
             checkpoint("ifft");
             if constexpr(normalize) {
                 auto scale = vz + ftype(partial ? flen : 1) / ftype(n);
@@ -183,30 +162,9 @@ namespace cp_algo::math::fft {
         template<bool partial = true>
         void fft() {
             size_t n = size();
+            prepare_roots(n / (partial ? 16 : 4));
             bool parity = std::countr_zero(n) % 2;
-            for(size_t leaf = 0; leaf < n; leaf += 4 * flen) {
-                size_t level = std::countr_zero(n + leaf);
-                level -= level % 2 != parity;
-                for(size_t lvl = level; lvl >= 4; lvl -= 2) {
-                    size_t i = (1 << lvl) / 4;
-                    exec_on_eval<4>(n >> lvl, leaf >> lvl, [&](size_t k, point rt) __attribute__((always_inline)) {
-                        k <<= lvl;
-                        vpoint v1 = {vz + real(rt), vz + imag(rt)};
-                        vpoint v2 = v1 * v1;
-                        vpoint v3 = v1 * v2;
-                        for(size_t j = k; j < k + i; j += flen) {
-                            auto A = at(j);
-                            auto B = at(j + i) * v1;
-                            auto C = at(j + 2 * i) * v2;
-                            auto D = at(j + 3 * i) * v3;
-                            at(j)         = (A + C) + (B + D);
-                            at(j + i)     = (A + C) - (B + D);
-                            at(j + 2 * i) = (A - C) + vi(B - D);
-                            at(j + 3 * i) = (A - C) - vi(B - D);
-                        }
-                    });
-                }
-            }
+            transform<false>(n, parity);
             if(parity) {
                 exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
                     k *= 2 * flen;
@@ -240,6 +198,74 @@ namespace cp_algo::math::fft {
         static const std::array<size_t, pre_evals> eval_args;
         static const std::array<point, pre_evals> evalp;
     private:
+        // Tile two radix-four stages together before descending into each child.
+        template<bool inverse>
+        void transform(size_t n, bool parity) {
+            auto butterfly = [&](size_t offset, size_t length, size_t begin, size_t end) __attribute__((always_inline)) {
+                size_t i = length / 4;
+                point rt = root(16 * n / length) * eval_point(4 * offset / length);
+                vpoint v1 = {vz + real(rt), inverse ? vz - imag(rt) : vz + imag(rt)};
+                vpoint v2 = v1 * v1, v3 = v1 * v2;
+                for(size_t j = offset + begin; j < offset + end; j += flen) {
+                    auto A = at(j), B = at(j+i), C = at(j+2*i), D = at(j+3*i);
+                    if constexpr(inverse) {
+                        at(j) = (A+B)+(C+D);
+                        at(j+2*i) = ((A+B)-(C+D))*v2;
+                        at(j+i) = ((A-B)-vi(C-D))*v1;
+                        at(j+3*i) = ((A-B)+vi(C-D))*v3;
+                    } else {
+                        B = B*v1; C = C*v2; D = D*v3;
+                        at(j) = (A+C)+(B+D);
+                        at(j+i) = (A+C)-(B+D);
+                        at(j+2*i) = (A-C)+vi(B-D);
+                        at(j+3*i) = (A-C)-vi(B-D);
+                    }
+                }
+            };
+            auto recurse = [&](auto &&self, size_t offset, size_t length) -> void {
+                if(length < 4 * flen) {return;}
+                if(length >= (1 << 15)) {
+                    size_t step = length / 16;
+                    if constexpr(inverse) {
+                        for(size_t t = 0; t < 16; t++) {self(self, offset + t*step, step);}
+                    }
+                    for(size_t j = 0; j < step; j += 256) {
+                        size_t end = std::min(step, j+256);
+                        if constexpr(inverse) {
+                            for(size_t t=0;t<4;t++) {butterfly(offset+t*length/4, length/4, j,end);}
+                            for(size_t t=0;t<4;t++) {butterfly(offset,length,j+t*step,end+t*step);}
+                        } else {
+                            for(size_t t=0;t<4;t++) {butterfly(offset,length,j+t*step,end+t*step);}
+                            for(size_t t=0;t<4;t++) {butterfly(offset+t*length/4,length/4,j,end);}
+                        }
+                    }
+                    if constexpr(!inverse) {
+                        for(size_t t = 0; t < 16; t++) {self(self, offset + t*step, step);}
+                    }
+                } else {
+                    if constexpr(inverse) {
+                        for(size_t leaf = offset + 3 * flen; leaf < offset + length; leaf += 4 * flen) {
+                            size_t level = std::min<size_t>(std::countr_one(leaf + 3), std::countr_zero(length));
+                            for(size_t lvl = 4 + parity; lvl <= level; lvl += 2) {
+                                size_t len = size_t(1) << lvl;
+                                butterfly(leaf / len * len, len, 0, len / 4);
+                            }
+                        }
+                    } else {
+                        for(size_t leaf = offset; leaf < offset + length; leaf += 4 * flen) {
+                            size_t level = std::min<size_t>(std::countr_zero(n + leaf), std::countr_zero(length));
+                            level -= level % 2 != parity;
+                            for(size_t lvl = level; lvl >= 4; lvl -= 2) {
+                                size_t len = size_t(1) << lvl;
+                                butterfly(leaf / len * len, len, 0, len / 4);
+                            }
+                        }
+                    }
+                }
+            };
+            // Radix two is performed separately at the leaves.
+            recurse(recurse, 0, n);
+        }
         static big_vector<point> extra;
         // Keep the usual table small; cache additional roots for large transforms.
         static void prepare_roots(size_t n) {

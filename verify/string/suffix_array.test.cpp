@@ -26,19 +26,45 @@ int main() {
     cp_algo::big_vector<int> link(2 * n + 1);
     auto length = [&](int v) { return v <= n ? v : clones[v - n - 1].len; };
     auto position = [&](int v) { return v <= n ? v : clones[v - n - 1].pos; };
-    using transitions = std::array<int, 26>;
+    // Pack two (letter + 1, state) pairs inline; bit 31 marks a dense row.
+    // State IDs fit in 24 bits under the problem's n <= 500000 bound.
+    struct transitions { uint32_t a = 0, b = 0; };
+    cp_algo::big_vector<std::array<int, 26>> dense;
+    dense.reserve(n / 8 + 1);
     cp_algo::big_vector<transitions> to;
     to.reserve(link.size());
     to.resize(n + 1);
+    auto get = [&](int p, int x) {
+        auto t = to[p];
+        if(t.a & 0x80000000) {return dense[t.a & 0x7FFFFFFF][x];}
+        if((t.a >> 24) == unsigned(x + 1)) {return int(t.a & 0xFFFFFF);}
+        if((t.b >> 24) == unsigned(x + 1)) {return int(t.b & 0xFFFFFF);}
+        return 0;
+    };
+    auto set = [&](int p, int x, int v) {
+        auto &t = to[p];
+        auto encoded = uint32_t((x + 1) << 24) | v;
+        if(t.a & 0x80000000) {dense[t.a & 0x7FFFFFFF][x] = v;}
+        else if(!t.a || (t.a >> 24) == unsigned(x + 1)) {t.a = encoded;}
+        else if(!t.b || (t.b >> 24) == unsigned(x + 1)) {t.b = encoded;}
+        else {
+            std::array<int, 26> row{};
+            row[(t.a >> 24) - 1] = t.a & 0xFFFFFF;
+            row[(t.b >> 24) - 1] = t.b & 0xFFFFFF;
+            row[x] = v;
+            t.a = 0x80000000 | uint32_t(dense.size());
+            dense.push_back(row);
+        }
+    };
     cp_algo::checkpoint("init");
     int last = 0;
     for(char c: s) {
         int x = c - 'a', p = last;
         ++last;
-        for(; !to[p][x]; p = link[p]) {
-            to[p][x] = last;
+        for(; !get(p, x); p = link[p]) {
+            set(p, x, last);
         }
-        int q = to[p][x];
+        int q = get(p, x);
         if(q != last) {
             if(length(q) == length(p) + 1) {
                 link[last] = q;
@@ -46,16 +72,23 @@ int main() {
                 int clone = n + 1 + (int)clones.size();
                 clones.push_back({length(p) + 1, position(q)});
                 link[clone] = link[q];
-                to.push_back(to[q]);
+                auto row = to[q];
+                if(row.a & 0x80000000) {
+                    auto copy = dense[row.a & 0x7FFFFFFF];
+                    row.a = 0x80000000 | uint32_t(dense.size());
+                    dense.push_back(copy);
+                }
+                to.push_back(row);
                 link[last] = link[q] = clone;
-                for(; to[p][x] == q; p = link[p]) {
-                    to[p][x] = clone;
+                for(; get(p, x) == q; p = link[p]) {
+                    set(p, x, clone);
                 }
             }
         }
     }
     int size = n + 1 + (int)clones.size();
     to = decltype(to){};
+    dense = decltype(dense){};
     cp_algo::checkpoint("build");
     // Store the suffix-link tree compactly, with each node's children in letter order.
     // Child IDs fit in 24 bits; the high byte stores the incoming letter.

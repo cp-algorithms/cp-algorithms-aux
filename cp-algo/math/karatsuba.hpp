@@ -14,9 +14,9 @@ namespace cp_algo::math {
 
     template<auto N>
     void base_conv(auto &&_a, auto &&_b, auto &&_c) {
-        auto a = std::assume_aligned<32>(&_a[0]);
-        auto b = std::assume_aligned<32>(&_b[0]);
-        auto c = std::assume_aligned<32>(&_c[0]);
+        auto a = &_a[0];
+        auto b = &_b[0];
+        auto c = &_c[0];
         for (size_t i = 0; i < N; i++) {
             for (size_t j = 0; j < N; j++) {
                 c[i + j] += a[i] * b[j];
@@ -53,6 +53,12 @@ namespace cp_algo::math {
 
     template<auto N>
     void base_conv_modint(auto &&a, auto &&b, auto &&c) {
+        using base = std::decay_t<decltype(a[0])>;
+        uint64_t largest = base::mod() - 1;
+        if(largest && largest > UINT64_MAX / N / largest) {
+            base_conv<N>(a, b, c);
+            return;
+        }
         if constexpr (N % 4) {
             static_assert(N < 4);
             base_conv<N>(a, b, c);
@@ -60,7 +66,6 @@ namespace cp_algo::math {
         }
         alignas(32) uint64_t pr0[2 * N] = {}, pr1[2 * N] = {};
         alignas(32) uint64_t pr2[2 * N] = {}, pr3[2 * N] = {};
-        using base = std::decay_t<decltype(a[0])>;
         for (size_t i = 0; i < N; i += 4) {
             auto va0 = __m256i() + a[i].getr();
             auto va1 = __m256i() + a[i + 1].getr();
@@ -88,9 +93,7 @@ namespace cp_algo::math {
     }
 
     // Generic Karatsuba multiplication algorithm for polynomials
-    // Template parameters:
-    //   N - Size of input arrays (must be power of 2)
-    //   Add, Sub, Mul - Operations for addition, subtraction, and coefficient multiplication
+    // N is the input length and must be a power of two.
     template<auto N>
     void _karatsuba(auto &&a, auto &&b, auto &&c) {
         [[gnu::assume(N <= 1<<19)]];
@@ -127,17 +130,137 @@ namespace cp_algo::math {
         }
     }
 
-    // Runtime wrapper that deduces N at compile time
+    namespace karatsuba_detail {
+        template<class T>
+        T constant(uint64_t x) {
+            if constexpr(std::is_same_v<T, nimber::f2_64>) {
+                T res{};
+                res.r = x;
+                return res;
+            } else {
+                return T(x);
+            }
+        }
+
+        template<class T>
+        T inverse(T a) {
+            if constexpr(std::is_same_v<T, nimber::f2_64>) {
+                return bpow(a, UINT64_MAX - 1, constant<T>(1));
+            } else {
+                // Euclid also supports composite moduli coprime to 2, 3, and 5.
+                auto x = a.getr(), y = typename T::UInt(T::mod());
+                typename T::Int2 u = 1, v = 0;
+                while(y) {
+                    auto q = x / y;
+                    x -= q * y;
+                    std::swap(x, y);
+                    u -= q * v;
+                    std::swap(u, v);
+                }
+                assert(x == 1);
+                return T(u);
+            }
+        }
+
+        template<class T>
+        auto const& interpolation() {
+            auto build = [] {
+                std::array<std::array<T, 14>, 7> a{};
+                // Values at 0, 1, 2, 3, 4, 5, and infinity.
+                for(size_t i = 0; i < 6; i++) {
+                    T x = constant<T>(i), p = constant<T>(1);
+                    for(size_t j = 0; j < 7; j++) {a[i][j] = p; p *= x;}
+                }
+                a[6][6] = constant<T>(1);
+                for(size_t i = 0; i < 7; i++) {a[i][i + 7] = constant<T>(1);}
+                for(size_t i = 0; i < 7; i++) {
+                    size_t pivot = i;
+                    while(pivot < 7 && a[pivot][i] == T{}) {pivot++;}
+                    assert(pivot < 7);
+                    std::swap(a[i], a[pivot]);
+                    auto inv = inverse(a[i][i]);
+                    for(auto &x: a[i]) {x *= inv;}
+                    for(size_t j = 0; j < 7; j++) {
+                        if(j == i) {continue;}
+                        auto q = a[j][i];
+                        for(size_t k = 0; k < 14; k++) {a[j][k] -= q * a[i][k];}
+                    }
+                }
+                std::array<std::array<T, 7>, 7> res{};
+                for(size_t i = 0; i < 7; i++) {
+                    for(size_t j = 0; j < 7; j++) {res[i][j] = a[i][j + 7];}
+                }
+                return res;
+            };
+            static thread_local auto matrix = build();
+            if constexpr(modint_type<T>) {
+                static thread_local auto modulus = T::mod();
+                if(modulus != T::mod()) {matrix = build(); modulus = T::mod();}
+            }
+            return matrix;
+        }
+
+        // Toom-4 uses seven products for four blocks; Karatsuba handles the leaves.
+        template<size_t N, class T>
+        void mul(T const* a, T const* b, T* c) {
+            if constexpr(N > (1 << 19)) {
+                __builtin_unreachable(); // Same size bound as _karatsuba.
+            } else if constexpr(N <= 4096) {
+                std::fill_n(c, 2 * N, T{});
+                _karatsuba<N>(a, b, c);
+            } else {
+                constexpr size_t h = N / 4;
+                static big_vector<T> products(14 * h), av(h), bv(h);
+                mul<h>(a, b, products.data());
+                mul<h>(a + 3 * h, b + 3 * h, products.data() + 12 * h);
+                for(size_t k = 1; k < 6; k++) {
+                    auto point = constant<T>(k);
+                    for(size_t i = 0; i < h; i++) {
+                        av[i] = ((a[i + 3*h] * point + a[i + 2*h]) * point + a[i + h]) * point + a[i];
+                        bv[i] = ((b[i + 3*h] * point + b[i + 2*h]) * point + b[i + h]) * point + b[i];
+                    }
+                    mul<h>(av.data(), bv.data(), products.data() + 2 * k * h);
+                }
+                auto const& matrix = interpolation<T>();
+                std::fill_n(c, 2 * N, T{});
+                for(size_t j = 0; j < 7; j++) {
+                    for(size_t k = 0; k < 7; k++) {
+                        auto x = matrix[j][k];
+                        if(x == T{}) {continue;}
+                        if(x == constant<T>(1)) {
+                            for(size_t i = 0; i < 2*h - 1; i++) {c[j*h + i] += products[k*2*h + i];}
+                        } else {
+                            for(size_t i = 0; i < 2*h - 1; i++) {c[j*h + i] += x * products[k*2*h + i];}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Large field inputs use Toom-4 above the Karatsuba recursion.
+    // Runtime wrapper that deduces N at compile time.
     // Resizes inputs to the next power of 2 and result to n + m - 1
     auto karatsuba(auto &a, auto &b) {
+        using base = std::decay_t<decltype(a[0])>;
         auto n = std::size(a);
         auto m = std::size(b);
+        if(!n || !m) {return big_vector<base>{};}
         auto N = std::bit_ceil(std::max(n, m));
         a.resize(N);
         b.resize(N);
-        using base = std::decay_t<decltype(a[0])>;
-        big_vector<base> c(2 * N - 1);
+        // The recursion reads the zero coefficient at index 2*N-1 when joining halves.
+        big_vector<base> c(2 * N);
         with_bit_ceil(N, [&]<auto NN>() {
+            if constexpr(std::is_same_v<base, nimber::f2_64>) {
+                karatsuba_detail::mul<NN>(std::data(a), std::data(b), c.data());
+                return;
+            } else if constexpr(modint_type<base>) {
+                if(base::mod() > 5 && base::mod() % 2 && base::mod() % 3 && base::mod() % 5) {
+                    karatsuba_detail::mul<NN>(std::data(a), std::data(b), c.data());
+                    return;
+                }
+            }
             _karatsuba<NN>(a, b, c);
         });
         c.resize(n + m - 1);

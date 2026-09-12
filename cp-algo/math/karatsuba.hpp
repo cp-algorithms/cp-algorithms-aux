@@ -200,6 +200,43 @@ namespace cp_algo::math {
             return matrix;
         }
 
+        // Modular evaluation points: 0, 1, -1, 2, -2, 3, infinity.
+        template<class T>
+        T evaluate_modular(T a0, T a1, T a2, T a3, size_t k) {
+            if(k <= 2) {
+                auto even = a0 + a2, odd = a1 + a3;
+                return k == 1 ? even + odd : even - odd;
+            }
+            if(k == 5) {return ((a3 * T(3) + a2) * T(3) + a1) * T(3) + a0;}
+            a2 += a2; a2 += a2;
+            a3 += a3; a3 += a3;
+            auto odd = a1 + a3;
+            odd += odd;
+            return k == 3 ? (a0 + a2) + odd : (a0 + a2) - odd;
+        }
+
+        template<class T>
+        void interpolate_modular(T const* p, T* c, size_t h) {
+            auto i2 = inverse(T(2)), i3 = inverse(T(3)), i4 = i2 * i2;
+            auto i5 = inverse(T(5)), i8 = i4 * i2, i12 = i4 * i3;
+            for(size_t i = 0; i < 2 * h - 1; i++) {
+                auto c0 = p[i], c6 = p[12*h + i];
+                auto p1 = p[2*h + i], m1 = p[4*h + i];
+                auto p2 = p[6*h + i], m2 = p[8*h + i], p3 = p[10*h + i];
+                // Separate even and odd powers before solving the small systems.
+                auto e1 = (p1 + m1) * i2 - c0 - c6;
+                auto e2 = (p2 + m2) * i2 - c0 - T(64) * c6;
+                auto c4 = (e2 - T(4) * e1) * i12, c2 = e1 - c4;
+                auto o1 = (p1 - m1) * i2, o2 = (p2 - m2) * i4;
+                auto o3 = (p3 - c0 - T(9) * c2 - T(81) * c4 - T(729) * c6) * i3;
+                auto d2 = (o2 - o1) * i3, d3 = (o3 - o1) * i8;
+                auto c5 = (d3 - d2) * i5, c3 = d2 - T(5) * c5, c1 = o1 - c3 - c5;
+                c[i] += c0; c[h + i] += c1; c[2*h + i] += c2;
+                c[3*h + i] += c3; c[4*h + i] += c4;
+                c[5*h + i] += c5; c[6*h + i] += c6;
+            }
+        }
+
         // Toom-4 uses seven products for four blocks; Karatsuba handles the leaves.
         template<size_t N, class T>
         void mul(T const* a, T const* b, T* c) {
@@ -216,21 +253,30 @@ namespace cp_algo::math {
                 for(size_t k = 1; k < 6; k++) {
                     auto point = constant<T>(k);
                     for(size_t i = 0; i < h; i++) {
-                        av[i] = ((a[i + 3*h] * point + a[i + 2*h]) * point + a[i + h]) * point + a[i];
-                        bv[i] = ((b[i + 3*h] * point + b[i + 2*h]) * point + b[i + h]) * point + b[i];
+                        if constexpr(modint_type<T>) {
+                            av[i] = evaluate_modular(a[i], a[i + h], a[i + 2*h], a[i + 3*h], k);
+                            bv[i] = evaluate_modular(b[i], b[i + h], b[i + 2*h], b[i + 3*h], k);
+                        } else {
+                            av[i] = ((a[i + 3*h] * point + a[i + 2*h]) * point + a[i + h]) * point + a[i];
+                            bv[i] = ((b[i + 3*h] * point + b[i + 2*h]) * point + b[i + h]) * point + b[i];
+                        }
                     }
                     mul<h>(av.data(), bv.data(), products.data() + 2 * k * h);
                 }
-                auto const& matrix = interpolation<T>();
                 std::fill_n(c, 2 * N, T{});
-                for(size_t j = 0; j < 7; j++) {
-                    for(size_t k = 0; k < 7; k++) {
-                        auto x = matrix[j][k];
-                        if(x == T{}) {continue;}
-                        if(x == constant<T>(1)) {
-                            for(size_t i = 0; i < 2*h - 1; i++) {c[j*h + i] += products[k*2*h + i];}
-                        } else {
-                            for(size_t i = 0; i < 2*h - 1; i++) {c[j*h + i] += x * products[k*2*h + i];}
+                if constexpr(modint_type<T>) {
+                    interpolate_modular(products.data(), c, h);
+                } else {
+                    auto const& matrix = interpolation<T>();
+                    for(size_t j = 0; j < 7; j++) {
+                        for(size_t k = 0; k < 7; k++) {
+                            auto x = matrix[j][k];
+                            if(x == T{}) {continue;}
+                            if(x == constant<T>(1)) {
+                                for(size_t i = 0; i < 2*h - 1; i++) {c[j*h + i] += products[k*2*h + i];}
+                            } else {
+                                for(size_t i = 0; i < 2*h - 1; i++) {c[j*h + i] += x * products[k*2*h + i];}
+                            }
                         }
                     }
                 }

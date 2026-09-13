@@ -30,7 +30,8 @@ int main() {
     // State IDs fit in 24 bits under the problem's n <= 500000 bound.
     struct transitions { uint32_t a = 0, b = 0; };
     cp_algo::big_vector<std::array<int, 26>> dense;
-    dense.reserve(n / 8 + 1);
+    // At most one dense row per state; avoid growth on branching structured strings.
+    dense.reserve(link.size());
     cp_algo::big_vector<transitions> to;
     to.reserve(link.size());
     to.resize(n + 1);

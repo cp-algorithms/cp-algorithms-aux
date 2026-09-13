@@ -1,5 +1,6 @@
 // @brief Suffix Array
 #define PROBLEM "https://judge.yosupo.jp/problem/suffixarray"
+#pragma GCC target("popcnt")
 #pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT
 #include "cp-algo/util/checkpoint.hpp"
@@ -88,40 +89,43 @@ int main() {
         }
     }
     int size = n + 1 + (int)clones.size();
-    to = decltype(to){};
     dense = decltype(dense){};
     cp_algo::checkpoint("build");
-    // Store the suffix-link tree compactly, with each node's children in letter order.
-    // Child IDs fit in 24 bits; the high byte stores the incoming letter.
+    // Children have distinct incoming letters. Reuse b for their letter masks.
     cp_algo::big_vector<int> offset(size + 1);
-    cp_algo::big_vector<uint32_t> edges(size - 1);
-    for(int i = 1; i < size; i++) {
-        offset[link[i]]++;
+    for(auto &t: to) {
+        t.b = 0;
     }
-    std::partial_sum(offset.begin(), offset.end(), offset.begin());
     for(int i = 1; i < size; i++) {
-        int p = link[i];
-        edges[--offset[p]] = (uint32_t(s[position(i) - length(p) - 1] - 'a') << 24) | i;
+        int p = link[i], x = s[position(i) - length(p) - 1] - 'a';
+        to[p].b |= 1U << x;
+        link[i] = (x << 24) | p;
     }
     for(int i = 0; i < size; i++) {
-        std::sort(edges.begin() + offset[i], edges.begin() + offset[i + 1]);
+        offset[i + 1] = offset[i] + __builtin_popcount(to[i].b);
+    }
+    // Count smaller letters to scatter child IDs into a in lexicographic order.
+    for(int i = 1; i < size; i++) {
+        int p = link[i] & 0xFFFFFF, x = unsigned(link[i]) >> 24;
+        int rank = __builtin_popcount(to[p].b & ((1U << x) - 1));
+        to[offset[p] + rank].a = i;
     }
     cp_algo::checkpoint("tree");
-    std::vector<int> stack{0}, answer;
-    answer.reserve(n);
-    while(!stack.empty()) {
-        int u = stack.back();
-        stack.pop_back();
+    // The masks and suffix links are now dead; reuse them for stack/output.
+    int top = 1, count = 0;
+    to[0].b = 0;
+    while(top) {
+        int u = to[--top].b;
         if(u && u <= n) {
-            answer.push_back(n - u);
+            link[count++] = n - u;
         }
         for(int j = offset[u + 1]; j > offset[u];) {
-            stack.push_back(edges[--j] & 0xFFFFFF);
+            to[top++].b = to[--j].a;
         }
     }
     cp_algo::checkpoint("dfs");
-    for(int i: answer) {
-        std::cout << i << ' ';
+    for(int i = 0; i < n; i++) {
+        std::cout << link[i] << ' ';
     }
     std::cout << '\n';
     cp_algo::checkpoint("write");

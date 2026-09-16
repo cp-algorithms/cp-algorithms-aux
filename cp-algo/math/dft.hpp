@@ -72,7 +72,11 @@ namespace cp_algo::math::fft {
                 B.r.emplace_back(qai, qani);
                 cur = montgomery_mul(cur, step4, mod, imod);
             }
+            // Zero the padding explicitly: spectrum storage is not zero-filled on resize.
+            size_t filled = A.r.size();
             A.r.resize(blocks); B.r.resize(blocks);
+            std::fill(A.r.begin() + filled, A.r.end(), vpoint{});
+            std::fill(B.r.begin() + filled, B.r.end(), vpoint{});
             checkpoint("dft init");
             if(n) {
                 if(partial) {

@@ -367,7 +367,6 @@ namespace cp_algo::math::fft {
                     A.dot(B);
                     A.template ifft<true, false>();
                 }
-                using i32x8 = simd<int32_t, 8>;
                 auto scale = vz + double(flen) / double(n);
                 for(size_t i = 0; i < n; i += 8) {
                     auto sum0 = project<true>(A.at(i) * scale, negative, L);
@@ -377,10 +376,10 @@ namespace cp_algo::math::fft {
                         u32x8 plus;
                         std::memcpy(&plus, out + n + i, sizeof(plus));
                         auto lo = plus + sum;
-                        lo = i32x8(lo) >= int32_t(base::mod()) ? lo - base::mod() : lo;
+                        // Unsigned reduction: these sums pass 2^31 for moduli above 2^30.
+                        lo = reduce_once(lo, D::mod);
                         lo = (lo + (lo & 1) * base::mod()) >> 1;
-                        auto hi = montgomery_mul(plus + base::mod() - sum, highmul, D::mod, D::imod);
-                        hi = i32x8(hi) >= int32_t(base::mod()) ? hi - base::mod() : hi;
+                        auto hi = reduce_once(montgomery_mul(plus + base::mod() - sum, highmul, D::mod, D::imod), D::mod);
                         std::memcpy(out + i, &lo, sizeof(lo));
                         std::memcpy(out + n + i, &hi, sizeof(hi));
                     } else {

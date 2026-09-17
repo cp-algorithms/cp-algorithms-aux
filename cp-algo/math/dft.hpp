@@ -42,8 +42,7 @@ namespace cp_algo::math::fft {
                 idx + 2 < std::size(a) ? a[idx + 2].getr() : 0,
                 idx + 3 < std::size(a) ? a[idx + 3].getr() : 0
             };
-            au = montgomery_mul(au, mul, mod, imod);
-            au = au >= base::mod() ? au - base::mod() : au;
+            au = reduce_once(montgomery_mul(au, mul, mod, imod), mod);
             auto ai = to_double(i64x4(au >= base::mod() / 2 ? au - base::mod() : au));
             auto quo = round(ai * (1.0 / split()));
             return std::pair{ai - quo * split(), quo};
@@ -145,8 +144,7 @@ namespace cp_algo::math::fft {
             // Center signed lifts in the unsigned Montgomery input range [0, mod*2^32).
             auto Ai = A0 + A1 * split() + A2 * splitsplit + (uint64_t(base::mod()) << 31);
             auto Au = montgomery_reduce(u64x4(Ai), mod, imod);
-            Au = montgomery_mul(Au, mul, mod, imod);
-            Au = Au >= base::mod() ? Au - base::mod() : Au;
+            Au = reduce_once(montgomery_mul(Au, mul, mod, imod), mod);
             for(size_t j = 0; j < flen; j++) {
                 res[idx + j].setr(typename base::UInt(Au[j]));
             }
@@ -159,7 +157,8 @@ namespace cp_algo::math::fft {
             assert(res.size() >= check);
             size_t n = A.size();
             auto scale = vz + ftype(flen) / ftype(n);
-            auto const splitsplit = base(split() * split()).getr();
+            // split()^2 exceeds the int range for moduli just below 2^31.
+            auto const splitsplit = base(int64_t(split()) * split()).getr();
             base b2x32 = bpow(base(2), 32);
             base b2x64 = bpow(base(2), 64);
             u64x4 cur = {
@@ -170,6 +169,11 @@ namespace cp_algo::math::fft {
             };
             u64x4 step4 = u64x4{} + (bpow(ifactor, 4) * b2x32).getr();
             u64x4 stepn = u64x4{} + (bpow(ifactor, n) * b2x32).getr();
+            // Multipliers stay below mod: the lifts are only reduced to [0, 2 mod), and a product
+            // of two such values overflows the Montgomery accumulator for moduli near 2^31.
+            auto advance = [&](u64x4 x, u64x4 step) {
+                return reduce_once(montgomery_mul(x, step, mod, imod), mod);
+            };
             for(size_t i = 0; i < std::min(n, k); i += flen) {
                 auto get = [&](auto const& x) {
                     if constexpr(normalized) {return x.at(i);}
@@ -180,9 +184,9 @@ namespace cp_algo::math::fft {
                 auto [Cx, Cy] = get(C);
                 do_recover_iter(i, Ax, Bx, Cx, cur, splitsplit, res);
                 if(i + n < k) {
-                    do_recover_iter(i + n, Ay, By, Cy, montgomery_mul(cur, stepn, mod, imod), splitsplit, res);
+                    do_recover_iter(i + n, Ay, By, Cy, advance(cur, stepn), splitsplit, res);
                 }
-                cur = montgomery_mul(cur, step4, mod, imod);
+                cur = advance(cur, step4);
             }
             checkpoint("recover mod");
         }

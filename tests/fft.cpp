@@ -131,14 +131,19 @@ int main() {
     // as the second factor turns the product into window sums, an exact dense reference.
     static_assert(fft::quadratic<modint<998244353>>::fixed_d == 1);
     static_assert(fft::quadratic<modint<1000000007>>::fixed_d == 5);
-    auto window_sums = [&]<int mod>(uint32_t d) {
+    auto window_sums = [&]<int mod>(uint32_t d, size_t n = 1 << 19, uint32_t twist = 0) {
         using V = modint<mod>;
-        size_t n = 1 << 19, m = (1 << 19) - 3;
+        size_t m = n - 3;
+        if(twist) {
+            fft::dft<V>::init();
+            fft::dft<V>::factor = V(twist);
+            fft::dft<V>::ifactor = V(twist).inv();
+        }
         V c = rng() % mod;
         big_vector<V> a(n), b(m, c);
         for(auto &x: a) {x = rng() % mod;}
         auto original = a;
-        assert(fft::quadratic<V>::usable(n, m) && fft::quadratic<V>::d == d);
+        assert(fft::quadratic<V>::usable(n, m) == (n == 1 << 19) && fft::quadratic<V>::d == d);
         fft::mul(a, b);
         assert(a.size() == n + m - 1);
         V window = 0;
@@ -153,6 +158,14 @@ int main() {
     window_sums.template operator()<1000000087>(3);
     window_sums.template operator()<1000000123>(2);
     window_sums.template operator()<1000001351>(13);
+    // Moduli next to 2^31, through the ring and through the split transform below its threshold:
+    // 32-bit sums pass 2^31 there, split()^2 passes the int range, and the recovery multiplier
+    // has to stay below mod to keep the 64-bit Montgomery accumulator from wrapping. The last
+    // one is rare, so the twist is pinned to a value that hit it.
+    window_sums.template operator()<2147483629>(1);
+    window_sums.template operator()<2147483647>(3);
+    window_sums.template operator()<2147483629>(1, 1 << 15, 5);
+    window_sums.template operator()<2147483647>(3, 1 << 15, 5);
     // The signed recovery lift can exceed mod^2 in magnitude for small primes.
     // Fix the twist to reproduce a negative lift that the old offset mishandled.
     using U = modint<65537>;

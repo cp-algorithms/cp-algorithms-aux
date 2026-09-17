@@ -255,40 +255,68 @@ namespace cp_algo::math::fft {
             auto re=half([&](int k){return real(a[k]);}),im=half([&](int k){return imag(a[k]);});
             return {vpoint{re[0],im[0]},vpoint{re[1],im[1]},vpoint{re[2],im[2]},vpoint{re[3],im[3]}};
         }
+        // Multiply groups of 16 points as polynomials modulo x^16 - rt: one radix-4 level on
+        // each operand, a lane-parallel 4-coefficient Karatsuba product, one inverse level.
+        // The weights rt, rt^2, rt^3 of a tile of groups are computed four groups per SIMD
+        // operation ahead of the tile, so the product loop only broadcasts them from memory.
+        static constexpr size_t dot_tile = 64;
         template<size_t fixed>void dot_fused16(cvector const& t,size_t offset,size_t length){
-            constexpr size_t n=fixed;
+            constexpr size_t n=fixed,T=dot_tile;
             point factor=root(n);
-            for(size_t pos=offset;pos<offset+length;pos+=16){
-                size_t k=pos/16;point e=k<pre_evals?evalp[k]:extra[k-pre_evals];point rt=factor*e;
-                vpoint v1={vz+real(rt),vz+imag(rt)},v2=v1*v1,v3=v1*v2;
-                auto forward=[&](cvector const& a) __attribute__((always_inline)) {
-                    auto A=a.at(pos),B=a.at(pos+4)*v1,C=a.at(pos+8)*v2,D=a.at(pos+12)*v3;
-                    return std::array<vpoint,4>{(A+C)+(B+D),(A+C)-(B+D),(A-C)+vi(B-D),(A-C)-vi(B-D)};
-                };
-                auto a=transpose(forward(*this)),b=transpose(forward(t));
-                vpoint w={vftype{real(rt),-real(rt),-imag(rt),imag(rt)},vftype{imag(rt),-imag(rt),real(rt),-real(rt)}};
-                auto cmadd=[](vpoint x,vpoint y,vpoint c) __attribute__((always_inline)) {
-                    auto re=_mm256_fmadd_pd(__m256d(real(x)),__m256d(real(y)),_mm256_fnmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(c))));
-                    auto im=_mm256_fmadd_pd(__m256d(real(x)),__m256d(imag(y)),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(c))));
-                    return vpoint{vftype(re),vftype(im)};
-                };
-                auto cmcross=[](vpoint x,vpoint y,vpoint p,vpoint q) __attribute__((always_inline)) {
-                    auto re=_mm256_sub_pd(_mm256_fmsub_pd(__m256d(real(x)),__m256d(real(y)),__m256d(real(p))),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(q))));
-                    auto im=_mm256_add_pd(_mm256_fmsub_pd(__m256d(real(x)),__m256d(imag(y)),__m256d(imag(p))),_mm256_fmsub_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(q))));
-                    return vpoint{vftype(re),vftype(im)};
-                };
-                auto mul=[&](vpoint a0,vpoint a1,vpoint b0,vpoint b1) __attribute__((always_inline)) {
-                    auto p=a0*b0,q=a1*b1;
-                    return std::array<vpoint,2>{cmadd(w,q,p),cmcross(a0+a1,b0+b1,p,q)};
-                };
-                auto p=mul(a[0],a[2],b[0],b[2]),q=mul(a[1],a[3],b[1],b[3]);
-                auto m=mul(a[0]+a[1],a[2]+a[3],b[0]+b[1],b[2]+b[3]);
-                auto c=transpose({cmadd(w,q[1],p[0]),(m[0]-p[0])-q[0],p[1]+q[0],(m[1]-p[1])-q[1]});
-                auto A=c[0],B=c[1],C=c[2],D=c[3];
-                // Recompute the inverse weights in the original operation order.
-                vpoint u1={vz+real(rt),vz-imag(rt)},u2=u1*u1,u3=u1*u2;
-                at(pos)=(A+B)+(C+D);at(pos+8)=((A+B)-(C+D))*u2;
-                at(pos+4)=((A-B)-vi(C-D))*u1;at(pos+12)=((A-B)+vi(C-D))*u3;
+            auto fr=_mm256_set1_pd(real(factor)),fi=_mm256_set1_pd(imag(factor));
+            alignas(32) double tw[6][T];
+            auto cmadd=[](vpoint x,vpoint y,vpoint c) __attribute__((always_inline)) {
+                auto re=_mm256_fmadd_pd(__m256d(real(x)),__m256d(real(y)),_mm256_fnmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(c))));
+                auto im=_mm256_fmadd_pd(__m256d(real(x)),__m256d(imag(y)),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(c))));
+                return vpoint{vftype(re),vftype(im)};
+            };
+            auto cmcross=[](vpoint x,vpoint y,vpoint p,vpoint q) __attribute__((always_inline)) {
+                auto re=_mm256_sub_pd(_mm256_fmsub_pd(__m256d(real(x)),__m256d(real(y)),__m256d(real(p))),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(q))));
+                auto im=_mm256_add_pd(_mm256_fmsub_pd(__m256d(real(x)),__m256d(imag(y)),__m256d(imag(p))),_mm256_fmsub_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(q))));
+                return vpoint{vftype(re),vftype(im)};
+            };
+            // z * conj(v)
+            auto mulconj=[](vpoint z,vpoint v) __attribute__((always_inline)) {
+                auto re=_mm256_fmadd_pd(__m256d(real(z)),__m256d(real(v)),_mm256_mul_pd(__m256d(imag(z)),__m256d(imag(v))));
+                auto im=_mm256_fmsub_pd(__m256d(imag(z)),__m256d(real(v)),_mm256_mul_pd(__m256d(real(z)),__m256d(imag(v))));
+                return vpoint{vftype(re),vftype(im)};
+            };
+            for(size_t tile=offset;tile<offset+length;tile+=16*T){
+                size_t k0=tile/16;
+                auto const* e=reinterpret_cast<double const*>(k0<pre_evals?evalp.data()+k0:extra.data()+(k0-pre_evals));
+                for(size_t g=0;g<T;g+=4){
+                    auto x=_mm256_loadu_pd(e+2*g),y=_mm256_loadu_pd(e+2*g+4);
+                    auto er=_mm256_permute4x64_pd(_mm256_unpacklo_pd(x,y),0xD8),ei=_mm256_permute4x64_pd(_mm256_unpackhi_pd(x,y),0xD8);
+                    auto r1=_mm256_fmsub_pd(fr,er,_mm256_mul_pd(fi,ei)),i1=_mm256_fmadd_pd(fr,ei,_mm256_mul_pd(fi,er));
+                    auto r2=_mm256_fmsub_pd(r1,r1,_mm256_mul_pd(i1,i1)),i2=_mm256_fmadd_pd(r1,i1,_mm256_mul_pd(i1,r1));
+                    auto r3=_mm256_fmsub_pd(r1,r2,_mm256_mul_pd(i1,i2)),i3=_mm256_fmadd_pd(r1,i2,_mm256_mul_pd(i1,r2));
+                    _mm256_store_pd(tw[0]+g,r1);_mm256_store_pd(tw[1]+g,i1);_mm256_store_pd(tw[2]+g,r2);
+                    _mm256_store_pd(tw[3]+g,i2);_mm256_store_pd(tw[4]+g,r3);_mm256_store_pd(tw[5]+g,i3);
+                }
+                for(size_t g=0;g<T;g++){
+                    size_t pos=tile+16*g;
+                    auto bc=[&](size_t c) __attribute__((always_inline)) {return vftype(_mm256_broadcast_sd(tw[c]+g));};
+                    vpoint v1={bc(0),bc(1)},v2={bc(2),bc(3)},v3={bc(4),bc(5)};
+                    auto forward=[&](cvector const& a) __attribute__((always_inline)) {
+                        auto A=a.at(pos),B=a.at(pos+4)*v1,C=a.at(pos+8)*v2,D=a.at(pos+12)*v3;
+                        return std::array<vpoint,4>{(A+C)+(B+D),(A+C)-(B+D),(A-C)+vi(B-D),(A-C)-vi(B-D)};
+                    };
+                    auto a=transpose(forward(*this)),b=transpose(forward(t));
+                    // The four residues are taken modulo x^4 - rt * {1, -1, i, -i}.
+                    const auto flip_re=_mm256_set_pd(0.,-0.,-0.,0.),flip_im=_mm256_set_pd(-0.,0.,-0.,0.);
+                    vpoint w={vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(real(v1)),__m256d(imag(v1)),0b1100),flip_re)),
+                              vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(imag(v1)),__m256d(real(v1)),0b1100),flip_im))};
+                    auto mul=[&](vpoint a0,vpoint a1,vpoint b0,vpoint b1) __attribute__((always_inline)) {
+                        auto p=a0*b0,q=a1*b1;
+                        return std::array<vpoint,2>{cmadd(w,q,p),cmcross(a0+a1,b0+b1,p,q)};
+                    };
+                    auto p=mul(a[0],a[2],b[0],b[2]),q=mul(a[1],a[3],b[1],b[3]);
+                    auto m=mul(a[0]+a[1],a[2]+a[3],b[0]+b[1],b[2]+b[3]);
+                    auto c=transpose({cmadd(w,q[1],p[0]),(m[0]-p[0])-q[0],p[1]+q[0],(m[1]-p[1])-q[1]});
+                    auto A=c[0],B=c[1],C=c[2],D=c[3];
+                    at(pos)=(A+B)+(C+D);at(pos+8)=mulconj((A+B)-(C+D),v2);
+                    at(pos+4)=mulconj((A-B)-vi(C-D),v1);at(pos+12)=mulconj((A-B)+vi(C-D),v3);
+                }
             }
         }
         // Radix-64 out-of-cache pass for n = 2^24, run as two tiled radix-8 stages.

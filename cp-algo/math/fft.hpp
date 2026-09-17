@@ -263,18 +263,21 @@ namespace cp_algo::math::fft {
             uint64_t seed_a = random::rng() | 1, seed_b = random::rng() | 1;
             a.resize(2 * n);
             cvector A(0), B(0);
-            if(n == (1 << 24)) {
-                A.r.resize(n / flen); B.r.resize(n / flen);
-                checkpoint("cvector create");
-            }
             auto* out = reinterpret_cast<uint32_t*>(std::data(a));
             for(bool negative: {false, true}) {
                 if(n == (1 << 24)) {
-                    cvector::fuse_args fa{out, as, seed_a, double(gaussian::a), double(gaussian::b),
-                                          gaussian::a / double(base::mod()), gaussian::b / double(base::mod())};
-                    cvector::fuse_args fb{reinterpret_cast<const uint32_t*>(std::data(b)), bs, seed_b, fa.a, fa.b, fa.a_over_p, fa.b_over_p};
-                    if(negative) {A.template cache_product<true>(B, fa, fb);}
-                    else {A.template cache_product<false>(B, fa, fb);}
+                    if constexpr(cvector::fuse_forward) {
+                        cvector::fuse_args fa{out, as, seed_a, double(gaussian::a), double(gaussian::b),
+                                              gaussian::a / double(base::mod()), gaussian::b / double(base::mod())};
+                        cvector::fuse_args fb{reinterpret_cast<const uint32_t*>(std::data(b)), bs, seed_b, fa.a, fa.b, fa.a_over_p, fa.b_over_p};
+                        if(negative) {A.template cache_product<true>(B, fa, fb);}
+                        else {A.template cache_product<false>(B, fa, fb);}
+                    } else {
+                        fill(A, std::span(a).first(as), n, negative, seed_a);
+                        fill(B, b, n, negative, seed_b);
+                        if(negative) {A.template cache_product<true>(B);}
+                        else {A.template cache_product<false>(B);}
+                    }
                 } else {
                     fill(A, std::span(a).first(as), n, negative, seed_a);
                     fill(B, b, n, negative, seed_b);
@@ -335,9 +338,11 @@ namespace cp_algo::math::fft {
             return mul(a, copy);
         }
         using base = std::decay_t<decltype(a[0])>;
-        if(gaussian<base>::usable(std::size(a), std::size(b))) {
-            if(square) {auto copy = make_copy(b); return gaussian<base>::mul(a, copy);}
-            return gaussian<base>::mul(a, b);
+        if constexpr(sizeof(base) == 4) {
+            if(gaussian<base>::usable(std::size(a), std::size(b))) {
+                if(square) {auto copy = make_copy(b); return gaussian<base>::mul(a, copy);}
+                return gaussian<base>::mul(a, b);
+            }
         }
         size_t small = std::min(size(a), size(b)), large = std::max(size(a), size(b));
         if(small >= magic && small <= 4096 && large >= (1 << 20) && large / small >= 64) {
@@ -378,9 +383,11 @@ namespace cp_algo::math::fft {
             return impl::mul_unbalanced(a, b);
         }
         using base = std::decay_t<decltype(a[0])>;
-        if(gaussian<base>::usable(std::size(a), std::size(b))) {
-            if(std::data(a) == std::data(b)) {auto copy = make_copy(b); return gaussian<base>::mul(a, copy);}
-            return gaussian<base>::mul(a, b);
+        if constexpr(sizeof(base) == 4) {
+            if(gaussian<base>::usable(std::size(a), std::size(b))) {
+                if(std::data(a) == std::data(b)) {auto copy = make_copy(b); return gaussian<base>::mul(a, copy);}
+                return gaussian<base>::mul(a, b);
+            }
         }
         size_t N = size(a) + size(b);
         if(N > (1 << 20)) {

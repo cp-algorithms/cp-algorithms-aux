@@ -1,5 +1,7 @@
 // @brief Suffix Array
 #define PROBLEM "https://judge.yosupo.jp/problem/suffixarray"
+// Standard headers must precede the target pragma (GCC 14 rejects always_inline mismatches otherwise).
+#include <bits/stdc++.h>
 #pragma GCC target("popcnt")
 #pragma GCC optimize("O3,unroll-loops")
 #define CP_ALGO_CHECKPOINT

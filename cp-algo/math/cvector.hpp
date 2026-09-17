@@ -415,13 +415,22 @@ namespace cp_algo::math::fft {
         // blocks. Both forward transforms read the u32 inputs directly; each block then
         // completes its two forward transforms, the product, and the inverse before the
         // final three inverse stages combine the results.
-        template<bool Neg>
-        void cache_product(cvector& b, fuse_args const& fa, fuse_args const& fb) {
+        // Fusing the Gaussian lift into the first pass saves a write and a read of each
+        // spectrum, but makes that pass compute-bound on the judge (measured slower there),
+        // so it stays opt-in; by default both spectra are filled first and swept in place.
+        static constexpr bool fuse_forward = false;
+        template<bool Neg, bool Fused = fuse_forward>
+        void cache_product(cvector& b, fuse_args const& fa = {}, fuse_args const& fb = {}) {
             constexpr size_t n = 1 << 24, block = 1 << 18;
             prepare_roots(n / 16); prepare_shear_roots();
-            sweep8<false, 2, sweep_tile, 1, Neg>(fa);
-            b.sweep8<false, 2, sweep_tile, 1, Neg>(fb);
-            checkpoint("fused forward");
+            if constexpr(Fused) {
+                sweep8<false, 2, sweep_tile, 1, Neg>(fa);
+                b.sweep8<false, 2, sweep_tile, 1, Neg>(fb);
+            } else {
+                sweep8<false, 2, sweep_tile>();
+                b.sweep8<false, 2, sweep_tile>();
+            }
+            checkpoint("sweep forward");
             for(size_t offset = 0; offset < n; offset += block) {
                 transform<false, n, block, 0, true>(n, false, offset, block);
                 b.transform<false, n, block, 0, true>(n, false, offset, block);

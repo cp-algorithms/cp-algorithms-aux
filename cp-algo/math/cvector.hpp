@@ -329,19 +329,42 @@ namespace cp_algo::math::fft {
         }
         // A product in two steps, this <- this * t modulo x^n - i up to the factor n / flen:
         // forward() on both operands, then multiply(t), which may be *this for a square.
-        // For n a power of four the forward transform stops at groups of 16 points and
-        // dot_fused16 multiplies those, which saves a pass over each operand and one over the
-        // result; other lengths take the complete transform and the 4-point product.
+        // The forward transform stops at groups of 16 points and dot_fused16 multiplies those,
+        // which saves a pass over each operand and one over the result. That needs powers of
+        // four, so a length 2 * 4^k takes its radix-two level at the top, modulo
+        // x^(n/2) -+ sqrt(i); short lengths take the complete transform and the 4-point product.
         void forward() {
             if(!fused_leaves()) {return fft();}
-            transform<false, 0, 0, -1, true>(size(), false);
+            size_t n = size(), part = fused_part();
+            if(part < n) {
+                vpoint vrt = {vz + real(roots[4]), vz + imag(roots[4])};
+                for(size_t k = 0; k < part; k += flen) {
+                    auto t = at(k + part) * vrt;
+                    at(k + part) = at(k) - t;
+                    at(k) += t;
+                }
+            }
+            for(size_t offset = 0; offset < n; offset += part) {
+                transform<false, 0, 0, -1, true>(n, false, offset, part);
+            }
             checkpoint("fft");
         }
         void multiply(cvector const& t) {
             if(!fused_leaves()) {dot(t); return ifft<true, false>();}
-            dot_fused16<0>(t, 0, size());
+            size_t n = size(), part = fused_part();
+            dot_fused16<0>(t, 0, n);
             checkpoint("dot");
-            transform<true, 0, 0, -1, true>(size(), false);
+            for(size_t offset = 0; offset < n; offset += part) {
+                transform<true, 0, 0, -1, true>(n, false, offset, part);
+            }
+            if(part < n) {
+                vpoint cvrt = {vz + real(roots[4]), vz - imag(roots[4])};
+                for(size_t k = 0; k < part; k += flen) {
+                    auto t = at(k) - at(k + part);
+                    at(k) += at(k + part);
+                    at(k + part) = t * cvrt;
+                }
+            }
             checkpoint("ifft");
         }
         // Radix-64 out-of-cache pass for n = 2^24, run as two tiled radix-8 stages.
@@ -498,8 +521,12 @@ namespace cp_algo::math::fft {
         static const std::array<size_t, pre_evals> eval_args;
         static const std::array<point, pre_evals> evalp;
     private:
+        // The power of four that the fused product works on: all of n = 4^k, half of n = 2 * 4^k.
+        size_t fused_part() const {
+            return size() >> (std::countr_zero(size()) % 2);
+        }
         bool fused_leaves() const {
-            return size() >= 16 * dot_tile && std::countr_zero(size()) % 2 == 0;
+            return fused_part() >= 16 * dot_tile;
         }
         // Tile two radix-four stages together before descending into each child.
         template<bool inverse, size_t fixed = 0, size_t range_fixed=0, int top_fixed=-1,bool omit16=false>

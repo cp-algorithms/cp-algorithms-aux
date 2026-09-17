@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <memory>
 #if defined(__x86_64__) && !defined(CP_ALGO_DISABLE_AVX2)
-#define CP_ALGO_SIMD_AVX2_TARGET _Pragma("GCC target(\"avx2\")")
+#define CP_ALGO_SIMD_AVX2_TARGET _Pragma("GCC target(\"avx2,fma\")")
 #else
 #define CP_ALGO_SIMD_AVX2_TARGET
 #endif

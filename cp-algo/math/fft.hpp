@@ -355,7 +355,7 @@ namespace cp_algo::math::fft {
                 emit.template operator()<true>(n + i, bits);
             }
             checkpoint("quadratic init");
-            if constexpr(!stream) {c.fft();}
+            if constexpr(!stream) {c.forward();}
         }
         static u64x4 seed() {
             return u64x4{random::rng() | 1, random::rng() | 1, random::rng() | 1, random::rng() | 1};
@@ -397,12 +397,8 @@ namespace cp_algo::math::fft {
                     }
                 } else {
                     fill<false, true>(A, a_lower, a_upper, n, negative, seed_a);
-                    if(square) {A.dot(A);}
-                    else {
-                        fill<false, true>(B, b_lower, b_upper, n, negative, seed_b);
-                        A.dot(B);
-                    }
-                    A.template ifft<true, false>();
+                    if(!square) {fill<false, true>(B, b_lower, b_upper, n, negative, seed_b);}
+                    A.multiply(square ? A : B);
                 }
                 auto scale = vz + double(flen) / double(n);
                 for(size_t i = 0; i < n; i += 8) {
@@ -444,12 +440,8 @@ namespace cp_algo::math::fft {
                 A.template cache_product<false>(B);
             } else {
                 fill<false, false>(A, a, none, n, false, seed());
-                if(square) {A.dot(A);}
-                else {
-                    fill<false, false>(B, b, none, n, false, seed());
-                    A.dot(B);
-                }
-                A.template ifft<true, false>();
+                if(!square) {fill<false, false>(B, b, none, n, false, seed());}
+                A.multiply(square ? A : B);
             }
             a.resize(n);
             auto* out = reinterpret_cast<uint32_t*>(std::data(a));

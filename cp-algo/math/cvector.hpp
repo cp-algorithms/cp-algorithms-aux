@@ -261,7 +261,8 @@ namespace cp_algo::math::fft {
         // operation ahead of the tile, so the product loop only broadcasts them from memory.
         static constexpr size_t dot_tile = 64;
         template<size_t fixed>void dot_fused16(cvector const& t,size_t offset,size_t length){
-            constexpr size_t n=fixed,T=dot_tile;
+            constexpr size_t T=dot_tile;
+            const size_t n=fixed?fixed:size();
             point factor=root(n);
             auto fr=_mm256_set1_pd(real(factor)),fi=_mm256_set1_pd(imag(factor));
             alignas(32) double tw[6][T];
@@ -325,6 +326,23 @@ namespace cp_algo::math::fft {
                     at(pos+4)=mulconj((A-B)-vi(C-D),v1);at(pos+12)=mulconj((A-B)+vi(C-D),v3);
                 }
             }
+        }
+        // A product in two steps, this <- this * t modulo x^n - i up to the factor n / flen:
+        // forward() on both operands, then multiply(t), which may be *this for a square.
+        // For n a power of four the forward transform stops at groups of 16 points and
+        // dot_fused16 multiplies those, which saves a pass over each operand and one over the
+        // result; other lengths take the complete transform and the 4-point product.
+        void forward() {
+            if(!fused_leaves()) {return fft();}
+            transform<false, 0, 0, -1, true>(size(), false);
+            checkpoint("fft");
+        }
+        void multiply(cvector const& t) {
+            if(!fused_leaves()) {dot(t); return ifft<true, false>();}
+            dot_fused16<0>(t, 0, size());
+            checkpoint("dot");
+            transform<true, 0, 0, -1, true>(size(), false);
+            checkpoint("ifft");
         }
         // Radix-64 out-of-cache pass for n = 2^24, run as two tiled radix-8 stages.
         // With Fuse=1 (forward only) the first stage lifts u32 residues to Gaussian
@@ -480,6 +498,9 @@ namespace cp_algo::math::fft {
         static const std::array<size_t, pre_evals> eval_args;
         static const std::array<point, pre_evals> evalp;
     private:
+        bool fused_leaves() const {
+            return size() >= 16 * dot_tile && std::countr_zero(size()) % 2 == 0;
+        }
         // Tile two radix-four stages together before descending into each child.
         template<bool inverse, size_t fixed = 0, size_t range_fixed=0, int top_fixed=-1,bool omit16=false>
         void transform(size_t input_n, bool parity, size_t range_offset=0, size_t range_length=0, int top_only=0) {

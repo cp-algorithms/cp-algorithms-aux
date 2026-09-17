@@ -265,6 +265,7 @@ namespace cp_algo::math::fft {
             point factor=root(n);
             auto fr=_mm256_set1_pd(real(factor)),fi=_mm256_set1_pd(imag(factor));
             alignas(32) double tw[6][T];
+            const bool ahead=offset+length<n;
             auto cmadd=[](vpoint x,vpoint y,vpoint c) __attribute__((always_inline)) {
                 auto re=_mm256_fmadd_pd(__m256d(real(x)),__m256d(real(y)),_mm256_fnmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(c))));
                 auto im=_mm256_fmadd_pd(__m256d(real(x)),__m256d(imag(y)),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(c))));
@@ -295,6 +296,12 @@ namespace cp_algo::math::fft {
                 }
                 for(size_t g=0;g<T;g++){
                     size_t pos=tile+16*g;
+                    if(ahead){
+                        // Pull the next block of both operands towards the cache while this one is multiplied.
+                        auto const* pa=reinterpret_cast<char const*>(r.data()+(pos+length)/flen);
+                        auto const* pb=reinterpret_cast<char const*>(t.r.data()+(pos+length)/flen);
+                        for(size_t c=0;c<4;c++){_mm_prefetch(pa+64*c,_MM_HINT_T2);_mm_prefetch(pb+64*c,_MM_HINT_T2);}
+                    }
                     auto bc=[&](size_t c) __attribute__((always_inline)) {return vftype(_mm256_broadcast_sd(tw[c]+g));};
                     vpoint v1={bc(0),bc(1)},v2={bc(2),bc(3)},v3={bc(4),bc(5)};
                     auto forward=[&](cvector const& a) __attribute__((always_inline)) {
@@ -530,7 +537,7 @@ namespace cp_algo::math::fft {
                         }
                     }
                 };
-                if(length>=256)run.template operator()<true>();else run.template operator()<false>();
+                if(length>=shear_min<fixed>)run.template operator()<true>();else run.template operator()<false>();
             };
             if(top_only){
                 size_t offset=range_offset,length=range_length;
@@ -630,12 +637,15 @@ namespace cp_algo::math::fft {
             // Radix two is performed separately at the leaves.
             recurse(recurse, range_offset, range_length?range_length:n);
         }
+        // Shortest butterfly that uses the shear rotation; the fixed 2^24 transform reads its
+        // shear roots from a table, so they are worth using down to the last in-block level.
+        template<size_t fixed> static constexpr size_t shear_min = fixed == (1 << 24) ? 64 : 256;
         static big_vector<std::array<point,3>> shear_roots;
         static void prepare_shear_roots() {
             constexpr size_t n=1<<24;
             if(!shear_roots.empty())return;
-            shear_roots.resize((n/64-1)/3,std::array<point,3>{});
-            for(size_t len=n;len>=256;len/=4) {
+            shear_roots.resize((n/16-1)/3,std::array<point,3>{});
+            for(size_t len=n;len>=shear_min<n>;len/=4) {
                 size_t count=n/len,base=(count-1)/3;
                 point factor=roots[29-std::countr_zero(len)];
                 for(size_t k=0;k<count;k++) {

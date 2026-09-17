@@ -237,11 +237,16 @@ namespace cp_algo::math::fft {
         // Lift residues to Gaussian coordinates with stochastic rounding (generic sizes).
         // The xorshift stream is advanced once per 8 residues and restarted from the same
         // seed for both branches, so both see the same representatives.
+        // With stream set the spectrum is written with non-temporal stores: for n = 2^24 it is
+        // far larger than the caches and is next read by a separate pass, so this saves the
+        // read-for-ownership of every destination line.
+        template<bool stream>
         static void fill(cvector& c, auto const& x, size_t n, bool negative, u64x4 state) {
             const lattice L;
             auto const* src = reinterpret_cast<const uint32_t*>(std::data(x));
             size_t count = std::size(x);
-            c.r.clear(); c.r.reserve(n / flen);
+            c.r.resize(n / flen);
+            auto* dst = reinterpret_cast<double*>(c.r.data());
             u32x8 words{};
             auto emit = [&](size_t i, i32x4 bits) __attribute__((always_inline)) {
                 auto v = __builtin_convertvector(bits, vftype);
@@ -250,7 +255,12 @@ namespace cp_algo::math::fft {
                 auto noise = __builtin_convertvector(small, vftype) * 0x1p-32;
                 auto q = round(v * L.a_over_p + noise), t = round(v * L.b_over_p + noise);
                 auto re = v - q * L.a - t * L.b, im = t * L.a - q * L.b;
-                c.r.push_back(vpoint{re, negative ? -im : im});
+                if constexpr(stream) {
+                    _mm256_stream_pd(dst + 2 * i, __m256d(re));
+                    _mm256_stream_pd(dst + 2 * i + flen, __m256d(negative ? -im : im));
+                } else {
+                    c.r[i / flen] = vpoint{re, negative ? -im : im};
+                }
             };
             size_t full = count / flen * flen;
             for(size_t i = 0; i < full; i += flen) {
@@ -263,9 +273,8 @@ namespace cp_algo::math::fft {
                 for(size_t j = full; j < count; j++) {bits[j - full] = int32_t(src[j]);}
                 emit(full, bits);
             }
-            size_t old = c.r.size();
-            c.r.resize(n / flen);
-            std::fill(c.r.begin() + old, c.r.end(), vpoint{});
+            if constexpr(stream) {_mm_sfence();}
+            std::fill(c.r.begin() + (count + flen - 1) / flen, c.r.end(), vpoint{});
             checkpoint("gaussian init");
             if(n != (1 << 24)) {c.fft();}
         }
@@ -294,14 +303,14 @@ namespace cp_algo::math::fft {
                         if(negative) {A.template cache_product<true>(B, fa, fb);}
                         else {A.template cache_product<false>(B, fa, fb);}
                     } else {
-                        fill(A, std::span(a).first(as), n, negative, seed_a);
-                        fill(B, b, n, negative, seed_b);
+                        fill<true>(A, std::span(a).first(as), n, negative, seed_a);
+                        fill<true>(B, b, n, negative, seed_b);
                         if(negative) {A.template cache_product<true>(B);}
                         else {A.template cache_product<false>(B);}
                     }
                 } else {
-                    fill(A, std::span(a).first(as), n, negative, seed_a);
-                    fill(B, b, n, negative, seed_b);
+                    fill<false>(A, std::span(a).first(as), n, negative, seed_a);
+                    fill<false>(B, b, n, negative, seed_b);
                     A.dot(B);
                     A.template ifft<true, false>();
                 }

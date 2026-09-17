@@ -15,7 +15,7 @@ namespace cp_algo::math {
         constexpr static Int mod() {
             return modint::mod();
         }
-        constexpr static Int remod() {
+        constexpr static UInt remod() {
             return modint::remod();
         }
         constexpr static UInt2 modmod() {
@@ -111,18 +111,29 @@ namespace cp_algo::math {
         auto getr() const {return Base::r;}
     };
 
+    // Odd moduli up to a quarter of the unsigned word keep Montgomery residues lazily in
+    // [0, 2 mod): remod() = 2 mod, and both 4 mod and ab + q * mod fit. Any other modulus keeps
+    // fully reduced residues, remod() = mod, which is what the sums of modint_base need then:
+    // an even one without the Montgomery form, a wide odd one with a reduction that subtracts
+    // high words instead of adding double words that would overflow.
     template<typename Int = int>
     struct dynamic_modint: modint_base<dynamic_modint<Int>, Int> {
         using Base = modint_base<dynamic_modint<Int>, Int>;
         using Base::Base;
 
+        // Out of line, so that the hot path stays as small as it was.
+        [[gnu::noinline, gnu::cold]] static Base::UInt m_reduce_reduced(Base::UInt2 ab) {
+            if(mod() % 2 == 0) {return typename Base::UInt(ab % mod());}
+            // q * mod has the low word of ab, so the difference of the high words is exact.
+            typename Base::UInt q = -(typename Base::UInt(ab) * inverse);
+            auto high = typename Base::UInt(ab >> Base::bits);
+            auto low = typename Base::UInt(typename Base::UInt2(q) * typename Base::UInt(mod()) >> Base::bits);
+            return high >= low ? high - low : high - low + mod();
+        }
         static Base::UInt m_reduce(Base::UInt2 ab) {
-            if(mod() % 2 == 0) [[unlikely]] {
-                return typename Base::UInt(ab % mod());
-            } else {
-                typename Base::UInt2 m = typename Base::UInt(ab) * imod();
-                return typename Base::UInt((ab + m * mod()) >> Base::bits);
-            }
+            if(imod() == 0) [[unlikely]] {return m_reduce_reduced(ab);}
+            typename Base::UInt2 m = typename Base::UInt(ab) * imod();
+            return typename Base::UInt((ab + m * mod()) >> Base::bits);
         }
         static Base::UInt m_transform(Base::UInt a) {
             if(mod() % 2 == 0) [[unlikely]] {
@@ -143,12 +154,15 @@ namespace cp_algo::math {
             return std::min(res, res - mod());
         }
         static Int mod() {return m;}
-        static Int remod() {return 2 * m;}
+        static Base::UInt remod() {return rm;}
         static Base::UInt imod() {return im;}
         static Base::UInt2 pw128() {return r2;}
         static void switch_mod(Int nm) {
             m = nm;
-            im = m % 2 ? inv2(-m) : 0;
+            bool lazy = m % 2 && typename Base::UInt(m) <= typename Base::UInt(-1) / 4;
+            rm = typename Base::UInt(m) * (lazy ? 2 : 1);
+            inverse = m % 2 ? inv2(-m) : 0;
+            im = lazy ? inverse : 0;
             r2 = static_cast<Base::UInt>(static_cast<Base::UInt2>(-1) % m + 1);
         }
 
@@ -163,7 +177,9 @@ namespace cp_algo::math {
         }
     private:
         static thread_local Int m;
-        static thread_local Base::UInt im, r2;
+        // im: -1 / mod modulo 2^bits for lazy residues and 0 for reduced ones; inverse: the same
+        // for every odd mod; rm: the value of remod().
+        static thread_local Base::UInt im, r2, inverse, rm;
     };
     template<typename Int>
     Int thread_local dynamic_modint<Int>::m = 1;
@@ -171,5 +187,9 @@ namespace cp_algo::math {
     dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::im = -1;
     template<typename Int>
     dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::r2 = 0;
+    template<typename Int>
+    dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::inverse = -1;
+    template<typename Int>
+    dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::rm = 2;
 }
 #endif // CP_ALGO_MATH_MODINT_HPP

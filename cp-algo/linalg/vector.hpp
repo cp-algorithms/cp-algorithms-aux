@@ -158,7 +158,7 @@ namespace cp_algo::linalg {
         static size_t accumulation_period() {
             // Eight canonical products keep the accumulator below 16 * mod^2.
             // Montgomery residues can be wider, so retain four updates there.
-            return base::remod() == base::mod() && base::mod() < (1LL << 30) ? 8 : 4;
+            return base::remod() == typename base::UInt(base::mod()) && base::mod() < (1LL << 30) ? 8 : 4;
         }
         static u64x4 mul(u64x4 a, u64x4 b) {
 #ifdef __AVX2__
@@ -245,7 +245,7 @@ namespace cp_algo::linalg {
                 std::integral_constant<uint32_t, base::remod()>{};
             }) {
                 return sizeof(base) == sizeof(uint32_t) && base::mod() > 1 &&
-                    base::mod() % 2 && base::mod() < (1U << 30) && base::remod() == base::mod();
+                    base::mod() % 2 && base::mod() < (1U << 30) && base::remod() == typename base::UInt(base::mod());
             } else return false;
         }();
         static u64x4 mul(u64x4 a, u64x4 b) {

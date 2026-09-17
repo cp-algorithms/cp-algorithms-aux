@@ -17,7 +17,7 @@ auto x_ninv=u64x4(_mm256_mul_epu32(__m256i(x),__m256i()+imod));x+=u64x4(_mm256_m
 #else
 auto x_ninv=u64x4(u32x8(low32(x))*imod);x+=x_ninv*uint64_t(mod);
 #endif
-return swap_bytes(x);}inline u64x4 montgomery_mul(u64x4 x,u64x4 y,uint32_t mod,uint32_t imod){
+return swap_bytes(x);}inline u32x8 reduce_once(u32x8 x,uint32_t mod){auto y=x-mod;return x<y?x:y;}inline u64x4 reduce_once(u64x4 x,uint32_t mod){return u64x4(reduce_once(u32x8(x),mod));}inline u64x4 montgomery_mul(u64x4 x,u64x4 y,uint32_t mod,uint32_t imod){
 #ifdef __AVX2__
 return montgomery_reduce(u64x4(_mm256_mul_epu32(__m256i(x),__m256i(y))),mod,imod);
 #else

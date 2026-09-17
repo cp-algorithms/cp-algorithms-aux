@@ -126,6 +126,33 @@ int main() {
             assert(a[i] == expected);
         }
     }
+    // Large products go through the ring Z[sqrt(-d)] with the least d such that -d is a square:
+    // d = 1 for 998244353 and d = 5, 3, 2, 13 for the other primes below. A constant polynomial
+    // as the second factor turns the product into window sums, an exact dense reference.
+    static_assert(fft::quadratic<modint<998244353>>::fixed_d == 1);
+    static_assert(fft::quadratic<modint<1000000007>>::fixed_d == 5);
+    auto window_sums = [&]<int mod>(uint32_t d) {
+        using V = modint<mod>;
+        size_t n = 1 << 19, m = (1 << 19) - 3;
+        V c = rng() % mod;
+        big_vector<V> a(n), b(m, c);
+        for(auto &x: a) {x = rng() % mod;}
+        auto original = a;
+        assert(fft::quadratic<V>::usable(n, m) && fft::quadratic<V>::d == d);
+        fft::mul(a, b);
+        assert(a.size() == n + m - 1);
+        V window = 0;
+        for(size_t k = 0; k < a.size(); k++) {
+            if(k < n) {window += original[k];}
+            if(k >= m) {window -= original[k - m];}
+            assert(a[k] == window * c);
+        }
+    };
+    window_sums.template operator()<998244353>(1);
+    window_sums.template operator()<1000000007>(5);
+    window_sums.template operator()<1000000087>(3);
+    window_sums.template operator()<1000000123>(2);
+    window_sums.template operator()<1000001351>(13);
     // The signed recovery lift can exceed mod^2 in magnitude for small primes.
     // Fix the twist to reproduce a negative lift that the old offset mishandled.
     using U = modint<65537>;

@@ -1,6 +1,8 @@
 #ifndef CP_ALGO_MATH_FFT_HPP
 #define CP_ALGO_MATH_FFT_HPP
 #include "dft.hpp"
+#include "../number_theory/discrete_sqrt.hpp"
+#include "../number_theory/primality.hpp"
 #include <cstring>
 #include <tuple>
 CP_ALGO_SIMD_PRAGMA_PUSH
@@ -179,68 +181,118 @@ namespace cp_algo::math::fft {
     void cyclic_mul(auto &a, auto const& b, size_t k) {
         return cyclic_mul(a, make_copy(b), k);
     }
-    // Gaussian-integer convolution for a 32-bit prime p = a^2 + b^2 (p = 1 mod 4).
-    // Residues become re + im*i with |re|, |im| < sqrt(p) after reducing by the lattice
-    // spanned by (a, b) and (-b, a); i is identified with root = b / a, a square root of -1.
-    // The product is one complex convolution instead of three real ones, computed modulo
-    // x^n - i and x^n + i (the latter through conjugation) and recombined.
+    // Convolution through an imaginary quadratic ring, for a prime modulus p < 2^31.
+    // Let d be the smallest positive integer such that -d is a quadratic residue (d = 1 exactly
+    // when p = 1 mod 4) and root^2 = -d. A residue x is written as re + im*sqrt(-d) with
+    // re + im*root = x, (re, im) reduced by the lattice of representations of zero under the norm
+    // re^2 + d*im^2, so that |re| and sqrt(d)*|im| are of order sqrt(p), and is embedded as the
+    // complex number re + i*sqrt(d)*im. The product is then one complex convolution instead of
+    // three real ones. For d = 1 (Gaussian integers) it is computed modulo x^n - i and x^n + i
+    // (the latter through conjugation) and recombined modulo p, which needs i to lie in the ring;
+    // for any other d it is a single transform of the full product length.
+    constexpr uint64_t pow_mod(uint64_t x, uint64_t e, uint64_t p) {
+        uint64_t res = 1;
+        for(x %= p; e; e >>= 1, x = x * x % p) {if(e & 1) {res = res * x % p;}}
+        return res;
+    }
+    // Smallest d > 0 with -d a quadratic residue modulo the odd prime p < 2^31, or 0.
+    constexpr uint32_t least_negated_residue(uint64_t p) {
+        for(uint32_t d = 1; d < 256 && d < p; d++) {
+            if(pow_mod(p - d, (p - 1) / 2, p) == 1) {return d;}
+        }
+        return 0;
+    }
     template<modint_type base>
-    struct gaussian {
+    struct quadratic {
         static inline bool ready = false, available = false;
-        static inline uint32_t a = 0, b = 0, root = 0;
+        static inline uint32_t d = 0, root = 0;
+        // (a, b) and (a2, b2): reduced basis of the pairs (re, im) that represent zero.
+        static inline int32_t a = 0, b = 0, a2 = 0, b2 = 0;
+        // A fixed modulus settles d at compile time, so only the path in use is instantiated.
+        static constexpr bool fixed_mod = requires {typename std::bool_constant<(base::mod(), true)>;};
+        static constexpr uint32_t fixed_d = [] {
+            if constexpr(fixed_mod) {return base::mod() > 2 && base::mod() % 2 ? least_negated_residue(base::mod()) : 0u;}
+            else {return 0u;}
+        }();
         static void init() {
             if(ready) {return;}
             ready = true;
             uint64_t p = base::mod();
-            if(p % 4 != 1 || p >= (uint64_t(1) << 31)) {return;}
-            // A square root of -1 from a quadratic non-residue, then Euclid down to sqrt(p).
-            uint64_t s = 0;
-            for(uint64_t g = 2; g < p; g++) {
-                if(bpow(base(g), (p - 1) / 2) != base(1)) {s = bpow(base(g), (p - 1) / 4).getr(); break;}
+            if(p < 5 || p >= (uint64_t(1) << 31) || !is_prime(p)) {return;}
+            d = least_negated_residue(p);
+            auto s = d ? cp_algo::math::sqrt(base(-int64_t(d))) : std::nullopt;
+            if(!s) {return;}
+            root = s->getr();
+            // Lagrange reduction of (p, 0), (-root, 1) under the norm x^2 + d*y^2.
+            using wide = __int128;
+            wide x1 = p, y1 = 0, x2 = -wide(root), y2 = 1;
+            auto norm = [&](wide x, wide y) {return x * x + d * y * y;};
+            while(true) {
+                if(norm(x1, y1) > norm(x2, y2)) {std::swap(x1, x2); std::swap(y1, y2);}
+                wide dot = x1 * x2 + d * y1 * y2, len = norm(x1, y1);
+                wide m = (2 * dot + (dot >= 0 ? len : -len)) / (2 * len);
+                if(m == 0 || norm(x2 - m * x1, y2 - m * y1) >= norm(x2, y2)) {break;}
+                x2 -= m * x1; y2 -= m * y1;
             }
-            uint64_t r0 = p, r1 = s;
-            while(r1 * r1 > p) {std::tie(r0, r1) = std::pair{r1, r0 % r1};}
-            uint64_t aa = r1, bb = uint64_t(std::sqrt((long double)(p - aa * aa)) + 0.5);
-            if(aa * aa + bb * bb != p) {return;}
-            a = uint32_t(aa); b = uint32_t(bb);
-            root = (base(b) / base(a)).getr();
-            assert(base(root) * base(root) == base(p - 1));
+            a = int32_t(x1); b = int32_t(y1);
+            // In the Gaussian integers i*(a, b) = (-b, a) lies in the lattice as well.
+            if(d == 1) {a2 = b; b2 = -a;}
+            else {a2 = int32_t(x2); b2 = int32_t(y2);}
+            assert(base(a) + base(b) * base(root) == base(0) && base(a2) + base(b2) * base(root) == base(0));
+            assert(std::abs(int64_t(a) * b2 - int64_t(a2) * b) == int64_t(p));
             available = true;
         }
-        // Whether the Gaussian path is used for operands of these sizes.
+        // Whether this path is used for operands of these sizes. The rounding error grows like
+        // n*sqrt(d) for transforms of n points, and d = 1 is known to hold for n = 2^24, so
+        // n*d <= 2^24 stays on the safe side of that.
         static bool usable(size_t as, size_t bs) {
             init();
             if(!available || !as || !bs) {return false;}
-            size_t n = std::max(flen, std::bit_ceil(as + bs - 1) / 2);
-            return std::max(as, bs) <= n && n >= (size_t(1) << 18);
+            size_t need = as + bs - 1;
+            if(d == 1) {
+                size_t n = std::max(flen, std::bit_ceil(need) / 2);
+                return std::max(as, bs) <= n && n >= (size_t(1) << 18);
+            }
+            size_t n = std::bit_ceil(need);
+            return n >= (size_t(1) << 19) && uint64_t(n) * d <= (uint64_t(1) << 24);
         }
-        // Precomputed lattice constants, hoisted out of the hot loops (the statics are
-        // uint32_t and could alias the uint32_t output stream).
+        // Lattice constants as doubles, hoisted out of the hot loops (the statics are 32-bit
+        // integers and could alias the 32-bit output stream).
         struct lattice {
-            double a, b, root, inv_b, a_over_p, b_over_p;
-            lattice(): a(gaussian::a), b(gaussian::b), root(gaussian::root), inv_b(1.0 / b),
-                       a_over_p(a / double(base::mod())), b_over_p(b / double(base::mod())) {}
+            // (c, e): the basis vector with the larger second coordinate, used to shrink im.
+            double a, b, a2, b2, to_q, to_t, c, e, inv_e, root, scale, inv_scale;
+            lattice(): a(quadratic::a), b(quadratic::b), a2(quadratic::a2), b2(quadratic::b2) {
+                double det = a * b2 - a2 * b;
+                to_q = b2 / det; to_t = -b / det;
+                bool first = std::abs(b) >= std::abs(b2);
+                c = first ? a : a2; e = first ? b : b2; inv_e = 1.0 / e;
+                root = quadratic::root;
+                scale = std::sqrt(double(d)); inv_scale = 1.0 / scale;
+            }
         };
-        // Map a rounded Gaussian coordinate pair back to the residue re + root*im.
+        // Map a rounded coordinate pair back to the residue re + root*im.
+        template<bool unit>
         static u32x4 project(vpoint value, bool negative, lattice const& L) {
             constexpr double p = base::mod();
-            auto R = round(real(value)), I = round(negative ? -imag(value) : imag(value));
-            auto q = round(I * L.inv_b);
-            auto U = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(L.a), __m256d(R)));
-            auto V = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(L.b), __m256d(I)));
+            auto R = round(real(value)), I = negative ? -imag(value) : imag(value);
+            if constexpr(unit) {I = round(I);}
+            else {I = round(I * L.inv_scale);}
+            auto q = round(I * L.inv_e);
+            auto U = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(L.c), __m256d(R)));
+            auto V = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(L.e), __m256d(I)));
             auto h = vftype(_mm256_fmadd_pd(__m256d(V), _mm256_set1_pd(L.root), __m256d(U)));
             q = round(h * (1.0 / p));
             auto out = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(p), __m256d(h)));
             out = out < 0 ? out + p : out;
             return u32x4(_mm256_cvttpd_epi32(__m256d(out)));
         }
-        // Lift residues to Gaussian coordinates with stochastic rounding (generic sizes).
+        // Lift residues to ring coordinates with stochastic rounding.
         // The xorshift stream is advanced once per 8 residues and restarted from the same
         // seed for both branches, so both see the same representatives.
         // With stream set the spectrum is written with non-temporal stores: for n = 2^24 it is
         // far larger than the caches and is next read by a separate pass, so this saves the
         // read-for-ownership of every destination line.
-        template<bool stream>
+        template<bool stream, bool unit>
         static void fill(cvector& c, auto const& x, size_t n, bool negative, u64x4 state) {
             const lattice L;
             auto const* src = reinterpret_cast<const uint32_t*>(std::data(x));
@@ -253,8 +305,9 @@ namespace cp_algo::math::fft {
                 if(i % 8 == 0) {state ^= state << 13; state ^= state >> 7; state ^= state << 17; words = u32x8(state);}
                 i32x4 small = i % 8 ? i32x4(__builtin_shufflevector(words, words, 1, 3, 5, 7)) : i32x4(__builtin_shufflevector(words, words, 0, 2, 4, 6));
                 auto noise = __builtin_convertvector(small, vftype) * 0x1p-32;
-                auto q = round(v * L.a_over_p + noise), t = round(v * L.b_over_p + noise);
-                auto re = v - q * L.a - t * L.b, im = t * L.a - q * L.b;
+                auto q = round(v * L.to_q + noise), t = round(v * L.to_t + noise);
+                auto re = v - q * L.a - t * L.a2, im = -(q * L.b) - t * L.b2;
+                if constexpr(!unit) {im = im * L.scale;}
                 if constexpr(stream) {
                     _mm256_stream_pd(dst + 2 * i, __m256d(re));
                     _mm256_stream_pd(dst + 2 * i + flen, __m256d(negative ? -im : im));
@@ -275,20 +328,21 @@ namespace cp_algo::math::fft {
             }
             if constexpr(stream) {_mm_sfence();}
             std::fill(c.r.begin() + (count + flen - 1) / flen, c.r.end(), vpoint{});
-            checkpoint("gaussian init");
+            checkpoint("quadratic init");
             if(n != (1 << 24)) {c.fft();}
         }
-        // a <- a * b; both operands must fit in half of the padded product length.
-        static void mul(auto& a, auto const& b) {
-            static_assert(sizeof(std::decay_t<decltype(a[0])>) == 4);
+        static u64x4 seed() {
+            return u64x4{random::rng() | 1, random::rng() | 1, random::rng() | 1, random::rng() | 1};
+        }
+        // a <- a * b for d = 1; both operands must fit in half of the padded product length.
+        static void mul_branches(auto& a, auto const& b) {
             size_t as = std::size(a), bs = std::size(b), need = as + bs - 1;
             size_t n = std::max(flen, std::bit_ceil(need) / 2);
-            assert(available && as <= n && bs <= n);
+            assert(available && d == 1 && as <= n && bs <= n);
             using D = dft<base>;
             D::init();
             base r32 = bpow(base(2), 32);
             auto highmul = u32x8{} + uint32_t(((base(2) * base(root)).inv() * r32).getr());
-            auto seed = []() {return u64x4{random::rng() | 1, random::rng() | 1, random::rng() | 1, random::rng() | 1};};
             u64x4 seed_a = seed(), seed_b = seed();
             const lattice L;
             a.resize(2 * n);
@@ -297,28 +351,27 @@ namespace cp_algo::math::fft {
             for(bool negative: {false, true}) {
                 if(n == (1 << 24)) {
                     if constexpr(cvector::fuse_forward) {
-                        cvector::fuse_args fa{out, as, seed_a[0], double(gaussian::a), double(gaussian::b),
-                                              gaussian::a / double(base::mod()), gaussian::b / double(base::mod())};
+                        cvector::fuse_args fa{out, as, seed_a[0], L.a, L.b, L.a / double(base::mod()), L.b / double(base::mod())};
                         cvector::fuse_args fb{reinterpret_cast<const uint32_t*>(std::data(b)), bs, seed_b[0], fa.a, fa.b, fa.a_over_p, fa.b_over_p};
                         if(negative) {A.template cache_product<true>(B, fa, fb);}
                         else {A.template cache_product<false>(B, fa, fb);}
                     } else {
-                        fill<true>(A, std::span(a).first(as), n, negative, seed_a);
-                        fill<true>(B, b, n, negative, seed_b);
+                        fill<true, true>(A, std::span(a).first(as), n, negative, seed_a);
+                        fill<true, true>(B, b, n, negative, seed_b);
                         if(negative) {A.template cache_product<true>(B);}
                         else {A.template cache_product<false>(B);}
                     }
                 } else {
-                    fill<false>(A, std::span(a).first(as), n, negative, seed_a);
-                    fill<false>(B, b, n, negative, seed_b);
+                    fill<false, true>(A, std::span(a).first(as), n, negative, seed_a);
+                    fill<false, true>(B, b, n, negative, seed_b);
                     A.dot(B);
                     A.template ifft<true, false>();
                 }
                 using i32x8 = simd<int32_t, 8>;
                 auto scale = vz + double(flen) / double(n);
                 for(size_t i = 0; i < n; i += 8) {
-                    auto sum0 = project(A.at(i) * scale, negative, L);
-                    auto sum1 = project(A.at(i + 4) * scale, negative, L);
+                    auto sum0 = project<true>(A.at(i) * scale, negative, L);
+                    auto sum1 = project<true>(A.at(i + 4) * scale, negative, L);
                     auto sum = __builtin_shufflevector(sum0, sum1, 0, 1, 2, 3, 4, 5, 6, 7);
                     if(negative) {
                         u32x8 plus;
@@ -334,9 +387,38 @@ namespace cp_algo::math::fft {
                         std::memcpy(out + n + i, &sum, sizeof(sum));
                     }
                 }
-                checkpoint("gaussian recover");
+                checkpoint("quadratic recover");
             }
             a.resize(need);
+        }
+        // a <- a * b for d > 1: i is not in the ring, so the two branches could only be
+        // recombined as complex numbers, which is slower and less exact than one full transform.
+        static void mul_single(auto& a, auto const& b) {
+            size_t as = std::size(a), bs = std::size(b), need = as + bs - 1;
+            size_t n = std::max(flen, std::bit_ceil(need));
+            assert(available && d > 1);
+            const lattice L;
+            cvector A(0), B(0);
+            fill<false, false>(A, a, n, false, seed());
+            fill<false, false>(B, b, n, false, seed());
+            A.dot(B);
+            A.template ifft<true, false>();
+            a.resize(n);
+            auto* out = reinterpret_cast<uint32_t*>(std::data(a));
+            auto scale = vz + double(flen) / double(n);
+            for(size_t i = 0; i < n; i += flen) {
+                auto sum = project<false>(A.at(i) * scale, false, L);
+                std::memcpy(out + i, &sum, sizeof(sum));
+            }
+            checkpoint("quadratic recover");
+            a.resize(need);
+        }
+        static void mul(auto& a, auto const& b) {
+            static_assert(sizeof(std::decay_t<decltype(a[0])>) == 4);
+            if constexpr(fixed_d == 1) {mul_branches(a, b);}
+            else if constexpr(fixed_d > 1) {mul_single(a, b);}
+            else if(d == 1) {mul_branches(a, b);}
+            else {mul_single(a, b);}
         }
     };
     namespace impl {
@@ -369,9 +451,9 @@ namespace cp_algo::math::fft {
         }
         using base = std::decay_t<decltype(a[0])>;
         if constexpr(sizeof(base) == 4) {
-            if(gaussian<base>::usable(std::size(a), std::size(b))) {
-                if(square) {auto copy = make_copy(b); return gaussian<base>::mul(a, copy);}
-                return gaussian<base>::mul(a, b);
+            if(quadratic<base>::usable(std::size(a), std::size(b))) {
+                if(square) {auto copy = make_copy(b); return quadratic<base>::mul(a, copy);}
+                return quadratic<base>::mul(a, b);
             }
         }
         size_t small = std::min(size(a), size(b)), large = std::max(size(a), size(b));
@@ -414,9 +496,9 @@ namespace cp_algo::math::fft {
         }
         using base = std::decay_t<decltype(a[0])>;
         if constexpr(sizeof(base) == 4) {
-            if(gaussian<base>::usable(std::size(a), std::size(b))) {
-                if(std::data(a) == std::data(b)) {auto copy = make_copy(b); return gaussian<base>::mul(a, copy);}
-                return gaussian<base>::mul(a, b);
+            if(quadratic<base>::usable(std::size(a), std::size(b))) {
+                if(std::data(a) == std::data(b)) {auto copy = make_copy(b); return quadratic<base>::mul(a, copy);}
+                return quadratic<base>::mul(a, b);
             }
         }
         size_t N = size(a) + size(b);

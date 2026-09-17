@@ -126,9 +126,10 @@ int main() {
             assert(a[i] == expected);
         }
     }
-    // Large products go through the ring Z[sqrt(-d)] with the least d such that -d is a square:
+    // Products go through the ring Z[sqrt(-d)] with the least d such that -d is a square:
     // d = 1 for 998244353 and d = 5, 3, 2, 13 for the other primes below. A constant polynomial
     // as the second factor turns the product into window sums, an exact dense reference.
+    // A pinned twist selects the split transform instead, which the twist belongs to.
     static_assert(fft::quadratic<modint<998244353>>::fixed_d == 1);
     static_assert(fft::quadratic<modint<1000000007>>::fixed_d == 5);
     auto window_sums = [&]<int mod>(uint32_t d, size_t n = 1 << 19, uint32_t twist = 0) {
@@ -143,8 +144,9 @@ int main() {
         big_vector<V> a(n), b(m, c);
         for(auto &x: a) {x = rng() % mod;}
         auto original = a;
-        assert(fft::quadratic<V>::usable(n, m) == (n == 1 << 19) && fft::quadratic<V>::d == d);
-        fft::mul(a, b);
+        assert(fft::quadratic<V>::usable(n, m) && fft::quadratic<V>::d == d);
+        if(twist) {fft::mul_truncate(a, b, n + m - 1);}
+        else {fft::mul(a, b);}
         assert(a.size() == n + m - 1);
         V window = 0;
         for(size_t k = 0; k < a.size(); k++) {
@@ -158,7 +160,23 @@ int main() {
     window_sums.template operator()<1000000087>(3);
     window_sums.template operator()<1000000123>(2);
     window_sums.template operator()<1000001351>(13);
-    // Moduli next to 2^31, through the ring and through the split transform below its threshold:
+    // 2^24 points in one transform for d > 1, and an operand that wraps around for d = 1.
+    window_sums.template operator()<1000000007>(5, 1 << 23);
+    {
+        using V = modint<998244353>;
+        big_vector<V> a(3000), b(1000), c(3999);
+        for(auto &x: a) {x = rng() % V::mod();}
+        for(auto &x: b) {x = rng() % V::mod();}
+        for(size_t i = 0; i < a.size(); i++) {
+            for(size_t j = 0; j < b.size(); j++) {c[i + j] += a[i] * b[j];}
+        }
+        assert(fft::quadratic<V>::usable(a.size(), b.size()) && fft::com_size(a.size(), b.size()) < a.size());
+        fft::mul(a, b);
+        assert(a == c);
+        // The split transform halves its length for a short wrapped tail, so it keeps those.
+        assert(!fft::quadratic<V>::usable(513, 513) && fft::quadratic<V>::usable(600, 600));
+    }
+    // Moduli next to 2^31, through the ring and through the split transform:
     // 32-bit sums pass 2^31 there, split()^2 passes the int range, and the recovery multiplier
     // has to stay below mod to keep the 64-bit Montgomery accumulator from wrapping. The last
     // one is rare, so the twist is pinned to a value that hit it.

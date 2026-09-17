@@ -53,11 +53,30 @@ namespace cp_algo::math::fft {
         size_t n = com_size(as, bs);
         return as + bs - 1 - n <= short_tail && as <= n && bs <= n;
     }
+    template<modint_type base> struct quadratic;
     void mul_truncate(auto &a, auto const& b, size_t k) {
         using base = std::decay_t<decltype(a[0])>;
         if(std::min({k, std::size(a), std::size(b)}) < magic) {
             mul_slow(a, b, k);
             return;
+        }
+        // The ring path multiplies the truncated operands in full, as the code below does.
+        if constexpr(sizeof(base) == 4 && std::ranges::contiguous_range<decltype(b)>) {
+            size_t as = std::min(k, std::size(a)), bs = std::min(k, std::size(b));
+            if(quadratic<base>::usable(as, bs)) {
+                bool aliased = std::data(a) == std::data(b), square = aliased && as == bs;
+                if(aliased && !square) {
+                    big_vector<base> copy(std::data(b), std::data(b) + bs);
+                    a.resize(as);
+                    quadratic<base>::mul(a, copy, false);
+                } else {
+                    auto prefix = std::span<base const>(std::data(b), bs);
+                    a.resize(as);
+                    quadratic<base>::mul(a, prefix, square);
+                }
+                a.resize(k);
+                return;
+            }
         }
         auto n = std::max(flen, std::bit_ceil(
             std::min(k, std::size(a)) + std::min(k, std::size(b)) - 1
@@ -212,7 +231,7 @@ namespace cp_algo::math::fft {
     template<modint_type base>
     struct quadratic {
         static inline bool ready = false, available = false;
-        static inline uint32_t d = 0, root = 0;
+        static inline uint32_t d = 0, root = 0, prime = 0;
         // (a, b) and (a2, b2): reduced basis of the pairs (re, im) that represent zero.
         static inline int32_t a = 0, b = 0, a2 = 0, b2 = 0;
         // A fixed modulus settles d at compile time, so only the path in use is instantiated.
@@ -222,9 +241,10 @@ namespace cp_algo::math::fft {
             else {return 0u;}
         }();
         static void init() {
-            if(ready) {return;}
-            ready = true;
+            if(ready && prime == uint32_t(base::mod())) {return;}
+            ready = true; available = false;
             uint64_t p = base::mod();
+            prime = uint32_t(p);
             if(p < 5 || p >= (uint64_t(1) << 31) || !is_prime(p)) {return;}
             d = least_negated_residue(p);
             auto s = d ? cp_algo::math::sqrt(base(-int64_t(d))) : std::nullopt;
@@ -250,23 +270,24 @@ namespace cp_algo::math::fft {
             available = true;
         }
         // Points per transform: two branches of half the padded product length for d = 1, one
-        // transform of the whole length otherwise.
+        // transform of the whole length otherwise. A short tail beyond that is computed naively
+        // and taken back out, as in mul_truncate, which halves the transform: over the residues
+        // for d = 1, where the branches together work modulo x^(2n) + 1, and in ring coordinates
+        // for the single transform, which works modulo x^n - i.
         static size_t length(size_t as, size_t bs) {
-            return d == 1 ? com_size(as, bs) : 2 * com_size(as, bs);
+            return (d == 1 ? com_size(as, bs) : 2 * com_size(as, bs)) >> has_short_tail(as, bs);
         }
         // Whether this path is used for operands of these sizes. With n = com_size(as, bs) it
         // takes six transforms of n points (three of 2n for d > 1), four for a square, where the
         // split representation takes seven and five, so it is preferred whenever it is exact,
-        // unless the split path halves n by correcting a short tail, or a transform exceeds 2^24
-        // points, the only length with a kernel tiled for data outside the caches (which in turn
-        // does not let an operand wrap around).
+        // unless a transform exceeds 2^24 points, the only length with a kernel tiled for data
+        // outside the caches (which in turn does not let an operand wrap around).
         // Exactness: the largest rounding error measured is about
         // 0.003 * sqrt(need * d / 2^22) * p / 2^30, so the bound below keeps it under 1/16.
         static bool usable(size_t as, size_t bs) {
             init();
             if(!available || std::min(as, bs) < size_t(magic)) {return false;}
             size_t need = as + bs - 1, n = length(as, bs);
-            if(as + bs <= (1 << 20) && has_short_tail(as, bs)) {return false;}
             if(n > (1 << 24) || (n == (1 << 24) && d == 1 && std::max(as, bs) > n)) {return false;}
             using wide = unsigned __int128;
             return wide(need) * d * base::mod() * base::mod() <= wide(1) << 90;
@@ -275,8 +296,8 @@ namespace cp_algo::math::fft {
         // integers and could alias the 32-bit output stream).
         struct lattice {
             // (c, e): the basis vector with the larger second coordinate, used to shrink im.
-            double a, b, a2, b2, to_q, to_t, c, e, inv_e, root, scale, inv_scale;
-            lattice(): a(quadratic::a), b(quadratic::b), a2(quadratic::a2), b2(quadratic::b2) {
+            double a, b, a2, b2, to_q, to_t, c, e, inv_e, root, scale, inv_scale, p;
+            lattice(): a(quadratic::a), b(quadratic::b), a2(quadratic::a2), b2(quadratic::b2), p(base::mod()) {
                 double det = a * b2 - a2 * b;
                 to_q = b2 / det; to_t = -b / det;
                 bool first = std::abs(b) >= std::abs(b2);
@@ -288,7 +309,7 @@ namespace cp_algo::math::fft {
         // Map a rounded coordinate pair back to the residue re + root*im.
         template<bool unit>
         static u32x4 project(vpoint value, bool negative, lattice const& L) {
-            constexpr double p = base::mod();
+            const double p = L.p;
             auto R = round(real(value)), I = negative ? -imag(value) : imag(value);
             if constexpr(unit) {I = round(I);}
             else {I = round(I * L.inv_scale);}
@@ -310,7 +331,7 @@ namespace cp_algo::math::fft {
         // Coefficients from n on (d = 1 only) wrap around: x^n = i in the branch modulo x^n - i,
         // and the conjugated branch modulo x^n + i sees conj(-i * z) = i * conj(z).
         template<bool stream, bool unit>
-        static void fill(cvector& c, auto const& x, auto const& upper, size_t n, bool negative, u64x4 state) {
+        static void fill(cvector& c, auto const& x, auto const& upper, size_t n, bool negative, u64x4 state, bool transform = true) {
             const lattice L;
             auto const* src = reinterpret_cast<const uint32_t*>(std::data(x));
             size_t count = std::size(x);
@@ -355,7 +376,7 @@ namespace cp_algo::math::fft {
                 emit.template operator()<true>(n + i, bits);
             }
             checkpoint("quadratic init");
-            if constexpr(!stream) {c.forward();}
+            if constexpr(!stream) {if(transform) {c.forward();}}
         }
         static u64x4 seed() {
             return u64x4{random::rng() | 1, random::rng() | 1, random::rng() | 1, random::rng() | 1};
@@ -365,8 +386,20 @@ namespace cp_algo::math::fft {
         // is set aside first.
         static void mul_branches(auto& a, auto const& b, bool square) {
             size_t as = std::size(a), bs = square ? as : std::size(b), need = as + bs - 1;
-            size_t n = com_size(as, bs);
+            size_t n = length(as, bs);
             assert(available && d == 1);
+            // Coefficients from 2n on come back negated at the bottom; there are few of them.
+            std::array<uint32_t, short_tail> high{};
+            size_t tail = need > 2 * n ? need - 2 * n : 0;
+            for(size_t i = 0; i < tail; i++) {
+                auto const* x = reinterpret_cast<const uint32_t*>(std::data(a));
+                auto const* y = square ? x : reinterpret_cast<const uint32_t*>(std::data(b));
+                uint64_t sum = 0;
+                for(size_t j = 2 * n + i - bs + 1; j < as; j++) {
+                    sum = (sum + uint64_t(x[j]) * y[2 * n + i - j]) % prime;
+                }
+                high[i] = uint32_t(sum);
+            }
             using D = dft<base>;
             D::init();
             base r32 = bpow(base(2), 32);
@@ -422,26 +455,50 @@ namespace cp_algo::math::fft {
                 checkpoint("quadratic recover");
             }
             a.resize(need);
+            out = reinterpret_cast<uint32_t*>(std::data(a));
+            for(size_t i = 0; i < tail; i++) {
+                uint32_t sum = out[i] + high[i];
+                out[i] = std::min(sum, sum - prime);
+                out[2 * n + i] = high[i];
+            }
         }
         // a <- a * b for d > 1, or a <- a * a with square set: i is not in the ring, so two
         // branches could only be recombined as complex numbers, which is slower and less exact
         // than one full transform.
         static void mul_single(auto& a, auto const& b, bool square) {
             size_t as = std::size(a), bs = square ? as : std::size(b), need = as + bs - 1;
-            size_t n = 2 * com_size(as, bs);
+            size_t n = length(as, bs), tail = need > n ? need - n : 0;
             assert(available && d > 1);
             const lattice L;
             cvector A(0), B(0);
             std::span<base const> none;
+            // Coefficients from n on, in ring coordinates: they come back multiplied by i.
+            std::array<point, short_tail> high{};
+            auto wrapped = [&](cvector const& rhs) {
+                for(size_t i = 0; i < tail; i++) {
+                    for(size_t j = n + i - bs + 1; j < as; j++) {
+                        high[i] += A.template get<point>(j) * rhs.template get<point>(n + i - j);
+                    }
+                }
+            };
             if(n == (1 << 24)) {
                 fill<true, false>(A, a, none, n, false, seed());
                 if(square) {fill<true, false>(B, a, none, n, false, seed());}
                 else {fill<true, false>(B, b, none, n, false, seed());}
+                wrapped(B);
                 A.template cache_product<false>(B);
             } else {
-                fill<false, false>(A, a, none, n, false, seed());
-                if(!square) {fill<false, false>(B, b, none, n, false, seed());}
+                fill<false, false>(A, a, none, n, false, seed(), !tail);
+                if(!square) {fill<false, false>(B, b, none, n, false, seed(), !tail);}
+                if(tail) {
+                    wrapped(square ? A : B);
+                    A.forward();
+                    if(!square) {B.forward();}
+                }
                 A.multiply(square ? A : B);
+            }
+            for(size_t i = 0; i < tail; i++) {
+                A.set(i, A.template get<point>(i) - point(0, 1) * high[i] * (double(n) / double(flen)));
             }
             a.resize(n);
             auto* out = reinterpret_cast<uint32_t*>(std::data(a));
@@ -452,13 +509,36 @@ namespace cp_algo::math::fft {
             }
             checkpoint("quadratic recover");
             a.resize(need);
+            out = reinterpret_cast<uint32_t*>(std::data(a));
+            for(size_t i = 0; i < tail; i += flen) {
+                vpoint lanes = {vz, vz};
+                for(size_t j = i; j < std::min(tail, i + flen); j++) {
+                    real(lanes)[j - i] = real(high[j]);
+                    imag(lanes)[j - i] = imag(high[j]);
+                }
+                auto sum = project<false>(lanes, false, L);
+                for(size_t j = i; j < std::min(tail, i + flen); j++) {out[n + j] = sum[j - i];}
+            }
         }
+        // Both routines read and write the storage as plain residues, which it is for modint<m>.
+        // A runtime-modulus type keeps another form, so its operands are converted on the way.
         static void mul(auto& a, auto const& b, bool square) {
             static_assert(sizeof(std::decay_t<decltype(a[0])>) == 4);
-            if constexpr(fixed_d == 1) {mul_branches(a, b, square);}
-            else if constexpr(fixed_d > 1) {mul_single(a, b, square);}
-            else if(d == 1) {mul_branches(a, b, square);}
-            else {mul_single(a, b, square);}
+            auto run = [&](auto const& rhs) {
+                if constexpr(fixed_d == 1) {mul_branches(a, rhs, square);}
+                else if constexpr(fixed_d > 1) {mul_single(a, rhs, square);}
+                else if(d == 1) {mul_branches(a, rhs, square);}
+                else {mul_single(a, rhs, square);}
+            };
+            if constexpr(fixed_mod) {run(b);}
+            else {
+                big_vector<base> plain;
+                if(!square) {plain.assign(std::begin(b), std::end(b));}
+                for(auto& x: plain) {x.setr_direct(x.getr());}
+                for(auto& x: a) {x.setr_direct(x.getr());}
+                run(plain);
+                for(auto& x: a) {x.setr(x.getr_direct());}
+            }
         }
     };
     namespace impl {

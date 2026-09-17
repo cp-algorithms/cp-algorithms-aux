@@ -22,7 +22,8 @@ namespace cp_algo::math::fft {
         static uint32_t mod, imod;
 
         static void init() {
-            if(!_init) {
+            // A runtime modulus may have changed since the twist was drawn.
+            if(!_init || mod != uint32_t(base::mod())) {
                 factor = 1 + random::rng() % (base::mod() - 1);
                 ifactor = base(1) / factor;
                 mod = base::mod();

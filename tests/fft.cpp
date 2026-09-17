@@ -173,8 +173,23 @@ int main() {
         assert(fft::quadratic<V>::usable(a.size(), b.size()) && fft::com_size(a.size(), b.size()) < a.size());
         fft::mul(a, b);
         assert(a == c);
-        // The split transform halves its length for a short wrapped tail, so it keeps those.
-        assert(!fft::quadratic<V>::usable(513, 513) && fft::quadratic<V>::usable(600, 600));
+        // A short wrapped tail halves the transform: over the residues for d = 1, in ring
+        // coordinates for the single transform.
+        for(size_t extra: {size_t(1), size_t(17)}) {
+            big_vector<V> x(1024 + extra), y(1025), want(x.size() + y.size() - 1);
+            big_vector<modint<1000000007>> x5(x.size()), y5(y.size()), want5(want.size());
+            for(size_t i = 0; i < x.size(); i++) {x[i] = rng() % V::mod(); x5[i] = rng() % 1000000007;}
+            for(size_t i = 0; i < y.size(); i++) {y[i] = rng() % V::mod(); y5[i] = rng() % 1000000007;}
+            for(size_t i = 0; i < x.size(); i++) {
+                for(size_t j = 0; j < y.size(); j++) {want[i + j] += x[i] * y[j]; want5[i + j] += x5[i] * y5[j];}
+            }
+            assert(fft::has_short_tail(x.size(), y.size()));
+            assert(fft::quadratic<V>::length(x.size(), y.size()) == 1024);
+            assert(fft::quadratic<modint<1000000007>>::usable(x.size(), y.size()));
+            assert(fft::quadratic<modint<1000000007>>::length(x.size(), y.size()) == 2048);
+            fft::mul(x, y); fft::mul(x5, y5);
+            assert(x == want && x5 == want5);
+        }
     }
     // Moduli next to 2^31, through the ring and through the split transform:
     // 32-bit sums pass 2^31 there, split()^2 passes the int range, and the recovery multiplier
@@ -203,5 +218,22 @@ int main() {
     }
     fft::dft<U>::factor = saved_factor;
     fft::dft<U>::ifactor = saved_ifactor;
+    // A runtime modulus stores residues in another form and may change between products.
+    for(int p: {998244353, 1000000007, 2147483629, 998244353}) {
+        using W = dynamic_modint<int>;
+        W::switch_mod(p);
+        big_vector<W> x(700), y(693), want(x.size() + y.size() - 1);
+        for(auto &v: x) {v = int64_t(rng() % p);}
+        for(auto &v: y) {v = int64_t(rng() % p);}
+        for(size_t i = 0; i < x.size(); i++) {
+            for(size_t j = 0; j < y.size(); j++) {want[i + j] += x[i] * y[j];}
+        }
+        auto square = x;
+        fft::mul(square, square);
+        auto other = x;
+        fft::mul(other, x);
+        fft::mul(x, y);
+        assert(x == want && square == other);
+    }
     std::cout << "FFT and large convolution properties passed\n";
 }

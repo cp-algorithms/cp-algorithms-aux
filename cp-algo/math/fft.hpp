@@ -214,35 +214,54 @@ namespace cp_algo::math::fft {
             size_t n = std::max(flen, std::bit_ceil(as + bs - 1) / 2);
             return std::max(as, bs) <= n && n >= (size_t(1) << 18);
         }
+        // Precomputed lattice constants, hoisted out of the hot loops (the statics are
+        // uint32_t and could alias the uint32_t output stream).
+        struct lattice {
+            double a, b, root, inv_b, a_over_p, b_over_p;
+            lattice(): a(gaussian::a), b(gaussian::b), root(gaussian::root), inv_b(1.0 / b),
+                       a_over_p(a / double(base::mod())), b_over_p(b / double(base::mod())) {}
+        };
         // Map a rounded Gaussian coordinate pair back to the residue re + root*im.
-        static u32x4 project(vpoint value, bool negative) {
-            const double p = base::mod(), da = a, db = b, dr = root;
+        static u32x4 project(vpoint value, bool negative, lattice const& L) {
+            constexpr double p = base::mod();
             auto R = round(real(value)), I = round(negative ? -imag(value) : imag(value));
-            auto q = round(I * (1.0 / db));
-            auto U = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(da), __m256d(R)));
-            auto V = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(db), __m256d(I)));
-            auto h = vftype(_mm256_fmadd_pd(__m256d(V), _mm256_set1_pd(dr), __m256d(U)));
+            auto q = round(I * L.inv_b);
+            auto U = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(L.a), __m256d(R)));
+            auto V = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(L.b), __m256d(I)));
+            auto h = vftype(_mm256_fmadd_pd(__m256d(V), _mm256_set1_pd(L.root), __m256d(U)));
             q = round(h * (1.0 / p));
             auto out = vftype(_mm256_fnmadd_pd(__m256d(q), _mm256_set1_pd(p), __m256d(h)));
             out = out < 0 ? out + p : out;
             return u32x4(_mm256_cvttpd_epi32(__m256d(out)));
         }
         // Lift residues to Gaussian coordinates with stochastic rounding (generic sizes).
-        static void fill(cvector& c, auto const& x, size_t n, bool negative, uint64_t seed) {
-            cvector::fuse_args fa{reinterpret_cast<const uint32_t*>(std::data(x)), std::size(x), seed,
-                                  double(a), double(b), a / double(base::mod()), b / double(base::mod())};
+        // The xorshift stream is advanced once per 8 residues and restarted from the same
+        // seed for both branches, so both see the same representatives.
+        static void fill(cvector& c, auto const& x, size_t n, bool negative, u64x4 state) {
+            const lattice L;
+            auto const* src = reinterpret_cast<const uint32_t*>(std::data(x));
+            size_t count = std::size(x);
             c.r.clear(); c.r.reserve(n / flen);
-            for(size_t i = 0; i < std::size(x); i += flen) {
-                i32x4 bits{};
-                if(i + flen <= std::size(x)) {std::memcpy(&bits, fa.src + i, sizeof(bits));}
-                else {for(size_t j = i; j < std::size(x); j++) {bits[j - i] = int32_t(fa.src[j]);}}
+            u32x8 words{};
+            auto emit = [&](size_t i, i32x4 bits) __attribute__((always_inline)) {
                 auto v = __builtin_convertvector(bits, vftype);
-                u32x4 h = u32x4{uint32_t(i), uint32_t(i + 1), uint32_t(i + 2), uint32_t(i + 3)} ^ uint32_t(seed);
-                h *= 0x9E3779B1u; h ^= h >> 15; h *= 0x85EBCA77u; h ^= h >> 13; h *= 0xC2B2AE3Du; h ^= h >> 16;
-                auto noise = __builtin_convertvector(i32x4(h), vftype) * 0x1p-32;
-                auto q = round(v * fa.a_over_p + noise), t = round(v * fa.b_over_p + noise);
-                auto re = v - q * fa.a - t * fa.b, im = t * fa.a - q * fa.b;
+                if(i % 8 == 0) {state ^= state << 13; state ^= state >> 7; state ^= state << 17; words = u32x8(state);}
+                i32x4 small = i % 8 ? i32x4(__builtin_shufflevector(words, words, 1, 3, 5, 7)) : i32x4(__builtin_shufflevector(words, words, 0, 2, 4, 6));
+                auto noise = __builtin_convertvector(small, vftype) * 0x1p-32;
+                auto q = round(v * L.a_over_p + noise), t = round(v * L.b_over_p + noise);
+                auto re = v - q * L.a - t * L.b, im = t * L.a - q * L.b;
                 c.r.push_back(vpoint{re, negative ? -im : im});
+            };
+            size_t full = count / flen * flen;
+            for(size_t i = 0; i < full; i += flen) {
+                i32x4 bits;
+                std::memcpy(&bits, src + i, sizeof(bits));
+                emit(i, bits);
+            }
+            if(full < count) {
+                i32x4 bits{};
+                for(size_t j = full; j < count; j++) {bits[j - full] = int32_t(src[j]);}
+                emit(full, bits);
             }
             size_t old = c.r.size();
             c.r.resize(n / flen);
@@ -260,16 +279,18 @@ namespace cp_algo::math::fft {
             D::init();
             base r32 = bpow(base(2), 32);
             auto highmul = u32x8{} + uint32_t(((base(2) * base(root)).inv() * r32).getr());
-            uint64_t seed_a = random::rng() | 1, seed_b = random::rng() | 1;
+            auto seed = []() {return u64x4{random::rng() | 1, random::rng() | 1, random::rng() | 1, random::rng() | 1};};
+            u64x4 seed_a = seed(), seed_b = seed();
+            const lattice L;
             a.resize(2 * n);
             cvector A(0), B(0);
             auto* out = reinterpret_cast<uint32_t*>(std::data(a));
             for(bool negative: {false, true}) {
                 if(n == (1 << 24)) {
                     if constexpr(cvector::fuse_forward) {
-                        cvector::fuse_args fa{out, as, seed_a, double(gaussian::a), double(gaussian::b),
+                        cvector::fuse_args fa{out, as, seed_a[0], double(gaussian::a), double(gaussian::b),
                                               gaussian::a / double(base::mod()), gaussian::b / double(base::mod())};
-                        cvector::fuse_args fb{reinterpret_cast<const uint32_t*>(std::data(b)), bs, seed_b, fa.a, fa.b, fa.a_over_p, fa.b_over_p};
+                        cvector::fuse_args fb{reinterpret_cast<const uint32_t*>(std::data(b)), bs, seed_b[0], fa.a, fa.b, fa.a_over_p, fa.b_over_p};
                         if(negative) {A.template cache_product<true>(B, fa, fb);}
                         else {A.template cache_product<false>(B, fa, fb);}
                     } else {
@@ -287,8 +308,8 @@ namespace cp_algo::math::fft {
                 using i32x8 = simd<int32_t, 8>;
                 auto scale = vz + double(flen) / double(n);
                 for(size_t i = 0; i < n; i += 8) {
-                    auto sum0 = project(A.at(i) * scale, negative);
-                    auto sum1 = project(A.at(i + 4) * scale, negative);
+                    auto sum0 = project(A.at(i) * scale, negative, L);
+                    auto sum1 = project(A.at(i + 4) * scale, negative, L);
                     auto sum = __builtin_shufflevector(sum0, sum1, 0, 1, 2, 3, 4, 5, 6, 7);
                     if(negative) {
                         u32x8 plus;

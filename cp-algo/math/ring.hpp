@@ -219,8 +219,17 @@ namespace cp_algo::math::fft {
                 if constexpr(wrap) {c.r[(i - n) / flen] += vpoint{negative ? im : -im, re};}
                 else {c.r[i / flen] = vpoint{re, negative ? -im : im};}
             };
+            // Residues are raw 32-bit words exactly when the modulus is a compile-time constant.
+            constexpr bool raw = fixed_mod && sizeof(base) == 4
+                              && std::ranges::contiguous_range<std::decay_t<decltype(x)>>;
             auto load = [&](size_t i, size_t upto) {
                 i32x4 bits{};
+                if constexpr(raw) {
+                    if(i + flen <= upto) {
+                        std::memcpy(&bits, reinterpret_cast<const uint32_t*>(std::data(x)) + i, sizeof(bits));
+                        return bits;
+                    }
+                }
                 for(size_t j = i; j < std::min(i + flen, upto); j++) {bits[j - i] = int32_t(x[j].getr());}
                 return bits;
             };
@@ -232,27 +241,57 @@ namespace cp_algo::math::fft {
         // Read a product out of its transformed branches, applying the inverse-transform scale.
         // For d = 1 the branches hold the product modulo x^n - i and modulo x^n + i, so the low
         // half of the result is their half-sum and the high half their half-difference over i.
+        // The half of the result that the branches are recombined into is parked in the output
+        // itself, which is always long enough: the high half is only wanted where the low half
+        // has already been read back.
         static void recover(std::array<cvector, 2> const& parts, size_t n, double factor, auto& out, size_t k) {
+            // Residues are raw 32-bit words exactly when the modulus is a compile-time constant,
+            // which is what lets the recombination stay vectorized.
+            constexpr bool raw = fixed_mod && sizeof(base) == 4
+                              && std::ranges::contiguous_range<std::decay_t<decltype(out)>>;
             const lattice L;
             auto scale = vz + factor;
-            auto store = [&](cvector const& part, bool negative, size_t upto, auto&& sink) {
-                for(size_t i = 0; i < upto; i += flen) {
-                    u32x4 v = d == 1 ? project<true>(part.at(i) * scale, negative, L)
-                                     : project<false>(part.at(i) * scale, negative, L);
-                    for(size_t j = 0; j < std::min(flen, upto - i); j++) {sink(i + j, v[j]);}
-                }
-            };
-            auto put = [&](size_t i, uint32_t v) {out[i].setr(typename base::UInt(v));};
-            if(d > 1) {store(parts[0], false, std::min(k, n), put); return;}
             size_t low = std::min(k, n);
-            store(parts[0], false, low, put);
-            base half = base(2).inv(), twist = (base(2) * base(root)).inv();
-            store(parts[1], true, low, [&](size_t i, uint32_t v) {
-                base minus; minus.setr(typename base::UInt(v));
-                base plus = out[i];
-                if(n + i < k) {out[n + i] = (plus - minus) * twist;}
-                out[i] = (plus + minus) * half;
-            });
+            auto project_at = [&](cvector const& part, size_t i, bool negative) {
+                if(d == 1) {return project<true>(part.at(i) * scale, negative, L);}
+                else {return project<false>(part.at(i) * scale, negative, L);}
+            };
+            // Eight coefficients at a time, the width the recombination works in.
+            auto project8 = [&](cvector const& part, size_t i, bool negative, size_t count) {
+                auto lo8 = project_at(part, i, negative);
+                auto hi8 = count > flen ? project_at(part, i + flen, negative) : u32x4{};
+                return __builtin_shufflevector(lo8, hi8, 0, 1, 2, 3, 4, 5, 6, 7);
+            };
+            auto store8 = [&](size_t idx, u32x8 v, size_t count) {
+                if constexpr(raw) {
+                    if(count == 8) {std::memcpy(reinterpret_cast<uint32_t*>(std::data(out)) + idx, &v, sizeof(v)); return;}
+                }
+                for(size_t l = 0; l < count; l++) {out[idx + l].setr(typename base::UInt(v[l]));}
+            };
+            auto load8 = [&](size_t idx, size_t count) {
+                u32x8 v{};
+                if constexpr(raw) {
+                    if(count == 8) {std::memcpy(&v, reinterpret_cast<uint32_t const*>(std::data(out)) + idx, sizeof(v)); return v;}
+                }
+                for(size_t l = 0; l < count; l++) {v[l] = uint32_t(out[idx + l].getr());}
+                return v;
+            };
+            for(size_t i = 0; i < low; i += 8) {
+                store8(i, project8(parts[0], i, false, std::min<size_t>(8, low - i)), std::min<size_t>(8, low - i));
+            }
+            if(d > 1) {checkpoint("quadratic recover"); return;}
+            const uint32_t mod32 = uint32_t(base::mod()), imod32 = -inv2<uint32_t>(base::mod());
+            auto highmul = u32x8{} + uint32_t(((base(2) * base(root)).inv() * bpow(base(2), 32)).getr());
+            for(size_t i = 0; i < low; i += 8) {
+                size_t count = std::min<size_t>(8, low - i);
+                auto minus = project8(parts[1], i, true, count);
+                auto plus = load8(i, count);
+                auto lo8 = reduce_once(plus + minus, mod32);
+                lo8 = (lo8 + (lo8 & 1) * mod32) >> 1;
+                auto hi8 = reduce_once(montgomery_mul(plus + mod32 - minus, highmul, mod32, imod32), mod32);
+                store8(i, lo8, count);
+                if(n + i < k) {store8(n + i, hi8, std::min<size_t>(count, k - n - i));}
+            }
             checkpoint("quadratic recover");
         }
         // Cyclic product modulo x^k - 1, in place over a, for operands of exactly k coefficients.
@@ -264,24 +303,26 @@ namespace cp_algo::math::fft {
             init();
             assert(available && std::popcount(k) == 1 && std::size(a) == k && std::size(b) == k);
             bool square = (void const*)std::data(a) == (void const*)std::data(b);
-            // w^j from two tables, as the root tables of the transform itself are built.
-            size_t fine_bits = std::min<size_t>(8, std::countr_zero(k));
+            // w^j from a table of every fourth power, built the way the root tables of the
+            // transform are, and four consecutive powers per vector by one broadcast multiply.
+            size_t groups = k / flen;
+            size_t fine_bits = std::min<size_t>(8, std::countr_zero(std::max<size_t>(groups, 1)));
             size_t fine = size_t(1) << fine_bits;
-            big_vector<point> low(fine), high(k >> fine_bits);
-            for(size_t t = 0; t < low.size(); t++) {
-                low[t] = polar<ftype>(1., -std::numbers::pi * ftype(t) / ftype(2 * k));
-            }
-            for(size_t c = 0; c < high.size(); c++) {
-                high[c] = polar<ftype>(1., -std::numbers::pi * ftype(c << fine_bits) / ftype(2 * k));
+            big_vector<point> low(fine), high((groups + fine - 1) >> fine_bits), step(groups);
+            auto w = [&](size_t j) {return polar<ftype>(1., -std::numbers::pi * ftype(j) / ftype(2 * k));};
+            for(size_t t = 0; t < low.size(); t++) {low[t] = w(flen * t);}
+            for(size_t c = 0; c < high.size(); c++) {high[c] = w(flen * (c << fine_bits));}
+            for(size_t c = 0; c < groups; c++) {step[c] = high[c >> fine_bits] * low[c & (fine - 1)];}
+            vpoint quarter, quarter_conj;
+            for(size_t l = 0; l < flen; l++) {
+                point v = w(l);
+                real(quarter)[l] = real(v); imag(quarter)[l] = imag(v);
+                real(quarter_conj)[l] = real(v); imag(quarter_conj)[l] = -imag(v);
             }
             auto twiddle = [&](size_t j, bool inverse, ftype scale) {
-                vpoint v;
-                for(size_t l = 0; l < flen; l++) {
-                    point w = high[(j + l) >> fine_bits] * low[(j + l) & (fine - 1)];
-                    real(v)[l] = real(w) * scale;
-                    imag(v)[l] = (inverse ? -imag(w) : imag(w)) * scale;
-                }
-                return v;
+                point t = step[j / flen];
+                vpoint head = {vz + real(t) * scale, vz + (inverse ? -imag(t) : imag(t)) * scale};
+                return head * (inverse ? quarter_conj : quarter);
             };
             auto run = [&]<bool unit>() {
                 const lattice L;

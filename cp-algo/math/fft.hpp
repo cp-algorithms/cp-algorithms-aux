@@ -6,8 +6,8 @@
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::fft {
     void mul_slow(auto &a, auto const& b, size_t k) {
+        using base = std::decay_t<decltype(a[0])>;
         if(!std::empty(a) && std::data(a) == std::data(b)) {
-            using base = std::decay_t<decltype(a[0])>;
             size_t n = std::min(k, std::size(a)), m = std::min(k, std::size(b));
             if(!m) {a.clear(); return;}
             a.resize(k);
@@ -29,7 +29,11 @@ namespace cp_algo::math::fft {
         } else {
             size_t n = std::min(k, std::size(a));
             size_t m = std::min(k, std::size(b));
+            size_t had = std::size(a);
             a.resize(k);
+            // The loop below reads every coefficient it writes, so the growth is zeroed here
+            // rather than relying on the caller's allocator to do it.
+            if(k > had) {std::fill(std::begin(a) + had, std::end(a), base(0));}
             for(int j = int(k - 1); j >= 0; j--) {
                 a[j] *= b[0];
                 for(int i = std::max(j - (int)n, 0) + 1; i < std::min(j + 1, (int)m); i++) {
@@ -57,6 +61,10 @@ namespace cp_algo::math::fft {
         size_t as = std::min(k, std::size(a)), bs = std::min(k, std::size(b));
         assert(quadratic<base>::usable(as, bs) && "the ring needs an odd prime modulus below 2^31 and a product within its rounding bound");
         bool aliased = same_storage(a, b), square = aliased && as == bs;
+        // Everything past the true length of the product is zero, written here rather than
+        // left to the caller's allocator.
+        size_t need = as + bs - 1, keep = std::min(k, need);
+        auto pad = [&] {if(k > need) {std::fill(std::begin(a) + need, std::end(a), base(0));}};
         if constexpr(sizeof(base) == 4 && std::ranges::contiguous_range<decltype(b)>) {
             if(aliased && !square) {
                 big_vector<base> copy(std::data(b), std::data(b) + bs);
@@ -68,14 +76,16 @@ namespace cp_algo::math::fft {
                 quadratic<base>::mul(a, prefix, square);
             }
             a.resize(k);
+            pad();
         } else {
             // Wider storage or a non-contiguous operand: the reusable transform reads and writes
             // through the modint interface instead of the raw residues.
-            size_t cap = std::bit_ceil(as + bs - 1);
+            size_t cap = std::bit_ceil(need);
             auto A = spectrum<base>(a | std::views::take(as), cap);
             a.resize(k);
-            if(square) {std::move(A).square(a, k);}
-            else {std::move(A).multiply(spectrum<base>(b | std::views::take(bs), cap), a, k);}
+            if(square) {std::move(A).square(a, keep);}
+            else {std::move(A).multiply(spectrum<base>(b | std::views::take(bs), cap), a, keep);}
+            pad();
         }
     }
     // Cyclic product modulo x^k - 1, in place over a.
@@ -92,7 +102,9 @@ namespace cp_algo::math::fft {
             constexpr size_t length = 1 << 15;
             size_t step = length - y.size() + 1;
             auto fixed = spectrum<base>(y, length);
-            std::decay_t<decltype(a)> result(x.size() + y.size() - 1);
+            std::decay_t<decltype(a)> result;
+            // Accumulated into, so the zeros are written rather than assumed.
+            result.assign(x.size() + y.size() - 1, base(0));
             big_vector<base> work(length);
             for(size_t start = 0; start < x.size(); start += step) {
                 size_t count = std::min(step, x.size() - start);

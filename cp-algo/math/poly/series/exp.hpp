@@ -25,30 +25,22 @@ namespace cp_algo::math {
         auto r = inv(q, m), dp = deriv(p);
         for(; m < n; m *= 2) {
             size_t k = std::min(2 * m, n), t = k - m;
-            auto Q = fft::dft<T>(q.a, m), R = fft::dft<T>(r.a, m);
+            auto Q = fft::spectrum<T>(q.a, 2 * m), R = fft::spectrum<T>(r.a, 2 * m);
             typename poly_t<T>::Vector work(2 * m);
-            {
-                auto D = fft::dft<T>(dp.a | std::views::take(k - 1), m);
-                D.mul(Q, work, k - 1);
-            }
+            fft::spectrum<T>(dp.a | std::views::take(k - 1), 2 * m).multiply(Q, work, k - 1);
             // p' q - q' vanishes below m-1. Cyclic wrap only touches <m-1.
-            auto E = fft::dft<T>(work | std::views::drop(m - 1) | std::views::take(t), m);
-            E.mul(R, work, t);
+            fft::spectrum<T>(work | std::views::drop(m - 1) | std::views::take(t), 2 * m).multiply(R, work, t);
             for(size_t i = 0; i < t; i++) {work[i] *= small_inv<T>(m + i);}
             // d = (p - log(q)) / x^m. Keep it for the reciprocal correction.
             auto d = typename poly_t<T>::Vector(begin(work), begin(work) + t);
-            {
-                auto D = fft::dft<T>(d, m);
-                D.mul(Q, work, t);
-            }
+            fft::spectrum<T>(d, 2 * m).multiply(Q, work, t);
             q.a.resize(k);
             std::copy_n(begin(work), t, begin(q.a) + m);
             if(k == n) {break;}
             // (q*(1+x^m*d))^-1 = q^-1*(1-x^m*d) modulo x^(2m).
-            Q.mul(R, work, k);
+            std::move(Q).multiply(R, work, k);
             for(size_t i = 0; i < t; i++) {work[m + i] += d[i];}
-            auto H = fft::dft<T>(work | std::views::drop(m) | std::views::take(t), m);
-            H.mul(R, work, t);
+            fft::spectrum<T>(work | std::views::drop(m) | std::views::take(t), 2 * m).multiply(R, work, t);
             r.a.resize(k);
             for(size_t i = 0; i < t; i++) {r.a[m + i] = -work[i];}
         }

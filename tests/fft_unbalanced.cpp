@@ -17,7 +17,7 @@ template<typename T> void check() {
         cp_algo::big_vector<T> expected(begin(a), end(a)), other(begin(b), end(b));
         expected.resize(length); other.resize(length);
         // Independent existing cyclic backend, bypassing unbalanced dispatch.
-        fft::cyclic_mul(expected, other, length, large <= length / 2);
+        fft::cyclic_mul(expected, other, length);
         expected.resize(need);
         auto original = a;
         fft::mul(a, std::as_const(b));

@@ -20,15 +20,15 @@ namespace cp_algo::math::poly::impl {
         auto qq = q0 * q0 - (q1 * q1).mul_xk_inplace(1);
         inv_inplace(qq, k / 2 - q.deg() / 2, (n + 1) / 2 + q.deg() / 2);
         size_t N = fft::com_size(size(q0.a), size(qq.a));
-        auto q0f = fft::dft<base>(q0.a, N);
-        auto q1f = fft::dft<base>(q1.a, N);
-        auto qqf = fft::dft<base>(qq.a, N);
+        auto q0f = fft::spectrum<base>(q0.a, 2 * N);
+        auto q1f = fft::spectrum<base>(q1.a, 2 * N);
+        auto qqf = fft::spectrum<base>(qq.a, 2 * N);
         size_t M = q0.deg() + (n + 1) / 2;
         typename poly::Vector A, B;
         A.resize((M + fft::flen - 1) / fft::flen * fft::flen);
         B.resize((M + fft::flen - 1) / fft::flen * fft::flen);
-        q0f.mul(qqf, A, M);
-        q1f.mul_inplace(qqf, B, M);
+        std::move(q0f).multiply(qqf, A, M);
+        std::move(q1f).multiply(qqf, B, M);
         q.a.resize(n + 1);
         for(size_t i = 0; i < n; i += 2) {
             q.a[i] = A[q0.deg() + i / 2];
@@ -60,16 +60,27 @@ namespace cp_algo::math {
 
             size_t N = fft::com_size((n + 1) / 2, (n + 1) / 2);
 
-            auto Q0f = fft::dft<T>(Q0.a, N);
-            auto Q1f = fft::dft<T>(Q1.a, N);
-            auto P0f = fft::dft<T>(P0.a, N);
-            auto P1f = fft::dft<T>(P1.a, N);
+            auto Q0f = fft::spectrum<T>(Q0.a, 2 * N);
+            auto Q1f = fft::spectrum<T>(Q1.a, 2 * N);
+            auto P0f = fft::spectrum<T>(P0.a, 2 * N);
+            auto P1f = fft::spectrum<T>(P1.a, 2 * N);
 
-            Q = poly_t<T>(Q0f * Q0f) - poly_t<T>(Q1f * Q1f).mul_xk_inplace(1);
+            // Both halves are squared before they are consumed, so those two copies are clones.
+            auto squared = [N](auto const& f) {
+                big_vector<T> res(2 * N);
+                f.clone().square(res, 2 * N);
+                return res;
+            };
+            auto times = [N](auto&& f, auto const& g) {
+                big_vector<T> res(2 * N);
+                std::move(f).multiply(g, res, 2 * N);
+                return res;
+            };
+            Q = poly_t<T>(squared(Q0f)) - poly_t<T>(squared(Q1f)).mul_xk_inplace(1);
             if(k % 2) {
-                P = poly_t<T>(Q0f *= P1f) - poly_t<T>(Q1f *= P0f);
+                P = poly_t<T>(times(std::move(Q0f), P1f)) - poly_t<T>(times(std::move(Q1f), P0f));
             } else {
-                P = poly_t<T>(Q0f *= P0f) - poly_t<T>(Q1f *= P1f).mul_xk_inplace(1);
+                P = poly_t<T>(times(std::move(Q0f), P0f)) - poly_t<T>(times(std::move(Q1f), P1f)).mul_xk_inplace(1);
             }
             k /= 2;
         }

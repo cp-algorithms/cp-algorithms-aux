@@ -91,7 +91,9 @@ namespace cp_algo::math::fps_detail {
     };
     template<typename T> struct product_transforms {};
     template<modint_type T> struct product_transforms<T> {
-        std::vector<std::optional<fft::dft<T>>> transforms;
+        // Shared because the enclosing product is copied into a std::function, and immutable
+        // because a transform is only ever read after it is built.
+        std::vector<std::shared_ptr<fft::spectrum<T> const>> transforms;
     };
     // One fixed input: each completed dyadic block fills the following block.
     // Cache fixed prefix transforms; only the middle of each product is needed.
@@ -137,17 +139,13 @@ namespace cp_algo::math::fps_detail {
                     if(!fixed) {
                         big_vector<T> block(count);
                         for(size_t j = 0; j < count; j++) {block[j] = coefficient(j);}
-                        fixed.emplace(block, len);
+                        fixed = std::make_shared<fft::spectrum<T> const>(block, 2 * len);
                     }
-                    auto block = fft::dft<T>(std::span(b).subspan(start, len), len);
                     big_vector<T> result(2 * len);
-                    // Retain a prefix only when reused; consume the first transform in place.
-                    if(end == len) {
-                        block.mul_inplace(*fixed, result, 2 * len);
-                        fixed.reset();
-                    } else {
-                        block.mul(*fixed, result, 2 * len);
-                    }
+                    fft::spectrum<T>(std::span(b).subspan(start, len), 2 * len)
+                        .multiply(*fixed, result, 2 * len);
+                    // The prefix transform is kept for the blocks that follow, if any.
+                    if(end == len) {fixed.reset();}
                     // Only the upper half is needed; cyclic wraparound affects the lower half.
                     for(size_t i = 0; i < len; i++) {c[end + i] += result[len + i];}
                     return;

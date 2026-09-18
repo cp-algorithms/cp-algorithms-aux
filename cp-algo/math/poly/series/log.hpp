@@ -20,22 +20,17 @@ namespace cp_algo::math {
         // Solve p*q = p' in two halves, avoiding a full-precision reciprocal.
         size_t m = std::bit_floor(k - 1), t = k - m;
         auto r = inv(p, m);
-        auto R = fft::dft<T>(r.a, m);
+        auto R = fft::spectrum<T>(r.a, 2 * m);
         typename poly_t<T>::Vector work(2 * m);
-        {
-            auto D = fft::dft<T>(dp.a | std::views::take(m), m);
-            D.mul(R, work, m);
-        }
+        fft::spectrum<T>(dp.a | std::views::take(m), 2 * m).multiply(R, work, m);
         poly_t<T> q(typename poly_t<T>::Vector(begin(work), begin(work) + m));
         {
-            auto Q = fft::dft<T>(q.a, m);
-            auto P = fft::dft<T>(p.a | std::views::take(k), m);
-            P.mul_inplace(Q, work, k);
+            auto Q = fft::spectrum<T>(q.a, 2 * m);
+            fft::spectrum<T>(p.a | std::views::take(k), 2 * m).multiply(Q, work, k);
         }
         // Cyclic wraparound only affects the discarded low half.
         for(size_t i = 0; i < t; i++) {work[m + i] = dp[int(m + i)] - work[m + i];}
-        auto E = fft::dft<T>(work | std::views::drop(m) | std::views::take(t), m);
-        E.mul_inplace(R, work, t);
+        fft::spectrum<T>(work | std::views::drop(m) | std::views::take(t), 2 * m).multiply(R, work, t);
         q.a.resize(k);
         std::copy_n(begin(work), t, begin(q.a) + m);
         q.normalize();

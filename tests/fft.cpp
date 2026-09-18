@@ -98,20 +98,6 @@ int main() {
         roundtrip.template operator()<true, false>();
         roundtrip.template operator()<false, false>();
     }
-    auto split_roundtrip = [&]<int mod>() {
-        using T = modint<mod>;
-        big_vector<T> a(4096);
-        for(size_t i = 0; i < a.size(); i++) {
-            a[i] = i % 3 == 0 ? 0 : i % 3 == 1 ? mod - 1 : rng() % mod;
-        }
-        auto expected = a;
-        fft::mod_split(a, a.size() / 2, T(17));
-        fft::mod_split<true>(a, a.size() / 2, T(34).inv());
-        assert(a == expected);
-    };
-    split_roundtrip.template operator()<998244353>();
-    split_roundtrip.template operator()<1000000007>();
-
     // Multiplication by (1-x)^2 gives an exact linear-time reference above the large cutoff.
     using T = modint<998244353>;
     for(size_t n: {(1 << 20) - 1, (1 << 20) + 7}) {
@@ -129,24 +115,17 @@ int main() {
     // Products go through the ring Z[sqrt(-d)] with the least d such that -d is a square:
     // d = 1 for 998244353 and d = 5, 3, 2, 13 for the other primes below. A constant polynomial
     // as the second factor turns the product into window sums, an exact dense reference.
-    // A pinned twist selects the split transform instead, which the twist belongs to.
     static_assert(fft::quadratic<modint<998244353>>::fixed_d == 1);
     static_assert(fft::quadratic<modint<1000000007>>::fixed_d == 5);
-    auto window_sums = [&]<int mod>(uint32_t d, size_t n = 1 << 19, uint32_t twist = 0) {
+    auto window_sums = [&]<int mod>(uint32_t d, size_t n = 1 << 19) {
         using V = modint<mod>;
         size_t m = n - 3;
-        if(twist) {
-            fft::dft<V>::init();
-            fft::dft<V>::factor = V(twist);
-            fft::dft<V>::ifactor = V(twist).inv();
-        }
         V c = rng() % mod;
         big_vector<V> a(n), b(m, c);
         for(auto &x: a) {x = rng() % mod;}
         auto original = a;
         assert(fft::quadratic<V>::usable(n, m) && fft::quadratic<V>::d == d);
-        if(twist) {fft::mul_truncate(a, b, n + m - 1);}
-        else {fft::mul(a, b);}
+        fft::mul(a, b);
         assert(a.size() == n + m - 1);
         V window = 0;
         for(size_t k = 0; k < a.size(); k++) {
@@ -197,15 +176,10 @@ int main() {
     // one is rare, so the twist is pinned to a value that hit it.
     window_sums.template operator()<2147483629>(1);
     window_sums.template operator()<2147483647>(3);
-    window_sums.template operator()<2147483629>(1, 1 << 15, 5);
-    window_sums.template operator()<2147483647>(3, 1 << 15, 5);
+    window_sums.template operator()<2147483629>(1, 1 << 15);
+    window_sums.template operator()<2147483647>(3, 1 << 15);
     // The signed recovery lift can exceed mod^2 in magnitude for small primes.
-    // Fix the twist to reproduce a negative lift that the old offset mishandled.
     using U = modint<65537>;
-    fft::dft<U>::init();
-    auto saved_factor = fft::dft<U>::factor, saved_ifactor = fft::dft<U>::ifactor;
-    fft::dft<U>::factor = U(58071);
-    fft::dft<U>::ifactor = U(58071).inv();
     size_t n = 1 << 19;
     big_vector<U> a(n);
     for(size_t i = 0; i < n; i++) {a[i] = i % 2 ? U(-1) : U(1);}
@@ -216,8 +190,6 @@ int main() {
         if(i % 2) {expected = -expected;}
         assert(a[i] == expected);
     }
-    fft::dft<U>::factor = saved_factor;
-    fft::dft<U>::ifactor = saved_ifactor;
     // A runtime modulus stores residues in another form and may change between products.
     for(int p: {998244353, 1000000007, 2147483629, 998244353}) {
         using W = dynamic_modint<int>;

@@ -36,25 +36,17 @@ namespace cp_algo::math {
         T half = T(1) / T(2);
         for(; m < n; m *= 2) {
             size_t k = std::min(2 * m, n), t = k - m;
-            auto R = fft::dft<T>(r.a, m);
+            auto R = fft::spectrum<T>(r.a, 2 * m);
             typename poly_t<T>::Vector work(2 * m);
-            {
-                auto A = fft::dft<T>(ans.a, m);
-                A.mul(A, work, k);
-            }
+            fft::spectrum<T>(ans.a, 2 * m).square(work, k);
             for(size_t i = 0; i < t; i++) {work[m + i] = (p[int(m + i)] - work[m + i]) * half;}
-            {
-                auto E = fft::dft<T>(work | std::views::drop(m) | std::views::take(t), m);
-                E.mul(R, work, t);
-            }
+            fft::spectrum<T>(work | std::views::drop(m) | std::views::take(t), 2 * m).multiply(R, work, t);
             ans.a.resize(k);
             std::copy_n(begin(work), t, begin(ans.a) + m);
             if(k == n) {break;}
             // Extend the reciprocal of the updated root, reusing its old transform.
-            auto A = fft::dft<T>(ans.a, m);
-            A.mul(R, work, k);
-            auto E = fft::dft<T>(work | std::views::drop(m) | std::views::take(t), m);
-            E.mul(R, work, t);
+            fft::spectrum<T>(ans.a, 2 * m).multiply(R, work, k);
+            fft::spectrum<T>(work | std::views::drop(m) | std::views::take(t), 2 * m).multiply(R, work, t);
             r.a.resize(k);
             for(size_t i = 0; i < t; i++) {r.a[m + i] = -work[i];}
         }

@@ -28,14 +28,11 @@ namespace cp_algo::math::poly::impl {
         for(; m < n; m *= 2) {
             size_t k = std::min(2 * m, n);
             typename poly::Vector error((k + fft::flen - 1) / fft::flen * fft::flen);
-            auto Q = fft::dft<base>(q.a, m);
-            {
-                auto P = fft::dft<base>(p.a | std::views::take(k), m);
-                // Wrapping modulo x^(2m) + factor^(2m) only changes the discarded low half.
-                P.mul(Q, error, k);
-            }
-            auto E = fft::dft<base>(error | std::views::drop(m) | std::views::take(k - m), m);
-            Q.mul_inplace(E, error, k - m);
+            auto Q = fft::spectrum<base>(q.a, 2 * m);
+            // Wrapping modulo x^(2m) + 1 only changes the discarded low half.
+            fft::spectrum<base>(p.a | std::views::take(k), 2 * m).multiply(Q, error, k);
+            auto E = fft::spectrum<base>(error | std::views::drop(m) | std::views::take(k - m), 2 * m);
+            std::move(Q).multiply(E, error, k - m);
             q.a.resize(k);
             for(size_t i = m; i < k; i++) {q.a[i] = -error[i - m];}
         }

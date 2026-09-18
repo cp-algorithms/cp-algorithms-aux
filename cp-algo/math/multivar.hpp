@@ -194,35 +194,34 @@ namespace cp_algo::math::fft {
                 return;
             }
             if(mul_subset(b)) {return;}
-            big_vector<dft<base>> A, B;
-            size_t M = std::max(flen, std::bit_ceil(2 * N - 1) / 2);
+            // Every operand is read by K of the K^2 products, so the transforms are built once
+            // and the products that share a result are accumulated before a single readback.
+            using operand = typename product<base>::operand;
+            big_vector<operand> A, B;
+            A.reserve(K); B.reserve(K);
+            size_t cap = std::max(2 * flen, std::bit_ceil(2 * N - 1));
             for(size_t i = 0; i < K; i++) {
                 A.emplace_back(data | std::views::enumerate | std::views::transform(
                     [&](auto jx) {
                         auto [j, x] = jx;
                         return ranks[j] == i ? x : base(0);
                     }
-                ), M, false);
+                ), cap);
                 B.emplace_back(b.data | std::views::enumerate | std::views::transform(
                     [&](auto jx) {
                         auto [j, x] = jx;
                         return ranks[j] == i ? x : base(0);
                     }
-                ), M, false);
+                ), cap);
             }
             for(size_t i = 0; i < K; i++) {
-                dft<base> C(M);
-                cvector X = C.A;
+                product<base> acc(cap);
                 for(size_t j = 0; j < K; j++) {
                     size_t tj = (i - j + K) % K;
-                    A[j].template dot<false, false>(B[tj].A, B[tj].B, C.A, C.B, X);
+                    acc.add(A[j], B[tj]);
                 }
-                checkpoint("dot");
-                big_vector<base> res((N + flen - 1) / flen * flen);
-                C.A.template ifft<false>();
-                C.B.template ifft<false>();
-                X.template ifft<false>();
-                C.recover_mod(X, res, N);
+                big_vector<base> res(N);
+                std::move(acc).recover(res, N);
                 for(size_t j = 0; j < N; j++) {
                     if(i == ranks[j]) {
                         data[j] = res[j];

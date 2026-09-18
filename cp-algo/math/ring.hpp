@@ -219,14 +219,22 @@ namespace cp_algo::math::fft {
                 if constexpr(wrap) {c.r[(i - n) / flen] += vpoint{negative ? im : -im, re};}
                 else {c.r[i / flen] = vpoint{re, negative ? -im : im};}
             };
-            // Residues are raw 32-bit words exactly when the modulus is a compile-time constant.
-            constexpr bool raw = fixed_mod && sizeof(base) == 4
-                              && std::ranges::contiguous_range<std::decay_t<decltype(x)>>;
+            // Residues are raw words exactly when the modulus is a compile-time constant; wider
+            // storage than the residue needs is narrowed on the way in.
+            constexpr bool plain = fixed_mod && std::ranges::contiguous_range<std::decay_t<decltype(x)>>;
+            constexpr bool raw = plain && sizeof(base) == 4;
+            constexpr bool wide = plain && sizeof(base) == 8;
             auto load = [&](size_t i, size_t upto) {
                 i32x4 bits{};
-                if constexpr(raw) {
+                if constexpr(raw || wide) {
                     if(i + flen <= upto) {
-                        std::memcpy(&bits, reinterpret_cast<const uint32_t*>(std::data(x)) + i, sizeof(bits));
+                        if constexpr(raw) {
+                            std::memcpy(&bits, reinterpret_cast<const uint32_t*>(std::data(x)) + i, sizeof(bits));
+                        } else {
+                            u64x4 words;
+                            std::memcpy(&words, reinterpret_cast<const uint64_t*>(std::data(x)) + i, sizeof(words));
+                            bits = __builtin_convertvector(words, i32x4);
+                        }
                         return bits;
                     }
                 }
@@ -247,8 +255,9 @@ namespace cp_algo::math::fft {
         static void recover(std::array<cvector, 2> const& parts, size_t n, double factor, auto& out, size_t k) {
             // Residues are raw 32-bit words exactly when the modulus is a compile-time constant,
             // which is what lets the recombination stay vectorized.
-            constexpr bool raw = fixed_mod && sizeof(base) == 4
-                              && std::ranges::contiguous_range<std::decay_t<decltype(out)>>;
+            constexpr bool plain = fixed_mod && std::ranges::contiguous_range<std::decay_t<decltype(out)>>;
+            constexpr bool raw = plain && sizeof(base) == 4;
+            constexpr bool wide = plain && sizeof(base) == 8;
             const lattice L;
             auto scale = vz + factor;
             size_t low = std::min(k, n);
@@ -265,6 +274,15 @@ namespace cp_algo::math::fft {
             auto store8 = [&](size_t idx, u32x8 v, size_t count) {
                 if constexpr(raw) {
                     if(count == 8) {std::memcpy(reinterpret_cast<uint32_t*>(std::data(out)) + idx, &v, sizeof(v)); return;}
+                } else if constexpr(wide) {
+                    if(count == 8) {
+                        auto words = reinterpret_cast<uint64_t*>(std::data(out)) + idx;
+                        auto lo4 = __builtin_convertvector(u32x4{v[0], v[1], v[2], v[3]}, u64x4);
+                        auto hi4 = __builtin_convertvector(u32x4{v[4], v[5], v[6], v[7]}, u64x4);
+                        std::memcpy(words, &lo4, sizeof(lo4));
+                        std::memcpy(words + flen, &hi4, sizeof(hi4));
+                        return;
+                    }
                 }
                 for(size_t l = 0; l < count; l++) {out[idx + l].setr(typename base::UInt(v[l]));}
             };
@@ -272,6 +290,15 @@ namespace cp_algo::math::fft {
                 u32x8 v{};
                 if constexpr(raw) {
                     if(count == 8) {std::memcpy(&v, reinterpret_cast<uint32_t const*>(std::data(out)) + idx, sizeof(v)); return v;}
+                } else if constexpr(wide) {
+                    if(count == 8) {
+                        auto words = reinterpret_cast<uint64_t const*>(std::data(out)) + idx;
+                        u64x4 lo4, hi4;
+                        std::memcpy(&lo4, words, sizeof(lo4));
+                        std::memcpy(&hi4, words + flen, sizeof(hi4));
+                        auto lo = __builtin_convertvector(lo4, u32x4), hi = __builtin_convertvector(hi4, u32x4);
+                        return u32x8(__builtin_shufflevector(lo, hi, 0, 1, 2, 3, 4, 5, 6, 7));
+                    }
                 }
                 for(size_t l = 0; l < count; l++) {v[l] = uint32_t(out[idx + l].getr());}
                 return v;

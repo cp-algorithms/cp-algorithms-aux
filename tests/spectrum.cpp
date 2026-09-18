@@ -145,6 +145,7 @@ int main() {
     check<modint<1000000007>>(rng);     // d = 5
     check<modint<2147483647>>(rng);     // the largest prime the rule admits
     check<modint<65537>>(rng);
+    check<modint<int64_t(998244353)>>(rng);   // 8-byte storage, as the linear algebra uses
     check<modint<13>>(rng);
     check<modint<3>>(rng);
     for(int p: {998244353, 1000000007, 65537}) {

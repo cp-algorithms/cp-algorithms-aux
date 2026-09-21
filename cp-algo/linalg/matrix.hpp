@@ -23,8 +23,11 @@ namespace cp_algo::linalg {
         using Base = big_vector<vec_t>;
         using Base::Base;
 
-        matrix(size_t n): Base(n, vec_t(n)) {}
-        matrix(size_t n, size_t m): Base(n, vec_t(m)) {}
+        matrix(size_t n): matrix(n, n) {}
+        matrix(size_t n, size_t m) {
+            Base::reserve(n);
+            for(size_t i = 0; i < n; i++) Base::emplace_back(m);
+        }
 
         matrix(Base const& t): Base(t) {}
         matrix(Base &&t): Base(std::move(t)) {}
@@ -127,7 +130,7 @@ namespace cp_algo::linalg {
         // Concatenate matrices
         matrix operator |(matrix const& b) const {
             assert(n() == b.n());
-            matrix res(n(), m()+b.m());
+            matrix res(n(), 0);
             for(size_t i = 0; i < n(); i++) {
                 res[i] = row(i) | b[i];
             }
@@ -257,12 +260,19 @@ namespace cp_algo::linalg {
         }
         template<gauss_mode mode = normal>
         matrix& gauss() {
+            return gauss_to<mode>(m());
+        }
+    private:
+        // Restrict pivot columns, while updating every column of each row.
+        template<gauss_mode mode>
+        matrix& gauss_to(size_t lim) {
             constexpr size_t block = 32;
             for(size_t first = 0; first < n(); first += block) {
                 size_t last = std::min(first + block, n());
                 // Reduce the pivot block before applying it to the other rows.
                 for(size_t i = first; i < last; i++) {
                     row(i).normalize();
+                    if(row(i).find_pivot().first >= lim) continue;
                     for(size_t j = mode == normal ? i + 1 : first; j < last; j++) {
                         if(j != i) row(j).reduce_by(row(i));
                     }
@@ -277,18 +287,21 @@ namespace cp_algo::linalg {
                     size_t i = first;
                     if constexpr(requires { requires vec_t::use_simd; }) {
                         constexpr size_t batch = vec_t::batch_size;
-                        if(pair) for(; i + batch <= last; i += batch) reduce_batch<mode, batch>(j, i);
+                        if(pair) for(; i + batch <= last; i += batch) reduce_batch<mode, batch>(j, i, lim);
                     }
-                    if(pair) for(; i + 1 < last; i += 2) reduce_pair<mode>(j, i);
+                    if(pair) for(; i + 1 < last; i += 2) reduce_pair<mode>(j, i, lim);
                     for(; i < last; i++) {
+                        if(row(i).find_pivot().first >= lim) continue;
                         row(j).reduce_by(row(i));
                         if(pair) row(j + 1).reduce_by(row(i));
                     }
                     j += pair;
                 }
             }
-            return normalize();
+            // Forward pivots are normalized before use and never modified afterward.
+            return mode == reverse ? normalize() : *this;
         }
+    public:
         template<gauss_mode mode = normal>
         auto echelonize(size_t lim) {
             return gauss<mode>().sort_classify(lim);
@@ -299,22 +312,24 @@ namespace cp_algo::linalg {
         }
 
         size_t rank() const {
-            if(n() > m()) {
-                return T().rank();
-            }
-            auto A = *this;
+            auto A = n() > m() ? T() : *this;
             A.gauss();
             return std::ranges::count_if(A, [&](auto &row) {
-                return row.find_pivot().first < m();
+                return row.find_pivot().first < A.m();
             });
         }
 
         base det() const {
             assert(n() == m());
             matrix b = *this;
-            b.echelonize();
+            b.gauss();
             base res = 1;
             for(size_t i = 0; i < n(); i++) {
+                for(size_t p = b[i].find_pivot().first; p != i; p = b[i].find_pivot().first) {
+                    if(p == n()) return 0;
+                    std::swap(b[i], b[p]);
+                    res = -res;
+                }
                 res *= b[i][i];
             }
             return res;
@@ -351,49 +366,43 @@ namespace cp_algo::linalg {
 
         std::pair<base, matrix> inv() const {
             assert(n() == m());
-            matrix b = *this | eye(n());
-            if(size(b.echelonize<reverse>(n())[0]) < n()) {
+            matrix b(n(), 2 * n());
+            for(size_t i = 0; i < n(); i++) {
+                std::ranges::copy(row(i), begin(b[i]));
+                b[i][n() + i] = 1;
+            }
+            // Pivots in the appended identity cannot make A invertible.
+            auto [pivots, free] = b.template gauss_to<normal>(n()).sort_classify(n());
+            if(size(pivots) < n()) {
                 return {0, {}};
             }
             base det = 1;
             for(size_t i = 0; i < n(); i++) {
                 det *= b[i][i];
-                b[i] *= base(1) / b[i][i];
             }
-            return {det, b.submatrix(std::views::all, std::views::drop(n()))};
+            matrix res = b.submatrix(std::views::all, std::views::drop(n()));
+            back_substitute(b, pivots, res);
+            return {det, std::move(res)};
         }
 
-        // Can also just run gauss on T() | eye(m)
-        // but it would be slower :(
         auto kernel() const {
-            auto A = *this;
-            auto [pivots, free] = A.template echelonize<reverse>();
-            matrix sols(size(free), m());
-            for(size_t j = 0; j < size(pivots); j++) {
-                base scale = A[j].find_pivot().second;
-                for(size_t i = 0; i < size(free); i++) {
-                    sols[i][pivots[j]] = A[j][free[i]] * scale;
-                }
-            }
-            for(size_t i = 0; i < size(free); i++) {
-                sols[i][free[i]] = -1;
-            }
-            return sols;
+            return kernel_of(*this);
         }
 
         // [solution, basis], transposed
-        std::optional<std::array<matrix, 2>> solve(matrix t) const {
-            matrix sols = (*this | t).kernel();
+        std::optional<std::array<matrix, 2>> solve(matrix const& t) const {
+            matrix sols = kernel_of(*this | t);
             if(sols.n() < t.m() || matrix(sols.submatrix(
                 std::views::drop(sols.n() - t.m()),
                 std::views::drop(m())
             )) != -eye(t.m())) {
                 return std::nullopt;
             } else {
-                return std::array{
-                    matrix(sols.submatrix(std::views::drop(sols.n() - t.m()), std::views::take(m()))),
-                    matrix(sols.submatrix(std::views::take(sols.n() - t.m()), std::views::take(m())))
-                };
+                for(auto &row: sols) row.resize(m());
+                auto first = begin(sols) + (sols.n() - t.m());
+                matrix sol(std::make_move_iterator(first), std::make_move_iterator(end(sols)));
+                sols.erase(first, end(sols));
+                return std::array{std::move(sol), std::move(sols)};
             }
         }
 
@@ -420,6 +429,39 @@ namespace cp_algo::linalg {
             return std::array{std::move(pivots), std::move(free)};
         }
     private:
+        // Own the working matrix so augmented temporaries do not need a copy.
+        static matrix kernel_of(matrix A) {
+            auto [pivots, free] = A.echelonize();
+            matrix rhs(size(pivots), size(free));
+            for(size_t i = 0; i < size(pivots); i++) {
+                for(size_t j = 0; j < size(free); j++) {
+                    rhs[i][j] = A[i][free[j]];
+                }
+            }
+            back_substitute(A, pivots, rhs);
+            matrix sols(size(free), A.m());
+            for(size_t j = 0; j < size(pivots); j++) {
+                for(size_t i = 0; i < size(free); i++) {
+                    sols[i][pivots[j]] = rhs[j][i];
+                }
+            }
+            for(size_t i = 0; i < size(free); i++) {
+                sols[i][free[i]] = -1;
+            }
+            return sols;
+        }
+
+        // Solve an upper-echelon system for the supplied right-hand sides.
+        static void back_substitute(matrix const& A, auto const& pivots, matrix &b) {
+            for(size_t i = size(pivots); i-- > 0;) {
+                b[i].normalize();
+                b[i] *= base(1) / A[i][pivots[i]];
+                for(size_t j = 0; j < i; j++) {
+                    b[j].add_scaled(b[i], -A[j][pivots[i]]);
+                }
+            }
+        }
+
         static void add_scaled_pair(vec_t &x, vec_t &y, vec_t const& p, vec_t const& q,
                                     std::array<base, 4> c, size_t first = 0) {
             if constexpr(requires { vec_t::add_scaled_pair(x, y, p, q, c, first); }) {
@@ -431,22 +473,22 @@ namespace cp_algo::linalg {
         }
         // Determine the sequential pivot coefficients before updating the full rows.
         template<gauss_mode mode, size_t count>
-        void reduce_batch(size_t dst, size_t src) {
+        void reduce_batch(size_t dst, size_t src, size_t lim) {
             static_assert(count <= 8);
             std::array<typename vec_t::Base const*, count> sources;
             std::array<size_t, count> pivots;
             std::array<base, count> inverses;
-            size_t first = m();
+            size_t first = lim;
             for(size_t t = 0; t < count; t++) {
                 sources[t] = &row(src + t);
                 auto [p, inv] = row(src + t).find_pivot();
-                pivots[t] = p; inverses[t] = p < m() ? inv : base(0);
+                pivots[t] = p; inverses[t] = p < lim ? inv : base(0);
                 first = std::min(first, p);
             }
-            if(first == m()) return;
+            if(first == lim) return;
             std::array<base, 2 * count> c{};
             for(size_t r = 0; r < 2; r++) for(size_t t = 0; t < count; t++) {
-                if(pivots[t] == m()) continue;
+                if(pivots[t] >= lim) continue;
                 base value = row(dst + r).normalize(pivots[t]);
                 if constexpr(mode == normal) {
                     // Fewer than eight canonical products fit in a 64-bit accumulator.
@@ -463,22 +505,30 @@ namespace cp_algo::linalg {
         // Fuse two sequential reductions, accounting for the first one's effect
         // on the second pivot before updating either destination row.
         template<gauss_mode mode>
-        void reduce_pair(size_t dst, size_t src) {
+        void reduce_pair(size_t dst, size_t src, size_t lim) {
             auto &p = row(src), &q = row(src + 1);
             auto [u, pu] = p.find_pivot();
             auto [v, qv] = q.find_pivot();
-            if(u == m() || v == m()) {
+            if(u >= lim || v >= lim) {
                 for(size_t j = dst; j < dst + 2; j++) {
-                    row(j).reduce_by(p); row(j).reduce_by(q);
+                    if(u < lim) row(j).reduce_by(p);
+                    if(v < lim) row(j).reduce_by(q);
                 }
                 return;
             }
+            // Canonical reduction coefficients fit in a 64-bit product.
+            auto mul = [](base x, base y) {
+                if constexpr(impl::use_strassen<vec_t>) {
+                    x.setr(uint64_t(x.getr()) * y.getr() % base::mod());
+                    return x;
+                } else return x * y;
+            };
             auto scales = [&](vec_t &a) {
-                base s = -a.normalize(u) * pu;
+                base s = mul(-a.normalize(u), pu);
                 base t = -a.normalize(v);
                 // Reverse elimination has already cleared p[v] within the pivot block.
-                if constexpr(mode == normal) t -= s * p[v];
-                t *= qv;
+                if constexpr(mode == normal) t -= mul(s, p[v]);
+                t = mul(t, qv);
                 return std::array{s, t};
             };
             auto a = scales(row(dst)), b = scales(row(dst + 1));

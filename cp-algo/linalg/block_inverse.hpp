@@ -19,10 +19,11 @@ namespace cp_algo::linalg {
                     auto mul = [](matrix const& x, matrix const& y) {
                         return impl::strassen_product<base::mod()>::product(x, y);
                     };
-                    auto u = mul(ai, b), v = mul(c, ai);
+                    auto v = mul(c, ai);
                     d -= mul(v, b); // Schur complement D - C A^-1 B.
                     auto [ds, si] = block_inverse(d);
                     if(ds == base(0)) return {0, {}};
+                    auto u = mul(ai, b);
                     auto r = mul(u, si), t = mul(si, v);
                     ai += mul(r, v);
                     matrix res(A.n());
@@ -33,6 +34,37 @@ namespace cp_algo::linalg {
                     return {da * ds, std::move(res)};
                 }
             }
+            // In-place Gauss-Jordan stores the inverse in the eliminated entries.
+            // Copy values into fresh rows, without cached pivots from the input.
+            matrix b(A.submatrix(std::views::all, std::views::all));
+            big_vector<size_t> swaps(A.n());
+            base det = 1;
+            for(size_t i = 0; i < A.n(); i++) {
+                size_t p = i;
+                while(p < A.n() && b[p].normalize(i) == base(0)) p++;
+                if(p == A.n()) return {0, {}};
+                swaps[i] = p;
+                if(p != i) { std::swap(b[p], b[i]); det = -det; }
+                b[i].normalize();
+                // Canonical pivot inverses need only 64-bit intermediate products.
+                using small = math::modint<int(base::mod())>;
+                base inv = small(b[i][i].getr()).inv().getr();
+                det *= b[i][i];
+                b[i][i] = 1;
+                // Canonical factors below 2^30 fit in a 64-bit product.
+                for(auto &x: b[i]) x.setr(uint64_t(x.getr()) * inv.getr() % base::mod());
+                for(size_t j = 0; j < A.n(); j++) if(j != i) {
+                    base scale = -b[j].normalize(i);
+                    b[j][i] = 0;
+                    b[j].add_scaled(b[i], scale);
+                }
+            }
+            // Undo row pivoting as column swaps, in reverse order.
+            for(size_t i = A.n(); i-- > 0;) {
+                if(swaps[i] != i) for(auto &values: b) std::swap(values[i], values[swaps[i]]);
+            }
+            b.normalize();
+            return {det, std::move(b)};
         }
         return A.inv();
     }

@@ -43,6 +43,9 @@ jobs:
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
           g++ --version
+      - name: Test minifier
+        run: python3 tests/test_minify.py
+
       - name: oj-resolve
         uses: competitive-verifier/actions/oj-resolve@v2
         with:

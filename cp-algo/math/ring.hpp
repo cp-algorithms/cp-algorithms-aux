@@ -99,8 +99,9 @@ namespace cp_algo::math::fft {
         // split representation takes seven and five, so it is preferred whenever it is exact,
         // unless a transform exceeds 2^24 points, the only length with a kernel tiled for data
         // outside the caches (which in turn does not let an operand wrap around).
-        // Exactness: the largest rounding error measured is about
-        // 0.003 * sqrt(need * d / 2^22) * p / 2^30, so the bound below keeps it under 1/16.
+        // Empirical rounding budget. Reusing a spectrum for a tiled square correlates its
+        // errors, so that optimization uses a stricter budget below and otherwise keeps
+        // independent lifts of the two operands.
         static bool usable(size_t as, size_t bs) {
             init();
             if(!available || std::min(as, bs) < size_t(magic)) {return false;}
@@ -416,11 +417,15 @@ namespace cp_algo::math::fft {
                         if(negative) {A.template cache_product<true>(B, fa, fb);}
                         else {A.template cache_product<false>(B, fa, fb);}
                     } else {
-                        // cache_product transforms both operands in place, so a square is lifted twice.
                         fill<true, true>(A, a_lower, a_upper, n, negative, seed_a);
-                        fill<true, true>(B, b_lower, b_upper, n, negative, seed_b);
-                        if(negative) {A.template cache_product<true>(B);}
-                        else {A.template cache_product<false>(B);}
+                        if(square && __uint128_t(need) * d * prime * prime <= (__uint128_t(1) << 88)) {
+                            if(negative) {A.template cache_product<true, false, true>(A);}
+                            else {A.template cache_product<false, false, true>(A);}
+                        } else {
+                            fill<true, true>(B, b_lower, b_upper, n, negative, seed_b);
+                            if(negative) {A.template cache_product<true>(B);}
+                            else {A.template cache_product<false>(B);}
+                        }
                     }
                 } else {
                     fill<false, true>(A, a_lower, a_upper, n, negative, seed_a);
@@ -477,10 +482,15 @@ namespace cp_algo::math::fft {
             };
             if(n == (1 << 24)) {
                 fill<true, false>(A, a, none, n, false, seed());
-                if(square) {fill<true, false>(B, a, none, n, false, seed());}
-                else {fill<true, false>(B, b, none, n, false, seed());}
-                wrapped(B);
-                A.template cache_product<false>(B);
+                if(square && __uint128_t(need) * d * prime * prime <= (__uint128_t(1) << 88)) {
+                    wrapped(A);
+                    A.template cache_product<false, false, true>(A);
+                } else {
+                    if(square) {fill<true, false>(B, a, none, n, false, seed());}
+                    else {fill<true, false>(B, b, none, n, false, seed());}
+                    wrapped(B);
+                    A.template cache_product<false>(B);
+                }
             } else {
                 fill<false, false>(A, a, none, n, false, seed(), !tail);
                 if(!square) {fill<false, false>(B, b, none, n, false, seed(), !tail);}

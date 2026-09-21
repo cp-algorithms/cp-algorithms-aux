@@ -43,11 +43,31 @@ template<int mod> void square_aliases() {
         }
     }
 }
+// The tiled 2^24-point kernel has its own square path. Check every coefficient
+// against the general product, including lengths below the padding boundary.
+template<int mod> void tiled_squares(size_t n) {
+    using T = modint<mod>;
+    std::mt19937 rng(193);
+    for(size_t size: {n, n - 5}) {
+        big_vector<T> a(size);
+        for(auto &x: a) {x = rng() % mod;}
+        assert(fft::quadratic<T>::usable(size, size));
+        assert(fft::quadratic<T>::length(size, size) == (1 << 24));
+        auto expected = a, rhs = a;
+        fft::mul(expected, rhs);
+        fft::mul(a, std::as_const(a));
+        assert(a == expected);
+    }
+}
+
 int main() {
     cp_algo::random::gen.seed(42);
     square_aliases<998244353>();
     square_aliases<1000000007>();
     square_aliases<17>();
     square_aliases<65537>();
+    tiled_squares<998244353>(1 << 24);
+    tiled_squares<1000000007>(1 << 23);
+    tiled_squares<2147479991>(1 << 23); // d=13, keep independent lifts near the precision limit.
     std::cout << "Self-squares, aliased truncation and exact large references passed under four primes\n";
 }

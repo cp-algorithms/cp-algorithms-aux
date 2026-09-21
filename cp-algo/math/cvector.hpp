@@ -260,7 +260,7 @@ namespace cp_algo::math::fft {
         // The weights rt, rt^2, rt^3 of a tile of groups are computed four groups per SIMD
         // operation ahead of the tile, so the product loop only broadcasts them from memory.
         static constexpr size_t dot_tile = 64;
-        template<size_t fixed>void dot_fused16(cvector const& t,size_t offset,size_t length){
+        template<size_t fixed, bool square = false>void dot_fused16(cvector const& t,size_t offset,size_t length){
             constexpr size_t T=dot_tile;
             const size_t n=fixed?fixed:size();
             point factor=root(n);
@@ -309,7 +309,8 @@ namespace cp_algo::math::fft {
                         auto A=a.at(pos),B=a.at(pos+4)*v1,C=a.at(pos+8)*v2,D=a.at(pos+12)*v3;
                         return std::array<vpoint,4>{(A+C)+(B+D),(A+C)-(B+D),(A-C)+vi(B-D),(A-C)-vi(B-D)};
                     };
-                    auto a=transpose(forward(*this)),b=transpose(forward(t));
+                    auto a=transpose(forward(*this));
+                    auto b=[&] {if constexpr(square) return a; else return transpose(forward(t));}();
                     // The four residues are taken modulo x^4 - rt * {1, -1, i, -i}.
                     const auto flip_re=_mm256_set_pd(0.,-0.,-0.,0.),flip_im=_mm256_set_pd(-0.,0.,-0.,0.);
                     vpoint w={vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(real(v1)),__m256d(imag(v1)),0b1100),flip_re)),
@@ -495,22 +496,22 @@ namespace cp_algo::math::fft {
         // spectrum, but makes that pass compute-bound on the judge (measured slower there),
         // so it stays opt-in; by default both spectra are filled first and swept in place.
         static constexpr bool fuse_forward = false;
-        template<bool Neg, bool Fused = fuse_forward>
+        template<bool Neg, bool Fused = fuse_forward, bool Square = false>
         void cache_product(cvector& b, fuse_args const& fa = {}, fuse_args const& fb = {}) {
             constexpr size_t n = 1 << 24, block = 1 << 18;
             prepare_roots(n / 16); prepare_shear_roots();
             if constexpr(Fused) {
                 sweep8<false, 2, sweep_tile, 1, Neg>(fa);
-                b.sweep8<false, 2, sweep_tile, 1, Neg>(fb);
+                if constexpr(!Square) {b.sweep8<false, 2, sweep_tile, 1, Neg>(fb);}
             } else {
                 sweep8<false, 2, sweep_tile>();
-                b.sweep8<false, 2, sweep_tile>();
+                if constexpr(!Square) {b.sweep8<false, 2, sweep_tile>();}
             }
             checkpoint("sweep forward");
             for(size_t offset = 0; offset < n; offset += block) {
                 transform<false, n, block, 0, true>(n, false, offset, block);
-                b.transform<false, n, block, 0, true>(n, false, offset, block);
-                dot_fused16<n>(b, offset, block);
+                if constexpr(!Square) {b.transform<false, n, block, 0, true>(n, false, offset, block);}
+                dot_fused16<n, Square>(b, offset, block);
                 transform<true, n, block, 0, true>(n, false, offset, block);
             }
             checkpoint("blocks");

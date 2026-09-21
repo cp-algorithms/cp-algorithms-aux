@@ -1,5 +1,6 @@
 #include "cp-algo/linalg/frobenius.hpp"
 #include <iostream>
+#include <random>
 
 using namespace cp_algo::math;
 using namespace cp_algo::linalg;
@@ -42,6 +43,59 @@ size_t check_decomposition() {
     return cases;
 }
 
+template<typename base>
+size_t check_quotients() {
+    using M = matrix<base>;
+    using P = poly_t<base>;
+    size_t cases = 0;
+    std::mt19937 rng(733);
+    for(size_t n: {0, 1, 2, 3, 7, 16, 31, 33}) for(int type = 0; type < 4; type++) {
+        M jordan(n), lower = M::eye(n), upper = M::eye(n);
+        P expected(1);
+        for(size_t i = 0; i < n; i++) for(size_t j = 0; j < i; j++) {
+            lower[i][j] = rng();
+            upper[j][i] = rng();
+        }
+        for(size_t first = 0; first < n;) {
+            size_t d = std::min(n - first,
+                type == 0 ? size_t(1) : type == 1 ? size_t(3) : type == 2 ? 1 + first % 5 : n);
+            base eigenvalue = type == 0 ? base(3) : base(first % 2);
+            for(size_t i = first; i < first + d; i++) {
+                jordan[i][i] = eigenvalue;
+                expected *= P({-eigenvalue, 1});
+                if(i + 1 < first + d) jordan[i][i + 1] = 1;
+            }
+            first += d;
+        }
+        auto p = lower * upper;
+        auto [det, pinv] = p.inv();
+        assert(det != base(0));
+        auto a = pinv * jordan * p;
+        for(unsigned seed: {0, 1, 2}) {
+            cp_algo::random::gen.seed(seed);
+            P result(1);
+            for(auto const& q: frobenius_form(a)) result *= q;
+            assert(result == expected);
+            cp_algo::random::gen.seed(seed);
+            auto [t, ti, blocks] = frobenius_form<full>(a);
+            M companion(n);
+            size_t first = 0;
+            result = P(1);
+            for(auto const& q: blocks) {
+                result *= q;
+                size_t d = q.deg();
+                for(size_t i = 0; i + 1 < d; i++) companion[first + i][first + i + 1] = 1;
+                for(size_t i = 0; i < d; i++) companion[first + d - 1][first + i] = -q[i] / q[d];
+                first += d;
+            }
+            assert(first == n && result == expected);
+            assert(t * ti == M::eye(n) && t * a == companion * t);
+            cases++;
+        }
+    }
+    return cases;
+}
+
 int main() {
     using base = modint<998244353LL>;
     using M = matrix<base>;
@@ -65,4 +119,9 @@ int main() {
     std::cout << cases << " small Frobenius powers passed against scalar multiplication\n";
     auto decompositions = check_decomposition<base>() + check_decomposition<modint<1000000007LL>>();
     std::cout << decompositions << " Frobenius decompositions and characteristic-polynomial checks passed\n";
+    auto quotients = check_quotients<base>() + check_quotients<modint<1000000007LL>>();
+    dynamic_modint<int64_t>::with_mod(998244353, [&] {
+        quotients += check_quotients<dynamic_modint<int64_t>>();
+    });
+    std::cout << quotients << " conjugated-Jordan block-polynomial and full-similarity checks passed\n";
 }

@@ -19,19 +19,43 @@ namespace cp_algo::linalg {
         big_vector<vec_t> basis, basis_init;
         while(size(basis) < n) {
             size_t start = size(basis);
+            // Record y_i = x_i + sum_j reductions[i][j] * y_j modulo earlier blocks.
+            big_vector<typename polyn::Vector> reductions;
             auto generate_block = [&](auto x) {
                 while(true) {
                     vec_t y = x;
-                    y.reserve(2 * n + 1);
-                    for(auto &it: basis) {
-                        y.resize(it.size());
-                        y.reduce_by(it);
+                    typename polyn::Vector coefficients;
+                    if constexpr(mode == full) y.reserve(2 * n + 1);
+                    else coefficients.resize(size(basis) - start);
+                    for(size_t i = 0; i < size(basis); i++) {
+                        auto &it = basis[i];
+                        if constexpr(mode == full) {
+                            y.resize(it.size());
+                            y.reduce_by(it);
+                        } else {
+                            auto [p, inv] = it.find_pivot();
+                            base scale = -y.normalize(p) * inv;
+                            y.add_scaled(it, scale, p);
+                            if(i >= start) coefficients[i - start] = scale;
+                        }
                     }
-                    y.push_back(1); // Earlier basis vectors have zero in this coordinate.
+                    if constexpr(mode == full) y.push_back(1);
                     y.normalize();
-                    if(std::ranges::count(y | std::views::take(n), base(0)) == int(n)) {
-                        return polyn(typename polyn::Vector(begin(y) + n, end(y)));
+                    if(y.find_pivot().first >= n) {
+                        if constexpr(mode == full) {
+                            return polyn(typename polyn::Vector(begin(y) + n, end(y)));
+                        } else {
+                            // Expand the dependency through the triangular reduction history.
+                            coefficients.push_back(1);
+                            for(size_t i = size(reductions); i-- > 0;) {
+                                for(size_t j = 0; j < i; j++) {
+                                    coefficients[j] += coefficients[i] * reductions[i][j];
+                                }
+                            }
+                            return polyn(std::move(coefficients));
+                        }
                     } else {
+                        if constexpr(mode == blocks) reductions.push_back(std::move(coefficients));
                         basis.push_back(std::move(y));
                         if constexpr(mode == full) {
                             basis_init.push_back(std::move(x));
@@ -42,7 +66,10 @@ namespace cp_algo::linalg {
                     }
                 }
             };
-            auto full_rec = generate_block(vec_t::random(n));
+            auto x = vec_t::random(n);
+            // Choose a random representative already reduced against earlier blocks.
+            for(auto &row: basis) x[row.find_pivot().first] = 0;
+            auto full_rec = generate_block(std::move(x));
             // Extra trimming to make it block-diagonal (expensive)
             if constexpr (mode == full) {
                 if(full_rec.mod_xk(start) != polyn()) {
@@ -57,7 +84,7 @@ namespace cp_algo::linalg {
                     full_rec = generate_block(x.normalize());
                 }
             }
-            charps.push_back(full_rec.div_xk(start));
+            charps.push_back(full_rec.div_xk(mode == full ? start : 0));
         }
         // Find transform matrices while we're at it...
         if constexpr (mode == full) {

@@ -12,16 +12,18 @@ namespace cp_algo::linalg::impl {
         uint32_t scale = factor.getr();
         if(!scale) return;
         uint32_t quotient = (uint64_t(scale) << 32) / mod;
+        auto dst = x.data();
+        auto src = y.data();
         for(; first + 8 <= last; first += 8) {
             u32x8 value, old;
-            std::memcpy(&value, y.data() + first, sizeof value);
-            std::memcpy(&old, x.data() + first, sizeof old);
+            std::memcpy(&value, src + first, sizeof value);
+            std::memcpy(&old, dst + first, sizeof old);
             auto q = u64x4(u32x8() + quotient);
             auto lo = strassen_product<mod>::mul(u64x4(value), q) >> 32;
             auto hi = (strassen_product<mod>::mul(u64x4(value) >> 32, q) >> 32) << 32;
             auto product = value * scale - u32x8(lo | hi) * mod;
             auto result = reduce_once(old + reduce_once(product, mod), mod);
-            std::memcpy(x.data() + first, &result, sizeof result);
+            std::memcpy(dst + first, &result, sizeof result);
         }
         for(; first < last; first++) x[first] += factor * y[first];
     }

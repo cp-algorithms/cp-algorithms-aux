@@ -10,7 +10,7 @@ size_t check_inverse() {
     using M = matrix<base>;
     std::mt19937 rng(311);
     size_t checks = 0;
-    for(size_t n: {127, 128, 129, 250, 257}) for(int type = 0; type < 6; type++) {
+    for(size_t n: {1, 7, 8, 9, 15, 16, 17, 63, 64, 65, 127, 128, 129, 250, 257}) for(int type = 0; type < 7; type++) {
         M a(n);
         if(type <= 2) {
             for(auto &x: a.elements()) x = rng();
@@ -23,9 +23,17 @@ size_t check_inverse() {
             for(size_t i = 0; i < n; i++) for(size_t j = 0; j < n; j++) {
                 a[i][j] = (i + 1) * (j + 2);
             }
-        } else {
+        } else if(type == 5) {
             a = M::eye(n);
             a.gauss(); // Exercise input rows with cached pivots.
+        } else {
+            // Reverse L*U rows to force late pivot swaps with stored multipliers.
+            for(size_t i = 0; i < n; i++) {
+                a[i][i] = 1;
+                for(size_t j = i + 1; j < n; j++) a[i][j] = rng();
+                if(i) for(size_t j = 0; j < n; j++) a[i][j] += a[i - 1][j];
+            }
+            std::ranges::reverse(a);
         }
         auto copy = a;
         auto [det, inverse] = block_inverse(a);
@@ -38,12 +46,24 @@ size_t check_inverse() {
         }
         checks++;
     }
+    if constexpr(base::bits > 32) {
+        auto expected = M::eye(9);
+        expected[0][1] = 3; expected[1][0] = 2;
+        auto a = expected;
+        for(auto &x: a.elements()) x.add_unsafe(base::modmod8());
+        auto copy = a;
+        auto [det, inverse] = block_inverse(a);
+        auto [expected_det, expected_inverse] = expected.inv();
+        assert(a == copy && det == expected_det && inverse == expected_inverse);
+        checks++;
+    }
     return checks;
 }
 
 int main() {
     auto checks = check_inverse<modint<998244353LL>>()
                 + check_inverse<modint<998244353>>()
-                + check_inverse<modint<1000000007LL>>();
+                + check_inverse<modint<1000000007LL>>()
+                + check_inverse<modint<1073741789LL>>();
     std::cout << checks << " Schur boundary, singular-leading-block, permutation and dense checks passed\n";
 }

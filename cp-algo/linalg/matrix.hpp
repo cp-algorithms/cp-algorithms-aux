@@ -55,14 +55,14 @@ namespace cp_algo::linalg {
             return *this | std::views::transform([](auto const& x) {return vec_t(-x);});
         }
         matrix& operator+=(matrix const& t) {
-            for(auto [a, b]: std::views::zip(elements(), t.elements())) {
-                a += b;
+            for(auto [a, b]: std::views::zip(*this, t)) {
+                for(auto [x, y]: std::views::zip(a, b)) x += y;
             }
             return *this;
         }
         matrix& operator -=(matrix const& t) {
-            for(auto [a, b]: std::views::zip(elements(), t.elements())) {
-                a -= b;
+            for(auto [a, b]: std::views::zip(*this, t)) {
+                for(auto [x, y]: std::views::zip(a, b)) x -= y;
             }
             return *this;
         }

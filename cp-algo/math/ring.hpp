@@ -157,7 +157,7 @@ namespace cp_algo::math::fft {
             c.r.resize(n / flen);
             auto* dst = reinterpret_cast<double*>(c.r.data());
             u32x8 words{};
-            auto emit = [&]<bool wrap = false>(size_t i, i32x4 bits) __attribute__((always_inline)) {
+            auto emit = [&]<bool wrap = false> [[gnu::always_inline]] (size_t i, i32x4 bits) {
                 auto v = __builtin_convertvector(bits, vftype);
                 if(i % 8 == 0) {state ^= state << 13; state ^= state >> 7; state ^= state << 17; words = u32x8(state);}
                 i32x4 small = i % 8 ? i32x4(__builtin_shufflevector(words, words, 1, 3, 5, 7)) : i32x4(__builtin_shufflevector(words, words, 0, 2, 4, 6));
@@ -207,7 +207,7 @@ namespace cp_algo::math::fft {
             c.r.resize(n / flen);
             u32x8 words{};
             size_t step = 0;
-            auto emit = [&]<bool wrap>(size_t i, i32x4 bits) __attribute__((always_inline)) {
+            auto emit = [&]<bool wrap> [[gnu::always_inline]] (size_t i, i32x4 bits) {
                 auto v = __builtin_convertvector(bits, vftype);
                 if(step % 2 == 0) {state ^= state << 13; state ^= state >> 7; state ^= state << 17; words = u32x8(state);}
                 i32x4 small = step++ % 2 ? i32x4(__builtin_shufflevector(words, words, 1, 3, 5, 7))

@@ -146,14 +146,14 @@ namespace cp_algo::math::fft {
         template<size_t fixed = 0>
         void dot(cvector const& t) {
             size_t n = fixed?fixed:this->size();
-            exec_on_evals<1>(n / flen, [&](size_t k, point rt) __attribute__((always_inline)) {
+            exec_on_evals<1>(n / flen, [&] [[gnu::always_inline]] (size_t k, point rt) {
                 k *= flen;
                 auto [Ax, Ay] = at(k);
                 auto Cv = t.at(k);
                 vpoint vrt = {vz + real(rt), vz + imag(rt)};
                 auto Cr = Cv * vrt;
                 vpoint res = vz;
-                auto iter = [&]<int i>() __attribute__((always_inline)) {
+                auto iter = [&]<int i> [[gnu::always_inline]] () {
                     auto wrap = [&](vftype original, vftype rotated) {
                         if constexpr(i == 0) {return original;}
                         else {return __builtin_shufflevector(rotated, original, 4-i,5-i,6-i,7-i);}
@@ -176,7 +176,7 @@ namespace cp_algo::math::fft {
             if constexpr (!partial) {
                 prepare_roots(n / 4);
                 point pi(0, 1);
-                exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
+                exec_on_evals<4>(n / 4, [&] [[gnu::always_inline]] (size_t k, point rt) {
                     k *= 4;
                     point v1 = conj(rt);
                     point v2 = v1 * v1;
@@ -193,7 +193,7 @@ namespace cp_algo::math::fft {
             }
             bool parity = std::countr_zero(n) % 2;
             if(parity) {
-                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
+                exec_on_evals<2>(n / (2 * flen), [&] [[gnu::always_inline]] (size_t k, point rt) {
                     k *= 2 * flen;
                     vpoint cvrt = {vz + real(rt), vz - imag(rt)};
                     auto B = at(k) - at(k + flen);
@@ -218,7 +218,7 @@ namespace cp_algo::math::fft {
             bool parity = std::countr_zero(n) % 2;
             transform<false,fixed>(n, parity);
             if(parity) {
-                exec_on_evals<2>(n / (2 * flen), [&](size_t k, point rt) __attribute__((always_inline)) {
+                exec_on_evals<2>(n / (2 * flen), [&] [[gnu::always_inline]] (size_t k, point rt) {
                     k *= 2 * flen;
                     vpoint vrt = {vz + real(rt), vz + imag(rt)};
                     auto t = at(k + flen) * vrt;
@@ -229,7 +229,7 @@ namespace cp_algo::math::fft {
             if constexpr (!partial) {
                 prepare_roots(n / 4);
                 point pi(0, 1);
-                exec_on_evals<4>(n / 4, [&](size_t k, point rt) __attribute__((always_inline)) {
+                exec_on_evals<4>(n / 4, [&] [[gnu::always_inline]] (size_t k, point rt) {
                     k *= 4;
                     point v1 = rt;
                     point v2 = v1 * v1;
@@ -267,18 +267,18 @@ namespace cp_algo::math::fft {
             auto fr=_mm256_set1_pd(real(factor)),fi=_mm256_set1_pd(imag(factor));
             alignas(32) double tw[6][T];
             const bool ahead=offset+length<n;
-            auto cmadd=[](vpoint x,vpoint y,vpoint c) __attribute__((always_inline)) {
+            auto cmadd=[] [[gnu::always_inline]] (vpoint x,vpoint y,vpoint c) {
                 auto re=_mm256_fmadd_pd(__m256d(real(x)),__m256d(real(y)),_mm256_fnmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(c))));
                 auto im=_mm256_fmadd_pd(__m256d(real(x)),__m256d(imag(y)),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(c))));
                 return vpoint{vftype(re),vftype(im)};
             };
-            auto cmcross=[](vpoint x,vpoint y,vpoint p,vpoint q) __attribute__((always_inline)) {
+            auto cmcross=[] [[gnu::always_inline]] (vpoint x,vpoint y,vpoint p,vpoint q) {
                 auto re=_mm256_sub_pd(_mm256_fmsub_pd(__m256d(real(x)),__m256d(real(y)),__m256d(real(p))),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(q))));
                 auto im=_mm256_add_pd(_mm256_fmsub_pd(__m256d(real(x)),__m256d(imag(y)),__m256d(imag(p))),_mm256_fmsub_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(q))));
                 return vpoint{vftype(re),vftype(im)};
             };
             // z * conj(v)
-            auto mulconj=[](vpoint z,vpoint v) __attribute__((always_inline)) {
+            auto mulconj=[] [[gnu::always_inline]] (vpoint z,vpoint v) {
                 auto re=_mm256_fmadd_pd(__m256d(real(z)),__m256d(real(v)),_mm256_mul_pd(__m256d(imag(z)),__m256d(imag(v))));
                 auto im=_mm256_fmsub_pd(__m256d(imag(z)),__m256d(real(v)),_mm256_mul_pd(__m256d(real(z)),__m256d(imag(v))));
                 return vpoint{vftype(re),vftype(im)};
@@ -303,9 +303,9 @@ namespace cp_algo::math::fft {
                         auto const* pb=reinterpret_cast<char const*>(t.r.data()+(pos+length)/flen);
                         for(size_t c=0;c<4;c++){_mm_prefetch(pa+64*c,_MM_HINT_T2);_mm_prefetch(pb+64*c,_MM_HINT_T2);}
                     }
-                    auto bc=[&](size_t c) __attribute__((always_inline)) {return vftype(_mm256_broadcast_sd(tw[c]+g));};
+                    auto bc=[&] [[gnu::always_inline]] (size_t c) {return vftype(_mm256_broadcast_sd(tw[c]+g));};
                     vpoint v1={bc(0),bc(1)},v2={bc(2),bc(3)},v3={bc(4),bc(5)};
-                    auto forward=[&](cvector const& a) __attribute__((always_inline)) {
+                    auto forward=[&] [[gnu::always_inline]] (cvector const& a) {
                         auto A=a.at(pos),B=a.at(pos+4)*v1,C=a.at(pos+8)*v2,D=a.at(pos+12)*v3;
                         return std::array<vpoint,4>{(A+C)+(B+D),(A+C)-(B+D),(A-C)+vi(B-D),(A-C)-vi(B-D)};
                     };
@@ -315,7 +315,7 @@ namespace cp_algo::math::fft {
                     const auto flip_re=_mm256_set_pd(0.,-0.,-0.,0.),flip_im=_mm256_set_pd(-0.,0.,-0.,0.);
                     vpoint w={vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(real(v1)),__m256d(imag(v1)),0b1100),flip_re)),
                               vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(imag(v1)),__m256d(real(v1)),0b1100),flip_im))};
-                    auto mul=[&](vpoint a0,vpoint a1,vpoint b0,vpoint b1) __attribute__((always_inline)) {
+                    auto mul=[&] [[gnu::always_inline]] (vpoint a0,vpoint a1,vpoint b0,vpoint b1) {
                         auto p=a0*b0,q=a1*b1;
                         return std::array<vpoint,2>{cmadd(w,q,p),cmcross(a0+a1,b0+b1,p,q)};
                     };
@@ -398,7 +398,7 @@ namespace cp_algo::math::fft {
                 }
                 return table;
             }();
-            auto lift = [&](size_t idx) __attribute__((always_inline)) -> vpoint {
+            auto lift = [&] [[gnu::always_inline]] (size_t idx) -> vpoint {
                 i32x4 bits{};
                 if(idx + 4 <= fa.count) {std::memcpy(&bits, fa.src + idx, sizeof(bits));}
                 else if(idx < fa.count) {for(size_t j = 0; j < fa.count - idx; j++) {bits[j] = int32_t(fa.src[idx + j]);}}
@@ -411,10 +411,10 @@ namespace cp_algo::math::fft {
                 auto re = x - q * fa.a - t * fa.b, im = t * fa.a - q * fa.b;
                 return vpoint{re, Neg ? -im : im};
             };
-            auto stage = [&]<bool top>(size_t offset, size_t length, size_t begin, size_t end) __attribute__((always_inline)) {
+            auto stage = [&]<bool top> [[gnu::always_inline]] (size_t offset, size_t length, size_t begin, size_t end) {
                 size_t step = length / 8, k = offset / length;
                 auto const& w = weights[(n / length - 1) / 7 + k];
-                auto rot = [&]<size_t J>(vpoint z) __attribute__((always_inline)) {
+                auto rot = [&]<size_t J> [[gnu::always_inline]] (vpoint z) {
                     auto c = w[J - 1];
                     if constexpr(Mode == 0) {return z * vpoint{vz + real(c), inverse ? vz - imag(c) : vz + imag(c)};}
                     else {
@@ -424,25 +424,25 @@ namespace cp_algo::math::fft {
                         return vpoint{vftype(_mm256_fnmadd_pd(__m256d(t), __m256d(y), __m256d(x))), y};
                     }
                 };
-                auto add = [](vpoint a, vpoint b) __attribute__((always_inline)) {
+                auto add = [] [[gnu::always_inline]] (vpoint a, vpoint b) {
                     if constexpr(Mode != 2) {return a + b;}
                     else {return vpoint{vftype(_mm256_fmadd_pd(__m256d(real(a)), _mm256_set1_pd(1), __m256d(real(b)))), vftype(_mm256_fmadd_pd(__m256d(imag(a)), _mm256_set1_pd(1), __m256d(imag(b))))};}
                 };
-                auto sub = [](vpoint a, vpoint b) __attribute__((always_inline)) {
+                auto sub = [] [[gnu::always_inline]] (vpoint a, vpoint b) {
                     if constexpr(Mode != 2) {return a - b;}
                     else {return vpoint{vftype(_mm256_fmsub_pd(__m256d(real(a)), _mm256_set1_pd(1), __m256d(real(b)))), vftype(_mm256_fmsub_pd(__m256d(imag(a)), _mm256_set1_pd(1), __m256d(imag(b))))};}
                 };
-                auto d4 = [](vpoint a, vpoint b, vpoint c, vpoint d) __attribute__((always_inline)) {
+                auto d4 = [] [[gnu::always_inline]] (vpoint a, vpoint b, vpoint c, vpoint d) {
                     auto s = a + c, t = a - c, u = b + d, v = vi(b - d);
                     if constexpr(inverse) {return std::array<vpoint, 4>{s + u, t - v, s - u, t + v};}
                     else {return std::array<vpoint, 4>{s + u, t + v, s - u, t - v};}
                 };
                 constexpr double q = 0.707106781186547524400844362104849039;
-                auto r1 = [](vpoint z) __attribute__((always_inline)) {
+                auto r1 = [] [[gnu::always_inline]] (vpoint z) {
                     if constexpr(inverse) {return vpoint{(real(z) + imag(z)) * q, (imag(z) - real(z)) * q};}
                     else {return vpoint{(real(z) - imag(z)) * q, (real(z) + imag(z)) * q};}
                 };
-                auto r3 = [](vpoint z) __attribute__((always_inline)) {
+                auto r3 = [] [[gnu::always_inline]] (vpoint z) {
                     if constexpr(inverse) {return vpoint{(imag(z) - real(z)) * q, (-imag(z) - real(z)) * q};}
                     else {return vpoint{(-real(z) - imag(z)) * q, (real(z) - imag(z)) * q};}
                 };
@@ -458,7 +458,7 @@ namespace cp_algo::math::fft {
                 constexpr bool fused_in = top && Fuse == 1 && !inverse;
                 for(size_t j = 0; j < (end - begin) / flen; j++) {
                     size_t base = offset + begin + j * flen;
-                    auto in = [&]<size_t S>() __attribute__((always_inline)) {
+                    auto in = [&]<size_t S> [[gnu::always_inline]] () {
                         if constexpr(fused_in) {return lift(base + S * step);}
                         else {return input[S][j];}
                     };
@@ -538,11 +538,11 @@ namespace cp_algo::math::fft {
             if constexpr(!range_fixed){prepare_roots(n/16);
             if constexpr(fixed==(1<<24))prepare_shear_roots();}
             size_t log_n=std::countr_zero(n);
-            auto butterfly = [&](size_t offset,size_t length,size_t begin,size_t end) __attribute__((always_inline)) {
+            auto butterfly = [&] [[gnu::always_inline]] (size_t offset,size_t length,size_t begin,size_t end) {
                 if constexpr(omit16)if(length==16)return;
                 size_t step=length/4,log_length=std::countr_zero(length),k=offset>>log_length;
                 auto *p0=r.data()+(offset+begin)/flen,*p1=r.data()+(offset+begin+step)/flen,*p2=r.data()+(offset+begin+2*step)/flen,*p3=r.data()+(offset+begin+3*step)/flen;
-                auto run=[&]<bool shear>() __attribute__((always_inline)) {
+                auto run=[&]<bool shear> [[gnu::always_inline]] () {
                     vpoint v1,v2,v3;vftype t1{},t2{},t3{};
                     if constexpr(shear && fixed==(1<<24)) {
                         auto const& c=shear_roots[((n>>log_length)-1)/3+k];
@@ -559,7 +559,7 @@ namespace cp_algo::math::fft {
                         v2=v1*v1;v3=v1*v2;
                         if constexpr(shear){t1=imag(v1)/(vz+1.0+real(v1));t2=imag(v2)/(vz+1.0+real(v2));t3=imag(v3)/(vz+1.0+real(v3));}
                     }
-                    auto rotate=[](vpoint z,vpoint v,vftype t) __attribute__((always_inline)) {
+                    auto rotate=[] [[gnu::always_inline]] (vpoint z,vpoint v,vftype t) {
                         if constexpr(!shear)return z*v;
                         else {
                             auto x=vftype(_mm256_fnmadd_pd(__m256d(t),__m256d(imag(z)),__m256d(real(z))));
@@ -639,7 +639,7 @@ namespace cp_algo::math::fft {
                     auto finish=[&]<bool par>() {
                         constexpr size_t chunk=size_t(1)<<(6+par);
                         constexpr size_t bottom=size_t(1)<<(4+par);
-                        auto small=[&]<size_t L>(auto&& self,size_t pos) __attribute__((always_inline)) -> void {
+                        auto small=[&]<size_t L> [[gnu::always_inline]] (auto&& self,size_t pos) -> void {
                             if constexpr(inverse && L>bottom) {
                                 for(size_t q=0;q<4;q++)self.template operator()<L/4>(self,pos+q*(L/4));
                             }

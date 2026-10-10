@@ -63,7 +63,7 @@ namespace cp_algo::math::fft {
 
         void dot(dft64 const& t) {
             size_t N = cv[0].size();
-            cvector::exec_on_evals<1>(N / flen, [&](size_t k, point rt) __attribute__((always_inline)) {
+            cvector::exec_on_evals<1>(N / flen, [&] [[gnu::always_inline]] (size_t k, point rt) {
                 k *= flen;
                 auto [A0x, A0y] = cv[0].at(k);
                 auto [A1x, A1y] = cv[1].at(k);

@@ -34,7 +34,7 @@ namespace cp_algo::math {
                 }
             }
         } else {
-            auto add = [&](auto &a, auto &b) __attribute__((always_inline)) {
+            auto add = [&] [[gnu::always_inline]] (auto &a, auto &b) {
                 auto x = a + b, y = a - b;
                 a = x, b = y;
             };

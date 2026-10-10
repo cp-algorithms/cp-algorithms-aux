@@ -340,25 +340,29 @@ namespace cp_algo::linalg {
             assert(n() == m() && n() % 2 == 0);
             matrix b = *this;
             base res = 1;
-            for(size_t i = 1; i < n(); i++) {
-                for(size_t j = i + 1; j < n() && b[i].normalize(i - 1) == base(0); j++) {
-                    if(b[j].normalize(i - 1) != base(0)) {
-                        std::swap(b[i], b[j]);
-                        for(size_t k = i; k < n(); k++) {
-                            std::swap(b[k][i], b[k][j]);
-                        }
-                        res = -res;
+            for(size_t k = 0; k < n(); k += 2) {
+                size_t q = k + 1, p = q;
+                while(p < n() && b[k].normalize(p) == base(0)) p++;
+                if(p == n()) return base(0);
+                if(p != q) {
+                    res = -res;
+                    // Normalize values before moving them between row accumulators.
+                    b[q].normalize(); b[p].normalize();
+                    // Symmetric permutation, storing only the upper triangle.
+                    for(size_t i = 0; i < q; i++) std::swap(b[i][q], b[i][p]);
+                    for(size_t i = q + 1; i < p; i++) {
+                        std::swap(b[q][i], b[i][p]);
+                        b[q][i] = -b[q].normalize(i); b[i][p] = -b[i].normalize(p);
                     }
+                    for(size_t i = p + 1; i < n(); i++) std::swap(b[q][i], b[p][i]);
+                    b[q][p] = -b[q].normalize(p);
                 }
-                b[i].normalize();
-                if(i % 2) {
-                    res *= -b[i][i - 1];
-                    if(res == base(0)) return res;
-                }
-                if(b[i][i - 1] == base(0)) continue;
-                base inv = base(1) / b[i][i - 1];
-                for(size_t j = i + 1; j < n(); j++) {
-                    b[j].add_scaled(b[i], -b[j].normalize(i - 1) * inv, i);
+                b[k].normalize(); b[q].normalize();
+                res *= b[k][q];
+                base inv = base(1) / b[k][q];
+                for(size_t i = k + 2; i + 1 < n(); i += 2) {
+                    add_scaled_pair(b[i], b[i + 1], b[k], b[q],
+                        {b[q][i] * inv, -b[k][i] * inv, b[q][i + 1] * inv, -b[k][i + 1] * inv}, i + 1);
                 }
             }
             return res;

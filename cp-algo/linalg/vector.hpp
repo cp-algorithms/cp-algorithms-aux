@@ -181,6 +181,9 @@ namespace cp_algo::linalg {
             }
             size_t n = x.size();
             assert(y.size() == n && p.size() == n && q.size() == n && first <= n);
+            // Pivot sources vanish before first; include that zero prefix for aligned updates.
+            if(is_aligned(x.data()) && is_aligned(y.data()) &&
+               is_aligned(p.data()) && is_aligned(q.data())) first -= first % 4;
             size_t period = accumulation_period();
             auto prepare = [&](modint_vec &a) {
                 // A pair must not cross the accumulator's reduction boundary.
@@ -261,6 +264,7 @@ namespace cp_algo::linalg {
                                      std::array<Base const*, count> const& src,
                                      std::array<base, rows * count> const& c, size_t first = 0) {
             static_assert(count <= batch_size && (rows == 1 || rows == 2));
+            if(std::ranges::all_of(c, [](base value) { return value == base(0); })) return;
             if constexpr(use_simd) {
                 constexpr uint32_t mod = base::mod(), inv = math::inv2(uint32_t(-mod));
                 std::array<uint32_t, rows * count> scale;

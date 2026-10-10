@@ -151,6 +151,7 @@ int main() {
     for(size_t j = 0; j < y.size(); j++) assert(y[j] == 40 + 6 * int64_t(j));
     check_blocks();
     check_pairs<modint<998244353LL>>();
+    check_pairs<modint<998244353>>();
     check_pairs<modint<1000000007LL>>();
     check_pairs<modint<1073741789LL>>();
     check_pairs<modint<998244353LL>, vec<modint<998244353LL>>>();

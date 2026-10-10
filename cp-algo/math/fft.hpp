@@ -9,14 +9,19 @@ namespace cp_algo::math::fft {
         using base = std::decay_t<decltype(a[0])>;
         if(!std::empty(a) && std::data(a) == std::data(b)) {
             size_t n = std::min(k, std::size(a)), m = std::min(k, std::size(b));
-            if(!m) {a.clear(); return;}
+            if(!m) {
+                a.clear();
+                return;
+            }
             a.resize(k);
             // Descending output only reads original coefficients at indices <=j.
             for(size_t j = k; j-- > 0;) {
                 base sum = 0;
                 size_t lo = j >= n ? j + 1 - n : 0, hi = std::min(j + 1, m);
                 for(size_t i = lo; i < hi; i++) {
-                    if(n == m && i > j - i) {break;}
+                    if(n == m && i > j - i) {
+                        break;
+                    }
                     auto term = a[i] * a[j - i];
                     sum += n == m && i != j - i ? term + term : term;
                 }
@@ -33,7 +38,9 @@ namespace cp_algo::math::fft {
             a.resize(k);
             // The loop below reads every coefficient it writes, so the growth is zeroed here
             // rather than relying on the caller's allocator to do it.
-            if(k > had) {std::fill(std::begin(a) + had, std::end(a), base(0));}
+            if(k > had) {
+                std::fill(std::begin(a) + had, std::end(a), base(0));
+            }
             for(int j = int(k - 1); j >= 0; j--) {
                 a[j] *= b[0];
                 for(int i = std::max(j - (int)n, 0) + 1; i < std::min(j + 1, (int)m); i++) {
@@ -59,12 +66,17 @@ namespace cp_algo::math::fft {
             return;
         }
         size_t as = std::min(k, std::size(a)), bs = std::min(k, std::size(b));
-        assert(quadratic<base>::usable(as, bs) && "the ring needs an odd prime modulus below 2^31 and a product within its rounding bound");
+        assert(quadratic<base>::usable(as, bs) &&
+               "the ring needs an odd prime modulus below 2^31 and a product within its rounding bound");
         bool aliased = same_storage(a, b), square = aliased && as == bs;
         // Everything past the true length of the product is zero, written here rather than
         // left to the caller's allocator.
         size_t need = as + bs - 1, keep = std::min(k, need);
-        auto pad = [&] {if(k > need) {std::fill(std::begin(a) + need, std::end(a), base(0));}};
+        auto pad = [&] {
+            if(k > need) {
+                std::fill(std::begin(a) + need, std::end(a), base(0));
+            }
+        };
         if constexpr(sizeof(base) == 4 && std::ranges::contiguous_range<decltype(b)>) {
             if(aliased && !square) {
                 big_vector<base> copy(std::data(b), std::data(b) + bs);
@@ -83,8 +95,11 @@ namespace cp_algo::math::fft {
             size_t cap = std::bit_ceil(need);
             auto A = spectrum<base>(a | std::views::take(as), cap);
             a.resize(k);
-            if(square) {std::move(A).square(a, keep);}
-            else {std::move(A).multiply(spectrum<base>(b | std::views::take(bs), cap), a, keep);}
+            if(square) {
+                std::move(A).square(a, keep);
+            } else {
+                std::move(A).multiply(spectrum<base>(b | std::views::take(bs), cap), a, keep);
+            }
             pad();
         }
     }
@@ -98,7 +113,9 @@ namespace cp_algo::math::fft {
         void mul_unbalanced(auto &a, auto const& b) {
             using base = std::decay_t<decltype(a[0])>;
             auto x = std::span<base const>(a), y = std::span<base const>(b);
-            if(x.size() < y.size()) {std::swap(x, y);}
+            if(x.size() < y.size()) {
+                std::swap(x, y);
+            }
             constexpr size_t length = 1 << 15;
             size_t step = length - y.size() + 1;
             auto fixed = spectrum<base>(y, length);
@@ -110,13 +127,18 @@ namespace cp_algo::math::fft {
                 size_t count = std::min(step, x.size() - start);
                 size_t need = count + y.size() - 1;
                 spectrum<base>(x.subspan(start, count), length).multiply(fixed, work, need);
-                for(size_t i = 0; i < need; i++) {result[start + i] += work[i];}
+                for(size_t i = 0; i < need; i++) {
+                    result[start + i] += work[i];
+                }
             }
             a = std::move(result);
         }
     }
     void mul(auto &a, auto const& b) {
-        if(std::empty(a) || std::empty(b)) {a.clear(); return;}
+        if(std::empty(a) || std::empty(b)) {
+            a.clear();
+            return;
+        }
         size_t small = std::min(std::size(a), std::size(b));
         size_t large = std::max(std::size(a), std::size(b));
         if(small >= magic && small <= 4096 && large >= (1 << 20) && large / small >= 64) {

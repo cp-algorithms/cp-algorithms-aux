@@ -14,21 +14,17 @@ namespace cp_algo::math::fft {
         size_t N;
         size_t rank(size_t i) {
             size_t cur = 1, res = 0, K = size(dim);
-            if(K == 0) return 0;
+            if(K == 0) {
+                return 0;
+            }
             for(auto ni: dim) {
                 cur *= ni;
                 res += i / cur;
             }
             return res % K;
         }
-        static void copy_prefix(
-            big_vector<base>& dst,
-            big_vector<size_t> const& dst_dim,
-            big_vector<base> const& src,
-            big_vector<size_t> const& src_dim,
-            big_vector<size_t> const& iter_dim,
-            size_t iter_N
-        ) {
+        static void copy_prefix(big_vector<base>& dst, big_vector<size_t> const& dst_dim, big_vector<base> const& src,
+                                big_vector<size_t> const& src_dim, big_vector<size_t> const& iter_dim, size_t iter_N) {
             size_t K = iter_dim.size();
             if(K == 0) {
                 dst[0] = src[0];
@@ -41,11 +37,7 @@ namespace cp_algo::math::fft {
             if(K == 2) {
                 size_t rows = iter_dim[1], cols = iter_dim[0];
                 for(size_t j = 0; j < rows; j++) {
-                    std::copy_n(
-                        src.data() + j * src_dim[0],
-                        cols,
-                        dst.data() + j * dst_dim[0]
-                    );
+                    std::copy_n(src.data() + j * src_dim[0], cols, dst.data() + j * dst_dim[0]);
                 }
                 return;
             }
@@ -73,9 +65,7 @@ namespace cp_algo::math::fft {
                 }
             }
         }
-        multivar(auto const& dim): dim(begin(dim), end(dim)), N(
-            std::ranges::fold_left(dim, 1, std::multiplies{})
-        ) {
+        multivar(auto const& dim): dim(begin(dim), end(dim)), N(std::ranges::fold_left(dim, 1, std::multiplies{})) {
             data.resize(N);
             ranks.resize(N);
             for(auto [i, x]: ranks | std::views::enumerate) {
@@ -92,11 +82,13 @@ namespace cp_algo::math::fft {
             }
             return pos;
         }
-        template<class Idx> requires requires(Idx const& idx) { idx[0]; }
+        template<class Idx>
+            requires requires(Idx const& idx) { idx[0]; }
         base& operator[](Idx const& idx) {
             return data[linear_index(idx)];
         }
-        template<class Idx> requires requires(Idx const& idx) { idx[0]; }
+        template<class Idx>
+            requires requires(Idx const& idx) { idx[0]; }
         base const& operator[](Idx const& idx) const {
             return data[linear_index(idx)];
         }
@@ -169,11 +161,7 @@ namespace cp_algo::math::fft {
             } else if(K == 2) {
                 size_t rows = nd[1], cols = nd[0];
                 for(size_t j = 1; j < rows; j++) {
-                    std::copy_n(
-                        data.data() + j * dim[0],
-                        cols,
-                        data.data() + j * cols
-                    );
+                    std::copy_n(data.data() + j * dim[0], cols, data.data() + j * cols);
                 }
             } else {
                 copy_prefix(data, nd, data, dim, nd, new_N);
@@ -193,26 +181,27 @@ namespace cp_algo::math::fft {
                 data[0] *= b.data[0];
                 return;
             }
-            if(mul_subset(b)) {return;}
+            if(mul_subset(b)) {
+                return;
+            }
             // Every operand is read by K of the K^2 products, so the transforms are built once
             // and the products that share a result are accumulated before a single readback.
             using operand = typename product<base>::operand;
             big_vector<operand> A, B;
-            A.reserve(K); B.reserve(K);
+            A.reserve(K);
+            B.reserve(K);
             size_t cap = std::max(2 * flen, std::bit_ceil(2 * N - 1));
             for(size_t i = 0; i < K; i++) {
-                A.emplace_back(data | std::views::enumerate | std::views::transform(
-                    [&](auto jx) {
-                        auto [j, x] = jx;
-                        return ranks[j] == i ? x : base(0);
-                    }
-                ), cap);
-                B.emplace_back(b.data | std::views::enumerate | std::views::transform(
-                    [&](auto jx) {
-                        auto [j, x] = jx;
-                        return ranks[j] == i ? x : base(0);
-                    }
-                ), cap);
+                A.emplace_back(data | std::views::enumerate | std::views::transform([&](auto jx) {
+                                   auto [j, x] = jx;
+                                   return ranks[j] == i ? x : base(0);
+                               }),
+                               cap);
+                B.emplace_back(b.data | std::views::enumerate | std::views::transform([&](auto jx) {
+                                   auto [j, x] = jx;
+                                   return ranks[j] == i ? x : base(0);
+                               }),
+                               cap);
             }
             for(size_t i = 0; i < K; i++) {
                 product<base> acc(cap);
@@ -230,18 +219,27 @@ namespace cp_algo::math::fft {
                 checkpoint("store");
             }
         }
+
     private:
         bool mul_subset(multivar const& b) {
             // The SIMD subset product accumulates at most 20 ranks in 64-bit lanes.
-            if constexpr(base::bits > 32 || max_logn < 3 || max_logn > 20) {return false;}
-            if(N < 64 || base::mod() % 2 == 0 || base::mod() >= (1 << 30)) {return false;}
+            if constexpr(base::bits > 32 || max_logn < 3 || max_logn > 20) {
+                return false;
+            }
+            if(N < 64 || base::mod() % 2 == 0 || base::mod() >= (1 << 30)) {
+                return false;
+            }
             size_t bits = 0, threes = 0;
             for(auto n: dim) {
-                if(n < 1 || n > 3) {return false;}
+                if(n < 1 || n > 3) {
+                    return false;
+                }
                 bits += n - 1;
                 threes += n == 3;
             }
-            if(bits > max_logn || threes > 7) {return false;}
+            if(bits > max_logn || threes > 7) {
+                return false;
+            }
             if(!threes) {
                 data = subset_convolution<base const>(data, b.data);
                 return true;
@@ -267,8 +265,8 @@ namespace cp_algo::math::fft {
             weight[0] = iweight[0] = 1;
             base half = base(2).inv();
             for(size_t i = 1; i <= threes; i++) {
-                weight[i] = weight[i-1] * base(2);
-                iweight[i] = iweight[i-1] * half;
+                weight[i] = weight[i - 1] * base(2);
+                iweight[i] = iweight[i - 1] * half;
             }
             big_vector<base> f(M), g(M);
             for(size_t i = 0; i < M; i++) {
@@ -277,7 +275,9 @@ namespace cp_algo::math::fft {
             }
             auto h = subset_convolution<base>(f, g);
             // Equivalent Boolean representatives agree, so repeated stores are harmless.
-            for(size_t i = 0; i < M; i++) {data[index[i]] = h[i] * iweight[degree[i]];}
+            for(size_t i = 0; i < M; i++) {
+                data[index[i]] = h[i] * iweight[degree[i]];
+            }
             return true;
         }
     };

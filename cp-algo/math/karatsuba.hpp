@@ -17,8 +17,8 @@ namespace cp_algo::math {
         auto a = &_a[0];
         auto b = &_b[0];
         auto c = &_c[0];
-        for (size_t i = 0; i < N; i++) {
-            for (size_t j = 0; j < N; j++) {
+        for(size_t i = 0; i < N; i++) {
+            for(size_t j = 0; j < N; j++) {
                 c[i + j] += a[i] * b[j];
             }
         }
@@ -29,24 +29,24 @@ namespace cp_algo::math {
     template<size_t N>
     [[gnu::target("avx2,vpclmulqdq")]]
     void base_conv_f2_64(auto &&a, auto &&b, auto &&c) {
-        if constexpr (N % 2) {
+        if constexpr(N % 2) {
             static_assert(N < 2);
             base_conv<N>(a, b, c);
             return;
         }
         alignas(32) __m128i pr0[2 * N] = {};
         alignas(32) __m128i pr1[2 * N] = {};
-        
-        for (size_t i = 0; i + 1 < N; i += 2) {
+
+        for(size_t i = 0; i + 1 < N; i += 2) {
             auto va = (__m256i)u64x4{a[i], 0, a[i + 1], 0};
-            for (size_t j = 0; j + 1 < N; j += 2) {
+            for(size_t j = 0; j + 1 < N; j += 2) {
                 auto vb = (__m256i)u64x4{b[j], b[j + 1], b[j], b[j + 1]};
                 (__m256i&)pr0[i + j] ^= _mm256_clmulepi64_epi128(va, vb, 0);
                 (__m256i&)pr1[i + j] ^= _mm256_clmulepi64_epi128(va, vb, 16);
             }
         }
         c[0].r = nimber::reduce_mod(pr0[0]);
-        for (size_t i = 1; i < 2 * N - 1; i++) {
+        for(size_t i = 1; i < 2 * N - 1; i++) {
             c[i].r ^= nimber::reduce_mod(pr0[i] ^ pr1[i - 1]);
         }
     }
@@ -59,31 +59,29 @@ namespace cp_algo::math {
             base_conv<N>(a, b, c);
             return;
         }
-        if constexpr (N % 4) {
+        if constexpr(N % 4) {
             static_assert(N < 4);
             base_conv<N>(a, b, c);
             return;
         }
         alignas(32) uint64_t pr0[2 * N] = {}, pr1[2 * N] = {};
         alignas(32) uint64_t pr2[2 * N] = {}, pr3[2 * N] = {};
-        for (size_t i = 0; i < N; i += 4) {
+        for(size_t i = 0; i < N; i += 4) {
             auto va0 = __m256i() + a[i].getr();
             auto va1 = __m256i() + a[i + 1].getr();
             auto va2 = __m256i() + a[i + 2].getr();
             auto va3 = __m256i() + a[i + 3].getr();
             size_t j = 0;
-            for (; j + 3 < N; j += 4) {
-                auto vb = (__m256i)u64x4{
-                    b[j].getr(), b[j + 1].getr(), b[j + 2].getr(), b[j + 3].getr()
-                };
+            for(; j + 3 < N; j += 4) {
+                auto vb = (__m256i)u64x4{b[j].getr(), b[j + 1].getr(), b[j + 2].getr(), b[j + 3].getr()};
                 (__m256i&)pr0[i + j] += _mm256_mul_epu32(va0, vb);
                 (__m256i&)pr1[i + j] += _mm256_mul_epu32(va1, vb);
                 (__m256i&)pr2[i + j] += _mm256_mul_epu32(va2, vb);
                 (__m256i&)pr3[i + j] += _mm256_mul_epu32(va3, vb);
             }
         }
-        for (size_t i = 0; i < 2 * N - 1; i++) {
-            if (i > 0) {
+        for(size_t i = 0; i < 2 * N - 1; i++) {
+            if(i > 0) {
                 pr2[i] += pr3[i - 1];
                 pr1[i] += pr2[i - 1];
                 pr0[i] += pr1[i - 1];
@@ -96,12 +94,12 @@ namespace cp_algo::math {
     // N is the input length and must be a power of two.
     template<auto N>
     void _karatsuba(auto &&a, auto &&b, auto &&c) {
-        [[gnu::assume(N <= 1<<19)]];
+        [[gnu::assume(N <= 1 << 19)]];
         using base = std::decay_t<decltype(a[0])>;
-        if constexpr (N <= NN) {
-            if constexpr (std::is_same_v<base, nimber::f2_64>) {
+        if constexpr(N <= NN) {
+            if constexpr(std::is_same_v<base, nimber::f2_64>) {
                 base_conv_f2_64<N>(a, b, c);
-            } else if constexpr (modint_type<base>) {
+            } else if constexpr(modint_type<base>) {
                 base_conv_modint<N>(a, b, c);
             } else {
                 base_conv<N>(a, b, c);
@@ -115,7 +113,7 @@ namespace cp_algo::math {
             static big_vector<base> buf(4 * h);
             auto f = &buf[0];
             auto sum_a = f + 2 * h, sum_b = f + 3 * h;
-            for (size_t i = 0; i < h; i++) {
+            for(size_t i = 0; i < h; i++) {
                 sum_a[i] = a0[i] + a1[i];
                 sum_b[i] = b0[i] + b1[i];
             }
@@ -169,33 +167,51 @@ namespace cp_algo::math {
                 // Values at 0, 1, 2, 3, 4, 5, and infinity.
                 for(size_t i = 0; i < 6; i++) {
                     T x = constant<T>(i), p = constant<T>(1);
-                    for(size_t j = 0; j < 7; j++) {a[i][j] = p; p *= x;}
+                    for(size_t j = 0; j < 7; j++) {
+                        a[i][j] = p;
+                        p *= x;
+                    }
                 }
                 a[6][6] = constant<T>(1);
-                for(size_t i = 0; i < 7; i++) {a[i][i + 7] = constant<T>(1);}
+                for(size_t i = 0; i < 7; i++) {
+                    a[i][i + 7] = constant<T>(1);
+                }
                 for(size_t i = 0; i < 7; i++) {
                     size_t pivot = i;
-                    while(pivot < 7 && a[pivot][i] == T{}) {pivot++;}
+                    while(pivot < 7 && a[pivot][i] == T{}) {
+                        pivot++;
+                    }
                     assert(pivot < 7);
                     std::swap(a[i], a[pivot]);
                     auto inv = inverse(a[i][i]);
-                    for(auto &x: a[i]) {x *= inv;}
+                    for(auto &x: a[i]) {
+                        x *= inv;
+                    }
                     for(size_t j = 0; j < 7; j++) {
-                        if(j == i) {continue;}
+                        if(j == i) {
+                            continue;
+                        }
                         auto q = a[j][i];
-                        for(size_t k = 0; k < 14; k++) {a[j][k] -= q * a[i][k];}
+                        for(size_t k = 0; k < 14; k++) {
+                            a[j][k] -= q * a[i][k];
+                        }
                     }
                 }
                 std::array<std::array<T, 7>, 7> res{};
                 for(size_t i = 0; i < 7; i++) {
-                    for(size_t j = 0; j < 7; j++) {res[i][j] = a[i][j + 7];}
+                    for(size_t j = 0; j < 7; j++) {
+                        res[i][j] = a[i][j + 7];
+                    }
                 }
                 return res;
             };
             static thread_local auto matrix = build();
             if constexpr(modint_type<T>) {
                 static thread_local auto modulus = T::mod();
-                if(modulus != T::mod()) {matrix = build(); modulus = T::mod();}
+                if(modulus != T::mod()) {
+                    matrix = build();
+                    modulus = T::mod();
+                }
             }
             return matrix;
         }
@@ -207,9 +223,13 @@ namespace cp_algo::math {
                 auto even = a0 + a2, odd = a1 + a3;
                 return k == 1 ? even + odd : even - odd;
             }
-            if(k == 5) {return ((a3 * T(3) + a2) * T(3) + a1) * T(3) + a0;}
-            a2 += a2; a2 += a2;
-            a3 += a3; a3 += a3;
+            if(k == 5) {
+                return ((a3 * T(3) + a2) * T(3) + a1) * T(3) + a0;
+            }
+            a2 += a2;
+            a2 += a2;
+            a3 += a3;
+            a3 += a3;
             auto odd = a1 + a3;
             odd += odd;
             return k == 3 ? (a0 + a2) + odd : (a0 + a2) - odd;
@@ -220,9 +240,9 @@ namespace cp_algo::math {
             auto i2 = inverse(T(2)), i3 = inverse(T(3)), i4 = i2 * i2;
             auto i5 = inverse(T(5)), i8 = i4 * i2, i12 = i4 * i3;
             for(size_t i = 0; i < 2 * h - 1; i++) {
-                auto c0 = p[i], c6 = p[12*h + i];
-                auto p1 = p[2*h + i], m1 = p[4*h + i];
-                auto p2 = p[6*h + i], m2 = p[8*h + i], p3 = p[10*h + i];
+                auto c0 = p[i], c6 = p[12 * h + i];
+                auto p1 = p[2 * h + i], m1 = p[4 * h + i];
+                auto p2 = p[6 * h + i], m2 = p[8 * h + i], p3 = p[10 * h + i];
                 // Separate even and odd powers before solving the small systems.
                 auto e1 = (p1 + m1) * i2 - c0 - c6;
                 auto e2 = (p2 + m2) * i2 - c0 - T(64) * c6;
@@ -231,9 +251,13 @@ namespace cp_algo::math {
                 auto o3 = (p3 - c0 - T(9) * c2 - T(81) * c4 - T(729) * c6) * i3;
                 auto d2 = (o2 - o1) * i3, d3 = (o3 - o1) * i8;
                 auto c5 = (d3 - d2) * i5, c3 = d2 - T(5) * c5, c1 = o1 - c3 - c5;
-                c[i] += c0; c[h + i] += c1; c[2*h + i] += c2;
-                c[3*h + i] += c3; c[4*h + i] += c4;
-                c[5*h + i] += c5; c[6*h + i] += c6;
+                c[i] += c0;
+                c[h + i] += c1;
+                c[2 * h + i] += c2;
+                c[3 * h + i] += c3;
+                c[4 * h + i] += c4;
+                c[5 * h + i] += c5;
+                c[6 * h + i] += c6;
             }
         }
 
@@ -254,11 +278,11 @@ namespace cp_algo::math {
                     auto point = constant<T>(k);
                     for(size_t i = 0; i < h; i++) {
                         if constexpr(modint_type<T>) {
-                            av[i] = evaluate_modular(a[i], a[i + h], a[i + 2*h], a[i + 3*h], k);
-                            bv[i] = evaluate_modular(b[i], b[i + h], b[i + 2*h], b[i + 3*h], k);
+                            av[i] = evaluate_modular(a[i], a[i + h], a[i + 2 * h], a[i + 3 * h], k);
+                            bv[i] = evaluate_modular(b[i], b[i + h], b[i + 2 * h], b[i + 3 * h], k);
                         } else {
-                            av[i] = ((a[i + 3*h] * point + a[i + 2*h]) * point + a[i + h]) * point + a[i];
-                            bv[i] = ((b[i + 3*h] * point + b[i + 2*h]) * point + b[i + h]) * point + b[i];
+                            av[i] = ((a[i + 3 * h] * point + a[i + 2 * h]) * point + a[i + h]) * point + a[i];
+                            bv[i] = ((b[i + 3 * h] * point + b[i + 2 * h]) * point + b[i + h]) * point + b[i];
                         }
                     }
                     mul<h>(av.data(), bv.data(), products.data() + 2 * k * h);
@@ -271,11 +295,17 @@ namespace cp_algo::math {
                     for(size_t j = 0; j < 7; j++) {
                         for(size_t k = 0; k < 7; k++) {
                             auto x = matrix[j][k];
-                            if(x == T{}) {continue;}
+                            if(x == T{}) {
+                                continue;
+                            }
                             if(x == constant<T>(1)) {
-                                for(size_t i = 0; i < 2*h - 1; i++) {c[j*h + i] += products[k*2*h + i];}
+                                for(size_t i = 0; i < 2 * h - 1; i++) {
+                                    c[j * h + i] += products[k * 2 * h + i];
+                                }
                             } else {
-                                for(size_t i = 0; i < 2*h - 1; i++) {c[j*h + i] += x * products[k*2*h + i];}
+                                for(size_t i = 0; i < 2 * h - 1; i++) {
+                                    c[j * h + i] += x * products[k * 2 * h + i];
+                                }
                             }
                         }
                     }
@@ -291,7 +321,9 @@ namespace cp_algo::math {
         using base = std::decay_t<decltype(a[0])>;
         auto n = std::size(a);
         auto m = std::size(b);
-        if(!n || !m) {return big_vector<base>{};}
+        if(!n || !m) {
+            return big_vector<base>{};
+        }
         auto N = std::bit_ceil(std::max(n, m));
         a.resize(N);
         b.resize(N);

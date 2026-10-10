@@ -27,8 +27,12 @@ namespace cp_algo::math::fft {
     template<class T>
     struct spectrum_alloc: big_alloc<T> {
         using big_alloc<T>::big_alloc;
-        template<class U> struct rebind { using other = spectrum_alloc<U>; };
-        template<class U> requires (std::is_same_v<U, vpoint>)
+        template<class U>
+        struct rebind {
+            using other = spectrum_alloc<U>;
+        };
+        template<class U>
+            requires(std::is_same_v<U, vpoint>)
         void construct(U*) noexcept {}
     };
     using spectrum_vector = std::vector<vpoint, spectrum_alloc<vpoint>>;
@@ -42,8 +46,8 @@ namespace cp_algo::math::fft {
             checkpoint("cvector create");
         }
 
-        vpoint& at(size_t k) {return r[k / flen];}
-        vpoint at(size_t k) const {return r[k / flen];}
+        vpoint& at(size_t k) { return r[k / flen]; }
+        vpoint at(size_t k) const { return r[k / flen]; }
         template<class pt = point>
         inline void set(size_t k, pt const& t) {
             if constexpr(std::is_same_v<pt, point>) {
@@ -101,36 +105,45 @@ namespace cp_algo::math::fft {
         }
         template<int step>
         static void exec_on_evals(size_t n, auto &&callback) {
-            point factor=root(4*step*n);
-            if constexpr(step==1 || step==2 || step==4){
-                prepare_roots((step*n+3)/4);
-                size_t i=0;
-                if constexpr(step==1){
-                    for(;i+4<=n;i+=4){
-                        size_t k=i/4;
-                        point e=k<pre_evals?evalp[k]:extra[k-pre_evals];
-                        point v=factor*e;
-                        callback(i,v);callback(i+1,-v);
-                        point iv(-imag(v),real(v));
-                        callback(i+2,iv);callback(i+3,-iv);
+            point factor = root(4 * step * n);
+            if constexpr(step == 1 || step == 2 || step == 4) {
+                prepare_roots((step * n + 3) / 4);
+                size_t i = 0;
+                if constexpr(step == 1) {
+                    for(; i + 4 <= n; i += 4) {
+                        size_t k = i / 4;
+                        point e = k < pre_evals ? evalp[k] : extra[k - pre_evals];
+                        point v = factor * e;
+                        callback(i, v);
+                        callback(i + 1, -v);
+                        point iv(-imag(v), real(v));
+                        callback(i + 2, iv);
+                        callback(i + 3, -iv);
                     }
-                }else if constexpr(step==2){
-                    for(;i+2<=n;i+=2){
-                        size_t k=i/2;
-                        point e=k<pre_evals?evalp[k]:extra[k-pre_evals];
-                        point v=factor*e;
-                        callback(i,v);callback(i+1,point(-imag(v),real(v)));
+                } else if constexpr(step == 2) {
+                    for(; i + 2 <= n; i += 2) {
+                        size_t k = i / 2;
+                        point e = k < pre_evals ? evalp[k] : extra[k - pre_evals];
+                        point v = factor * e;
+                        callback(i, v);
+                        callback(i + 1, point(-imag(v), real(v)));
                     }
                 }
-                for(;i<n;i++){
-                    size_t index=step*i,k=index/4;
-                    point e=k<pre_evals?evalp[k]:extra[k-pre_evals];
-                    if(index&2)e=e*point(0,1);
-                    if(index&1)e=-e;
-                    callback(i,factor*e);
+                for(; i < n; i++) {
+                    size_t index = step * i, k = index / 4;
+                    point e = k < pre_evals ? evalp[k] : extra[k - pre_evals];
+                    if(index & 2) {
+                        e = e * point(0, 1);
+                    }
+                    if(index & 1) {
+                        e = -e;
+                    }
+                    callback(i, factor * e);
                 }
-            }else{
-                for(size_t i=0;i<n;i++)callback(i,factor*eval_point(step*i));
+            } else {
+                for(size_t i = 0; i < n; i++) {
+                    callback(i, factor * eval_point(step * i));
+                }
             }
         }
 
@@ -145,7 +158,7 @@ namespace cp_algo::math::fft {
 
         template<size_t fixed = 0>
         void dot(cvector const& t) {
-            size_t n = fixed?fixed:this->size();
+            size_t n = fixed ? fixed : this->size();
             exec_on_evals<1>(n / flen, [&] [[gnu::always_inline]] (size_t k, point rt) {
                 k *= flen;
                 auto [Ax, Ay] = at(k);
@@ -155,16 +168,19 @@ namespace cp_algo::math::fft {
                 vpoint res = vz;
                 auto iter = [&]<int i> [[gnu::always_inline]] () {
                     auto wrap = [&](vftype original, vftype rotated) {
-                        if constexpr(i == 0) {return original;}
-                        else {return __builtin_shufflevector(rotated, original, 4-i,5-i,6-i,7-i);}
+                        if constexpr(i == 0) {
+                            return original;
+                        } else {
+                            return __builtin_shufflevector(rotated, original, 4 - i, 5 - i, 6 - i, 7 - i);
+                        }
                     };
-                    vpoint Cw = {wrap(real(Cv),real(Cr)),wrap(imag(Cv),imag(Cr))};
-                    vpoint Av = {vz+Ax[i],vz+Ay[i]};
-                    return Av*Cw;
+                    vpoint Cw = {wrap(real(Cv), real(Cr)), wrap(imag(Cv), imag(Cr))};
+                    vpoint Av = {vz + Ax[i], vz + Ay[i]};
+                    return Av * Cw;
                 };
-                auto p0=iter.template operator()<0>(), p1=iter.template operator()<1>();
-                auto p2=iter.template operator()<2>(), p3=iter.template operator()<3>();
-                res=(p0+p1)+(p2+p3);
+                auto p0 = iter.template operator()<0>(), p1 = iter.template operator()<1>();
+                auto p2 = iter.template operator()<2>(), p3 = iter.template operator()<3>();
+                res = (p0 + p1) + (p2 + p3);
                 set(k, res);
             });
             checkpoint("dot");
@@ -172,8 +188,8 @@ namespace cp_algo::math::fft {
         // normalize=false leaves the inverse-transform scale for the caller.
         template<bool partial = true, bool normalize = true, size_t fixed = 0>
         void ifft() {
-            size_t n = fixed?fixed:size();
-            if constexpr (!partial) {
+            size_t n = fixed ? fixed : size();
+            if constexpr(!partial) {
                 prepare_roots(n / 4);
                 point pi(0, 1);
                 exec_on_evals<4>(n / 4, [&] [[gnu::always_inline]] (size_t k, point rt) {
@@ -202,7 +218,7 @@ namespace cp_algo::math::fft {
                 });
             }
 
-            transform<true,fixed>(n, parity);
+            transform<true, fixed>(n, parity);
             checkpoint("ifft");
             if constexpr(normalize) {
                 auto scale = vz + ftype(partial ? flen : 1) / ftype(n);
@@ -213,10 +229,10 @@ namespace cp_algo::math::fft {
         }
         template<bool partial = true, size_t fixed = 0>
         void fft() {
-            size_t n = fixed?fixed:size();
+            size_t n = fixed ? fixed : size();
             prepare_roots(n / (partial ? 16 : 4));
             bool parity = std::countr_zero(n) % 2;
-            transform<false,fixed>(n, parity);
+            transform<false, fixed>(n, parity);
             if(parity) {
                 exec_on_evals<2>(n / (2 * flen), [&] [[gnu::always_inline]] (size_t k, point rt) {
                     k *= 2 * flen;
@@ -226,7 +242,7 @@ namespace cp_algo::math::fft {
                     at(k) += t;
                 });
             }
-            if constexpr (!partial) {
+            if constexpr(!partial) {
                 prepare_roots(n / 4);
                 point pi(0, 1);
                 exec_on_evals<4>(n / 4, [&] [[gnu::always_inline]] (size_t k, point rt) {
@@ -246,85 +262,119 @@ namespace cp_algo::math::fft {
             }
             checkpoint("fft");
         }
-        static std::array<vpoint,4> transpose(std::array<vpoint,4> const&a){
-            auto half=[](auto part){
-                auto a0=__m256d(part(0)),a1=__m256d(part(1)),a2=__m256d(part(2)),a3=__m256d(part(3));
-                auto t0=_mm256_unpacklo_pd(a0,a1),t1=_mm256_unpackhi_pd(a0,a1),t2=_mm256_unpacklo_pd(a2,a3),t3=_mm256_unpackhi_pd(a2,a3);
-                return std::array<vftype,4>{vftype(_mm256_permute2f128_pd(t0,t2,0x20)),vftype(_mm256_permute2f128_pd(t1,t3,0x20)),vftype(_mm256_permute2f128_pd(t0,t2,0x31)),vftype(_mm256_permute2f128_pd(t1,t3,0x31))};
+        static std::array<vpoint, 4> transpose(std::array<vpoint, 4> const& a) {
+            auto half = [](auto part) {
+                auto a0 = __m256d(part(0)), a1 = __m256d(part(1)), a2 = __m256d(part(2)), a3 = __m256d(part(3));
+                auto t0 = _mm256_unpacklo_pd(a0, a1), t1 = _mm256_unpackhi_pd(a0, a1), t2 = _mm256_unpacklo_pd(a2, a3),
+                     t3 = _mm256_unpackhi_pd(a2, a3);
+                return std::array<vftype, 4>{
+                    vftype(_mm256_permute2f128_pd(t0, t2, 0x20)), vftype(_mm256_permute2f128_pd(t1, t3, 0x20)),
+                    vftype(_mm256_permute2f128_pd(t0, t2, 0x31)), vftype(_mm256_permute2f128_pd(t1, t3, 0x31))};
             };
-            auto re=half([&](int k){return real(a[k]);}),im=half([&](int k){return imag(a[k]);});
-            return {vpoint{re[0],im[0]},vpoint{re[1],im[1]},vpoint{re[2],im[2]},vpoint{re[3],im[3]}};
+            auto re = half([&](int k) { return real(a[k]); }), im = half([&](int k) { return imag(a[k]); });
+            return {vpoint{re[0], im[0]}, vpoint{re[1], im[1]}, vpoint{re[2], im[2]}, vpoint{re[3], im[3]}};
         }
         // Multiply groups of 16 points as polynomials modulo x^16 - rt: one radix-4 level on
         // each operand, a lane-parallel 4-coefficient Karatsuba product, one inverse level.
         // The weights rt, rt^2, rt^3 of a tile of groups are computed four groups per SIMD
         // operation ahead of the tile, so the product loop only broadcasts them from memory.
         static constexpr size_t dot_tile = 64;
-        template<size_t fixed, bool square = false>void dot_fused16(cvector const& t,size_t offset,size_t length){
-            constexpr size_t T=dot_tile;
-            const size_t n=fixed?fixed:size();
-            point factor=root(n);
-            auto fr=_mm256_set1_pd(real(factor)),fi=_mm256_set1_pd(imag(factor));
+        template<size_t fixed, bool square = false>
+        void dot_fused16(cvector const& t, size_t offset, size_t length) {
+            constexpr size_t T = dot_tile;
+            const size_t n = fixed ? fixed : size();
+            point factor = root(n);
+            auto fr = _mm256_set1_pd(real(factor)), fi = _mm256_set1_pd(imag(factor));
             alignas(32) double tw[6][T];
-            const bool ahead=offset+length<n;
-            auto cmadd=[] [[gnu::always_inline]] (vpoint x,vpoint y,vpoint c) {
-                auto re=_mm256_fmadd_pd(__m256d(real(x)),__m256d(real(y)),_mm256_fnmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(c))));
-                auto im=_mm256_fmadd_pd(__m256d(real(x)),__m256d(imag(y)),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(c))));
-                return vpoint{vftype(re),vftype(im)};
+            const bool ahead = offset + length < n;
+            auto cmadd = [] [[gnu::always_inline]] (vpoint x, vpoint y, vpoint c) {
+                auto re = _mm256_fmadd_pd(__m256d(real(x)), __m256d(real(y)),
+                                          _mm256_fnmadd_pd(__m256d(imag(x)), __m256d(imag(y)), __m256d(real(c))));
+                auto im = _mm256_fmadd_pd(__m256d(real(x)), __m256d(imag(y)),
+                                          _mm256_fmadd_pd(__m256d(imag(x)), __m256d(real(y)), __m256d(imag(c))));
+                return vpoint{vftype(re), vftype(im)};
             };
-            auto cmcross=[] [[gnu::always_inline]] (vpoint x,vpoint y,vpoint p,vpoint q) {
-                auto re=_mm256_sub_pd(_mm256_fmsub_pd(__m256d(real(x)),__m256d(real(y)),__m256d(real(p))),_mm256_fmadd_pd(__m256d(imag(x)),__m256d(imag(y)),__m256d(real(q))));
-                auto im=_mm256_add_pd(_mm256_fmsub_pd(__m256d(real(x)),__m256d(imag(y)),__m256d(imag(p))),_mm256_fmsub_pd(__m256d(imag(x)),__m256d(real(y)),__m256d(imag(q))));
-                return vpoint{vftype(re),vftype(im)};
+            auto cmcross = [] [[gnu::always_inline]] (vpoint x, vpoint y, vpoint p, vpoint q) {
+                auto re = _mm256_sub_pd(_mm256_fmsub_pd(__m256d(real(x)), __m256d(real(y)), __m256d(real(p))),
+                                        _mm256_fmadd_pd(__m256d(imag(x)), __m256d(imag(y)), __m256d(real(q))));
+                auto im = _mm256_add_pd(_mm256_fmsub_pd(__m256d(real(x)), __m256d(imag(y)), __m256d(imag(p))),
+                                        _mm256_fmsub_pd(__m256d(imag(x)), __m256d(real(y)), __m256d(imag(q))));
+                return vpoint{vftype(re), vftype(im)};
             };
             // z * conj(v)
-            auto mulconj=[] [[gnu::always_inline]] (vpoint z,vpoint v) {
-                auto re=_mm256_fmadd_pd(__m256d(real(z)),__m256d(real(v)),_mm256_mul_pd(__m256d(imag(z)),__m256d(imag(v))));
-                auto im=_mm256_fmsub_pd(__m256d(imag(z)),__m256d(real(v)),_mm256_mul_pd(__m256d(real(z)),__m256d(imag(v))));
-                return vpoint{vftype(re),vftype(im)};
+            auto mulconj = [] [[gnu::always_inline]] (vpoint z, vpoint v) {
+                auto re = _mm256_fmadd_pd(__m256d(real(z)), __m256d(real(v)),
+                                          _mm256_mul_pd(__m256d(imag(z)), __m256d(imag(v))));
+                auto im = _mm256_fmsub_pd(__m256d(imag(z)), __m256d(real(v)),
+                                          _mm256_mul_pd(__m256d(real(z)), __m256d(imag(v))));
+                return vpoint{vftype(re), vftype(im)};
             };
-            for(size_t tile=offset;tile<offset+length;tile+=16*T){
-                size_t k0=tile/16;
-                auto const* e=reinterpret_cast<double const*>(k0<pre_evals?evalp.data()+k0:extra.data()+(k0-pre_evals));
-                for(size_t g=0;g<T;g+=4){
-                    auto x=_mm256_loadu_pd(e+2*g),y=_mm256_loadu_pd(e+2*g+4);
-                    auto er=_mm256_permute4x64_pd(_mm256_unpacklo_pd(x,y),0xD8),ei=_mm256_permute4x64_pd(_mm256_unpackhi_pd(x,y),0xD8);
-                    auto r1=_mm256_fmsub_pd(fr,er,_mm256_mul_pd(fi,ei)),i1=_mm256_fmadd_pd(fr,ei,_mm256_mul_pd(fi,er));
-                    auto r2=_mm256_fmsub_pd(r1,r1,_mm256_mul_pd(i1,i1)),i2=_mm256_fmadd_pd(r1,i1,_mm256_mul_pd(i1,r1));
-                    auto r3=_mm256_fmsub_pd(r1,r2,_mm256_mul_pd(i1,i2)),i3=_mm256_fmadd_pd(r1,i2,_mm256_mul_pd(i1,r2));
-                    _mm256_store_pd(tw[0]+g,r1);_mm256_store_pd(tw[1]+g,i1);_mm256_store_pd(tw[2]+g,r2);
-                    _mm256_store_pd(tw[3]+g,i2);_mm256_store_pd(tw[4]+g,r3);_mm256_store_pd(tw[5]+g,i3);
+            for(size_t tile = offset; tile < offset + length; tile += 16 * T) {
+                size_t k0 = tile / 16;
+                auto const* e = reinterpret_cast<double const*>(k0 < pre_evals ? evalp.data() + k0
+                                                                               : extra.data() + (k0 - pre_evals));
+                for(size_t g = 0; g < T; g += 4) {
+                    auto x = _mm256_loadu_pd(e + 2 * g), y = _mm256_loadu_pd(e + 2 * g + 4);
+                    auto er = _mm256_permute4x64_pd(_mm256_unpacklo_pd(x, y), 0xD8),
+                         ei = _mm256_permute4x64_pd(_mm256_unpackhi_pd(x, y), 0xD8);
+                    auto r1 = _mm256_fmsub_pd(fr, er, _mm256_mul_pd(fi, ei)),
+                         i1 = _mm256_fmadd_pd(fr, ei, _mm256_mul_pd(fi, er));
+                    auto r2 = _mm256_fmsub_pd(r1, r1, _mm256_mul_pd(i1, i1)),
+                         i2 = _mm256_fmadd_pd(r1, i1, _mm256_mul_pd(i1, r1));
+                    auto r3 = _mm256_fmsub_pd(r1, r2, _mm256_mul_pd(i1, i2)),
+                         i3 = _mm256_fmadd_pd(r1, i2, _mm256_mul_pd(i1, r2));
+                    _mm256_store_pd(tw[0] + g, r1);
+                    _mm256_store_pd(tw[1] + g, i1);
+                    _mm256_store_pd(tw[2] + g, r2);
+                    _mm256_store_pd(tw[3] + g, i2);
+                    _mm256_store_pd(tw[4] + g, r3);
+                    _mm256_store_pd(tw[5] + g, i3);
                 }
-                for(size_t g=0;g<T;g++){
-                    size_t pos=tile+16*g;
-                    if(ahead){
+                for(size_t g = 0; g < T; g++) {
+                    size_t pos = tile + 16 * g;
+                    if(ahead) {
                         // Pull the next block of both operands towards the cache while this one is multiplied.
-                        auto const* pa=reinterpret_cast<char const*>(r.data()+(pos+length)/flen);
-                        auto const* pb=reinterpret_cast<char const*>(t.r.data()+(pos+length)/flen);
-                        for(size_t c=0;c<4;c++){_mm_prefetch(pa+64*c,_MM_HINT_T2);_mm_prefetch(pb+64*c,_MM_HINT_T2);}
+                        auto const* pa = reinterpret_cast<char const*>(r.data() + (pos + length) / flen);
+                        auto const* pb = reinterpret_cast<char const*>(t.r.data() + (pos + length) / flen);
+                        for(size_t c = 0; c < 4; c++) {
+                            _mm_prefetch(pa + 64 * c, _MM_HINT_T2);
+                            _mm_prefetch(pb + 64 * c, _MM_HINT_T2);
+                        }
                     }
-                    auto bc=[&] [[gnu::always_inline]] (size_t c) {return vftype(_mm256_broadcast_sd(tw[c]+g));};
-                    vpoint v1={bc(0),bc(1)},v2={bc(2),bc(3)},v3={bc(4),bc(5)};
-                    auto forward=[&] [[gnu::always_inline]] (cvector const& a) {
-                        auto A=a.at(pos),B=a.at(pos+4)*v1,C=a.at(pos+8)*v2,D=a.at(pos+12)*v3;
-                        return std::array<vpoint,4>{(A+C)+(B+D),(A+C)-(B+D),(A-C)+vi(B-D),(A-C)-vi(B-D)};
+                    auto bc = [&] [[gnu::always_inline]] (size_t c) {
+                        return vftype(_mm256_broadcast_sd(tw[c] + g));
                     };
-                    auto a=transpose(forward(*this));
-                    auto b=[&] {if constexpr(square) return a; else return transpose(forward(t));}();
+                    vpoint v1 = {bc(0), bc(1)}, v2 = {bc(2), bc(3)}, v3 = {bc(4), bc(5)};
+                    auto forward = [&] [[gnu::always_inline]] (cvector const& a) {
+                        auto A = a.at(pos), B = a.at(pos + 4) * v1, C = a.at(pos + 8) * v2, D = a.at(pos + 12) * v3;
+                        return std::array<vpoint, 4>{(A + C) + (B + D), (A + C) - (B + D), (A - C) + vi(B - D),
+                                                     (A - C) - vi(B - D)};
+                    };
+                    auto a = transpose(forward(*this));
+                    auto b = [&] {
+                        if constexpr(square) {
+                            return a;
+                        } else {
+                            return transpose(forward(t));
+                        }
+                    }();
                     // The four residues are taken modulo x^4 - rt * {1, -1, i, -i}.
-                    const auto flip_re=_mm256_set_pd(0.,-0.,-0.,0.),flip_im=_mm256_set_pd(-0.,0.,-0.,0.);
-                    vpoint w={vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(real(v1)),__m256d(imag(v1)),0b1100),flip_re)),
-                              vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(imag(v1)),__m256d(real(v1)),0b1100),flip_im))};
-                    auto mul=[&] [[gnu::always_inline]] (vpoint a0,vpoint a1,vpoint b0,vpoint b1) {
-                        auto p=a0*b0,q=a1*b1;
-                        return std::array<vpoint,2>{cmadd(w,q,p),cmcross(a0+a1,b0+b1,p,q)};
+                    const auto flip_re = _mm256_set_pd(0., -0., -0., 0.), flip_im = _mm256_set_pd(-0., 0., -0., 0.);
+                    vpoint w = {
+                        vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(real(v1)), __m256d(imag(v1)), 0b1100), flip_re)),
+                        vftype(_mm256_xor_pd(_mm256_blend_pd(__m256d(imag(v1)), __m256d(real(v1)), 0b1100), flip_im))};
+                    auto mul = [&] [[gnu::always_inline]] (vpoint a0, vpoint a1, vpoint b0, vpoint b1) {
+                        auto p = a0 * b0, q = a1 * b1;
+                        return std::array<vpoint, 2>{cmadd(w, q, p), cmcross(a0 + a1, b0 + b1, p, q)};
                     };
-                    auto p=mul(a[0],a[2],b[0],b[2]),q=mul(a[1],a[3],b[1],b[3]);
-                    auto m=mul(a[0]+a[1],a[2]+a[3],b[0]+b[1],b[2]+b[3]);
-                    auto c=transpose({cmadd(w,q[1],p[0]),(m[0]-p[0])-q[0],p[1]+q[0],(m[1]-p[1])-q[1]});
-                    auto A=c[0],B=c[1],C=c[2],D=c[3];
-                    at(pos)=(A+B)+(C+D);at(pos+8)=mulconj((A+B)-(C+D),v2);
-                    at(pos+4)=mulconj((A-B)-vi(C-D),v1);at(pos+12)=mulconj((A-B)+vi(C-D),v3);
+                    auto p = mul(a[0], a[2], b[0], b[2]), q = mul(a[1], a[3], b[1], b[3]);
+                    auto m = mul(a[0] + a[1], a[2] + a[3], b[0] + b[1], b[2] + b[3]);
+                    auto c = transpose({cmadd(w, q[1], p[0]), (m[0] - p[0]) - q[0], p[1] + q[0], (m[1] - p[1]) - q[1]});
+                    auto A = c[0], B = c[1], C = c[2], D = c[3];
+                    at(pos) = (A + B) + (C + D);
+                    at(pos + 8) = mulconj((A + B) - (C + D), v2);
+                    at(pos + 4) = mulconj((A - B) - vi(C - D), v1);
+                    at(pos + 12) = mulconj((A - B) + vi(C - D), v3);
                 }
             }
         }
@@ -335,7 +385,9 @@ namespace cp_algo::math::fft {
         // four, so a length 2 * 4^k takes its radix-two level at the top, modulo
         // x^(n/2) -+ sqrt(i); short lengths take the complete transform and the 4-point product.
         void forward() {
-            if(!fused_leaves()) {return fft();}
+            if(!fused_leaves()) {
+                return fft();
+            }
             size_t n = size(), part = fused_part();
             if(part < n) {
                 vpoint vrt = {vz + real(roots[4]), vz + imag(roots[4])};
@@ -351,7 +403,10 @@ namespace cp_algo::math::fft {
             checkpoint("fft");
         }
         void multiply(cvector const& t) {
-            if(!fused_leaves()) {dot(t); return ifft<true, false>();}
+            if(!fused_leaves()) {
+                dot(t);
+                return ifft<true, false>();
+            }
             size_t n = size(), part = fused_part();
             dot_fused16<0>(t, 0, n);
             checkpoint("dot");
@@ -385,27 +440,49 @@ namespace cp_algo::math::fft {
             constexpr size_t n = 1 << 24;
             static const std::array<std::array<point, 7>, 9> weights = []() {
                 std::array<std::array<point, 7>, 9> table;
-                for(size_t count: {size_t(1), size_t(8)}) for(size_t k = 0; k < count; k++) {
-                    size_t rev = 0, x = k;
-                    for(size_t c = count; c > 1; c >>= 1) {rev = (rev << 1) | (x & 1); x >>= 1;}
-                    long double angle = std::numbers::pi_v<long double> * (1 + 4 * rev) / (16 * count);
-                    if(k & 1) {angle -= std::numbers::pi_v<long double> / 4;}
-                    for(size_t j = 1; j < 8; j++) {
-                        long double a = j * angle;
-                        if constexpr(Mode == 0) {table[(count - 1) / 7 + k][j - 1] = {double(cosl(a)), double(sinl(a))};}
-                        else {table[(count - 1) / 7 + k][j - 1] = {double(sinl(a)), double(tanl(a / 2))};}
+                for(size_t count: {size_t(1), size_t(8)}) {
+                    for(size_t k = 0; k < count; k++) {
+                        size_t rev = 0, x = k;
+                        for(size_t c = count; c > 1; c >>= 1) {
+                            rev = (rev << 1) | (x & 1);
+                            x >>= 1;
+                        }
+                        long double angle = std::numbers::pi_v<long double> * (1 + 4 * rev) / (16 * count);
+                        if(k & 1) {
+                            angle -= std::numbers::pi_v<long double> / 4;
+                        }
+                        for(size_t j = 1; j < 8; j++) {
+                            long double a = j * angle;
+                            if constexpr(Mode == 0) {
+                                table[(count - 1) / 7 + k][j - 1] = {double(cosl(a)), double(sinl(a))};
+                            } else {
+                                table[(count - 1) / 7 + k][j - 1] = {double(sinl(a)), double(tanl(a / 2))};
+                            }
+                        }
                     }
                 }
                 return table;
             }();
             auto lift = [&] [[gnu::always_inline]] (size_t idx) -> vpoint {
                 i32x4 bits{};
-                if(idx + 4 <= fa.count) {std::memcpy(&bits, fa.src + idx, sizeof(bits));}
-                else if(idx < fa.count) {for(size_t j = 0; j < fa.count - idx; j++) {bits[j] = int32_t(fa.src[idx + j]);}}
-                else {return vpoint{vz, vz};}
+                if(idx + 4 <= fa.count) {
+                    std::memcpy(&bits, fa.src + idx, sizeof(bits));
+                } else if(idx < fa.count) {
+                    for(size_t j = 0; j < fa.count - idx; j++) {
+                        bits[j] = int32_t(fa.src[idx + j]);
+                    }
+                } else {
+                    return vpoint{vz, vz};
+                }
                 auto x = __builtin_convertvector(bits, vftype);
-                u32x4 h = u32x4{uint32_t(idx), uint32_t(idx + 1), uint32_t(idx + 2), uint32_t(idx + 3)} ^ uint32_t(fa.seed);
-                h *= 0x9E3779B1u; h ^= h >> 15; h *= 0x85EBCA77u; h ^= h >> 13; h *= 0xC2B2AE3Du; h ^= h >> 16;
+                u32x4 h =
+                    u32x4{uint32_t(idx), uint32_t(idx + 1), uint32_t(idx + 2), uint32_t(idx + 3)} ^ uint32_t(fa.seed);
+                h *= 0x9E3779B1u;
+                h ^= h >> 15;
+                h *= 0x85EBCA77u;
+                h ^= h >> 13;
+                h *= 0xC2B2AE3Du;
+                h ^= h >> 16;
                 auto noise = __builtin_convertvector(i32x4(h), vftype) * 0x1p-32;
                 auto q = round(x * fa.a_over_p + noise), t = round(x * fa.b_over_p + noise);
                 auto re = x - q * fa.a - t * fa.b, im = t * fa.a - q * fa.b;
@@ -416,8 +493,9 @@ namespace cp_algo::math::fft {
                 auto const& w = weights[(n / length - 1) / 7 + k];
                 auto rot = [&]<size_t J> [[gnu::always_inline]] (vpoint z) {
                     auto c = w[J - 1];
-                    if constexpr(Mode == 0) {return z * vpoint{vz + real(c), inverse ? vz - imag(c) : vz + imag(c)};}
-                    else {
+                    if constexpr(Mode == 0) {
+                        return z * vpoint{vz + real(c), inverse ? vz - imag(c) : vz + imag(c)};
+                    } else {
                         auto s = inverse ? vz - real(c) : vz + real(c), t = inverse ? vz - imag(c) : vz + imag(c);
                         auto x = vftype(_mm256_fnmadd_pd(__m256d(t), __m256d(imag(z)), __m256d(real(z))));
                         auto y = vftype(_mm256_fmadd_pd(__m256d(s), __m256d(x), __m256d(imag(z))));
@@ -425,67 +503,122 @@ namespace cp_algo::math::fft {
                     }
                 };
                 auto add = [] [[gnu::always_inline]] (vpoint a, vpoint b) {
-                    if constexpr(Mode != 2) {return a + b;}
-                    else {return vpoint{vftype(_mm256_fmadd_pd(__m256d(real(a)), _mm256_set1_pd(1), __m256d(real(b)))), vftype(_mm256_fmadd_pd(__m256d(imag(a)), _mm256_set1_pd(1), __m256d(imag(b))))};}
+                    if constexpr(Mode != 2) {
+                        return a + b;
+                    } else {
+                        return vpoint{vftype(_mm256_fmadd_pd(__m256d(real(a)), _mm256_set1_pd(1), __m256d(real(b)))),
+                                      vftype(_mm256_fmadd_pd(__m256d(imag(a)), _mm256_set1_pd(1), __m256d(imag(b))))};
+                    }
                 };
                 auto sub = [] [[gnu::always_inline]] (vpoint a, vpoint b) {
-                    if constexpr(Mode != 2) {return a - b;}
-                    else {return vpoint{vftype(_mm256_fmsub_pd(__m256d(real(a)), _mm256_set1_pd(1), __m256d(real(b)))), vftype(_mm256_fmsub_pd(__m256d(imag(a)), _mm256_set1_pd(1), __m256d(imag(b))))};}
+                    if constexpr(Mode != 2) {
+                        return a - b;
+                    } else {
+                        return vpoint{vftype(_mm256_fmsub_pd(__m256d(real(a)), _mm256_set1_pd(1), __m256d(real(b)))),
+                                      vftype(_mm256_fmsub_pd(__m256d(imag(a)), _mm256_set1_pd(1), __m256d(imag(b))))};
+                    }
                 };
                 auto d4 = [] [[gnu::always_inline]] (vpoint a, vpoint b, vpoint c, vpoint d) {
                     auto s = a + c, t = a - c, u = b + d, v = vi(b - d);
-                    if constexpr(inverse) {return std::array<vpoint, 4>{s + u, t - v, s - u, t + v};}
-                    else {return std::array<vpoint, 4>{s + u, t + v, s - u, t - v};}
+                    if constexpr(inverse) {
+                        return std::array<vpoint, 4>{s + u, t - v, s - u, t + v};
+                    } else {
+                        return std::array<vpoint, 4>{s + u, t + v, s - u, t - v};
+                    }
                 };
                 constexpr double q = 0.707106781186547524400844362104849039;
                 auto r1 = [] [[gnu::always_inline]] (vpoint z) {
-                    if constexpr(inverse) {return vpoint{(real(z) + imag(z)) * q, (imag(z) - real(z)) * q};}
-                    else {return vpoint{(real(z) - imag(z)) * q, (real(z) + imag(z)) * q};}
+                    if constexpr(inverse) {
+                        return vpoint{(real(z) + imag(z)) * q, (imag(z) - real(z)) * q};
+                    } else {
+                        return vpoint{(real(z) - imag(z)) * q, (real(z) + imag(z)) * q};
+                    }
                 };
                 auto r3 = [] [[gnu::always_inline]] (vpoint z) {
-                    if constexpr(inverse) {return vpoint{(imag(z) - real(z)) * q, (-imag(z) - real(z)) * q};}
-                    else {return vpoint{(-real(z) - imag(z)) * q, (real(z) - imag(z)) * q};}
+                    if constexpr(inverse) {
+                        return vpoint{(imag(z) - real(z)) * q, (-imag(z) - real(z)) * q};
+                    } else {
+                        return vpoint{(-real(z) - imag(z)) * q, (real(z) - imag(z)) * q};
+                    }
                 };
                 std::array<vpoint*, 8> input, output;
-                for(size_t j = 0; j < 8; j++) {input[j] = output[j] = r.data() + (offset + begin + j * step) / flen;}
+                for(size_t j = 0; j < 8; j++) {
+                    input[j] = output[j] = r.data() + (offset + begin + j * step) / flen;
+                }
                 if(k & 1) {
                     constexpr std::array<size_t, 8> perm = {7, 6, 4, 5, 0, 1, 2, 3};
                     for(size_t j = 0; j < 8; j++) {
-                        if constexpr(inverse) {input[j] = output[perm[j]];}
-                        else {output[j] = input[perm[j]];}
+                        if constexpr(inverse) {
+                            input[j] = output[perm[j]];
+                        } else {
+                            output[j] = input[perm[j]];
+                        }
                     }
                 }
                 constexpr bool fused_in = top && Fuse == 1 && !inverse;
                 for(size_t j = 0; j < (end - begin) / flen; j++) {
                     size_t base = offset + begin + j * flen;
                     auto in = [&]<size_t S> [[gnu::always_inline]] () {
-                        if constexpr(fused_in) {return lift(base + S * step);}
-                        else {return input[S][j];}
+                        if constexpr(fused_in) {
+                            return lift(base + S * step);
+                        } else {
+                            return input[S][j];
+                        }
                     };
                     if constexpr(!inverse) {
-                        auto E = d4(in.template operator()<0>(), rot.template operator()<2>(in.template operator()<2>()), rot.template operator()<4>(in.template operator()<4>()), rot.template operator()<6>(in.template operator()<6>()));
-                        auto O = d4(rot.template operator()<1>(in.template operator()<1>()), rot.template operator()<3>(in.template operator()<3>()), rot.template operator()<5>(in.template operator()<5>()), rot.template operator()<7>(in.template operator()<7>()));
+                        auto E =
+                            d4(in.template operator()<0>(), rot.template operator()<2>(in.template operator()<2>()),
+                               rot.template operator()<4>(in.template operator()<4>()),
+                               rot.template operator()<6>(in.template operator()<6>()));
+                        auto O = d4(rot.template operator()<1>(in.template operator()<1>()),
+                                    rot.template operator()<3>(in.template operator()<3>()),
+                                    rot.template operator()<5>(in.template operator()<5>()),
+                                    rot.template operator()<7>(in.template operator()<7>()));
                         auto a = O[0], b = r1(O[1]), c = vi(O[2]), d = r3(O[3]);
-                        output[0][j] = add(E[0], a); output[1][j] = sub(E[0], a);
-                        output[2][j] = add(E[2], c); output[3][j] = sub(E[2], c);
-                        output[4][j] = add(E[1], b); output[5][j] = sub(E[1], b);
-                        output[6][j] = add(E[3], d); output[7][j] = sub(E[3], d);
+                        output[0][j] = add(E[0], a);
+                        output[1][j] = sub(E[0], a);
+                        output[2][j] = add(E[2], c);
+                        output[3][j] = sub(E[2], c);
+                        output[4][j] = add(E[1], b);
+                        output[5][j] = sub(E[1], b);
+                        output[6][j] = add(E[3], d);
+                        output[7][j] = sub(E[3], d);
                     } else {
-                        auto E = d4(add(input[0][j], input[1][j]), add(input[4][j], input[5][j]), add(input[2][j], input[3][j]), add(input[6][j], input[7][j]));
-                        auto O = d4(sub(input[0][j], input[1][j]), r1(sub(input[4][j], input[5][j])), -vi(sub(input[2][j], input[3][j])), r3(sub(input[6][j], input[7][j])));
-                        output[0][j] = E[0]; output[1][j] = rot.template operator()<1>(O[0]);
-                        output[2][j] = rot.template operator()<2>(E[1]); output[3][j] = rot.template operator()<3>(O[1]);
-                        output[4][j] = rot.template operator()<4>(E[2]); output[5][j] = rot.template operator()<5>(O[2]);
-                        output[6][j] = rot.template operator()<6>(E[3]); output[7][j] = rot.template operator()<7>(O[3]);
+                        auto E = d4(add(input[0][j], input[1][j]), add(input[4][j], input[5][j]),
+                                    add(input[2][j], input[3][j]), add(input[6][j], input[7][j]));
+                        auto O = d4(sub(input[0][j], input[1][j]), r1(sub(input[4][j], input[5][j])),
+                                    -vi(sub(input[2][j], input[3][j])), r3(sub(input[6][j], input[7][j])));
+                        output[0][j] = E[0];
+                        output[1][j] = rot.template operator()<1>(O[0]);
+                        output[2][j] = rot.template operator()<2>(E[1]);
+                        output[3][j] = rot.template operator()<3>(O[1]);
+                        output[4][j] = rot.template operator()<4>(E[2]);
+                        output[5][j] = rot.template operator()<5>(O[2]);
+                        output[6][j] = rot.template operator()<6>(E[3]);
+                        output[7][j] = rot.template operator()<7>(O[3]);
                     }
                 }
             };
             constexpr size_t h = n / 64;
             for(size_t j = 0; j < h; j += Tile) {
                 size_t end = std::min(h, j + Tile);
-                auto first = [&]() {for(size_t t = 0; t < 8; t++) {stage.template operator()<true>(0, n, j + t * h, end + t * h);}};
-                auto second = [&]() {for(size_t k = 0; k < 8; k++) {stage.template operator()<false>(k * n / 8, n / 8, j, end);}};
-                if constexpr(inverse) {second(); first();} else {first(); second();}
+                auto first = [&]() {
+                    for(size_t t = 0; t < 8; t++) {
+                        stage.template operator()<true>(0, n, j + t * h, end + t * h);
+                    }
+                };
+                auto second = [&]() {
+                    for(size_t k = 0; k < 8; k++) {
+                        stage.template operator()<false>(k * n / 8, n / 8, j, end);
+                    }
+                };
+                if constexpr(inverse) {
+                    second();
+                    first();
+                } else {
+                    first();
+                    second();
+                }
             }
         }
         // Product for n = 2^24: the top three stages split each input into 64 independent
@@ -499,18 +632,25 @@ namespace cp_algo::math::fft {
         template<bool Neg, bool Fused = fuse_forward, bool Square = false>
         void cache_product(cvector& b, fuse_args const& fa = {}, fuse_args const& fb = {}) {
             constexpr size_t n = 1 << 24, block = 1 << 18;
-            prepare_roots(n / 16); prepare_shear_roots();
+            prepare_roots(n / 16);
+            prepare_shear_roots();
             if constexpr(Fused) {
                 sweep8<false, 2, sweep_tile, 1, Neg>(fa);
-                if constexpr(!Square) {b.sweep8<false, 2, sweep_tile, 1, Neg>(fb);}
+                if constexpr(!Square) {
+                    b.sweep8<false, 2, sweep_tile, 1, Neg>(fb);
+                }
             } else {
                 sweep8<false, 2, sweep_tile>();
-                if constexpr(!Square) {b.sweep8<false, 2, sweep_tile>();}
+                if constexpr(!Square) {
+                    b.sweep8<false, 2, sweep_tile>();
+                }
             }
             checkpoint("sweep forward");
             for(size_t offset = 0; offset < n; offset += block) {
                 transform<false, n, block, 0, true>(n, false, offset, block);
-                if constexpr(!Square) {b.transform<false, n, block, 0, true>(n, false, offset, block);}
+                if constexpr(!Square) {
+                    b.transform<false, n, block, 0, true>(n, false, offset, block);
+                }
                 dot_fused16<n, Square>(b, offset, block);
                 transform<true, n, block, 0, true>(n, false, offset, block);
             }
@@ -521,6 +661,7 @@ namespace cp_algo::math::fft {
         static constexpr size_t pre_evals = 1 << 16;
         static const std::array<size_t, pre_evals> eval_args;
         static const std::array<point, pre_evals> evalp;
+
     private:
         // The power of four that the fused product works on: all of n = 4^k, half of n = 2 * 4^k.
         size_t fused_part() const {
@@ -530,145 +671,257 @@ namespace cp_algo::math::fft {
             return fused_part() >= 16 * dot_tile;
         }
         // Tile two radix-four stages together before descending into each child.
-        template<bool inverse, size_t fixed = 0, size_t range_fixed=0, int top_fixed=-1,bool omit16=false>
-        void transform(size_t input_n, bool parity, size_t range_offset=0, size_t range_length=0, int top_only=0) {
-            if constexpr(range_fixed)range_length=range_fixed;
-            if constexpr(top_fixed>=0)top_only=top_fixed;
-            const size_t n=fixed?fixed:input_n;
-            if constexpr(!range_fixed){prepare_roots(n/16);
-            if constexpr(fixed==(1<<24))prepare_shear_roots();}
-            size_t log_n=std::countr_zero(n);
-            auto butterfly = [&] [[gnu::always_inline]] (size_t offset,size_t length,size_t begin,size_t end) {
-                if constexpr(omit16)if(length==16)return;
-                size_t step=length/4,log_length=std::countr_zero(length),k=offset>>log_length;
-                auto *p0=r.data()+(offset+begin)/flen,*p1=r.data()+(offset+begin+step)/flen,*p2=r.data()+(offset+begin+2*step)/flen,*p3=r.data()+(offset+begin+3*step)/flen;
-                auto run=[&]<bool shear> [[gnu::always_inline]] () {
-                    vpoint v1,v2,v3;vftype t1{},t2{},t3{};
-                    if constexpr(shear && fixed==(1<<24)) {
-                        auto const& c=shear_roots[((n>>log_length)-1)/3+k];
-                        v1={vz,inverse?vz-real(c[0]):vz+real(c[0])};
-                        v2={vz,inverse?vz-real(c[1]):vz+real(c[1])};
-                        v3={vz,inverse?vz-real(c[2]):vz+real(c[2])};
-                        t1=inverse?vz-imag(c[0]):vz+imag(c[0]);
-                        t2=inverse?vz-imag(c[1]):vz+imag(c[1]);
-                        t3=inverse?vz-imag(c[2]):vz+imag(c[2]);
-                    }else {
-                        point e=k<pre_evals?evalp[k]:extra[k-pre_evals];point rt=roots[log_n+5-log_length]*e;
-                        v1={vz+real(rt),inverse?vz-imag(rt):vz+imag(rt)};
-                        if constexpr(shear)if(k&1){if constexpr(inverse)v1=vi(v1);else v1=-vi(v1);}
-                        v2=v1*v1;v3=v1*v2;
-                        if constexpr(shear){t1=imag(v1)/(vz+1.0+real(v1));t2=imag(v2)/(vz+1.0+real(v2));t3=imag(v3)/(vz+1.0+real(v3));}
+        template<bool inverse, size_t fixed = 0, size_t range_fixed = 0, int top_fixed = -1, bool omit16 = false>
+        void transform(size_t input_n, bool parity, size_t range_offset = 0, size_t range_length = 0,
+                       int top_only = 0) {
+            if constexpr(range_fixed) {
+                range_length = range_fixed;
+            }
+            if constexpr(top_fixed >= 0) {
+                top_only = top_fixed;
+            }
+            const size_t n = fixed ? fixed : input_n;
+            if constexpr(!range_fixed) {
+                prepare_roots(n / 16);
+                if constexpr(fixed == (1 << 24)) {
+                    prepare_shear_roots();
+                }
+            }
+            size_t log_n = std::countr_zero(n);
+            auto butterfly = [&] [[gnu::always_inline]] (size_t offset, size_t length, size_t begin, size_t end) {
+                if constexpr(omit16) {
+                    if(length == 16) {
+                        return;
                     }
-                    auto rotate=[] [[gnu::always_inline]] (vpoint z,vpoint v,vftype t) {
-                        if constexpr(!shear)return z*v;
-                        else {
-                            auto x=vftype(_mm256_fnmadd_pd(__m256d(t),__m256d(imag(z)),__m256d(real(z))));
-                            auto y=vftype(_mm256_fmadd_pd(__m256d(imag(v)),__m256d(x),__m256d(imag(z))));
-                            return vpoint{vftype(_mm256_fnmadd_pd(__m256d(t),__m256d(y),__m256d(x))),y};
+                }
+                size_t step = length / 4, log_length = std::countr_zero(length), k = offset >> log_length;
+                auto *p0 = r.data() + (offset + begin) / flen, *p1 = r.data() + (offset + begin + step) / flen,
+                     *p2 = r.data() + (offset + begin + 2 * step) / flen,
+                     *p3 = r.data() + (offset + begin + 3 * step) / flen;
+                auto run = [&]<bool shear> [[gnu::always_inline]] () {
+                    vpoint v1, v2, v3;
+                    vftype t1{}, t2{}, t3{};
+                    if constexpr(shear && fixed == (1 << 24)) {
+                        auto const& c = shear_roots[((n >> log_length) - 1) / 3 + k];
+                        v1 = {vz, inverse ? vz - real(c[0]) : vz + real(c[0])};
+                        v2 = {vz, inverse ? vz - real(c[1]) : vz + real(c[1])};
+                        v3 = {vz, inverse ? vz - real(c[2]) : vz + real(c[2])};
+                        t1 = inverse ? vz - imag(c[0]) : vz + imag(c[0]);
+                        t2 = inverse ? vz - imag(c[1]) : vz + imag(c[1]);
+                        t3 = inverse ? vz - imag(c[2]) : vz + imag(c[2]);
+                    } else {
+                        point e = k < pre_evals ? evalp[k] : extra[k - pre_evals];
+                        point rt = roots[log_n + 5 - log_length] * e;
+                        v1 = {vz + real(rt), inverse ? vz - imag(rt) : vz + imag(rt)};
+                        if constexpr(shear) {
+                            if(k & 1) {
+                                if constexpr(inverse) {
+                                    v1 = vi(v1);
+                                } else {
+                                    v1 = -vi(v1);
+                                }
+                            }
+                        }
+                        v2 = v1 * v1;
+                        v3 = v1 * v2;
+                        if constexpr(shear) {
+                            t1 = imag(v1) / (vz + 1.0 + real(v1));
+                            t2 = imag(v2) / (vz + 1.0 + real(v2));
+                            t3 = imag(v3) / (vz + 1.0 + real(v3));
+                        }
+                    }
+                    auto rotate = [] [[gnu::always_inline]] (vpoint z, vpoint v, vftype t) {
+                        if constexpr(!shear) {
+                            return z * v;
+                        } else {
+                            auto x = vftype(_mm256_fnmadd_pd(__m256d(t), __m256d(imag(z)), __m256d(real(z))));
+                            auto y = vftype(_mm256_fmadd_pd(__m256d(imag(v)), __m256d(x), __m256d(imag(z))));
+                            return vpoint{vftype(_mm256_fnmadd_pd(__m256d(t), __m256d(y), __m256d(x))), y};
                         }
                     };
-                    auto *i0=p0,*i1=p1,*i2=p2,*i3=p3,*o0=p0,*o1=p1,*o2=p2,*o3=p3;
-                    if constexpr(shear)if(k&1) {
-                        if constexpr(inverse){i0=p3;i1=p2;i2=p0;i3=p1;}
-                        else{o0=p3;o1=p2;o2=p0;o3=p1;}
+                    auto *i0 = p0, *i1 = p1, *i2 = p2, *i3 = p3, *o0 = p0, *o1 = p1, *o2 = p2, *o3 = p3;
+                    if constexpr(shear) {
+                        if(k & 1) {
+                            if constexpr(inverse) {
+                                i0 = p3;
+                                i1 = p2;
+                                i2 = p0;
+                                i3 = p1;
+                            } else {
+                                o0 = p3;
+                                o1 = p2;
+                                o2 = p0;
+                                o3 = p1;
+                            }
+                        }
                     }
-                    for(size_t j=0;j<(end-begin)/flen;j++) {
-                        auto A=i0[j],B=i1[j],C=i2[j],D=i3[j];
+                    for(size_t j = 0; j < (end - begin) / flen; j++) {
+                        auto A = i0[j], B = i1[j], C = i2[j], D = i3[j];
                         if constexpr(inverse) {
-                            o0[j]=(A+B)+(C+D);
-                            o2[j]=rotate((A+B)-(C+D),v2,t2);
-                            o1[j]=rotate((A-B)-vi(C-D),v1,t1);
-                            o3[j]=rotate((A-B)+vi(C-D),v3,t3);
-                        }else{
-                            B=rotate(B,v1,t1);C=rotate(C,v2,t2);D=rotate(D,v3,t3);
-                            o0[j]=(A+C)+(B+D);o1[j]=(A+C)-(B+D);
-                            o2[j]=(A-C)+vi(B-D);o3[j]=(A-C)-vi(B-D);
+                            o0[j] = (A + B) + (C + D);
+                            o2[j] = rotate((A + B) - (C + D), v2, t2);
+                            o1[j] = rotate((A - B) - vi(C - D), v1, t1);
+                            o3[j] = rotate((A - B) + vi(C - D), v3, t3);
+                        } else {
+                            B = rotate(B, v1, t1);
+                            C = rotate(C, v2, t2);
+                            D = rotate(D, v3, t3);
+                            o0[j] = (A + C) + (B + D);
+                            o1[j] = (A + C) - (B + D);
+                            o2[j] = (A - C) + vi(B - D);
+                            o3[j] = (A - C) - vi(B - D);
                         }
                     }
                 };
-                if(length>=shear_min<fixed>)run.template operator()<true>();else run.template operator()<false>();
+                if(length >= shear_min<fixed>) {
+                    run.template operator()<true>();
+                } else {
+                    run.template operator()<false>();
+                }
             };
-            if(top_only){
-                size_t offset=range_offset,length=range_length;
-                if(top_only==1){butterfly(offset,length,0,length/4);return;}
-                if(top_only==3){
-                    size_t h=length/64;
-                    for(size_t j=0;j<h;j+=512){
-                        size_t end=std::min(h,j+512);
-                        auto stage0=[&](){for(size_t t=0;t<16;t++)butterfly(offset,length,j+t*h,end+t*h);};
-                        auto stage1=[&](){for(size_t q=0;q<4;q++)for(size_t t=0;t<4;t++)butterfly(offset+q*length/4,length/4,j+t*h,end+t*h);};
-                        auto stage2=[&](){for(size_t q=0;q<16;q++)butterfly(offset+q*length/16,length/16,j,end);};
-                        if constexpr(inverse){stage2();stage1();stage0();}else{stage0();stage1();stage2();}
+            if(top_only) {
+                size_t offset = range_offset, length = range_length;
+                if(top_only == 1) {
+                    butterfly(offset, length, 0, length / 4);
+                    return;
+                }
+                if(top_only == 3) {
+                    size_t h = length / 64;
+                    for(size_t j = 0; j < h; j += 512) {
+                        size_t end = std::min(h, j + 512);
+                        auto stage0 = [&]() {
+                            for(size_t t = 0; t < 16; t++) {
+                                butterfly(offset, length, j + t * h, end + t * h);
+                            }
+                        };
+                        auto stage1 = [&]() {
+                            for(size_t q = 0; q < 4; q++) {
+                                for(size_t t = 0; t < 4; t++) {
+                                    butterfly(offset + q * length / 4, length / 4, j + t * h, end + t * h);
+                                }
+                            }
+                        };
+                        auto stage2 = [&]() {
+                            for(size_t q = 0; q < 16; q++) {
+                                butterfly(offset + q * length / 16, length / 16, j, end);
+                            }
+                        };
+                        if constexpr(inverse) {
+                            stage2();
+                            stage1();
+                            stage0();
+                        } else {
+                            stage0();
+                            stage1();
+                            stage2();
+                        }
                     }
                     return;
                 }
-                size_t step=length/16;
-                for(size_t j=0;j<step;j+=256){
-                    size_t end=std::min(step,j+256);
-                    if constexpr(inverse){
-                        for(size_t t=0;t<4;t++)butterfly(offset+t*length/4,length/4,j,end);
-                        for(size_t t=0;t<4;t++)butterfly(offset,length,j+t*step,end+t*step);
-                    }else{
-                        for(size_t t=0;t<4;t++)butterfly(offset,length,j+t*step,end+t*step);
-                        for(size_t t=0;t<4;t++)butterfly(offset+t*length/4,length/4,j,end);
+                size_t step = length / 16;
+                for(size_t j = 0; j < step; j += 256) {
+                    size_t end = std::min(step, j + 256);
+                    if constexpr(inverse) {
+                        for(size_t t = 0; t < 4; t++) {
+                            butterfly(offset + t * length / 4, length / 4, j, end);
+                        }
+                        for(size_t t = 0; t < 4; t++) {
+                            butterfly(offset, length, j + t * step, end + t * step);
+                        }
+                    } else {
+                        for(size_t t = 0; t < 4; t++) {
+                            butterfly(offset, length, j + t * step, end + t * step);
+                        }
+                        for(size_t t = 0; t < 4; t++) {
+                            butterfly(offset + t * length / 4, length / 4, j, end);
+                        }
                     }
                 }
                 return;
             }
             auto recurse = [&](auto &&self, size_t offset, size_t length) -> void {
-                if(length < 4 * flen) {return;}
+                if(length < 4 * flen) {
+                    return;
+                }
                 if(length >= (1 << 15)) {
                     size_t step = length / 16;
                     if constexpr(inverse) {
-                        for(size_t t = 0; t < 16; t++) {self(self, offset + t*step, step);}
+                        for(size_t t = 0; t < 16; t++) {
+                            self(self, offset + t * step, step);
+                        }
                     }
                     for(size_t j = 0; j < step; j += 256) {
-                        size_t end = std::min(step, j+256);
+                        size_t end = std::min(step, j + 256);
                         if constexpr(inverse) {
-                            for(size_t t=0;t<4;t++) {butterfly(offset+t*length/4, length/4, j,end);}
-                            for(size_t t=0;t<4;t++) {butterfly(offset,length,j+t*step,end+t*step);}
+                            for(size_t t = 0; t < 4; t++) {
+                                butterfly(offset + t * length / 4, length / 4, j, end);
+                            }
+                            for(size_t t = 0; t < 4; t++) {
+                                butterfly(offset, length, j + t * step, end + t * step);
+                            }
                         } else {
-                            for(size_t t=0;t<4;t++) {butterfly(offset,length,j+t*step,end+t*step);}
-                            for(size_t t=0;t<4;t++) {butterfly(offset+t*length/4,length/4,j,end);}
+                            for(size_t t = 0; t < 4; t++) {
+                                butterfly(offset, length, j + t * step, end + t * step);
+                            }
+                            for(size_t t = 0; t < 4; t++) {
+                                butterfly(offset + t * length / 4, length / 4, j, end);
+                            }
                         }
                     }
                     if constexpr(!inverse) {
-                        for(size_t t = 0; t < 16; t++) {self(self, offset + t*step, step);}
+                        for(size_t t = 0; t < 16; t++) {
+                            self(self, offset + t * step, step);
+                        }
                     }
                 } else if(length >= (size_t(1) << (6 + parity))) {
-                    auto finish=[&]<bool par>() {
-                        constexpr size_t chunk=size_t(1)<<(6+par);
-                        constexpr size_t bottom=size_t(1)<<(4+par);
-                        auto small=[&]<size_t L> [[gnu::always_inline]] (auto&& self,size_t pos) -> void {
-                            if constexpr(inverse && L>bottom) {
-                                for(size_t q=0;q<4;q++)self.template operator()<L/4>(self,pos+q*(L/4));
+                    auto finish = [&]<bool par>() {
+                        constexpr size_t chunk = size_t(1) << (6 + par);
+                        constexpr size_t bottom = size_t(1) << (4 + par);
+                        auto small = [&]<size_t L> [[gnu::always_inline]] (auto &&self, size_t pos) -> void {
+                            if constexpr(inverse && L > bottom) {
+                                for(size_t q = 0; q < 4; q++) {
+                                    self.template operator()<L / 4>(self, pos + q * (L / 4));
+                                }
                             }
-                            butterfly(pos,L,0,L/4);
-                            if constexpr(!inverse && L>bottom) {
-                                for(size_t q=0;q<4;q++)self.template operator()<L/4>(self,pos+q*(L/4));
+                            butterfly(pos, L, 0, L / 4);
+                            if constexpr(!inverse && L > bottom) {
+                                for(size_t q = 0; q < 4; q++) {
+                                    self.template operator()<L / 4>(self, pos + q * (L / 4));
+                                }
                             }
                         };
-                        for(size_t leaf=offset;leaf<offset+length;leaf+=chunk){
-                            if constexpr(inverse){
-                                small.template operator()<chunk>(small,leaf);
-                                size_t level=std::min<size_t>(std::countr_one(leaf+chunk-1),std::countr_zero(length));
-                                for(size_t lvl=6+2+par;lvl<=level;lvl+=2){size_t len=size_t(1)<<lvl;butterfly(leaf & ~(len-1),len,0,len/4);}
-                            }else{
-                                size_t level=std::min<size_t>(std::countr_zero(n+leaf),std::countr_zero(length));
-                                level-=level%2!=par;
-                                for(size_t lvl=level;lvl>=6+2+par;lvl-=2){size_t len=size_t(1)<<lvl;butterfly(leaf & ~(len-1),len,0,len/4);}
-                                small.template operator()<chunk>(small,leaf);
+                        for(size_t leaf = offset; leaf < offset + length; leaf += chunk) {
+                            if constexpr(inverse) {
+                                small.template operator()<chunk>(small, leaf);
+                                size_t level =
+                                    std::min<size_t>(std::countr_one(leaf + chunk - 1), std::countr_zero(length));
+                                for(size_t lvl = 6 + 2 + par; lvl <= level; lvl += 2) {
+                                    size_t len = size_t(1) << lvl;
+                                    butterfly(leaf & ~(len - 1), len, 0, len / 4);
+                                }
+                            } else {
+                                size_t level = std::min<size_t>(std::countr_zero(n + leaf), std::countr_zero(length));
+                                level -= level % 2 != par;
+                                for(size_t lvl = level; lvl >= 6 + 2 + par; lvl -= 2) {
+                                    size_t len = size_t(1) << lvl;
+                                    butterfly(leaf & ~(len - 1), len, 0, len / 4);
+                                }
+                                small.template operator()<chunk>(small, leaf);
                             }
                         }
                     };
-                    if(parity)finish.template operator()<true>();else finish.template operator()<false>();
+                    if(parity) {
+                        finish.template operator()<true>();
+                    } else {
+                        finish.template operator()<false>();
+                    }
                 } else {
                     if constexpr(inverse) {
                         for(size_t leaf = offset + 3 * flen; leaf < offset + length; leaf += 4 * flen) {
                             size_t level = std::min<size_t>(std::countr_one(leaf + 3), std::countr_zero(length));
                             for(size_t lvl = 4 + parity; lvl <= level; lvl += 2) {
                                 size_t len = size_t(1) << lvl;
-                                butterfly(leaf & ~(len-1), len, 0, len / 4);
+                                butterfly(leaf & ~(len - 1), len, 0, len / 4);
                             }
                         }
                     } else {
@@ -677,57 +930,70 @@ namespace cp_algo::math::fft {
                             level -= level % 2 != parity;
                             for(size_t lvl = level; lvl >= 4; lvl -= 2) {
                                 size_t len = size_t(1) << lvl;
-                                butterfly(leaf & ~(len-1), len, 0, len / 4);
+                                butterfly(leaf & ~(len - 1), len, 0, len / 4);
                             }
                         }
                     }
                 }
             };
             // Radix two is performed separately at the leaves.
-            recurse(recurse, range_offset, range_length?range_length:n);
+            recurse(recurse, range_offset, range_length ? range_length : n);
         }
         // Shortest butterfly that uses the shear rotation; the fixed 2^24 transform reads its
         // shear roots from a table, so they are worth using down to the last in-block level.
-        template<size_t fixed> static constexpr size_t shear_min = fixed == (1 << 24) ? 64 : 256;
-        static big_vector<std::array<point,3>> shear_roots;
+        template<size_t fixed>
+        static constexpr size_t shear_min = fixed == (1 << 24) ? 64 : 256;
+        static big_vector<std::array<point, 3>> shear_roots;
         static void prepare_shear_roots() {
-            constexpr size_t n=1<<24;
-            if(!shear_roots.empty())return;
-            shear_roots.resize((n/16-1)/3,std::array<point,3>{});
-            for(size_t len=n;len>=shear_min<n>;len/=4) {
-                size_t count=n/len,base=(count-1)/3;
-                point factor=roots[29-std::countr_zero(len)];
-                for(size_t k=0;k<count;k++) {
-                    point rt=factor*(k<pre_evals?evalp[k]:extra[k-pre_evals]);
-                    vpoint v1={vz+real(rt),vz+imag(rt)};
-                    if(k&1)v1=-vi(v1);
-                    vpoint v2=v1*v1,v3=v1*v2;
-                    vftype t1=imag(v1)/(vz+1.0+real(v1)),t2=imag(v2)/(vz+1.0+real(v2)),t3=imag(v3)/(vz+1.0+real(v3));
-                    shear_roots[base+k]={point(imag(v1)[0],t1[0]),point(imag(v2)[0],t2[0]),point(imag(v3)[0],t3[0])};
+            constexpr size_t n = 1 << 24;
+            if(!shear_roots.empty()) {
+                return;
+            }
+            shear_roots.resize((n / 16 - 1) / 3, std::array<point, 3>{});
+            for(size_t len = n; len >= shear_min<n>; len /= 4) {
+                size_t count = n / len, base = (count - 1) / 3;
+                point factor = roots[29 - std::countr_zero(len)];
+                for(size_t k = 0; k < count; k++) {
+                    point rt = factor * (k < pre_evals ? evalp[k] : extra[k - pre_evals]);
+                    vpoint v1 = {vz + real(rt), vz + imag(rt)};
+                    if(k & 1) {
+                        v1 = -vi(v1);
+                    }
+                    vpoint v2 = v1 * v1, v3 = v1 * v2;
+                    vftype t1 = imag(v1) / (vz + 1.0 + real(v1)), t2 = imag(v2) / (vz + 1.0 + real(v2)),
+                           t3 = imag(v3) / (vz + 1.0 + real(v3));
+                    shear_roots[base + k] = {point(imag(v1)[0], t1[0]), point(imag(v2)[0], t2[0]),
+                                             point(imag(v3)[0], t3[0])};
                 }
             }
         }
         static big_vector<point> extra;
         // Keep the usual table small; cache additional roots for large transforms.
         static void prepare_roots(size_t n) {
-            if(n <= pre_evals + extra.size()) {return;}
+            if(n <= pre_evals + extra.size()) {
+                return;
+            }
             size_t old = extra.size();
             extra.resize(std::bit_ceil(n) - pre_evals);
-            static const std::array<point,256> coarse=[](){
-                std::array<point,256> out;
-                for(size_t i=0;i<256;i++)out[i]=polar<ftype>(1.,std::numbers::pi*double((eval_args[256+i]-1)/2)/512.0);
+            static const std::array<point, 256> coarse = []() {
+                std::array<point, 256> out;
+                for(size_t i = 0; i < 256; i++) {
+                    out[i] = polar<ftype>(1., std::numbers::pi * double((eval_args[256 + i] - 1) / 2) / 512.0);
+                }
                 return out;
             }();
-            for(size_t h=pre_evals+old;h<pre_evals+extra.size();h*=2){
-                for(size_t i=h;i<2*h;i+=256){
-                    point fine=polar<ftype>(1.,std::numbers::pi/double(4*h)*double(eval_arg(4*i)));
-                    for(size_t j=0;j<256;j++)extra[i+j-pre_evals]=coarse[j]*fine;
+            for(size_t h = pre_evals + old; h < pre_evals + extra.size(); h *= 2) {
+                for(size_t i = h; i < 2 * h; i += 256) {
+                    point fine = polar<ftype>(1., std::numbers::pi / double(4 * h) * double(eval_arg(4 * i)));
+                    for(size_t j = 0; j < 256; j++) {
+                        extra[i + j - pre_evals] = coarse[j] * fine;
+                    }
                 }
             }
         }
     };
 
-    big_vector<std::array<point,3>> cvector::shear_roots;
+    big_vector<std::array<point, 3>> cvector::shear_roots;
     big_vector<point> cvector::extra;
 
     const std::array<size_t, cvector::pre_evals> cvector::eval_args = []() {

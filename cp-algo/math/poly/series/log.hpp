@@ -7,7 +7,9 @@ namespace cp_algo::math {
     // log(p) modulo x^n, for p[0] = 1.
     template<typename T>
     poly_t<T> log(poly_t<T> p, size_t n) {
-        if(n == 0) {return {};}
+        if(n == 0) {
+            return {};
+        }
         assert(p[0] == T(1));
         p.mod_xk_inplace(n);
         auto dp = deriv(p);
@@ -29,7 +31,9 @@ namespace cp_algo::math {
             fft::spectrum<T>(p.a | std::views::take(k), 2 * m).multiply(Q, work, k);
         }
         // Cyclic wraparound only affects the discarded low half.
-        for(size_t i = 0; i < t; i++) {work[m + i] = dp[int(m + i)] - work[m + i];}
+        for(size_t i = 0; i < t; i++) {
+            work[m + i] = dp[int(m + i)] - work[m + i];
+        }
         fft::spectrum<T>(work | std::views::drop(m) | std::views::take(t), 2 * m).multiply(R, work, t);
         q.a.resize(k);
         std::copy_n(begin(work), t, begin(q.a) + m);

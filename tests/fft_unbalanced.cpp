@@ -3,19 +3,23 @@
 #include <iostream>
 #include <utility>
 using namespace cp_algo::math;
-template<typename T> void check() {
+template<typename T>
+void check() {
     std::mt19937 rng(371);
-    for(auto [small, large]: {std::pair{size_t(63), size_t(1 << 20)},
-                             std::pair{size_t(64), size_t((1 << 20) - 1)},
-                             std::pair{size_t(64), size_t(1 << 20)},
-                             std::pair{size_t(1000), size_t((1 << 20) + 19)},
-                             std::pair{size_t(4096), size_t((1 << 20) + 1)}}) {
+    for(auto [small, large]: {std::pair{size_t(63), size_t(1 << 20)}, std::pair{size_t(64), size_t((1 << 20) - 1)},
+                              std::pair{size_t(64), size_t(1 << 20)}, std::pair{size_t(1000), size_t((1 << 20) + 19)},
+                              std::pair{size_t(4096), size_t((1 << 20) + 1)}}) {
         std::vector<T> a(large), b(small);
-        for(auto &x: a) {x = rng() % T::mod();}
-        for(auto &x: b) {x = rng() % T::mod();}
+        for(auto &x: a) {
+            x = rng() % T::mod();
+        }
+        for(auto &x: b) {
+            x = rng() % T::mod();
+        }
         size_t need = large + small - 1, length = std::bit_ceil(need);
         cp_algo::big_vector<T> expected(begin(a), end(a)), other(begin(b), end(b));
-        expected.resize(length); other.resize(length);
+        expected.resize(length);
+        other.resize(length);
         // Independent existing cyclic backend, bypassing unbalanced dispatch.
         fft::cyclic_mul(expected, other, length);
         expected.resize(need);

@@ -6,7 +6,7 @@
 #include <vector>
 #include <ranges>
 namespace cp_algo::linalg {
-    enum frobenius_mode {blocks, full};
+    enum frobenius_mode { blocks, full };
     template<frobenius_mode mode = blocks>
     auto frobenius_form(auto const& A) {
         using matrix = std::decay_t<decltype(A)>;
@@ -25,8 +25,11 @@ namespace cp_algo::linalg {
                 while(true) {
                     vec_t y = x;
                     typename polyn::Vector coefficients;
-                    if constexpr(mode == full) y.reserve(2 * n + 1);
-                    else coefficients.resize(size(basis) - start);
+                    if constexpr(mode == full) {
+                        y.reserve(2 * n + 1);
+                    } else {
+                        coefficients.resize(size(basis) - start);
+                    }
                     for(size_t i = 0; i < size(basis); i++) {
                         auto &it = basis[i];
                         if constexpr(mode == full) {
@@ -36,10 +39,14 @@ namespace cp_algo::linalg {
                             auto [p, inv] = it.find_pivot();
                             base scale = -y.normalize(p) * inv;
                             y.add_scaled(it, scale, p);
-                            if(i >= start) coefficients[i - start] = scale;
+                            if(i >= start) {
+                                coefficients[i - start] = scale;
+                            }
                         }
                     }
-                    if constexpr(mode == full) y.push_back(1);
+                    if constexpr(mode == full) {
+                        y.push_back(1);
+                    }
                     y.normalize();
                     if(y.find_pivot().first >= n) {
                         if constexpr(mode == full) {
@@ -55,7 +62,9 @@ namespace cp_algo::linalg {
                             return polyn(std::move(coefficients));
                         }
                     } else {
-                        if constexpr(mode == blocks) reductions.push_back(std::move(coefficients));
+                        if constexpr(mode == blocks) {
+                            reductions.push_back(std::move(coefficients));
+                        }
                         basis.push_back(std::move(y));
                         if constexpr(mode == full) {
                             basis_init.push_back(std::move(x));
@@ -68,10 +77,12 @@ namespace cp_algo::linalg {
             };
             auto x = vec_t::random(n);
             // Choose a random representative already reduced against earlier blocks.
-            for(auto &row: basis) x[row.find_pivot().first] = 0;
+            for(auto &row: basis) {
+                x[row.find_pivot().first] = 0;
+            }
             auto full_rec = generate_block(std::move(x));
             // Extra trimming to make it block-diagonal (expensive)
-            if constexpr (mode == full) {
+            if constexpr(mode == full) {
                 if(full_rec.mod_xk(start) != polyn()) {
                     auto charp = full_rec.div_xk(start);
                     auto x = basis_init[start];
@@ -87,8 +98,10 @@ namespace cp_algo::linalg {
             charps.push_back(full_rec.div_xk(mode == full ? start : 0));
         }
         // Find transform matrices while we're at it...
-        if constexpr (mode == full) {
-            for(auto &row: basis) row.resize(2 * n + 1);
+        if constexpr(mode == full) {
+            for(auto &row: basis) {
+                row.resize(2 * n + 1);
+            }
             for(size_t i = 0; i < n; i++) {
                 for(size_t j = i + 1; j < n; j++) {
                     basis[i].reduce_by(basis[j]);
@@ -99,9 +112,7 @@ namespace cp_algo::linalg {
             auto Tinv = matrix(std::move(basis));
             std::ignore = Tinv.sort_classify(n);
             for(size_t i = 0; i < n; i++) {
-                Tinv[i] = vec_t(
-                    Tinv[i] | std::views::drop(n) | std::views::take(n)
-                ) * (base(1) / Tinv[i][i]);
+                Tinv[i] = vec_t(Tinv[i] | std::views::drop(n) | std::views::take(n)) * (base(1) / Tinv[i][i]);
             }
             return std::tuple{std::move(T), std::move(Tinv), std::move(charps)};
         } else {
@@ -133,7 +144,9 @@ namespace cp_algo::linalg {
 
     template<typename base>
     auto frobenius_pow(matrix<base> const& A, uint64_t k) {
-        if(k <= 2) return A.pow(k);
+        if(k <= 2) {
+            return A.pow(k);
+        }
         return with_frobenius(A, [k](auto const& charp) {
             if(charp.deg() == 1) {
                 return math::poly_t<base>(bpow(-charp[0] / charp[1], k));

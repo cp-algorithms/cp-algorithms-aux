@@ -5,7 +5,10 @@ CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::poly::impl {
     template<typename poly>
     poly& inv_inplace(poly& q, int64_t k, size_t n) {
-        if(n == 0) {q.a.clear(); return q;}
+        if(n == 0) {
+            q.a.clear();
+            return q;
+        }
         assert(k >= 0 || uint64_t(-(k + 1)) < n);
         using poly_t = std::decay_t<poly>;
         using base = poly_t::base;
@@ -42,7 +45,9 @@ namespace cp_algo::math::poly::impl {
 namespace cp_algo::math {
     // Non-monic characteristic polynomial of a minimum recurrence.
     template<typename T>
-    poly_t<T> min_rec(poly_t<T> const& p, size_t d) {return poly::impl::min_rec(p, d);}
+    poly_t<T> min_rec(poly_t<T> const& p, size_t d) {
+        return poly::impl::min_rec(p, d);
+    }
     // Coefficients [x^k] through [x^{k+n-1}] of 1/p; k+n must be nonnegative.
     template<typename T>
     poly_t<T> inv(poly_t<T> p, int64_t k, size_t n) {
@@ -71,7 +76,7 @@ namespace cp_algo::math {
                 f.clone().square(res, 2 * N);
                 return res;
             };
-            auto times = [N](auto&& f, auto const& g) {
+            auto times = [N](auto &&f, auto const& g) {
                 big_vector<T> res(2 * N);
                 std::move(f).multiply(g, res, 2 * N);
                 return res;

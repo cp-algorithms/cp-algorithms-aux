@@ -21,21 +21,30 @@ template<class T>
 void check(size_t n, size_t m, bool square = false) {
     std::mt19937_64 rng(100 * n + m);
     std::vector<T> a(n), b(m);
-    for(auto &x: a) {x = coefficient<T>(rng());}
-    for(auto &x: b) {x = coefficient<T>(rng());}
-    if(square) {b = a;}
+    for(auto &x: a) {
+        x = coefficient<T>(rng());
+    }
+    for(auto &x: b) {
+        x = coefficient<T>(rng());
+    }
+    if(square) {
+        b = a;
+    }
     big_vector<T> expected(n && m ? n + m - 1 : 0);
     if(std::min(n, m) < 80) {
         for(size_t i = 0; i < n; i++) {
-            for(size_t j = 0; j < m; j++) {expected[i + j] += a[i] * b[j];}
+            for(size_t j = 0; j < m; j++) {
+                expected[i + j] += a[i] * b[j];
+            }
         }
     } else {
         // Compare Toom interpolation against the original three-product recursion.
         size_t N = std::bit_ceil(std::max(n, m));
         auto x = a, y = b;
-        x.resize(N); y.resize(N);
+        x.resize(N);
+        y.resize(N);
         expected.resize(2 * N);
-        with_bit_ceil(N, [&]<auto NN>() {_karatsuba<NN>(x, y, expected);});
+        with_bit_ceil(N, [&]<auto NN>() { _karatsuba<NN>(x, y, expected); });
         expected.resize(n + m - 1);
     }
     auto actual = square ? karatsuba(a, a) : karatsuba(a, b);
@@ -45,7 +54,9 @@ void check(size_t n, size_t m, bool square = false) {
 template<class T>
 void boundaries() {
     for(size_t n: {0, 1, 2, 3, 7, 8, 9, 15, 16, 17, 33, 65}) {
-        for(size_t m: {0, 1, 3, 8, 17, 65}) {check<T>(n, m);}
+        for(size_t m: {0, 1, 3, 8, 17, 65}) {
+            check<T>(n, m);
+        }
     }
     for(size_t n: {4095, 4096, 4097, 8192, 8193}) {
         check<T>(n, n - 13);
@@ -64,7 +75,7 @@ int main() {
     check<modint<49>>(8193, 8193); // Composite, but all denominators invertible.
     check<int64_t>(65, 65);
     for(int modulus: {1000000007, 49, 37, 15, 1000000007}) {
-        dynamic_modint<>::with_mod(modulus, [] {check<dynamic_modint<>>(8193, 8179);});
+        dynamic_modint<>::with_mod(modulus, [] { check<dynamic_modint<>>(8193, 8179); });
     }
     check<modint<2305843009213693951LL>>(4097, 4097);
     std::cout << "Karatsuba and Toom-4 properties passed\n";

@@ -42,36 +42,49 @@ namespace cp_algo::structures {
     private:
         friend auto suffix_array(std::string text);
         // Align large mappings to huge-page boundaries. This policy is local to SAM.
-        template<class T> struct page_allocator {
+        template<class T>
+        struct page_allocator {
             using value_type = T;
-            template<class U> struct rebind { using other = page_allocator<U>; };
+            template<class U>
+            struct rebind {
+                using other = page_allocator<U>;
+            };
             page_allocator() = default;
-            template<class U> page_allocator(page_allocator<U> const&) {}
+            template<class U>
+            page_allocator(page_allocator<U> const&) {}
             bool operator==(page_allocator const&) const { return true; }
             static constexpr size_t page = 1U << 21, threshold = 1U << 20;
             T* allocate(size_t count) {
-                if(count > (std::numeric_limits<size_t>::max() - 2 * page) / sizeof(T))
+                if(count > (std::numeric_limits<size_t>::max() - 2 * page) / sizeof(T)) {
                     throw std::bad_array_new_length();
+                }
                 size_t bytes = count * sizeof(T);
 #ifdef __linux__
                 if(bytes >= threshold) {
                     bytes = (bytes + page - 1) & -page;
-                    void *raw = mmap(nullptr, bytes + page, PROT_READ | PROT_WRITE,
-                                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-                    if(raw == MAP_FAILED) throw std::bad_alloc();
+                    void* raw = mmap(nullptr, bytes + page, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                    if(raw == MAP_FAILED) {
+                        throw std::bad_alloc();
+                    }
                     uintptr_t begin = (uintptr_t(raw) + page - 1) & -page;
                     size_t before = begin - uintptr_t(raw), after = page - before;
-                    if(before) munmap(raw, before);
-                    if(after) munmap(reinterpret_cast<void*>(begin + bytes), after);
+                    if(before) {
+                        munmap(raw, before);
+                    }
+                    if(after) {
+                        munmap(reinterpret_cast<void*>(begin + bytes), after);
+                    }
                     madvise(reinterpret_cast<void*>(begin), bytes, MADV_HUGEPAGE);
                     return reinterpret_cast<T*>(begin);
                 }
 #endif
                 auto p = static_cast<T*>(std::calloc(std::max(count, size_t(1)), sizeof(T)));
-                if(!p) throw std::bad_alloc();
+                if(!p) {
+                    throw std::bad_alloc();
+                }
                 return p;
             }
-            void deallocate(T *p, size_t count) {
+            void deallocate(T* p, size_t count) {
 #ifdef __linux__
                 if(count * sizeof(T) >= threshold) {
                     munmap(p, (count * sizeof(T) + page - 1) & -page);
@@ -81,28 +94,44 @@ namespace cp_algo::structures {
                 std::free(p);
             }
         };
-        template<class T> using storage = std::vector<T, page_allocator<T>>;
+        template<class T>
+        using storage = std::vector<T, page_allocator<T>>;
         using row = std::array<int, 26>;
         // Newly mapped pages are zero. Begin row lifetimes without touching every page.
-        template<class T> struct zero_storage {
-            T *data = nullptr;
+        template<class T>
+        struct zero_storage {
+            T* data = nullptr;
             size_t capacity = 0;
             zero_storage() = default;
             explicit zero_storage(size_t n): data(page_allocator<T>{}.allocate(n)), capacity(n) {
                 std::uninitialized_default_construct_n(data, n);
             }
-            zero_storage(zero_storage const &other): zero_storage(other.capacity) {
-                if(capacity) std::copy_n(other.data, capacity, data);
+            zero_storage(zero_storage const& other): zero_storage(other.capacity) {
+                if(capacity) {
+                    std::copy_n(other.data, capacity, data);
+                }
             }
-            zero_storage(zero_storage &&other) noexcept { swap(other); }
-            zero_storage &operator=(zero_storage other) noexcept { swap(other); return *this; }
-            void swap(zero_storage &other) noexcept {
-                std::swap(data, other.data); std::swap(capacity, other.capacity);
+            zero_storage(zero_storage&& other) noexcept { swap(other); }
+            zero_storage& operator=(zero_storage other) noexcept {
+                swap(other);
+                return *this;
             }
-            ~zero_storage() { if(data) page_allocator<T>{}.deallocate(data, capacity); }
+            void swap(zero_storage& other) noexcept {
+                std::swap(data, other.data);
+                std::swap(capacity, other.capacity);
+            }
+            ~zero_storage() {
+                if(data) {
+                    page_allocator<T>{}.deallocate(data, capacity);
+                }
+            }
         };
-        struct clone_data { int len, pos; };
-        struct transitions { uint32_t a = 0, b = 0; };
+        struct clone_data {
+            int len, pos;
+        };
+        struct transitions {
+            uint32_t a = 0, b = 0;
+        };
         static constexpr uint32_t dense_tag = 0x80000000, id_mask = 0xFFFFFF;
         std::string word;
         int n = 0, alphabet = 26, width = 0;
@@ -119,7 +148,9 @@ namespace cp_algo::structures {
             assert(word.size() < (1U << 23));
             n = (int)word.size();
             if(suffix_order) {
-                for(int c = 0; c < 26; c++) code[c] = c;
+                for(int c = 0; c < 26; c++) {
+                    code[c] = c;
+                }
             } else {
                 code.fill(-1);
                 uint32_t letters = 0;
@@ -129,16 +160,26 @@ namespace cp_algo::structures {
                 }
                 alphabet = 0;
                 for(int c = 0; c < 26; c++) {
-                    if(letters >> c & 1) code[c] = alphabet++;
+                    if(letters >> c & 1) {
+                        code[c] = alphabet++;
+                    }
                 }
                 if(alphabet != 26) {
-                    for(char &c: word) c = char('a' + code[c - 'a']);
+                    for(char& c: word) {
+                        c = char('a' + code[c - 'a']);
+                    }
                 }
-                if(alphabet <= 1) width = 1;
-                else if(alphabet <= 2) width = 2;
-                else if(alphabet <= 4) width = 4;
+                if(alphabet <= 1) {
+                    width = 1;
+                } else if(alphabet <= 2) {
+                    width = 2;
+                } else if(alphabet <= 4) {
+                    width = 4;
+                }
                 // Avoid tagged lookups while the ordinary dense rows fit in 32 MiB.
-                else if(alphabet <= 16 || size_t(n) * alphabet <= (1U << 23)) width = -1;
+                else if(alphabet <= 16 || size_t(n) * alphabet <= (1U << 23)) {
+                    width = -1;
+                }
             }
             clones.reserve(n);
             link.resize(2 * n + 1);
@@ -156,13 +197,14 @@ namespace cp_algo::structures {
             checkpoint("init");
             if(suffix_order) {
                 build<0, false, true>();
-            }
-            else switch(width) {
-                case 0: build<0>(); break;
-                case 1: build<1>(); break;
-                case 2: build<2>(); break;
-                case 4: build<4>(); break;
-                default: build<-1>();
+            } else {
+                switch(width) {
+                    case 0: build<0>(); break;
+                    case 1: build<1>(); break;
+                    case 2: build<2>(); break;
+                    case 4: build<4>(); break;
+                    default: build<-1>();
+                }
             }
             checkpoint("build");
         }
@@ -172,31 +214,44 @@ namespace cp_algo::structures {
         int length(int v) const { return v <= n ? v : clones[v - n - 1].len; }
         int position(int v) const { return v <= n ? v : clones[v - n - 1].pos; }
 
-        static row &clone_row(int p, uintptr_t base) {
+        static row& clone_row(int p, uintptr_t base) {
             return *reinterpret_cast<row*>(base + size_t(p) * sizeof(row));
         }
         template<int Width, bool CloneDense = false>
         int get(int p, int x, uintptr_t clone_base = 0) const {
             if constexpr(CloneDense) {
-                if(p > n) return clone_row(p, clone_base)[x];
+                if(p > n) {
+                    return clone_row(p, clone_base)[x];
+                }
                 // A prefix state's first edge is always p -> p+1 and never redirected.
-                if(word[p] == char('a' + x)) return p + 1;
+                if(word[p] == char('a' + x)) {
+                    return p + 1;
+                }
                 return p <= prefix_bound ? prefix_edges.data[p][x] : 0;
             }
             if constexpr(Width != 0) {
                 return flat[size_t(p) * (Width > 0 ? Width : alphabet) + x];
             } else {
                 auto t = to[p];
-                if(t.a & dense_tag) return dense[t.a & ~dense_tag][x];
-                if((t.a >> 24) == unsigned(x + 1)) return int(t.a & id_mask);
-                if((t.b >> 24) == unsigned(x + 1)) return int(t.b & id_mask);
+                if(t.a & dense_tag) {
+                    return dense[t.a & ~dense_tag][x];
+                }
+                if((t.a >> 24) == unsigned(x + 1)) {
+                    return int(t.a & id_mask);
+                }
+                if((t.b >> 24) == unsigned(x + 1)) {
+                    return int(t.b & id_mask);
+                }
                 return 0;
             }
         }
         template<int Width, bool CloneDense = false>
         void set(int p, int x, int v, uintptr_t clone_base = 0) {
             if constexpr(CloneDense) {
-                if(p > n) { clone_row(p, clone_base)[x] = v; return; }
+                if(p > n) {
+                    clone_row(p, clone_base)[x] = v;
+                    return;
+                }
                 prefix_bound = std::max(prefix_bound, p);
                 prefix_edges.data[p][x] = v;
                 return;
@@ -206,10 +261,13 @@ namespace cp_algo::structures {
             } else {
                 auto &t = to[p];
                 auto encoded = (uint32_t(x + 1) << 24) | v;
-                if(t.a & dense_tag) dense[t.a & ~dense_tag][x] = v;
-                else if(!t.a || (t.a >> 24) == unsigned(x + 1)) t.a = encoded;
-                else if(!t.b || (t.b >> 24) == unsigned(x + 1)) t.b = encoded;
-                else {
+                if(t.a & dense_tag) {
+                    dense[t.a & ~dense_tag][x] = v;
+                } else if(!t.a || (t.a >> 24) == unsigned(x + 1)) {
+                    t.a = encoded;
+                } else if(!t.b || (t.b >> 24) == unsigned(x + 1)) {
+                    t.b = encoded;
+                } else {
                     std::array<int, 26> row{};
                     row[(t.a >> 24) - 1] = t.a & id_mask;
                     row[(t.b >> 24) - 1] = t.b & id_mask;
@@ -228,17 +286,24 @@ namespace cp_algo::structures {
         template<int Width, bool Count = true, bool CloneDense = false>
         void build() {
             auto state_id = [](uint32_t v) -> int {
-                if constexpr(CloneDense) return v & id_mask;
-                else return v;
+                if constexpr(CloneDense) {
+                    return v & id_mask;
+                } else {
+                    return v;
+                }
             };
             auto state_length = [&](uint32_t v) {
-                if constexpr(CloneDense) return tagged_length(v);
-                else return length(v);
+                if constexpr(CloneDense) {
+                    return tagged_length(v);
+                } else {
+                    return length(v);
+                }
             };
             // Compute the ID-to-row adjustment once, outside the lookup dependency chain.
             uintptr_t clone_base = 0;
-            if constexpr(CloneDense)
+            if constexpr(CloneDense) {
                 clone_base = reinterpret_cast<uintptr_t>(clone_edges.data) - size_t(n + 1) * sizeof(row);
+            }
             int last = 0;
             for(unsigned char c: word) {
                 int x = c - 'a';
@@ -258,21 +323,24 @@ namespace cp_algo::structures {
                 int q = state_id(found);
                 if(q != last) {
                     int len = state_length(current) + 1;
-                    if(state_length(found) == len) link[last] = found;
-                    else {
+                    if(state_length(found) == len) {
+                        link[last] = found;
+                    } else {
                         int clone = states();
                         clones.push_back({len, position(q)});
                         if constexpr(CloneDense) {
                             auto &copy = clone_row(clone, clone_base);
-                            if(q > n) copy = clone_row(q, clone_base);
-                            else {
-                                if(q <= prefix_bound) copy = prefix_edges.data[q];
+                            if(q > n) {
+                                copy = clone_row(q, clone_base);
+                            } else {
+                                if(q <= prefix_bound) {
+                                    copy = prefix_edges.data[q];
+                                }
                                 copy[word[q] - 'a'] = q + 1;
                             }
                         } else if constexpr(Width != 0) {
                             int stride = Width > 0 ? Width : alphabet;
-                            std::copy_n(flat.data() + size_t(q) * stride, stride,
-                                        flat.data() + size_t(clone) * stride);
+                            std::copy_n(flat.data() + size_t(q) * stride, stride, flat.data() + size_t(clone) * stride);
                         } else {
                             auto row = to[q];
                             if(row.a & dense_tag) {
@@ -283,7 +351,9 @@ namespace cp_algo::structures {
                             to.push_back(row);
                         }
                         uint32_t tagged = clone;
-                        if constexpr(CloneDense) tagged |= uint32_t(std::min(len, 255)) << 24;
+                        if constexpr(CloneDense) {
+                            tagged |= uint32_t(std::min(len, 255)) << 24;
+                        }
                         link[last] = link[q] = tagged;
                         uint32_t next;
                         while(state_id(next = get<Width, CloneDense>(p, x, clone_base)) == q) {
@@ -296,7 +366,9 @@ namespace cp_algo::structures {
                         link[clone] = state_id(next) == clone ? 0 : next;
                     }
                 }
-                if constexpr(Count) distinct += last - length(link[last]);
+                if constexpr(Count) {
+                    distinct += last - length(link[last]);
+                }
             }
         }
         template<int Width>
@@ -305,14 +377,21 @@ namespace cp_algo::structures {
             for(int i = 0; i < (int)other.size(); i++) {
                 unsigned c = (unsigned char)other[i] - unsigned('a');
                 int x = c < 26 ? code[c] : -1;
-                if(x < 0) { v = matched = 0; continue; }
+                if(x < 0) {
+                    v = matched = 0;
+                    continue;
+                }
                 while(v && !get<Width>(v, x)) {
                     v = link[v];
                     matched = length(v);
                 }
                 v = get<Width>(v, x);
                 matched = v ? matched + 1 : 0;
-                if(matched > best) { best = matched; end_s = position(v); end_t = i + 1; }
+                if(matched > best) {
+                    best = matched;
+                    end_s = position(v);
+                    end_t = i + 1;
+                }
             }
             checkpoint("query");
             return {end_s - best, end_s, end_t - best, end_t};
@@ -328,18 +407,24 @@ namespace cp_algo::structures {
             auto links = link.data();
             auto text = word.data();
             auto clone = clones.data();
-            auto position = [&](int v) { return v <= n ? v : clone[v - n - 1].pos; };
+            auto position = [&](int v) {
+                return v <= n ? v : clone[v - n - 1].pos;
+            };
             auto tagged_length = [&](uint32_t v) {
                 int len = v >> 24;
                 return len == 255 ? (int(v & id_mask) <= n ? int(v & id_mask) : clone[(v & id_mask) - n - 1].len)
-                                  : len ? len : int(v & id_mask);
+                       : len      ? len
+                                  : int(v & id_mask);
             };
-            struct tree_node { uint32_t offset, mask; };
+            struct tree_node {
+                uint32_t offset, mask;
+            };
             zero_storage<tree_node> tree(size + 1);
             zero_storage<int> children(size);
             uint32_t border = links[n];
-            while((border & id_mask) > unsigned(n) && tagged_length(border) > prefix_bound)
+            while((border & id_mask) > unsigned(n) && tagged_length(border) > prefix_bound) {
                 border = links[border & id_mask];
+            }
             int last_branch = std::max(prefix_bound, (border & id_mask) <= unsigned(n) ? int(border & id_mask) : 0);
             for(int i = 1; i < size; i++) {
                 int p = links[i] & id_mask, x = text[position(i) - tagged_length(links[i]) - 1] - 'a';
@@ -348,26 +433,35 @@ namespace cp_algo::structures {
             }
             // Beyond the longest repeated prefix, ordinary states are leaves.
             // Their offset entries are never read, so skip that whole interval.
-            for(int i = 0; i <= last_branch; i++)
+            for(int i = 0; i <= last_branch; i++) {
                 tree.data[i + 1].offset = tree.data[i].offset + std::popcount(tree.data[i].mask);
+            }
             tree.data[n + 1].offset = tree.data[last_branch + 1].offset;
-            for(int i = n + 1; i < size; i++)
+            for(int i = n + 1; i < size; i++) {
                 tree.data[i + 1].offset = tree.data[i].offset + std::popcount(tree.data[i].mask);
+            }
             auto scatter = [&](int i, uint32_t entry) {
                 int p = links[i] & id_mask, x = unsigned(links[i]) >> 24;
                 int rank = std::popcount(tree.data[p].mask & ((1U << x) - 1));
                 children.data[tree.data[p].offset + rank] = entry;
             };
             // Leaves carry answers; clones carry ranges; internal prefixes also emit themselves.
-            for(int i = 1; i <= last_branch; i++) scatter(i, uint32_t(i) | dense_tag);
-            for(int i = last_branch + 1; i <= n; i++) scatter(i, n - i);
-            for(int i = n + 1; i < size; i++)
+            for(int i = 1; i <= last_branch; i++) {
+                scatter(i, uint32_t(i) | dense_tag);
+            }
+            for(int i = last_branch + 1; i <= n; i++) {
+                scatter(i, n - i);
+            }
+            for(int i = n + 1; i < size; i++) {
                 scatter(i, (uint32_t(std::popcount(tree.data[i].mask)) << 24) | tree.data[i].offset);
+            }
             checkpoint("tree");
             int top = 0, count = 0, cursor = tree.data[0].offset, end = tree.data[1].offset;
             while(true) {
                 if(cursor == end) {
-                    if(!top) break;
+                    if(!top) {
+                        break;
+                    }
                     end = tree.data[--top].mask;
                     cursor = tree.data[--top].mask;
                     continue;
@@ -377,12 +471,16 @@ namespace cp_algo::structures {
                     std::memcpy(&pair, children.data + cursor, sizeof(pair));
                     if(!(pair & 0xFF000000FF000000ULL)) {
                         std::memcpy(links + count, &pair, sizeof(pair));
-                        count += 2; cursor += 2;
+                        count += 2;
+                        cursor += 2;
                         continue;
                     }
                 }
                 uint32_t entry = children.data[cursor++];
-                if(!(entry >> 24)) { links[count++] = entry; continue; }
+                if(!(entry >> 24)) {
+                    links[count++] = entry;
+                    continue;
+                }
                 int begin, finish;
                 if(entry & dense_tag) {
                     int u = entry & id_mask;

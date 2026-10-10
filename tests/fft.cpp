@@ -4,17 +4,22 @@
 using namespace cp_algo;
 using namespace cp_algo::math;
 
-template<int mod> void convolution_boundaries() {
+template<int mod>
+void convolution_boundaries() {
     using T = modint<mod>;
     std::mt19937 rng(42);
     // In-place small squares and shorter aliased prefixes, including truncation.
     for(size_t n = 1; n <= 32; n++) {
         big_vector<T> a(n);
-        for(auto &v: a) {v = rng() % mod;}
+        for(auto &v: a) {
+            v = rng() % mod;
+        }
         for(size_t m = 0; m <= n; m++) {
             big_vector<T> c(n + m);
             for(size_t i = 0; i < n; i++) {
-                for(size_t j = 0; j < m; j++) {c[i + j] += a[i] * a[j];}
+                for(size_t j = 0; j < m; j++) {
+                    c[i + j] += a[i] * a[j];
+                }
             }
             for(size_t k = 0; k <= n + m + 2; k++) {
                 auto x = a, want = c;
@@ -32,10 +37,16 @@ template<int mod> void convolution_boundaries() {
     for(int n: {64, 65, 66, 79, 80, 81, 97, 127, 128, 129, 130, 145, 257, 513}) {
         for(int m: {64, 65, 66, 79, 97, 127, 128, 129, 257}) {
             big_vector<T> a(n), b(m), c(n + m - 1);
-            for(auto &v: a) {v = rng() % mod;}
-            for(auto &v: b) {v = rng() % mod;}
+            for(auto &v: a) {
+                v = rng() % mod;
+            }
+            for(auto &v: b) {
+                v = rng() % mod;
+            }
             for(int i = 0; i < n; i++) {
-                for(int j = 0; j < m; j++) {c[i + j] += a[i] * b[j];}
+                for(int j = 0; j < m; j++) {
+                    c[i + j] += a[i] * b[j];
+                }
             }
             for(size_t k: {size_t(0), size_t(63), size_t(64), size_t(n), c.size() - 1, c.size(), c.size() + 7}) {
                 auto x = a, want = c;
@@ -45,9 +56,13 @@ template<int mod> void convolution_boundaries() {
             }
         }
         big_vector<T> a(n), c(2 * n - 1);
-        for(auto &v: a) {v = rng() % mod;}
+        for(auto &v: a) {
+            v = rng() % mod;
+        }
         for(int i = 0; i < n; i++) {
-            for(int j = 0; j < n; j++) {c[i + j] += a[i] * a[j];}
+            for(int j = 0; j < n; j++) {
+                c[i + j] += a[i] * a[j];
+            }
         }
         for(size_t k: {size_t(n), c.size(), c.size() + 7}) {
             auto x = a, want = c;
@@ -60,7 +75,9 @@ template<int mod> void convolution_boundaries() {
             m = std::min(m, a.size());
             big_vector<T> product(a.size() + m - 1);
             for(size_t i = 0; i < a.size(); i++) {
-                for(size_t j = 0; j < m; j++) {product[i + j] += a[i] * a[j];}
+                for(size_t j = 0; j < m; j++) {
+                    product[i + j] += a[i] * a[j];
+                }
             }
             for(size_t k: {size_t(63), size_t(n), product.size(), product.size() + 7}) {
                 auto x = a, want = product;
@@ -102,13 +119,19 @@ int main() {
     using T = modint<998244353>;
     for(size_t n: {(1 << 20) - 1, (1 << 20) + 7}) {
         big_vector<T> a(n), b{1, -2, 1};
-        for(auto &x: a) {x = rng() % T::mod();}
+        for(auto &x: a) {
+            x = rng() % T::mod();
+        }
         auto original = a;
         fft::mul(a, b);
         for(size_t i = 0; i < a.size(); i++) {
             T expected = i < original.size() ? original[i] : T(0);
-            if(i && i - 1 < original.size()) {expected -= original[i - 1] * 2;}
-            if(i > 1 && i - 2 < original.size()) {expected += original[i - 2];}
+            if(i && i - 1 < original.size()) {
+                expected -= original[i - 1] * 2;
+            }
+            if(i > 1 && i - 2 < original.size()) {
+                expected += original[i - 2];
+            }
             assert(a[i] == expected);
         }
     }
@@ -122,15 +145,21 @@ int main() {
         size_t m = n - 3;
         V c = rng() % mod;
         big_vector<V> a(n), b(m, c);
-        for(auto &x: a) {x = rng() % mod;}
+        for(auto &x: a) {
+            x = rng() % mod;
+        }
         auto original = a;
         assert(fft::quadratic<V>::usable(n, m) && fft::quadratic<V>::d == d);
         fft::mul(a, b);
         assert(a.size() == n + m - 1);
         V window = 0;
         for(size_t k = 0; k < a.size(); k++) {
-            if(k < n) {window += original[k];}
-            if(k >= m) {window -= original[k - m];}
+            if(k < n) {
+                window += original[k];
+            }
+            if(k >= m) {
+                window -= original[k - m];
+            }
             assert(a[k] == window * c);
         }
     };
@@ -144,10 +173,16 @@ int main() {
     {
         using V = modint<998244353>;
         big_vector<V> a(3000), b(1000), c(3999);
-        for(auto &x: a) {x = rng() % V::mod();}
-        for(auto &x: b) {x = rng() % V::mod();}
+        for(auto &x: a) {
+            x = rng() % V::mod();
+        }
+        for(auto &x: b) {
+            x = rng() % V::mod();
+        }
         for(size_t i = 0; i < a.size(); i++) {
-            for(size_t j = 0; j < b.size(); j++) {c[i + j] += a[i] * b[j];}
+            for(size_t j = 0; j < b.size(); j++) {
+                c[i + j] += a[i] * b[j];
+            }
         }
         assert(fft::quadratic<V>::usable(a.size(), b.size()) && fft::com_size(a.size(), b.size()) < a.size());
         fft::mul(a, b);
@@ -157,16 +192,26 @@ int main() {
         for(size_t extra: {size_t(1), size_t(17)}) {
             big_vector<V> x(1024 + extra), y(1025), want(x.size() + y.size() - 1);
             big_vector<modint<1000000007>> x5(x.size()), y5(y.size()), want5(want.size());
-            for(size_t i = 0; i < x.size(); i++) {x[i] = rng() % V::mod(); x5[i] = rng() % 1000000007;}
-            for(size_t i = 0; i < y.size(); i++) {y[i] = rng() % V::mod(); y5[i] = rng() % 1000000007;}
             for(size_t i = 0; i < x.size(); i++) {
-                for(size_t j = 0; j < y.size(); j++) {want[i + j] += x[i] * y[j]; want5[i + j] += x5[i] * y5[j];}
+                x[i] = rng() % V::mod();
+                x5[i] = rng() % 1000000007;
+            }
+            for(size_t i = 0; i < y.size(); i++) {
+                y[i] = rng() % V::mod();
+                y5[i] = rng() % 1000000007;
+            }
+            for(size_t i = 0; i < x.size(); i++) {
+                for(size_t j = 0; j < y.size(); j++) {
+                    want[i + j] += x[i] * y[j];
+                    want5[i + j] += x5[i] * y5[j];
+                }
             }
             assert(fft::has_short_tail(x.size(), y.size()));
             assert(fft::quadratic<V>::length(x.size(), y.size()) == 1024);
             assert(fft::quadratic<modint<1000000007>>::usable(x.size(), y.size()));
             assert(fft::quadratic<modint<1000000007>>::length(x.size(), y.size()) == 2048);
-            fft::mul(x, y); fft::mul(x5, y5);
+            fft::mul(x, y);
+            fft::mul(x5, y5);
             assert(x == want && x5 == want5);
         }
     }
@@ -182,12 +227,16 @@ int main() {
     using U = modint<65537>;
     size_t n = 1 << 19;
     big_vector<U> a(n);
-    for(size_t i = 0; i < n; i++) {a[i] = i % 2 ? U(-1) : U(1);}
+    for(size_t i = 0; i < n; i++) {
+        a[i] = i % 2 ? U(-1) : U(1);
+    }
     auto b = a;
     fft::mul(a, b);
     for(size_t i = 0; i < a.size(); i++) {
         U expected = i < n ? i + 1 : 2 * n - 1 - i;
-        if(i % 2) {expected = -expected;}
+        if(i % 2) {
+            expected = -expected;
+        }
         assert(a[i] == expected);
     }
     // A runtime modulus stores residues in another form and may change between products.
@@ -195,10 +244,16 @@ int main() {
         using W = dynamic_modint<int>;
         W::switch_mod(p);
         big_vector<W> x(700), y(693), want(x.size() + y.size() - 1);
-        for(auto &v: x) {v = int64_t(rng() % p);}
-        for(auto &v: y) {v = int64_t(rng() % p);}
+        for(auto &v: x) {
+            v = int64_t(rng() % p);
+        }
+        for(auto &v: y) {
+            v = int64_t(rng() % p);
+        }
         for(size_t i = 0; i < x.size(); i++) {
-            for(size_t j = 0; j < y.size(); j++) {want[i + j] += x[i] * y[j];}
+            for(size_t j = 0; j < y.size(); j++) {
+                want[i + j] += x[i] * y[j];
+            }
         }
         auto square = x;
         fft::mul(square, square);

@@ -32,27 +32,35 @@ void check_accumulation() {
             }
             if(t % 23 == 0) {
                 a.normalize();
-                for(size_t i = 0; i < n; i++) assert(a[i].getr() == expected[i]);
+                for(size_t i = 0; i < n; i++) {
+                    assert(a[i].getr() == expected[i]);
+                }
             }
         }
         a.normalize();
-        for(size_t i = 0; i < n; i++) assert(a[i].getr() == expected[i]);
+        for(size_t i = 0; i < n; i++) {
+            assert(a[i].getr() == expected[i]);
+        }
     }
 }
 
 template<gauss_mode mode, typename M>
 void check_gauss(M a) {
     size_t rank = 0;
-    if constexpr(mode == normal) rank = a.rank();
+    if constexpr(mode == normal) {
+        rank = a.rank();
+    }
     M b = a;
-    for(size_t i = 0; i < a.n(); i++) a.template eliminate<mode>(i);
+    for(size_t i = 0; i < a.n(); i++) {
+        a.template eliminate<mode>(i);
+    }
     a.normalize();
     b.template gauss<mode>();
     assert(a == b);
     if constexpr(mode == normal) {
         assert(rank == size_t(std::ranges::count_if(a, [](auto const& row) {
-            return std::ranges::any_of(row, [](auto const& x) {return x != typename M::base(0);});
-        })));
+                   return std::ranges::any_of(row, [](auto const& x) { return x != typename M::base(0); });
+               })));
     }
 }
 
@@ -65,16 +73,30 @@ void check_blocks() {
             for(int type = 0; type < 4; type++) {
                 M a(n, m);
                 if(type == 0) {
-                    for(auto &x: a.elements()) x = rng();
+                    for(auto &x: a.elements()) {
+                        x = rng();
+                    }
                 } else if(type == 1) {
-                    for(size_t i = 0; i < std::min(n, m); i++) a[i][m - 1 - i] = rng();
+                    for(size_t i = 0; i < std::min(n, m); i++) {
+                        a[i][m - 1 - i] = rng();
+                    }
                 } else if(type == 2) {
                     M low(3, m);
-                    for(auto &x: low.elements()) x = rng();
-                    for(auto &row: a) for(auto &b: low) row.add_scaled(b, base(rng()));
+                    for(auto &x: low.elements()) {
+                        x = rng();
+                    }
+                    for(auto &row: a) {
+                        for(auto &b: low) {
+                            row.add_scaled(b, base(rng()));
+                        }
+                    }
                     a.normalize();
                 } else {
-                    for(auto &x: a.elements()) if(rng() % 20 == 0) x = rng();
+                    for(auto &x: a.elements()) {
+                        if(rng() % 20 == 0) {
+                            x = rng();
+                        }
+                    }
                 }
                 check_gauss<normal>(a);
                 check_gauss<reverse>(a);
@@ -89,45 +111,74 @@ template<typename base, typename row = modint_vec<base>>
 void check_pairs() {
     using M = matrix<base, row>;
     std::mt19937 rng(623);
-    std::array<size_t, 3> shapes[] = {
-        {0, 0, 0}, {3, 0, 0}, {2, 9, 0}, {1, 7, 9}, {2, 9, 1},
-        {3, 7, 7}, {4, 8, 4}, {5, 9, 5}, {8, 16, 17}, {9, 31, 31},
-        {32, 33, 35}, {33, 65, 129}, {3, 127, 5}, {5, 128, 7},
-        {7, 129, 9}, {129, 257, 3}
-    };
-    for(auto [n, m, k]: shapes) for(int type = 0; type < 3; type++) {
-        M a(n, m), b(m, k), expected(n, b.m());
-        for(auto &x: a.elements()) x = type == 1 ? base(-1) : base(rng());
-        for(auto &x: b.elements()) x = type == 1 ? base(-1) : base(rng());
-        if(type == 2) {
-            for(auto &x: a.elements()) if(rng() % 3) x = 0;
-            for(auto &x: b.elements()) if(rng() % 3) x = 0;
+    std::array<size_t, 3> shapes[] = {{0, 0, 0},   {3, 0, 0},   {2, 9, 0},   {1, 7, 9},    {2, 9, 1},    {3, 7, 7},
+                                      {4, 8, 4},   {5, 9, 5},   {8, 16, 17}, {9, 31, 31},  {32, 33, 35}, {33, 65, 129},
+                                      {3, 127, 5}, {5, 128, 7}, {7, 129, 9}, {129, 257, 3}};
+    for(auto [n, m, k]: shapes) {
+        for(int type = 0; type < 3; type++) {
+            M a(n, m), b(m, k), expected(n, b.m());
+            for(auto &x: a.elements()) {
+                x = type == 1 ? base(-1) : base(rng());
+            }
+            for(auto &x: b.elements()) {
+                x = type == 1 ? base(-1) : base(rng());
+            }
+            if(type == 2) {
+                for(auto &x: a.elements()) {
+                    if(rng() % 3) {
+                        x = 0;
+                    }
+                }
+                for(auto &x: b.elements()) {
+                    if(rng() % 3) {
+                        x = 0;
+                    }
+                }
+            }
+            for(size_t i = 0; i < n; i++) {
+                for(size_t j = 0; j < m; j++) {
+                    for(size_t t = 0; t < b.m(); t++) {
+                        expected[i][t] += a[i][j] * b[j][t];
+                    }
+                }
+            }
+            assert(a * b == expected);
+            auto at = a.T();
+            assert(at.n() == a.m());
+            if(a.m()) {
+                assert(at.m() == a.n());
+            }
+            for(size_t i = 0; i < a.n(); i++) {
+                for(size_t j = 0; j < a.m(); j++) {
+                    assert(at[j][i] == a[i][j]);
+                }
+            }
+            paired_products++;
         }
-        for(size_t i = 0; i < n; i++)
-        for(size_t j = 0; j < m; j++)
-        for(size_t t = 0; t < b.m(); t++) expected[i][t] += a[i][j] * b[j][t];
-        assert(a * b == expected);
-        auto at = a.T();
-        assert(at.n() == a.m());
-        if(a.m()) assert(at.m() == a.n());
-        for(size_t i = 0; i < a.n(); i++)
-        for(size_t j = 0; j < a.m(); j++) assert(at[j][i] == a[i][j]);
-        paired_products++;
     }
-    for(size_t n: {1, 2, 3, 31, 32, 33, 65})
-    for(size_t m: {0, 1, 3, 5, 33, 66, 101}) {
-        M a(n, m);
-        row source(m);
-        for(auto &x: source) x = rng();
-        for(size_t i = 0; i < n; i++) {
-            for(auto &x: a[i]) x = rng();
-            // Leave different deferred-reduction counts in adjacent rows.
-            for(size_t j = 0; j < i % 13; j++) a[i].add_scaled(source, base(-1));
-            if(i % 3 == 0 && m) a[i].normalize(i % m);
+    for(size_t n: {1, 2, 3, 31, 32, 33, 65}) {
+        for(size_t m: {0, 1, 3, 5, 33, 66, 101}) {
+            M a(n, m);
+            row source(m);
+            for(auto &x: source) {
+                x = rng();
+            }
+            for(size_t i = 0; i < n; i++) {
+                for(auto &x: a[i]) {
+                    x = rng();
+                }
+                // Leave different deferred-reduction counts in adjacent rows.
+                for(size_t j = 0; j < i % 13; j++) {
+                    a[i].add_scaled(source, base(-1));
+                }
+                if(i % 3 == 0 && m) {
+                    a[i].normalize(i % m);
+                }
+            }
+            check_gauss<normal>(a);
+            check_gauss<reverse>(a);
+            paired_gauss += 2;
         }
-        check_gauss<normal>(a);
-        check_gauss<reverse>(a);
-        paired_gauss += 2;
     }
 }
 
@@ -144,11 +195,15 @@ int main() {
     vec<int64_t> x(size_t(3));
     for(size_t i = 0; i < a.n(); i++) {
         x[i] = i + 1;
-        for(size_t j = 0; j < a.m(); j++) a[i][j] = 5 * i + j;
+        for(size_t j = 0; j < a.m(); j++) {
+            a[i][j] = 5 * i + j;
+        }
     }
     auto y = a.apply(x);
     assert(y.size() == 5);
-    for(size_t j = 0; j < y.size(); j++) assert(y[j] == 40 + 6 * int64_t(j));
+    for(size_t j = 0; j < y.size(); j++) {
+        assert(y[j] == 40 + 6 * int64_t(j));
+    }
     check_blocks();
     check_pairs<modint<998244353LL>>();
     check_pairs<modint<998244353>>();
@@ -160,6 +215,7 @@ int main() {
             check_pairs<dynamic_modint<int64_t>>();
         });
     }
-    std::cout << paired_products << " products/transposes and " << paired_gauss << " mixed-state Gaussian comparisons passed\n";
+    std::cout << paired_products << " products/transposes and " << paired_gauss
+              << " mixed-state Gaussian comparisons passed\n";
     std::cout << "96 accumulation cases, 936 Gaussian comparisons and rectangular application passed\n";
 }

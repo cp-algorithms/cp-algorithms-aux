@@ -34,7 +34,9 @@ namespace cp_algo::math::poly::impl {
             auto E = fft::spectrum<base>(error | std::views::drop(m) | std::views::take(k - m), 2 * m);
             std::move(Q).multiply(E, error, k - m);
             q.a.resize(k);
-            for(size_t i = m; i < k; i++) {q.a[i] = -error[i - m];}
+            for(size_t i = m; i < k; i++) {
+                q.a[i] = -error[i - m];
+            }
         }
         p = std::move(q);
         p.normalize();

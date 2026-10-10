@@ -108,7 +108,7 @@ namespace cp_algo {
     }
 
     template<std::size_t Align = 32>
-    inline bool is_aligned(const auto* p) noexcept {
+    inline bool is_aligned(const auto *p) noexcept {
         return (reinterpret_cast<std::uintptr_t>(p) % Align) == 0;
     }
 

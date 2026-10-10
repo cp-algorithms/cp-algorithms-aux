@@ -130,13 +130,13 @@ namespace cp_algo::linalg::impl {
             return out < out - mod ? out : out - mod;
         }
         // Copy between matrix rows and contiguous recursive quadrants.
-        template<bool unpack = false, class matrix>
+        template<bool unpack = false, int add = 0, class matrix>
         static void copy(matrix &a, uint32_t *ptr, size_t n, size_t m, size_t depth,
                          size_t row = 0, size_t col = 0) {
             if(depth) {
                 n /= 2; m /= 2;
                 for(size_t q = 0; q < 4; q++) {
-                    copy<unpack>(a, ptr + q * n * m, n, m, depth - 1,
+                    copy<unpack, add>(a, ptr + q * n * m, n, m, depth - 1,
                                  row + q / 2 * n, col + q % 2 * m);
                 }
                 return;
@@ -147,13 +147,19 @@ namespace cp_algo::linalg::impl {
                 auto data = a[i].data() + col;
                 auto packed = ptr + (i - row) * m;
                 for(size_t j = 0; j < width; j++) {
-                    if constexpr(unpack) data[j].setr(packed[j]);
+                    if constexpr(unpack && add != 0) {
+                        typename matrix::base value;
+                        value.setr(packed[j]);
+                        if constexpr(add == 1) data[j] += value;
+                        else data[j] -= value;
+                    } else if constexpr(unpack) data[j].setr(packed[j]);
                     else packed[j] = uint32_t(data[j].getr());
                 }
             }
         }
-        template<class matrix>
-        static matrix product(matrix const& a, matrix const& b) {
+        template<int add = 0, class matrix>
+        static matrix product(matrix const& a, matrix const& b, matrix res = {}) {
+            static_assert(add >= -1 && add <= 1);
             auto pad = [](size_t x) {return (x + 31) / 32 * 32;};
             size_t n = pad(a.n()), m = pad(a.m()), k = pad(b.m());
             // Each recursion level needs a quarter as much scratch; children reuse it.
@@ -178,8 +184,9 @@ namespace cp_algo::linalg::impl {
                 std::memcpy(ap + i, &x, sizeof x);
             }
             multiply(ap, bp, cp, n, m, k, scratch);
-            matrix res(a.n(), b.m());
-            copy<true>(res, cp, n, k, depth);
+            if constexpr(add == 0) res = matrix(a.n(), b.m());
+            assert(res.n() == a.n() && res.m() == b.m());
+            copy<true, add>(res, cp, n, k, depth);
             return res;
         }
     };

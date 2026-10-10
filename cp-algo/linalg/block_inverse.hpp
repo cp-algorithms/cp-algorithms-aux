@@ -58,16 +58,17 @@ namespace cp_algo::linalg {
                 if(da != base(0)) {
                     matrix b = A.submatrix(lo, hi), c = A.submatrix(hi, lo), d = A.submatrix(hi, hi);
                     b.normalize(); c.normalize(); d.normalize();
+                    using multiplier = impl::strassen_product<base::mod()>;
                     auto mul = [](matrix const& x, matrix const& y) {
-                        return impl::strassen_product<base::mod()>::product(x, y);
+                        return multiplier::product(x, y);
                     };
                     auto v = mul(c, ai);
-                    d -= mul(v, b); // Schur complement D - C A^-1 B.
+                    d = multiplier::template product<-1>(v, b, std::move(d)); // D - C A^-1 B.
                     auto [ds, si] = block_inverse(d);
                     if(ds == base(0)) return {0, {}};
                     auto u = mul(ai, b);
                     auto r = mul(u, si), t = mul(si, v);
-                    ai += mul(r, v);
+                    ai = multiplier::template product<1>(r, v, std::move(ai));
                     matrix res(A.n());
                     size_t cut = ai.n();
                     for(size_t i = 0; i < cut; i++) {

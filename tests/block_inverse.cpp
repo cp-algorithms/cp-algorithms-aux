@@ -10,7 +10,7 @@ size_t check_inverse() {
     using M = matrix<base>;
     std::mt19937 rng(311);
     size_t checks = 0;
-    for(size_t n: {1, 7, 8, 9, 15, 16, 17, 63, 64, 65, 127, 128, 129, 250, 257}) for(int type = 0; type < 7; type++) {
+    for(size_t n: {1, 7, 8, 9, 15, 16, 17, 63, 64, 65, 111, 112, 113, 127, 128, 129, 250, 257}) for(int type = 0; type < 7; type++) {
         M a(n);
         if(type <= 2) {
             for(auto &x: a.elements()) x = rng();

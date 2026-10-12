@@ -46,10 +46,10 @@ namespace cp_algo::math {
     }
     template<typename Int>
     big_generator<Int> divisors_sqrt(Int m) {
-        for(Int i = 1; i * i <= m; i++) {
+        for(Int i = 1; i <= m / i; i++) {
             if(m % i == 0) {
                 co_yield i;
-                if(i * i != m) {
+                if(i != m / i) {
                     co_yield m / i;
                 }
             }

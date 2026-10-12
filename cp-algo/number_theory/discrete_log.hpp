@@ -13,6 +13,14 @@ namespace cp_algo::math {
             auto res = discrete_log(b, c, m, _Int(int64_t(a) * b % m));
             return res ? std::optional(*res + 1) : res;
         }
+        // Remove the multiplier's annihilator before computing the period.
+        auto g = std::gcd(a, m);
+        if(c % g != 0) {
+            return std::nullopt;
+        }
+        if(g != 1) {
+            return discrete_log(b, _Int(c / g), _Int(m / g), _Int(a / g));
+        }
         // a * b^x is periodic here
         using Int = std::make_signed_t<_Int>;
         using base = dynamic_modint<Int>;

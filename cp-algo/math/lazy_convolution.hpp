@@ -9,7 +9,9 @@ namespace cp_algo::math {
     auto lazy_multiply(base a0, base b0, auto &&get_ab, size_t n) {
         big_vector<base> A = {a0}, B = {b0};
         big_vector<base> C(n);
+        if(n == 0) {return C;}
         C[0] = a0 * b0;
+        if(n == 1) {return C;}
         auto cdq = [&](this auto &&cdq, size_t l, size_t r) -> void {
             if (r - l == 1) {
                 auto [al, bl] = get_ab(A, B, C, l);
@@ -41,7 +43,9 @@ namespace cp_algo::math {
     auto lazy_multiply(auto &A, base b0, auto &&get_b, size_t n) {
         big_vector<base> B = {b0};
         big_vector<base> C(n);
+        if(n == 0) {return C;}
         C[0] = A[0] * b0;
+        if(n == 1) {return C;}
         assert(n <= size(A));
         auto cdq = [&](this auto &&cdq, size_t l, size_t r) -> void {
             if (r - l == 1) {
@@ -67,6 +71,7 @@ namespace cp_algo::math {
 
     template<typename base>
     auto lazy_exp(base p1, auto &&get_p, size_t n) {
+        if(n <= 1) {return big_vector<base>(n, base(1));}
         // Q = exp P
         // Q' = Q * P'
         auto Qd = lazy_multiply<base>(base(1), p1, [&](auto &Q, auto &Pd, auto &Qd, size_t k) {

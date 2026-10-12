@@ -85,13 +85,13 @@ namespace cp_algo::structures::segtree::metas {
         }
 
         static auto proceed_chmin(int64_t b) {
-            return [b](meta const& t) {return t.mx.proceed(b);};
+            return [b](meta const& t) {return t.mn.val == t.mx.val || t.mx.proceed(b);};
         }
         static auto stop_chmin(int64_t b) {
             return [b](meta const& t) {return t.mx.stop(b);};
         }
         static auto proceed_chmax(int64_t b) {
-            return [b](meta const& t) {return t.mn.proceed(b);};
+            return [b](meta const& t) {return t.mn.val == t.mx.val || t.mn.proceed(b);};
         }
         static auto stop_chmax(int64_t b) {
             return [b](meta const& t) {return t.mn.stop(b);};

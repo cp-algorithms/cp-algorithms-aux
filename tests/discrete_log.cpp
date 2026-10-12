@@ -12,4 +12,8 @@ int main() {
         }
         for(int c = 0; c < m; c++) assert(discrete_log(b, c, m, a) == first[c]);
     }
+    assert(discrete_log<int64_t>(5000000000LL,0,10000000000LL)==2);
+    assert(discrete_log<int64_t>(5000000000LL,5000000000LL,10000000000LL)==1);
+    assert(!discrete_log<int64_t>(5000000000LL,3,10000000000LL));
+
 }

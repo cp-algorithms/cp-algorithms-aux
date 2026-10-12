@@ -15,4 +15,14 @@ int main() {
         P A(av),B(bv); auto want=(A*inv(B,100)).mod_xk(100);
         for(int k:{0,1,7,30,70,99})assert(kth_rec(A,B,k)==want[k]);
     }
+    for(int degree=1;degree<=15;degree++) for(int rep=0;rep<5;rep++) {
+        P::Vector a(degree+1);a[0]=1;a.back()=1;
+        for(int i=1;i<degree;i++)a[i]=rng()%3?T(rng()%11):T(0);
+        P p(a);auto all=inv(p,250);
+        for(int k:{10,30,64,100,150})for(int n:{1,2,3,7,16,31}) {
+            auto window=inv(p,k,n);
+            for(int j=0;j<n;j++)assert(window[j]==all[k+j]);
+        }
+    }
+
 }

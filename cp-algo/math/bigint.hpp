@@ -179,8 +179,11 @@ namespace cp_algo::math {
         }
         bigint(int64_t x) {
             negative = x < 0;
-            x = negative ? -x : x;
-            digits = x ? big_basic_string<uint64_t>{uint64_t(x)} : big_basic_string<uint64_t>{};
+            uint64_t magnitude = negative ? -uint64_t(x) : uint64_t(x);
+            while(magnitude) {
+                digits.push_back(magnitude % Base);
+                magnitude /= Base;
+            }
         }
         bigint(std::span<char> s): negative(false) {
             if (size(s) < digit_length) {

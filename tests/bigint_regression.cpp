@@ -13,4 +13,9 @@ int main() {
     }
     assert(str(bigint<x16>(std::numeric_limits<int64_t>::min())) == "-8000000000000000");
     assert(str(bigint<x16>(std::numeric_limits<int64_t>::max())) == "7FFFFFFFFFFFFFFF");
+    assert(str(parse("9999999999999999") * int64_t(1000000000000000000LL)) == "9999999999999999000000000000000000");
+    assert(str(parse("-9999999999999999") * int64_t(1000000000000000000LL)) == "-9999999999999999000000000000000000");
+    assert(str(bigint<>(2) * std::numeric_limits<int64_t>::min()) == "-18446744073709551616");
+    assert(str(bigint<>(0) * int64_t(-1)) == "0");
+
 }

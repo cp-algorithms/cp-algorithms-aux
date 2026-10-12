@@ -251,24 +251,24 @@ namespace cp_algo::math {
         bigint& operator *= (int64_t other) {
             if (other < 0) {
                 negative ^= 1;
-                other = -other;
             }
-            if (other == 0) {
+            uint64_t magnitude = other < 0 ? -uint64_t(other) : uint64_t(other);
+            if (magnitude == 0) {
                 return *this = bigint(0);
-            } else if (other == 1) {
-                return *this;
+            } else if (magnitude == 1) {
+                return normalize();
             }
             uint64_t carry = 0;
             for (auto &d: digits) {
-                __uint128_t val = __uint128_t(d) * other + carry;
+                __uint128_t val = __uint128_t(d) * magnitude + carry;
                 d = uint64_t(val % base);
                 carry = uint64_t(val / base);
             }
-            if (carry) {
+            while (carry) {
                 digits.push_back(carry % base);
                 carry /= base;
             }
-            return *this;
+            return normalize();
         }
         bigint operator * (int64_t other) const {
             return bigint(*this) *= other;

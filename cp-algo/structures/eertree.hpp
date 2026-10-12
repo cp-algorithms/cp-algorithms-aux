@@ -38,7 +38,7 @@ namespace cp_algo::structures {
         }
         
         void add_letter(char c) {
-            c -= 'a';
+            c -= mch;
             s[n++] = c;
             last = get_link(last);
             int v = get(last, c);
@@ -47,7 +47,7 @@ namespace cp_algo::structures {
                 link[v] = get(get_link(link[last]), c);
                 par[v] = last;
                 len[v] = len[last] + 2;
-                to.push(last, (v << 8) | c);
+                to.push(last, (v << 8) | (unsigned char)c);
                 if(last < 2) root_to[last][(unsigned char)c] = v;
             }
             last = v;

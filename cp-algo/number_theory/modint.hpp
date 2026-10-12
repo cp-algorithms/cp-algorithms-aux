@@ -23,7 +23,8 @@ namespace cp_algo::math {
         }
         constexpr modint_base() = default;
         constexpr modint_base(Int2 rr) {
-            to_modint().setr(UInt((rr + modmod()) % mod()));
+            Int2 residue = rr % Int2(mod());
+            to_modint().setr(UInt(residue < 0 ? residue + mod() : residue));
         }
         constexpr modint inv() const {
             return bpow(to_modint(), mod() - 2);

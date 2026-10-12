@@ -14,11 +14,11 @@ namespace cp_algo {
             cnt[proj(x)]++;
         }
         std::partial_sum(begin(cnt), end(cnt), begin(cnt));
-        auto res = a;
+        std::vector<std::ranges::range_value_t<decltype(a)>> res(std::begin(a), std::end(a));
         for(auto const& it: a | std::views::reverse) {
             res[--cnt[proj(it)]] = it;
         }
-        a = std::move(res);
+        std::ranges::copy(res, std::begin(a));
     }
     template<size_t maxc>
     void count_sort(auto &a) {

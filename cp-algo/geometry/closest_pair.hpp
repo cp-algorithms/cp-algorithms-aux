@@ -10,7 +10,10 @@ namespace cp_algo::geometry {
     auto closest_pair(auto const& r) {
         using point = std::decay_t<decltype(r[0])>;
         size_t n = size(r);
-        int64_t md = 1e18;
+        int64_t md = norm(r[0] - r[1]);
+        if(md == 0) {
+            return std::pair<size_t, size_t>{0, 1};
+        }
         for(size_t i = 0; i < n / 100; i++) {
             auto A = random::rng() % n;
             auto B = random::rng() % n;

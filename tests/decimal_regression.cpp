@@ -34,4 +34,15 @@ int main() {
         assert(error.magnitude()<=-3);
     }
 
+    auto printed=[](decimal<> x) {
+        std::ostringstream out;auto previous=std::cout.rdbuf(out.rdbuf());
+        x.print();std::cout.rdbuf(previous);return out.str();
+    };
+    assert(printed(decimal<>(1))=="1\n");
+    assert(printed(decimal<>(0,-1))=="0\n");
+    assert(printed(decimal<>(-7500000000000000LL,-1))=="-0.7500000000000000\n");
+    assert(printed(decimal<>(-12500000000000000LL,-1))=="-1.2500000000000000\n");
+    assert(printed(decimal<>(1,-2))=="0."+std::string(31,'0')+"1\n");
+    assert(printed(decimal<>(1,1))=="10000000000000000\n");
+
 }

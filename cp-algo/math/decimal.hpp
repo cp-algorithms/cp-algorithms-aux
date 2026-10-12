@@ -53,8 +53,11 @@ namespace cp_algo::math {
         }
         void print() {
             auto [int_part, frac_part] = split();
+            if(value.negative && int_part.digits.empty() && !value.digits.empty()) {
+                std::cout << '-';
+            }
             print_bigint(std::cout, int_part);
-            if (frac_part.value != bigint<base>(0)) {
+            if (!frac_part.value.digits.empty()) {
                 std::cout << '.';
                 std::cout << std::string(bigint<base>::digit_length * (-frac_part.magnitude()), '0');
                 frac_part.value.negative = false;

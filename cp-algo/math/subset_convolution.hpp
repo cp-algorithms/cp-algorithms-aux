@@ -17,9 +17,9 @@ namespace cp_algo::math {
     const size_t max_logn = CP_ALGO_SUBSET_CONVOLUTION_MAX_LOGN;
 
     template<auto N>
-    inline void xor_transform(auto &&a) {
+    inline void subset_rank_transform(auto &&a) {
         if constexpr(N >> max_logn) {
-            throw std::runtime_error("N too large for xor_transform");
+            throw std::runtime_error("N too large for subset_rank_transform");
         } else if constexpr(N <= 32) {
             for(size_t i = 1; i < N; i *= 2) {
                 for(size_t j = 0; j < N; j += 2 * i) {
@@ -62,22 +62,22 @@ namespace cp_algo::math {
                 a[i + (size_t)quar * 2] = x2;
                 a[i + (size_t)quar * 3] = x3;
             }
-            xor_transform<quar>(&a[quar * 0]);
-            xor_transform<quar>(&a[quar * 1]);
-            xor_transform<quar>(&a[quar * 2]);
-            xor_transform<quar>(&a[quar * 3]);
+            subset_rank_transform<quar>(&a[quar * 0]);
+            subset_rank_transform<quar>(&a[quar * 1]);
+            subset_rank_transform<quar>(&a[quar * 2]);
+            subset_rank_transform<quar>(&a[quar * 3]);
         }
     }
 
-    inline void xor_transform(auto &&a, auto n) {
+    inline void subset_rank_transform(auto &&a, auto n) {
         with_bit_floor(n, [&]<auto NN>() {
             assert(NN == n);
-            xor_transform<NN>(a);
+            subset_rank_transform<NN>(a);
         });
     }
 
-    inline void xor_transform(auto &&a) {
-        xor_transform(a, std::size(a));
+    inline void subset_rank_transform(auto &&a) {
+        subset_rank_transform(a, std::size(a));
     }
 
     // Generic rank vectors processor with variadic inputs
@@ -148,7 +148,7 @@ namespace cp_algo::math {
 
             checkpoint("init");
             std::apply([](auto&... bufs) {
-                (..., xor_transform(bufs));
+                (..., subset_rank_transform(bufs));
             }, buffers);
             checkpoint("transform");
 
@@ -183,7 +183,7 @@ namespace cp_algo::math {
 
             checkpoint("dot");
             auto &first_buf = std::get<0>(buffers);
-            xor_transform(first_buf);
+            subset_rank_transform(first_buf);
             checkpoint("transform");
 
             // Gather results from first buffer

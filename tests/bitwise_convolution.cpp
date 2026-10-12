@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/math/xor_convolution.hpp"
+#include "cp-algo/math/subset_convolution.hpp"
 #include "cp-algo/math/and_convolution.hpp"
 using namespace cp_algo::math;
 template<class T> void check() {
@@ -16,6 +17,12 @@ template<class T> void check() {
         }
         assert(xor_convolution(a, b) == want_xor);
         assert(and_convolution(a, b) == want_and);
+        std::vector<T> want_subset(n);
+        for(size_t i = 0; i < n; i++) for(size_t j = 0; j < n; j++) {
+            if(!(i & j)) want_subset[i | j] += a[i] * b[j];
+        }
+        auto subset = subset_convolution<T>(std::span(a), std::span(b));
+        assert(std::ranges::equal(subset, want_subset));
     }
 }
 int main() {

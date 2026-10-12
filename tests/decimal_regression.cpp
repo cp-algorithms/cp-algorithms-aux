@@ -22,4 +22,10 @@ int main() {
     }
     auto [q,r] = divmod_fast(parse("18446744073709551617"), std::numeric_limits<int64_t>::min());
     assert(str(q)=="-2" && str(r)=="1");
+    for(int q=-40;q<=40;q++) {
+        decimal<> x(int64_t(q)*2500000000000000LL, -1);
+        auto want = q < 0 ? -((-q+2)/4) : (q+2)/4;
+        assert(str(x.round())==std::to_string(want));
+    }
+
 }

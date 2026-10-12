@@ -4,7 +4,7 @@
 #include "bit_array.hpp"
 namespace cp_algo::structures {
     template<size_t maxc>
-    using popcount_array = std::array<int, maxc / bit_width<uint64_t> + 1>;
+    using popcount_array = std::array<int, (maxc + bit_width<uint64_t> - 1) / bit_width<uint64_t> + 1>;
     // fenwick-based set for [0, maxc)
     template<size_t maxc>
     struct fenwick_set: fenwick<int, popcount_array<maxc>> {

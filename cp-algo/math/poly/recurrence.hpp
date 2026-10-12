@@ -22,11 +22,12 @@ namespace cp_algo::math::poly::impl {
         auto [q0, q1] = q.bisect();
         auto qq = q0 * q0 - (q1 * q1).mul_xk_inplace(1);
         inv_inplace(qq, k / 2 - q.deg() / 2, (n + 1) / 2 + q.deg() / 2);
-        size_t N = fft::com_size(size(q0.a), size(qq.a));
+        size_t offset = q.deg() / 2;
+        size_t M = offset + (n + 1) / 2;
+        size_t N = std::max(fft::com_size(std::max(size(q0.a), size(q1.a)), size(qq.a)), (M + 1) / 2);
         auto q0f = fft::spectrum<base>(q0.a, 2 * N);
         auto q1f = fft::spectrum<base>(q1.a, 2 * N);
         auto qqf = fft::spectrum<base>(qq.a, 2 * N);
-        size_t M = q0.deg() + (n + 1) / 2;
         typename poly::Vector A, B;
         A.resize((M + fft::flen - 1) / fft::flen * fft::flen);
         B.resize((M + fft::flen - 1) / fft::flen * fft::flen);
@@ -34,8 +35,8 @@ namespace cp_algo::math::poly::impl {
         std::move(q1f).multiply(qqf, B, M);
         q.a.resize(n + 1);
         for(size_t i = 0; i < n; i += 2) {
-            q.a[i] = A[q0.deg() + i / 2];
-            q.a[i + 1] = -B[q0.deg() + i / 2];
+            q.a[i] = A[offset + i / 2];
+            q.a[i + 1] = -B[offset + i / 2];
         }
         q.a.pop_back();
         q.normalize();

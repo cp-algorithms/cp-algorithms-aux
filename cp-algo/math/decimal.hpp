@@ -120,7 +120,7 @@ namespace cp_algo::math {
         }
         bool neg_a = a.negative;
         bool neg_b = b < 0;
-        b = std::abs(b);
+        uint64_t divisor = neg_b ? -uint64_t(b) : uint64_t(b);
         
         bigint<base> quotient;
         uint64_t remainder = 0;
@@ -128,8 +128,8 @@ namespace cp_algo::math {
         auto n = ssize(a.digits);
         for (auto i = n - 1; i >= 0; i--) {
             __uint128_t val = (__uint128_t)remainder * bigint<base>::Base + a.digits[i];
-            uint64_t q = uint64_t(val / b);
-            remainder = uint64_t(val % b);
+            uint64_t q = uint64_t(val / divisor);
+            remainder = uint64_t(val % divisor);
             quotient.digits.push_back(q);
         }
         std::ranges::reverse(quotient.digits);
@@ -138,12 +138,23 @@ namespace cp_algo::math {
         
         bigint<base> rem{int64_t(remainder)};
         rem.negative = neg_a;
+        rem.normalize();
         
         return std::pair{quotient, rem};
     }
 
     template<base_v base>
-    auto divmod(bigint<base> const& a, bigint<base> const& b) {
+    std::pair<bigint<base>, bigint<base>> divmod(bigint<base> const& a, bigint<base> const& b) {
+        if(a.negative || b.negative) {
+            auto magnitude_a = a, magnitude_b = b;
+            magnitude_a.negative = magnitude_b.negative = false;
+            auto [quotient, remainder] = divmod(magnitude_a, magnitude_b);
+            quotient.negative = a.negative != b.negative;
+            remainder.negative = a.negative;
+            quotient.normalize();
+            remainder.normalize();
+            return std::pair{quotient, remainder};
+        }
         if (a < b) {
             return std::pair{bigint<base>(0), a};
         }

@@ -6,7 +6,7 @@ namespace cp_algo::math {
     // Find min non-negative x s.t. a*b^x = c (mod m)
     template<typename _Int>
     std::optional<_Int> discrete_log(_Int b, _Int c, _Int m, _Int a = 1) {
-        if(std::abs(a - c) % m == 0) {
+        if((__int128_t(a) - __int128_t(c)) % m == 0) {
             return 0;
         }
         _Int next = _Int(__int128_t(a) * b % m);

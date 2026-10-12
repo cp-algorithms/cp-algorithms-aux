@@ -38,12 +38,17 @@ namespace cp_algo {
         auto key = [&](auto const& x) -> key_type {
             return key_type(std::invoke(proj, x)) - key_type(std::invoke(proj, mn));
         };
+        auto range = key(mx);
         with_bit_floor<1>(size(a), [&]<size_t floor>() {
             constexpr int base = std::min<size_t>(floor, 1 << 16);
-            for(int64_t i = 1; i <= key(mx); i *= base) {
+            for(key_type i = 1; i <= range;) {
                 count_sort<base>(a, [&](auto const& x) {
                     return key(x) / i % base;
                 });
+                if(range / i < base) {
+                    break;
+                }
+                i *= base;
             }
         });
     }

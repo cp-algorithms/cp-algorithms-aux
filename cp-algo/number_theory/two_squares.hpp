@@ -12,14 +12,15 @@ namespace cp_algo::math {
     using gaussint = complex<T>;
     template<typename _Int>
     auto two_squares_prime_any(_Int p) {
+        using Int = std::make_signed_t<_Int>;
         if(p == 2) {
-            return gaussint<_Int>{1, 1};
+            return gaussint<Int>{1, 1};
         }
         assert(p % 4 == 1);
-        using Int = std::make_signed_t<_Int>;
-        using base = dynamic_modint<Int>;
+        using modular_int = std::conditional_t<(sizeof(Int) < sizeof(int64_t)), int64_t, Int>;
+        using base = dynamic_modint<modular_int>;
         return base::with_mod(p, [&](){
-            base g = primitive_root(p);
+            base g = primitive_root(modular_int(p));
             int64_t i = bpow(g, (p - 1) / 4).getr();
             int64_t q0 = 1, q1 = 0;
             int64_t r = i, m = p;
@@ -29,12 +30,13 @@ namespace cp_algo::math {
                 q0 = std::exchange(q1, q0 + d * q1);
                 r = std::exchange(m, r % m);
             } while(q1 < p / q1);
-            return gaussint<_Int>{q0, (base(i) * base(q0)).rem()};
+            return gaussint<Int>{Int(q0), Int((base(i) * base(q0)).rem())};
         });
     }
 
     template<typename Int>
-    big_vector<gaussint<Int>> two_squares_all(Int n) {
+    big_vector<gaussint<std::make_signed_t<Int>>> two_squares_all(Int n) {
+        using coefficient = std::make_signed_t<Int>;
         if(n == 0) {
             return {0};
         }
@@ -43,12 +45,12 @@ namespace cp_algo::math {
         for(auto p: primes) {
             cnt[p]++;
         }
-        big_vector<gaussint<Int>> res = {1};
+        big_vector<gaussint<coefficient>> res = {1};
         for(auto [p, c]: cnt) {
-            big_vector<gaussint<Int>> nres;
+            big_vector<gaussint<coefficient>> nres;
             if(p % 4 == 3) {
                 if(c % 2 == 0) {
-                    auto mul = bpow(gaussint<Int>(p), c / 2);
+                    auto mul = bpow(gaussint<coefficient>(p), c / 2);
                     for(auto p: res) {
                         nres.push_back(p * mul);
                     }
@@ -62,17 +64,17 @@ namespace cp_algo::math {
                     }
                 }
             } else if(p % 4 == 2) {
-                auto mul = bpow(gaussint<Int>(1, 1), c);
+                auto mul = bpow(gaussint<coefficient>(1, 1), c);
                 for(auto p: res) {
                     nres.push_back(p * mul);
                 }
             }
             res = nres;
         }
-        big_vector<gaussint<Int>> nres;
+        big_vector<gaussint<coefficient>> nres;
         for(auto p: res) {
             while(p.real() < 0 || p.imag() < 0) {
-                p *= gaussint<Int>(0, 1);
+                p *= gaussint<coefficient>(0, 1);
             }
             nres.push_back(p);
             if(!p.real() || !p.imag()) {

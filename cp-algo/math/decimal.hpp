@@ -99,7 +99,8 @@ namespace cp_algo::math {
         decimal inv(int64_t precision) {
             assert(precision >= 0);
             int64_t lead = llround((double)bigint<base>::Base / (double)value.digits.back());
-            decimal d(bigint<base>(lead), -ssize(value.digits));
+            if(value.negative) {lead = -lead;}
+            decimal d(bigint<base>(lead), -ssize(value.digits) - scale);
             size_t cur = 2;
             decimal amend = decimal(1) - trunc(cur) * d;
             while(-amend.magnitude() < precision) {

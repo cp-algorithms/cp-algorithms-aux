@@ -16,7 +16,7 @@ namespace cp_algo::math {
         static constexpr uint16_t sub_base = base == x10 ? 10 : 16;
         static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e4) : uint32_t(1 << 15);
         big_basic_string<uint64_t> digits;
-        bool negative;
+        bool negative = false;
 
         auto operator <=> (bigint const& other) const {
             // Handle zero cases

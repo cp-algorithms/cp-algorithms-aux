@@ -58,6 +58,13 @@ namespace cp_algo::math {
     template<typename T>
     T kth_rec(poly_t<T> P, poly_t<T> Q, int64_t k) {
         assert(k >= 0 && Q[0] != T(0));
+        T polynomial_part = 0;
+        if(P.deg() >= Q.deg()) {
+            auto [quotient, remainder] = divmod(std::move(P), Q);
+            polynomial_part = k <= quotient.deg() ? quotient[int(k)] : T(0);
+            P = std::move(remainder);
+        }
+        if(P.is_zero()) {return polynomial_part;}
         while(k > Q.deg()) {
             size_t n = Q.a.size();
             auto [Q0, Q1] = Q.bisect();
@@ -91,7 +98,7 @@ namespace cp_algo::math {
         }
         size_t n = size_t(k) + 1;
         P.mul_truncate(inv(std::move(Q), n), n);
-        return P[(int)k];
+        return polynomial_part + P[(int)k];
     }
 }
 #pragma GCC pop_options

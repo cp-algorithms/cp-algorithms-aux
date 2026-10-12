@@ -18,4 +18,10 @@ int main() {
     assert(str(bigint<>(2) * std::numeric_limits<int64_t>::min()) == "-18446744073709551616");
     assert(str(bigint<>(0) * int64_t(-1)) == "0");
 
+    std::optional<bigint<>> default_value(std::in_place,-1);
+    default_value.reset();default_value.emplace();
+    assert(str(*default_value)=="0");
+    assert((*default_value<=>bigint<>(0))==0);
+    *default_value+=bigint<>(2);assert(str(*default_value)=="2");
+
 }

@@ -355,7 +355,8 @@ namespace cp_algo::math {
             out << '-';
         }
         if (empty(x.digits)) {
-            return print_digit<base, fill_all>(out, 0);
+            print_digit<base, fill_all>(out, 0);
+            return out;
         }
         print_digit<base, fill_all>(out, x.digits.back());
         for (auto d: x.digits | std::views::reverse | std::views::drop(1)) {

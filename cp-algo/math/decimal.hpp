@@ -79,7 +79,7 @@ namespace cp_algo::math {
             } else {
                 auto res = value.top(ssize(value.digits) + scale);
                 if (value.digits[-scale - 1] * 2 >= bigint<base>::Base) {
-                    res += 1;
+                    res += value.negative ? -1 : 1;
                 }
                 return res;
             }

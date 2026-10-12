@@ -9,8 +9,9 @@ namespace cp_algo::math {
         if(std::abs(a - c) % m == 0) {
             return 0;
         }
-        if(std::gcd(a, m) != std::gcd(int64_t(a) * b, int64_t(m))) {
-            auto res = discrete_log(b, c, m, _Int(int64_t(a) * b % m));
+        _Int next = _Int(__int128_t(a) * b % m);
+        if(std::gcd(a, m) != std::gcd(next, m)) {
+            auto res = discrete_log(b, c, m, next);
             return res ? std::optional(*res + 1) : res;
         }
         // Remove the multiplier's annihilator before computing the period.

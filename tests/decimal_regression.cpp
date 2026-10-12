@@ -28,4 +28,10 @@ int main() {
         assert(str(x.round())==std::to_string(want));
     }
 
+    for(int scale=-3;scale<=3;scale++) for(int v:{-7,-2,1,2,7}) {
+        decimal<> x(v,scale);auto reciprocal=x.inv(3);
+        auto error=decimal<>(1)-x*reciprocal;
+        assert(error.magnitude()<=-3);
+    }
+
 }

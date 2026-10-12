@@ -16,8 +16,8 @@ namespace cp_algo::structures {
         fenwick_set(): Base(popcount_array<maxc>{}) {}
         fenwick_set(auto &&range): fenwick_set() {
             for(auto x: range) {
-                Base::data[x / word + 1] += 1;
                 if(!bits.test(x)) {
+                    Base::data[x / word + 1] += 1;
                     sz++;
                     bits.flip(x);
                 }

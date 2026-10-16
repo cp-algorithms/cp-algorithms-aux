@@ -27,14 +27,14 @@ template<class T> void check() {
         for(int64_t v : {int64_t(0), m / 2, m - 1}) {input << v << ' ';}
         for(int64_t v : {int64_t(0), m / 2, m - 1}) {
             T value;
-            assert(&read_reduced(input, value) == &input);
+            assert(&value.read_reduced(input) == &input);
             assert(input && value.getr() == uint64_t(v));
         }
         for(std::string text : {"", "word", "18446744073709551616"}) {
             std::istringstream bad(text);
             T value = 7;
             auto before = value.getr();
-            read_reduced(bad, value);
+            value.read_reduced(bad);
             assert(bad.fail() && value.getr() == before);
         }
     }

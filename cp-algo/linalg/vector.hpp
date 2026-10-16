@@ -66,7 +66,7 @@ namespace cp_algo::linalg {
         // Every input coefficient must already be in [0, base::mod()).
         void read_reduced() requires math::modint_type<base> {
             for(auto &it: *this) {
-                math::read_reduced(std::cin, it);
+                it.read_reduced();
             }
         }
         void print() const {

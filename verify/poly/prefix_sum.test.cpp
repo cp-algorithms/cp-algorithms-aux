@@ -18,7 +18,7 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector f(n);
-    for(auto &x : f) cp_algo::math::read_reduced(cin, x);
+    for(auto &x : f) x.read_reduced();
     prefix_sum(polyn(std::move(f))).print(n + 1);
 
 }

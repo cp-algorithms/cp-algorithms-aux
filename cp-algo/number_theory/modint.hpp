@@ -72,6 +72,13 @@ namespace cp_algo::math {
         constexpr UInt getr() const {
             return r;
         }
+        // Input must already satisfy 0 <= value < mod(); no reduction or range check.
+        // Failed extraction leaves the value unchanged.
+        decltype(std::cin)& read_reduced(decltype(std::cin)& in = std::cin) {
+            UInt value;
+            if(in >> value) {to_modint().setr(value);}
+            return in;
+        }
 
         // Only use these if you really know what you're doing!
         static uint64_t modmod8() { return uint64_t(8 * modmod()); }
@@ -95,14 +102,6 @@ namespace cp_algo::math {
     };
     template<typename modint>
     concept modint_type = std::is_base_of_v<modint_base<modint, typename modint::Int>, modint>;
-    // Input must already satisfy 0 <= value < mod(); no reduction or range check.
-    // Failed extraction leaves x unchanged.
-    template<modint_type modint>
-    decltype(std::cin)& read_reduced(decltype(std::cin)& in, modint& x) {
-        typename modint::UInt r;
-        if(in >> r) {x.setr(r);}
-        return in;
-    }
     // Read a signed integer with the modint's storage width, then reduce it.
     // Failed extraction leaves x unchanged.
     template<modint_type modint>
@@ -110,6 +109,7 @@ namespace cp_algo::math {
         using UInt = typename modint::UInt;
         std::make_signed_t<UInt> value;
         if(in >> value) {
+            // Convert before negating so the signed minimum is supported too.
             UInt magnitude = value < 0 ? -UInt(value) : UInt(value);
             bool reduce = true;
             if constexpr(requires { modint::m_transform(UInt{}); }) {

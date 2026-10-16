@@ -101,7 +101,7 @@ namespace cp_algo::math::fft {
         // Every input coefficient must already be in [0, base::mod()).
         void read_reduced() {
             for(auto &it: data) {
-                math::read_reduced(std::cin, it);
+                it.read_reduced();
             }
             checkpoint("multivar read");
         }

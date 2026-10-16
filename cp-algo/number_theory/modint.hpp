@@ -94,14 +94,27 @@ namespace cp_algo::math {
     };
     template<typename modint>
     concept modint_type = std::is_base_of_v<modint_base<modint, typename modint::Int>, modint>;
-    // Contest input must already be reduced: 0 <= value < mod().
-    // This intentionally skips validation and normalization on the input hot path.
+    // Input must already satisfy 0 <= value < mod(); no reduction or range check.
+    // Failed extraction leaves x unchanged.
+    template<modint_type modint>
+    decltype(std::cin)& read_reduced(decltype(std::cin)& in, modint& x) {
+        typename modint::UInt r;
+        if(in >> r) {x.setr(r);}
+        return in;
+    }
+    // Read a signed 64-bit integer and reduce it modulo mod().
+    // Failed extraction leaves x unchanged; already-reduced input skips division.
     template<modint_type modint>
     decltype(std::cin)& operator>>(decltype(std::cin)& in, modint& x) {
-        typename modint::UInt r;
-        auto &res = in >> r;
-        x.setr(r);
-        return res;
+        int64_t r;
+        if(in >> r) {
+            if(uint64_t(r) >= uint64_t(modint::mod())) {
+                r %= int64_t(modint::mod());
+                if(r < 0) {r += modint::mod();}
+            }
+            x.setr(typename modint::UInt(r));
+        }
+        return in;
     }
     template<modint_type modint>
     decltype(std::cout)& operator<<(decltype(std::cout)& out, modint const& x) {

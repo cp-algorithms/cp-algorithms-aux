@@ -1,30 +1,118 @@
 #include "cp-algo/number_theory/modint.hpp"
+#include <bit>
 #include <cassert>
+#include <cstdint>
+#include <iomanip>
+#include <limits>
+#include <random>
 #include <sstream>
+#include <string>
 #include <vector>
 
 using namespace cp_algo::math;
 
-template <class T> void check() {
-    std::vector<typename T::UInt> values{0, 1, typename T::UInt(T::mod() / 2), typename T::UInt(T::mod() - 1)};
+template<class T> uint64_t reference(int64_t value) {
+    __int128 r = __int128(value) % __int128(T::mod());
+    return uint64_t(r < 0 ? r + T::mod() : r);
+}
+
+template<class T> void check() {
+    int64_t m = T::mod();
+    {
+        std::stringstream input;
+        for(int64_t v : {int64_t(0), m / 2, m - 1}) {input << v << ' ';}
+        for(int64_t v : {int64_t(0), m / 2, m - 1}) {
+            T value;
+            assert(&read_reduced(input, value) == &input);
+            assert(input && value.getr() == uint64_t(v));
+        }
+        for(std::string text : {"", "word", "18446744073709551616"}) {
+            std::istringstream bad(text);
+            T value = 7;
+            auto before = value.getr();
+            read_reduced(bad, value);
+            assert(bad.fail() && value.getr() == before);
+        }
+    }
+    std::vector<int64_t> values{0, 1, -1, m - 1, m, -m, -m + 1,
+        INT32_MIN, INT32_MAX, int64_t(UINT32_MAX), INT64_MIN, INT64_MAX};
+    if(m < INT64_MAX) { values.push_back(m + 1); }
+    std::mt19937_64 random(627491);
+    for(int i = 0; i < 1024; i++) {
+        values.push_back(std::bit_cast<int64_t>(random()));
+    }
     std::stringstream input;
-    for(auto x : values)
-        input << x << ' ';
-    for(auto x : values) {
-        T value;
-        input >> value;
-        assert(value.getr() == x);
-        assert((value + T(1)).getr() == (x + 1) % T::mod());
+    for(auto v : values) { input << v << ' '; }
+    for(auto v : values) {
+        T value = 0;
+        assert(&(input >> value) == &input);
+        assert(input);
+        auto expected = reference<T>(v);
+        assert(value.getr() == expected);
+        assert((value + T(1)).getr() == (expected + 1) % uint64_t(m));
+        assert((value * value).getr() == __uint128_t(expected) * expected % uint64_t(m));
+    }
+
+    for(std::string text : {"", " \t\n", "word", "+", "-", "9223372036854775808", "-9223372036854775809"}) {
+        std::istringstream bad(text);
+        T value = 7;
+        auto before = value.getr();
+        assert(&(bad >> value) == &bad);
+        assert(bad.fail());
+        assert(value.getr() == before);
+    }
+    for(auto state : {std::ios::failbit, std::ios::badbit, std::ios::eofbit}) {
+        std::istringstream bad("123");
+        bad.setstate(state);
+        T value = 7;
+        auto before = value.getr();
+        bad >> value;
+        assert(bad.fail() && value.getr() == before);
+    }
+    {
+        std::istringstream bad("invalid");
+        bad.exceptions(std::ios::failbit);
+        T value = 7;
+        auto before = value.getr();
+        bool threw = false;
+        try { bad >> value; } catch(std::ios_base::failure const&) { threw = true; }
+        assert(threw && value.getr() == before);
+    }
+    {
+        std::istringstream input("  +15 -0 12x");
+        T a, b, c;
+        input >> a >> b >> c;
+        assert(a.getr() == reference<T>(15) && b.getr() == 0 && c.getr() == reference<T>(12));
+        assert(input.peek() == 'x');
+        auto before = c.getr();
+        input >> c;
+        assert(input.fail() && c.getr() == before);
+    }
+    {
+        std::istringstream input("ff -ff 7fffffffffffffff -8000000000000000");
+        input >> std::hex;
+        for(int64_t v : {int64_t(255), int64_t(-255), INT64_MAX, INT64_MIN}) {
+            T value;
+            input >> value;
+            assert(!input.fail() && value.getr() == reference<T>(v));
+        }
+        assert(input.eof());
     }
 }
 
 int main() {
+    check<modint<1>>();
+    check<modint<2>>();
     check<modint<998244353>>();
+    check<modint<998244353u>>();
+    check<modint<INT32_MAX>>();
     check<modint<2305843009213693951LL>>();
-    for(int m : {2, 998244353, 2147483647}) {
+    check<modint<2305843009213693951ULL>>();
+    check<modint<INT64_MAX>>();
+    for(int m : {1, 2, 998244353, 1879048201, INT32_MAX}) {
         dynamic_modint<>::with_mod(m, [] { check<dynamic_modint<>>(); });
     }
-    for(int64_t m : {int64_t(998244353), int64_t(2305843009213693951)}) {
+    for(int64_t m : {int64_t(1), int64_t(2), int64_t(998244353), int64_t(2305843009213693951), INT64_MAX - 1, INT64_MAX}) {
         dynamic_modint<int64_t>::with_mod(m, [] { check<dynamic_modint<int64_t>>(); });
     }
 }

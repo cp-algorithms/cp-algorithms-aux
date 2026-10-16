@@ -10,7 +10,7 @@
 namespace cp_algo::math {
     template<typename T>
     using gaussint = complex<T>;
-    // Prime p == 2 or p == 1 (mod 4), with p <= INT64_MAX. Coefficients are signed.
+    // Prime p == 2 or p == 1 (mod 4), with p <= max(make_signed_t<_Int>). Coefficients are signed.
     template<typename _Int>
     auto two_squares_prime_any(_Int p) {
         using Int = std::make_signed_t<_Int>;
@@ -18,10 +18,9 @@ namespace cp_algo::math {
             return gaussint<Int>{1, 1};
         }
         assert(p % 4 == 1);
-        using modular_int = std::conditional_t<(sizeof(Int) < sizeof(int64_t)), int64_t, Int>;
-        using base = dynamic_modint<modular_int>;
+        using base = dynamic_modint<Int>;
         return base::with_mod(p, [&](){
-            base g = primitive_root(modular_int(p));
+            base g = primitive_root(Int(p));
             int64_t i = bpow(g, (p - 1) / 4).getr();
             int64_t q0 = 1, q1 = 0;
             int64_t r = i, m = p;

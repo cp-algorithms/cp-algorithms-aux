@@ -23,7 +23,7 @@ int main() {
     check<int64_t>();
     check<uint32_t>();
     check<uint64_t>();
-    auto z = two_squares_prime_any(uint32_t(4294967197U));
+    auto z = two_squares_prime_any(int64_t(4294967197LL));
     assert(int64_t(z.real()) * z.real() + int64_t(z.imag()) * z.imag() == 4294967197LL);
     for(auto p : two_squares_all(uint64_t(1) << 62))
         assert(__int128(p.real()) * p.real() + __int128(p.imag()) * p.imag() == (__int128(1) << 62));

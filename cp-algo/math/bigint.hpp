@@ -16,7 +16,7 @@ namespace cp_algo::math {
         static constexpr uint16_t sub_base = base == x10 ? 10 : 16;
         static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e4) : uint32_t(1 << 15);
         big_basic_string<uint64_t> digits;
-        bool negative;
+        bool negative = false;
 
         auto operator <=> (bigint const& other) const {
             auto sign = [](bigint const& x) { return x.digits.empty() ? 0 : x.negative ? -1 : 1; };
@@ -157,14 +157,22 @@ namespace cp_algo::math {
         }
         bigint(int64_t x) {
             negative = x < 0;
-            x = negative ? -x : x;
-            digits = x ? big_basic_string<uint64_t>{uint64_t(x)} : big_basic_string<uint64_t>{};
+            uint64_t magnitude = negative ? -uint64_t(x) : uint64_t(x);
+            digits = magnitude ? big_basic_string<uint64_t>{magnitude} : big_basic_string<uint64_t>{};
+            if(magnitude >= Base) [[unlikely]] {
+                digits[0] = magnitude % Base;
+                digits.push_back(magnitude / Base);
+            }
         }
+        // Valid digits in the selected base, optionally prefixed by a minus sign.
         bigint(std::span<char> s): negative(false) {
             if (size(s) < digit_length) {
                 int64_t val = 0;
                 std::from_chars(s.data(), s.data() + size(s), val, sub_base);
-                *this = bigint(val);
+                // This short input fits in one limb; avoid the general scalar constructor.
+                negative = val < 0;
+                uint64_t magnitude = negative ? -uint64_t(val) : uint64_t(val);
+                digits = magnitude ? big_basic_string<uint64_t>{magnitude} : big_basic_string<uint64_t>{};
                 return;
             }
             if (!empty(s) && s[0] == '-') {
@@ -224,22 +232,26 @@ namespace cp_algo::math {
             }
         }
         bigint& operator *= (int64_t other) {
+            if (digits.empty()) {
+                negative = false;
+                return *this;
+            }
             if (other < 0) {
                 negative ^= 1;
-                other = -other;
             }
-            if (other == 0) {
+            uint64_t magnitude = other < 0 ? -uint64_t(other) : uint64_t(other);
+            if (magnitude == 0) {
                 return *this = bigint(0);
-            } else if (other == 1) {
+            } else if (magnitude == 1) {
                 return *this;
             }
             uint64_t carry = 0;
             for (auto &d: digits) {
-                __uint128_t val = __uint128_t(d) * other + carry;
+                __uint128_t val = __uint128_t(d) * magnitude + carry;
                 d = uint64_t(val % base);
                 carry = uint64_t(val / base);
             }
-            if (carry) {
+            while (carry) {
                 digits.push_back(carry % base);
                 carry /= base;
             }
@@ -330,7 +342,8 @@ namespace cp_algo::math {
             out << '-';
         }
         if (empty(x.digits)) {
-            return print_digit<base, fill_all>(out, 0);
+            print_digit<base, fill_all>(out, 0);
+            return out;
         }
         print_digit<base, fill_all>(out, x.digits.back());
         for (auto d: x.digits | std::views::reverse | std::views::drop(1)) {

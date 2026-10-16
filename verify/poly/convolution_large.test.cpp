@@ -17,8 +17,8 @@ void solve() {
     int n, m;
     cin >> n >> m;
     cp_algo::big_vector<base> a(n), b(m);
-    for(auto &x: a) {cin >> x;}
-    for(auto &x: b) {cin >> x;}
+    for(auto &x: a) {x.read_reduced();}
+    for(auto &x: b) {x.read_reduced();}
     cp_algo::checkpoint("read");
     fft::mul(a, b);
     for(auto x: a) {cout << x << " ";}

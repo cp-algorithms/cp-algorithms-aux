@@ -17,8 +17,8 @@ void solve() {
     int n, m, k;
     cin >> n >> m >> k;
     matrix<base> a(n, m), b(m, k);
-    a.read();
-    b.read();
+    a.read_reduced();
+    b.read_reduced();
     (a * b).print();
 }
 

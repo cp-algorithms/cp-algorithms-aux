@@ -3,6 +3,7 @@
 #include "../math/common.hpp"
 #include <iostream>
 #include <cassert>
+#include <type_traits>
 namespace cp_algo::math {
 
     template<typename modint, typename _Int>
@@ -71,6 +72,12 @@ namespace cp_algo::math {
         constexpr UInt getr() const {
             return r;
         }
+        // Input must already satisfy 0 <= value < mod(); no reduction or range check.
+        // Failed extraction leaves the value unchanged.
+        void read_reduced(decltype(std::cin)& in = std::cin) {
+            UInt value;
+            if(in >> value) {to_modint().setr(value);}
+        }
 
         // Only use these if you really know what you're doing!
         static uint64_t modmod8() { return uint64_t(8 * modmod()); }
@@ -94,12 +101,25 @@ namespace cp_algo::math {
     };
     template<typename modint>
     concept modint_type = std::is_base_of_v<modint_base<modint, typename modint::Int>, modint>;
+    // Read a signed integer with the modint's storage width, then reduce it.
+    // Failed extraction leaves x unchanged.
     template<modint_type modint>
     decltype(std::cin)& operator>>(decltype(std::cin)& in, modint& x) {
-        typename modint::UInt r;
-        auto &res = in >> r;
-        x.setr(r);
-        return res;
+        using UInt = typename modint::UInt;
+        std::make_signed_t<UInt> value;
+        if(in >> value) {
+            // Convert before negating so the signed minimum is supported too.
+            UInt magnitude = value < 0 ? -UInt(value) : UInt(value);
+            bool reduce = true;
+            if constexpr(requires { modint::m_transform(UInt{}); }) {
+                // Montgomery conversion already reduces any word for odd moduli.
+                reduce = modint::mod() % 2 == 0;
+            }
+            if(reduce && magnitude >= UInt(modint::mod())) {magnitude %= modint::mod();}
+            x.setr(magnitude);
+            if(value < 0) {x = -x;}
+        }
+        return in;
     }
     template<modint_type modint>
     decltype(std::cout)& operator<<(decltype(std::cout)& out, modint const& x) {

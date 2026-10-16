@@ -32,10 +32,11 @@ namespace cp_algo::geometry {
             for(int dx: {-1, 0, 1}) {
                 for(int dy: {-1, 0, 1}) {
                     auto pp = p + point{dx, dy};
-                    if(!neigs.count(pp)) {
+                    auto it = neigs.find(pp);
+                    if(it == neigs.end()) {
                         continue;
                     }
-                    for(size_t i: neigs[pp]) {
+                    for(size_t i: it->second) {
                         for(size_t j: id) {
                             if(j == i) {
                                 break;

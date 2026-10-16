@@ -1,9 +1,11 @@
 // @brief Multipoint Evaluation (Geometric Sequence)
 #define PROBLEM "https://judge.yosupo.jp/problem/multipoint_evaluation_on_geometric_sequence"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
-#include <bits/stdc++.h>
+#include <iostream>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/chirpz.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -16,8 +18,8 @@ void solve() {
     int n, m, a, r;
     cin >> n >> m >> a >> r;
     polyn::Vector f(n);
-    copy_n(istream_iterator<base>(cin), n, begin(f));
-    polyn(f).mulx(a).chirpz(r, m).print(m);
+    for(auto &it: f) {cin >> it;}
+    chirpz(mulx(polyn(std::move(f)), a), r, m).print(m);
 }
 
 signed main() {

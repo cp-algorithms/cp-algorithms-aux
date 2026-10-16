@@ -1,9 +1,11 @@
 // @brief Polynomial Interpolation (Geometric Sequence)
 #define PROBLEM "https://judge.yosupo.jp/problem/polynomial_interpolation_on_geometric_sequence"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
-#include <bits/stdc++.h>
+#include <iostream>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/chirpz.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -16,8 +18,8 @@ void solve() {
     int n, a, r;
     cin >> n >> a >> r;
     polyn::Vector y(n);
-    copy_n(istream_iterator<base>(cin), n, begin(y));
-    polyn(y).chirpz_inverse(r, n).mulx(base(a).inv()).print(n);
+    for(auto &it: y) {cin >> it;}
+    mulx(chirpz_inverse(polyn(std::move(y)), r, n), base(a).inv()).print(n);
 }
 
 signed main() {

@@ -1,9 +1,10 @@
 // @brief Multipoint Evaluation
 #define PROBLEM "https://judge.yosupo.jp/problem/multipoint_evaluation"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
-#include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/eval.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -16,9 +17,9 @@ void solve() {
     int n, m;
     cin >> n >> m;
     polyn::Vector f(n), x(m);
-    copy_n(istream_iterator<base>(cin), n, begin(f));
-    copy_n(istream_iterator<base>(cin), m, begin(x));
-    polyn(polyn(f).eval(x)).print(m);
+    for(auto &it: f) {cin >> it;}
+    for(auto &it: x) {cin >> it;}
+    polyn(eval(polyn(std::move(f)), x)).print(m);
 }
 
 signed main() {

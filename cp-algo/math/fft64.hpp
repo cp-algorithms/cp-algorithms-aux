@@ -12,10 +12,14 @@ namespace cp_algo::math::fft {
         static bool _init;
 
         static void init() {
-            if(_init) return;
+            if(_init) {
+                return;
+            }
             _init = true;
             factor = random::rng();
-            if(factor % 2 == 0) {factor++;}
+            if(factor % 2 == 0) {
+                factor++;
+            }
             ifactor = inv2(factor);
         }
 
@@ -46,7 +50,8 @@ namespace cp_algo::math::fft {
             }
         }
 
-        static void do_dot_iter(point rt, std::array<vpoint, 4>& B, std::array<vpoint, 4> const& A, std::array<vpoint, 4>& C) {
+        static void do_dot_iter(point rt, std::array<vpoint, 4>& B, std::array<vpoint, 4> const& A,
+                                std::array<vpoint, 4>& C) {
             for(size_t k = 0; k < 4; k++) {
                 for(size_t i = 0; i <= k; i++) {
                     C[k] += A[i] * B[k - i];
@@ -63,27 +68,18 @@ namespace cp_algo::math::fft {
 
         void dot(dft64 const& t) {
             size_t N = cv[0].size();
-            cvector::exec_on_evals<1>(N / flen, [&](size_t k, point rt) __attribute__((always_inline)) {
+            cvector::exec_on_evals<1>(N / flen, [&] [[gnu::always_inline]] (size_t k, point rt) {
                 k *= flen;
                 auto [A0x, A0y] = cv[0].at(k);
                 auto [A1x, A1y] = cv[1].at(k);
                 auto [A2x, A2y] = cv[2].at(k);
                 auto [A3x, A3y] = cv[3].at(k);
-                std::array B = {
-                    t.cv[0].at(k),
-                    t.cv[1].at(k),
-                    t.cv[2].at(k),
-                    t.cv[3].at(k)
-                };
+                std::array B = {t.cv[0].at(k), t.cv[1].at(k), t.cv[2].at(k), t.cv[3].at(k)};
 
                 std::array<vpoint, 4> C = {vz, vz, vz, vz};
-                for (size_t i = 0; i < flen; i++) {
-                    std::array A = {
-                        vpoint{vz + A0x[i], vz + A0y[i]},
-                        vpoint{vz + A1x[i], vz + A1y[i]},
-                        vpoint{vz + A2x[i], vz + A2y[i]},
-                        vpoint{vz + A3x[i], vz + A3y[i]}
-                    };
+                for(size_t i = 0; i < flen; i++) {
+                    std::array A = {vpoint{vz + A0x[i], vz + A0y[i]}, vpoint{vz + A1x[i], vz + A1y[i]},
+                                    vpoint{vz + A2x[i], vz + A2y[i]}, vpoint{vz + A3x[i], vz + A3y[i]}};
                     do_dot_iter(rt, B, A, C);
                 }
                 cv[0].at(k) = C[0];
@@ -104,7 +100,9 @@ namespace cp_algo::math::fft {
                 std::array re = {real(cv[0].get(i)), real(cv[1].get(i)), real(cv[2].get(i)), real(cv[3].get(i))};
                 std::array im = {imag(cv[0].get(i)), imag(cv[1].get(i)), imag(cv[2].get(i)), imag(cv[3].get(i))};
                 auto set_i = [&](size_t i, auto &x, auto mul) {
-                    if (i >= k) return;
+                    if(i >= k) {
+                        return;
+                    }
                     res[i] = llround(x[0]) + (llround(x[1]) << 16) + (llround(x[2]) << 32) + (llround(x[3]) << 48);
                     res[i] *= mul;
                 };
@@ -118,9 +116,9 @@ namespace cp_algo::math::fft {
     uint64_t dft64::factor = 1, dft64::ifactor = 1;
     bool dft64::_init = false;
 
-    void conv64(auto& a, auto const& b) {
+    void conv64(auto &a, auto const& b) {
         size_t n = a.size(), m = b.size();
-        if (n == 0 || m == 0) {
+        if(n == 0 || m == 0) {
             a.clear();
             return;
         }

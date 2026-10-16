@@ -45,29 +45,25 @@ namespace cp_algo::math {
         }
         big_vector<gaussint<Int>> res = {1};
         for(auto [p, c]: cnt) {
-            big_vector<gaussint<Int>> nres;
-            if(p % 4 == 3) {
-                if(c % 2 == 0) {
-                    auto mul = bpow(gaussint<Int>(p), c / 2);
-                    for(auto p: res) {
-                        nres.push_back(p * mul);
-                    }
+            if(p % 4 == 3 && c % 2) {
+                return {};
+            }
+            if(p % 4 != 1) {
+                auto mul = p == 2 ? bpow(gaussint<Int>(1, 1), c) : bpow(gaussint<Int>(p), c / 2);
+                for(auto &value: res) {
+                    value *= mul;
                 }
-            } else if(p % 4 == 1) {
+            } else {
+                big_vector<gaussint<Int>> nres;
                 auto base = two_squares_prime_any(p);
                 for(int i = 0; i <= c; i++) {
                     auto mul = bpow(base, i) * bpow(conj(base), c - i);
-                    for(auto p: res) {
-                        nres.push_back(p * mul);
+                    for(auto value: res) {
+                        nres.push_back(value * mul);
                     }
                 }
-            } else if(p % 4 == 2) {
-                auto mul = bpow(gaussint<Int>(1, 1), c);
-                for(auto p: res) {
-                    nres.push_back(p * mul);
-                }
+                res = std::move(nres);
             }
-            res = nres;
         }
         big_vector<gaussint<Int>> nres;
         for(auto p: res) {

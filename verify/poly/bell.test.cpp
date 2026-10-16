@@ -1,9 +1,12 @@
 // @brief Bell Number
 #define PROBLEM "https://judge.yosupo.jp/problem/bell_number"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
-#include <bits/stdc++.h>
+
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/series.hpp"
+#include "cp-algo/math/poly/transform.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -15,7 +18,7 @@ using polyn = poly_t<base>;
 void solve() {
     int n;
     cin >> n;
-    (polyn::expx(n+1) - polyn(1)).exp_inplace(n+1).invborel().print(n+1);
+    invborel(exp((expx<base>(n+1) - polyn(1)), n+1)).print(n+1);
 }
 
 signed main() {

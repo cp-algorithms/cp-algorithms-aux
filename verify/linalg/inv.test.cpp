@@ -1,22 +1,22 @@
 // @brief Inverse Matrix
 #define PROBLEM "https://judge.yosupo.jp/problem/inverse_matrix"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include <bits/stdc++.h>
-#include "cp-algo/linalg/matrix.hpp"
+#include "cp-algo/linalg/block_inverse.hpp"
 
 using namespace std;
 using namespace cp_algo::linalg;
 using namespace cp_algo::math;
 
-const int64_t mod = 998244353;
+const int mod = 998244353;
 
 void solve() {
     int n;
     cin >> n;
     matrix<modint<mod>> a(n, n);
     a.read();
-    auto [d, ai] = a.inv();
+    auto [d, ai] = block_inverse(a);
     if(d == 0) {
         cout << -1 << "\n";
     } else {

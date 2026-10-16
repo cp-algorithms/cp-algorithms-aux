@@ -32,7 +32,7 @@ namespace cp_algo::graph {
     template<graph_type graph>
     std::pair<node_index, big_deque<edge_index>> find_cycle(graph const& g) {
         auto context = dfs<cycle_context>(g);
-        return {context.v0, context.cycle};
+        return {context.v0, std::move(context.cycle)};
     }
 }
 #endif // CP_ALGO_GRAPH_CYCLE_HPP

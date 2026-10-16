@@ -8,7 +8,7 @@
 #define CP_ALGO_CHECKPOINT
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/math/subset_convolution.hpp"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/eval.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -48,7 +48,7 @@ void solve() {
     auto Y = cp_algo::math::subset_power_projection<base>(indep, w, n+1);
     cp_algo::big_vector<base> X(n+1);
     std::ranges::iota(X, 0);
-    auto res = polyn::inter(X, Y);
+    auto res = inter(X, Y);
     res.print((int)n+1);
 }
 

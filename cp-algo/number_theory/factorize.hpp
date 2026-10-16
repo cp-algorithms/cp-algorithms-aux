@@ -14,18 +14,19 @@ namespace cp_algo::math {
             auto f = [&](auto x) {
                 return x * x + t;
             };
-            base x = 0, y = 0;
-            base g = 1;
-            while(g == 1) {
+            const base zero = 0, one = 1;
+            base x = zero, y = zero;
+            base g = one;
+            while(g == one) {
                 for(int i = 0; i < 64; i++) {
                     x = f(x);
                     y = f(f(y));
                     if(x == y) [[unlikely]] {
                         t = random::rng();
-                        x = y = 0;
+                        x = y = zero;
                     } else {
                         base t = g * (x - y);
-                        g = t == 0 ? g : t;
+                        g = t == zero ? g : t;
                     }
                 }
                 g = std::gcd(g.getr(), m);

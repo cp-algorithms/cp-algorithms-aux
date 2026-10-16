@@ -10,6 +10,8 @@
 namespace cp_algo::structures {
     template<int sigma = 26, char mch = 'a'>
     struct eertree {
+        // Symbols are mch + [0, sigma); byte value 255 after subtracting mch is reserved.
+        static_assert(0 < sigma && sigma <= 255);
         eertree(size_t q) {
             q += 2;
             s = big_string(q, -1);

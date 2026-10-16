@@ -1,3 +1,4 @@
+#include <cassert>
 #include <bits/stdc++.h>
 #ifdef TEST_MINIFIED
 #include "cp-algo/min/structures/fenwick_set.hpp"
@@ -5,7 +6,7 @@
 #include "cp-algo/structures/fenwick_set.hpp"
 #endif
 using set_type = cp_algo::structures::fenwick_set<128>;
-void check(set_type const& values) {
+void check(set_type const &values) {
     assert(values.sz == 2);
     assert(values.find_by_order(0) == 1);
     assert(values.find_by_order(1) == 70);
@@ -20,7 +21,7 @@ int main() {
     check(const_copy);
     auto moved = std::move(copied);
     check(moved);
-    [](set_type value) {check(value);}(original);
+    [](set_type value) { check(value); }(original);
     moved.erase(70);
     check(original);
     std::vector<int> keys = {1, 70};

@@ -6,6 +6,8 @@
 #include <cstdint>
 namespace cp_algo::structures::segtree::metas {
     struct chmin_chmax_sum_meta: base_meta<chmin_chmax_sum_meta> {
+        // Values, clamp bounds, and values after addition must stay strictly in (-inf, inf).
+        // Segment sums must fit int64_t. The endpoints are reserved sentinels, not data.
         static constexpr int64_t inf = 1e12;
 
         using meta = chmin_chmax_sum_meta;
@@ -85,13 +87,13 @@ namespace cp_algo::structures::segtree::metas {
         }
 
         static auto proceed_chmin(int64_t b) {
-            return [b](meta const& t) {return t.mn.val == t.mx.val || t.mx.proceed(b);};
+            return [b](meta const& t) {return t.mx.proceed(b);};
         }
         static auto stop_chmin(int64_t b) {
             return [b](meta const& t) {return t.mx.stop(b);};
         }
         static auto proceed_chmax(int64_t b) {
-            return [b](meta const& t) {return t.mn.val == t.mx.val || t.mn.proceed(b);};
+            return [b](meta const& t) {return t.mn.proceed(b);};
         }
         static auto stop_chmax(int64_t b) {
             return [b](meta const& t) {return t.mn.stop(b);};

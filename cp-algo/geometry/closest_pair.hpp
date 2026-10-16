@@ -6,7 +6,7 @@
 #include <vector>
 #include <map>
 namespace cp_algo::geometry {
-    // Rabin & Lipton
+    // Rabin & Lipton. At least two integral points; every squared distance must fit int64_t.
     auto closest_pair(auto const& r) {
         using point = std::decay_t<decltype(r[0])>;
         size_t n = size(r);
@@ -35,10 +35,11 @@ namespace cp_algo::geometry {
             for(int dx: {-1, 0, 1}) {
                 for(int dy: {-1, 0, 1}) {
                     auto pp = p + point{dx, dy};
-                    if(!neigs.count(pp)) {
+                    auto it = neigs.find(pp);
+                    if(it == neigs.end()) {
                         continue;
                     }
-                    for(size_t i: neigs[pp]) {
+                    for(size_t i: it->second) {
                         for(size_t j: id) {
                             if(j == i) {
                                 break;

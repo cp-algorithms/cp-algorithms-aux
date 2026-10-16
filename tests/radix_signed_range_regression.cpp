@@ -1,3 +1,4 @@
+#include <cassert>
 #include <bits/stdc++.h>
 #ifdef TEST_MINIFIED
 #include "cp-algo/min/util/sort.hpp"
@@ -6,8 +7,7 @@
 #include "cp-algo/util/sort.hpp"
 #include "cp-algo/util/compress_coords.hpp"
 #endif
-template<class T>
-void check(std::vector<T> values) {
+template <class T> void check(std::vector<T> values) {
     auto expected = values;
     std::sort(expected.begin(), expected.end());
     cp_algo::radix_sort(values);
@@ -22,7 +22,8 @@ int main() {
     std::mt19937 rng(8731);
     for(int test = 0; test < 1000; ++test) {
         std::vector<int> values(1 + rng() % 256);
-        for(auto& x: values) x = int(rng());
+        for(auto &x : values)
+            x = int(rng());
         check(values);
     }
     std::vector<int> values = {INT_MAX, INT_MIN, 0, INT_MAX};

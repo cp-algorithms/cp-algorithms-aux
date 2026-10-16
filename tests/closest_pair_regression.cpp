@@ -1,3 +1,4 @@
+#include <cassert>
 #include <bits/stdc++.h>
 #ifdef TEST_MINIFIED
 #include "cp-algo/min/geometry/closest_pair.hpp"
@@ -5,7 +6,7 @@
 #include "cp-algo/geometry/closest_pair.hpp"
 #endif
 using point = cp_algo::geometry::point_t<int64_t>;
-void check(std::vector<point> const& points) {
+void check(std::vector<point> const &points) {
     auto [a, b] = cp_algo::geometry::closest_pair(points);
     int64_t expected = std::numeric_limits<int64_t>::max();
     for(size_t i = 0; i < points.size(); ++i) {
@@ -22,8 +23,7 @@ int main() {
     for(int test = 0; test < 1000; ++test) {
         std::vector<point> points;
         for(int i = 0, n = 2 + rng() % 150; i < n; ++i) {
-            points.emplace_back(int64_t(rng() % 2000000001) - 1000000000,
-                                int64_t(rng() % 2000000001) - 1000000000);
+            points.emplace_back(int64_t(rng() % 2000000001) - 1000000000, int64_t(rng() % 2000000001) - 1000000000);
         }
         check(points);
     }

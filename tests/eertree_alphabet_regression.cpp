@@ -1,11 +1,11 @@
+#include <cassert>
 #include <bits/stdc++.h>
 #ifdef TEST_MINIFIED
 #include "cp-algo/min/structures/eertree.hpp"
 #else
 #include "cp-algo/structures/eertree.hpp"
 #endif
-template<int Sigma, char First>
-void check(std::string const& text) {
+template <int Sigma, char First> void check(std::string const &text) {
     cp_algo::structures::eertree<Sigma, First> tree(text.size());
     std::map<std::string, int> ids;
     for(size_t end = 0; end < text.size(); ++end) {
@@ -33,6 +33,7 @@ void check(std::string const& text) {
 }
 int main() {
     check<10, '0'>("000000");
+    check<2, char(127)>(std::string{char(127), char(128), char(127), char(128)});
     std::mt19937 rng(2931);
     for(int test = 0; test < 500; ++test) {
         std::string digits(1 + rng() % 80, '0');
@@ -45,5 +46,9 @@ int main() {
         check<10, '0'>(digits);
         check<26, 'A'>(upper);
         check<26, 'a'>(lower);
+        std::string bytes(digits.size(), 0);
+        for(char &c : bytes)
+            c = char(rng() % 255);
+        check<255, 0>(bytes);
     }
 }

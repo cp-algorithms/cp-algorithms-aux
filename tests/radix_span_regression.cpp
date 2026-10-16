@@ -1,3 +1,4 @@
+#include <cassert>
 #include <bits/stdc++.h>
 #ifdef TEST_MINIFIED
 #include "cp-algo/min/util/compress_coords.hpp"
@@ -6,7 +7,7 @@
 #endif
 struct item {
     int key, index;
-    bool operator==(item const&) const = default;
+    bool operator==(item const &) const = default;
 };
 int main() {
     std::vector<int> values = {1, 0};
@@ -26,11 +27,12 @@ int main() {
     std::mt19937 rng(3182);
     for(int test = 0; test < 500; ++test) {
         std::vector<item> items;
-        for(int i = 0, n = 1 + rng() % 200; i < n; ++i) items.push_back({int(rng() % 9) - 4, i});
+        for(int i = 0, n = 1 + rng() % 200; i < n; ++i)
+            items.push_back({int(rng() % 9) - 4, i});
         auto expected = items;
-        std::stable_sort(expected.begin(), expected.end(), [](auto a, auto b) {return a.key < b.key;});
+        std::stable_sort(expected.begin(), expected.end(), [](auto a, auto b) { return a.key < b.key; });
         std::span<item> range(items);
-        cp_algo::radix_sort(range, [](auto x) {return x.key;});
+        cp_algo::radix_sort(range, [](auto x) { return x.key; });
         assert(items == expected);
     }
 }

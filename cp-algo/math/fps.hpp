@@ -115,9 +115,7 @@ namespace cp_algo::math::fps_detail {
     struct product_transforms {};
     template<modint_type T>
     struct product_transforms<T> {
-        // Shared because the enclosing product is copied into a std::function, and immutable
-        // because a transform is only ever read after it is built.
-        std::vector<std::shared_ptr<fft::spectrum<T> const>> transforms;
+        std::vector<std::optional<fft::spectrum<T>>> transforms;
     };
     // One fixed input: each completed dyadic block fills the following block.
     // Cache fixed prefix transforms; only the middle of each product is needed.
@@ -177,7 +175,7 @@ namespace cp_algo::math::fps_detail {
                         for(size_t j = 0; j < count; j++) {
                             block[j] = coefficient(j);
                         }
-                        fixed = std::make_shared<fft::spectrum<T> const>(block, 2 * len);
+                        fixed.emplace(block, 2 * len);
                     }
                     big_vector<T> result(2 * len);
                     fft::spectrum<T>(std::span(b).subspan(start, len), 2 * len).multiply(*fixed, result, 2 * len);
@@ -206,7 +204,7 @@ namespace cp_algo::math {
     template<typename T>
     class fps {
         struct state {
-            std::function<T(size_t, big_vector<T> const&)> generate;
+            std::move_only_function<T(size_t, big_vector<T> const&)> generate;
             big_vector<T> cache;
             enum status { idle, fixed, active } mode = idle;
             T get(size_t n) {

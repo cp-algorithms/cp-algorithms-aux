@@ -140,6 +140,25 @@ namespace cp_algo::math {
         using Base = modint_base<dynamic_modint<Int>, Int>;
         using Base::Base;
 
+        friend decltype(std::cin)& operator>>(decltype(std::cin)& in, dynamic_modint& x) {
+            int64_t r;
+            if(in >> r) {
+                uint64_t magnitude = r < 0 ? -uint64_t(r) : uint64_t(r);
+                // Montgomery conversion accepts any unsigned word for an odd modulus.
+                if(Base::bits >= 32 && mod() % 2 && magnitude <= typename Base::UInt(-1)) {
+                    x.setr(typename Base::UInt(magnitude));
+                    if(r < 0) {x = -x;}
+                } else {
+                    if(uint64_t(r) >= uint64_t(mod())) {
+                        r %= int64_t(mod());
+                        if(r < 0) {r += mod();}
+                    }
+                    x.setr(typename Base::UInt(r));
+                }
+            }
+            return in;
+        }
+
         // Out of line, so that the hot path stays as small as it was.
         [[gnu::noinline, gnu::cold]] static Base::UInt m_reduce_reduced(Base::UInt2 ab) {
             if(mod() % 2 == 0) {

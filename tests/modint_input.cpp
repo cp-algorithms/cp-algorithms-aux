@@ -35,7 +35,8 @@ template<class T> void check() {
         }
     }
     std::vector<int64_t> values{0, 1, -1, m - 1, m, -m, -m + 1,
-        INT32_MIN, INT32_MAX, int64_t(UINT32_MAX), INT64_MIN, INT64_MAX};
+        INT32_MIN, INT32_MAX, int64_t(UINT32_MAX), int64_t(UINT32_MAX) + 1,
+        -int64_t(UINT32_MAX) - 1, INT64_MIN, INT64_MAX};
     if(m < INT64_MAX) { values.push_back(m + 1); }
     std::mt19937_64 random(627491);
     for(int i = 0; i < 1024; i++) {
@@ -109,7 +110,7 @@ int main() {
     check<modint<2305843009213693951LL>>();
     check<modint<2305843009213693951ULL>>();
     check<modint<INT64_MAX>>();
-    for(int m : {1, 2, 998244353, 1879048201, INT32_MAX}) {
+    for(int m : {1, 2, 3, 10, 998244353, 1073741823, 1073741825, 1879048201, INT32_MAX}) {
         dynamic_modint<>::with_mod(m, [] { check<dynamic_modint<>>(); });
     }
     for(int64_t m : {int64_t(1), int64_t(2), int64_t(998244353), int64_t(2305843009213693951), INT64_MAX - 1, INT64_MAX}) {

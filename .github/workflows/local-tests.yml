@@ -1,0 +1,39 @@
+name: local-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        headers: [source, minified]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Run C++ regressions
+        env:
+          CXX: g++-14
+          HEADERS: ${{ matrix.headers }}
+        run: |
+          g++-14 --version
+          args=()
+          if [ "$HEADERS" = minified ]; then args+=(--minified); fi
+          python3 tests/run.py --jobs 2 "${args[@]}"
+      - name: Test minifier
+        if: matrix.headers == 'source'
+        run: python3 tests/test_minify.py

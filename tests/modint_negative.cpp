@@ -11,6 +11,13 @@ template <class T> void check() {
             r += T::mod();
         assert(T(x).getr() == r);
     }
+    using Wide = typename T::Int2;
+    for(Wide x : {std::numeric_limits<Wide>::min(), std::numeric_limits<Wide>::max()}) {
+        __int128 residue = __int128(x) % T::mod();
+        if(residue < 0)
+            residue += T::mod();
+        assert(T(x).getr() == residue);
+    }
 }
 int main() {
     check<modint<7>>();

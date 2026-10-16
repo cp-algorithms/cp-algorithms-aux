@@ -28,6 +28,7 @@ namespace cp_algo::math {
             Int2 residue = rr % Int2(mod());
             to_modint().setr(UInt(residue < 0 ? residue + mod() : residue));
         }
+        // Fermat inversion: mod() must be prime and the residue nonzero.
         constexpr modint inv() const {
             return bpow(to_modint(), mod() - 2);
         }
@@ -172,7 +173,7 @@ namespace cp_algo::math {
         static Base::UInt2 pw128() { return r2; }
         static void switch_mod(Int nm) {
             // Positive signed moduli ensure two canonical residues fit UInt.
-            assert(nm > 0);
+            assert(nm > 0 && nm <= Int(std::numeric_limits<std::make_signed_t<Int>>::max()));
             m = nm;
             bool lazy = m % 2 && typename Base::UInt(m) <= typename Base::UInt(-1) / 4;
             rm = typename Base::UInt(m) * (lazy ? 2 : 1);

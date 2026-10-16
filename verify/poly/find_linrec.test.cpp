@@ -1,7 +1,12 @@
 // @brief Find Linear Recurrence
 #define PROBLEM "https://judge.yosupo.jp/problem/find_linear_recurrence"
-#include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
+#pragma GCC optimize("O3,unroll-loops")
+//#include <bits/allocator.h>
+#pragma GCC target("avx2")
+#include <iostream>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/recurrence.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -14,8 +19,8 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector a(n);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
-    auto Q = polyn(a).min_rec(n);
+    for(auto &it: a) {cin >> it;}
+    auto Q = min_rec(polyn(std::move(a)), n);
     int d = Q.deg();
     cout << d << endl;
     (-Q / Q[d]).reverse().div_xk(1).print(d);

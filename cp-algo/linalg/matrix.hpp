@@ -3,6 +3,7 @@
 #include "../random/rng.hpp"
 #include "../math/common.hpp"
 #include "vector.hpp"
+#include "strassen.hpp"
 #include <iostream>
 #include <optional>
 #include <cassert>
@@ -10,30 +11,33 @@
 #include <array>
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::linalg {
-    enum gauss_mode {normal, reverse};
+    enum gauss_mode { normal, reverse };
 
-    template<typename base_t, class _vec_t = std::conditional_t<
-        math::modint_type<base_t>,
-        modint_vec<base_t>,
-        vec<base_t>>>
+    template<typename base_t,
+             class _vec_t = std::conditional_t<math::modint_type<base_t>, modint_vec<base_t>, vec<base_t>>>
     struct matrix: big_vector<_vec_t> {
         using vec_t = _vec_t;
         using base = base_t;
         using Base = big_vector<vec_t>;
         using Base::Base;
 
-        matrix(size_t n): Base(n, vec_t(n)) {}
-        matrix(size_t n, size_t m): Base(n, vec_t(m)) {}
+        matrix(size_t n): matrix(n, n) {}
+        matrix(size_t n, size_t m) {
+            Base::reserve(n);
+            for(size_t i = 0; i < n; i++) {
+                Base::emplace_back(m);
+            }
+        }
 
         matrix(Base const& t): Base(t) {}
-        matrix(Base &&t): Base(std::move(t)) {}
-        
-        template<std::ranges::input_range R>
-        matrix(R &&r): Base(r.begin(), r.end()) {}
+        matrix(Base&& t): Base(std::move(t)) {}
 
-        size_t n() const {return size(*this);}
-        size_t m() const {return n() ? size(row(0)) : 0;}
-        
+        template<std::ranges::input_range R>
+        matrix(R&& r): Base(r.begin(), r.end()) {}
+
+        size_t n() const { return size(*this); }
+        size_t m() const { return n() ? size(row(0)) : 0; }
+
         void resize(size_t n, size_t m) {
             Base::resize(n);
             for(auto &it: *this) {
@@ -41,37 +45,44 @@ namespace cp_algo::linalg {
             }
         }
 
-        auto& row(size_t i) {return (*this)[i];}
-        auto const& row(size_t i) const {return (*this)[i];}
+        auto &row(this auto&& self, size_t i) { return self[i]; }
 
-        auto elements() {return *this | std::views::join;}
-        auto elements() const {return *this | std::views::join;}
+        auto elements(this auto&& self) { return self | std::views::join; }
 
         matrix operator-() const {
-            return *this | std::views::transform([](auto x) {return vec_t(-x);});
+            return *this | std::views::transform([](auto const& x) { return vec_t(-x); });
         }
         matrix& operator+=(matrix const& t) {
-            for(auto [a, b]: std::views::zip(elements(), t.elements())) {
-                a += b;
+            for(auto [a, b]: std::views::zip(*this, t)) {
+                for(auto [x, y]: std::views::zip(a, b)) {
+                    x += y;
+                }
             }
             return *this;
         }
-        matrix& operator -=(matrix const& t) {
-            for(auto [a, b]: std::views::zip(elements(), t.elements())) {
-                a -= b;
+        matrix& operator-=(matrix const& t) {
+            for(auto [a, b]: std::views::zip(*this, t)) {
+                for(auto [x, y]: std::views::zip(a, b)) {
+                    x -= y;
+                }
             }
             return *this;
         }
-        matrix operator+(matrix const& t) const {return matrix(*this) += t;}
-        matrix operator-(matrix const& t) const {return matrix(*this) -= t;}
-        
-        matrix& operator *=(base t) {for(auto &it: *this) it *= t; return *this;}
-        matrix operator *(base t) const {return matrix(*this) *= t;}
-        matrix& operator /=(base t) {return *this *= base(1) / t;}
-        matrix operator /(base t) const {return matrix(*this) /= t;}
+        matrix operator+(matrix const& t) const { return matrix(*this) += t; }
+        matrix operator-(matrix const& t) const { return matrix(*this) -= t; }
+
+        matrix& operator*=(base t) {
+            for(auto &it: *this) {
+                it *= t;
+            }
+            return *this;
+        }
+        matrix operator*(base t) const { return matrix(*this) *= t; }
+        matrix& operator/=(base t) { return *this *= base(1) / t; }
+        matrix operator/(base t) const { return matrix(*this) /= t; }
 
         // Make sure the result is matrix, not Base
-        matrix& operator *=(matrix const& t) {return *this = *this * t;}
+        matrix& operator*=(matrix const& t) { return *this = *this * t; }
 
         void read_transposed() {
             for(size_t j = 0; j < m(); j++) {
@@ -109,7 +120,7 @@ namespace cp_algo::linalg {
         }
         static matrix random(size_t n, size_t m) {
             matrix res(n, m);
-            std::ranges::generate(res, std::bind(vec_t::random, m));
+            std::ranges::generate(res, [m] { return vec_t::random(m); });
             return res;
         }
         static matrix random(size_t n) {
@@ -124,9 +135,9 @@ namespace cp_algo::linalg {
         }
 
         // Concatenate matrices
-        matrix operator |(matrix const& b) const {
+        matrix operator|(matrix const& b) const {
             assert(n() == b.n());
-            matrix res(n(), m()+b.m());
+            matrix res(n(), 0);
             for(size_t i = 0; i < n(); i++) {
                 res[i] = row(i) | b[i];
             }
@@ -145,32 +156,99 @@ namespace cp_algo::linalg {
 
         matrix T() const {
             matrix res(m(), n());
-            for(size_t i = 0; i < n(); i++) {
-                for(size_t j = 0; j < m(); j++) {
-                    res[j][i] = row(i)[j];
+            constexpr size_t block = 128;
+            for(size_t first = 0; first < m(); first += block) {
+                size_t last = std::min(first + block, m());
+                for(size_t i = 0; i < n(); i++) {
+                    auto const& src = row(i);
+                    for(size_t j = first; j < last; j++) {
+                        res[j][i] = src[j];
+                    }
                 }
             }
             return res;
         }
 
-        matrix operator *(matrix const& b) const {
+        matrix operator*(matrix const& b) const {
             assert(m() == b.n());
-            matrix res(n(), b.m());
-            for(size_t i = 0; i < n(); i++) {
-                for(size_t j = 0; j < m(); j++) {
-                    res[i].add_scaled(b[j], row(i)[j]);
+            if constexpr(impl::use_strassen<vec_t>) {
+                if(std::min({n(), m(), b.m()}) >= (base::bits <= 32 ? 64 : 512)) {
+                    return impl::strassen_product<base::mod()>::product(*this, b);
                 }
             }
-            return res.normalize();
+            matrix res(n(), b.m());
+            if constexpr(requires { requires vec_t::use_simd; }) {
+                if(n() == 1) {
+                    res[0] = b.apply(row(0));
+                    return res;
+                }
+            }
+            constexpr size_t block = 32;
+            for(size_t first = 0; first < m(); first += block) {
+                size_t last = std::min(first + block, m());
+                size_t i = 0;
+                for(; i + 1 < n(); i += 2) {
+                    size_t j = first;
+                    if constexpr(requires { requires vec_t::use_simd; }) {
+                        constexpr size_t batch = vec_t::batch_size;
+                        if(b.m() >= 8) {
+                            for(; j + batch <= last; j += batch) {
+                                std::array<typename vec_t::Base const*, batch> src;
+                                std::array<base, 2 * batch> c;
+                                for(size_t t = 0; t < batch; t++) {
+                                    src[t] = &b[j + t];
+                                    c[t] = row(i)[j + t];
+                                    c[batch + t] = row(i + 1)[j + t];
+                                }
+                                vec_t::template add_scaled_batch<batch, 2>({&res[i], &res[i + 1]}, src, c);
+                            }
+                        }
+                    }
+                    for(; j + 1 < last; j += 2) {
+                        add_scaled_pair(res[i], res[i + 1], b[j], b[j + 1],
+                                        {row(i)[j], row(i)[j + 1], row(i + 1)[j], row(i + 1)[j + 1]});
+                    }
+                    if(j < last) {
+                        res[i].add_scaled(b[j], row(i)[j]);
+                        res[i + 1].add_scaled(b[j], row(i + 1)[j]);
+                    }
+                }
+                for(; i < n(); i++) {
+                    for(size_t j = first; j < last; j++) {
+                        res[i].add_scaled(b[j], row(i)[j]);
+                    }
+                }
+            }
+            res.normalize();
+            return res;
         }
 
         vec_t apply(vec_t const& x) const {
-            return (matrix(1, x) * *this)[0];
+            assert(x.size() == n());
+            vec_t res(m());
+            size_t i = 0;
+            if constexpr(requires { requires vec_t::use_simd; }) {
+                constexpr size_t batch = vec_t::batch_size;
+                for(; i + batch <= n(); i += batch) {
+                    std::array<typename vec_t::Base const*, batch> src;
+                    std::array<base, batch> c;
+                    for(size_t t = 0; t < batch; t++) {
+                        src[t] = &row(i + t);
+                        c[t] = x[i + t];
+                    }
+                    vec_t::template add_scaled_batch<batch, 1>({&res}, src, c);
+                }
+            }
+            for(; i < n(); i++) {
+                res.add_scaled(row(i), x[i]);
+            }
+            res.normalize();
+            return res;
         }
 
         matrix pow(uint64_t k) const {
             assert(n() == m());
-            return bpow(*this, k, eye(n()));
+            return bpow<3>(*this, k, eye(n()));
         }
 
         matrix& normalize() {
@@ -199,11 +277,70 @@ namespace cp_algo::linalg {
         }
         template<gauss_mode mode = normal>
         matrix& gauss() {
-            for(size_t i = 0; i < n(); i++) {
-                eliminate<mode>(i);
-            }
-            return normalize();
+            return gauss_to<mode>(m());
         }
+
+    private:
+        // Restrict pivot columns, while updating every column of each row.
+        template<gauss_mode mode>
+        matrix& gauss_to(size_t lim) {
+            constexpr size_t block = 32;
+            for(size_t first = 0; first < n(); first += block) {
+                size_t last = std::min(first + block, n());
+                // Reduce the pivot block before applying it to the other rows.
+                for(size_t i = first; i < last; i++) {
+                    row(i).normalize();
+                    if(row(i).find_pivot().first >= lim) {
+                        continue;
+                    }
+                    for(size_t j = mode == normal ? i + 1 : first; j < last; j++) {
+                        if(j != i) {
+                            row(j).reduce_by(row(i));
+                        }
+                    }
+                }
+                if constexpr(mode == reverse) {
+                    // Later pivots may have changed earlier rows in this block.
+                    for(size_t i = first; i < last; i++) {
+                        row(i).normalize();
+                    }
+                }
+                for(size_t j = mode == normal ? last : 0; j < n(); j++) {
+                    if(j >= first && j < last) {
+                        continue;
+                    }
+                    bool pair = j + 1 < n() && j + 1 != first;
+                    size_t i = first;
+                    if constexpr(requires { requires vec_t::use_simd; }) {
+                        constexpr size_t batch = vec_t::batch_size;
+                        if(pair) {
+                            for(; i + batch <= last; i += batch) {
+                                reduce_batch<mode, batch>(j, i, lim);
+                            }
+                        }
+                    }
+                    if(pair) {
+                        for(; i + 1 < last; i += 2) {
+                            reduce_pair<mode>(j, i, lim);
+                        }
+                    }
+                    for(; i < last; i++) {
+                        if(row(i).find_pivot().first >= lim) {
+                            continue;
+                        }
+                        row(j).reduce_by(row(i));
+                        if(pair) {
+                            row(j + 1).reduce_by(row(i));
+                        }
+                    }
+                    j += pair;
+                }
+            }
+            // Forward pivots are normalized before use and never modified afterward.
+            return mode == reverse ? normalize() : *this;
+        }
+
+    public:
         template<gauss_mode mode = normal>
         auto echelonize(size_t lim) {
             return gauss<mode>().sort_classify(lim);
@@ -214,68 +351,114 @@ namespace cp_algo::linalg {
         }
 
         size_t rank() const {
-            if(n() > m()) {
-                return T().rank();
-            }
-            return size(matrix(*this).echelonize()[0]);
+            auto A = n() > m() ? T() : *this;
+            A.gauss();
+            return std::ranges::count_if(A, [&](auto &row) {
+                return row.find_pivot().first < A.m();
+            });
         }
 
         base det() const {
             assert(n() == m());
             matrix b = *this;
-            b.echelonize();
+            b.gauss();
             base res = 1;
             for(size_t i = 0; i < n(); i++) {
+                for(size_t p = b[i].find_pivot().first; p != i; p = b[i].find_pivot().first) {
+                    if(p == n()) {
+                        return 0;
+                    }
+                    std::swap(b[i], b[p]);
+                    res = -res;
+                }
                 res *= b[i][i];
+            }
+            return res;
+        }
+
+        // Pfaffian of an alternating matrix over a field.
+        base pfaffian() const {
+            assert(n() == m() && n() % 2 == 0);
+            matrix b = *this;
+            base res = 1;
+            for(size_t k = 0; k < n(); k += 2) {
+                size_t q = k + 1, p = q;
+                while(p < n() && b[k].normalize(p) == base(0)) {
+                    p++;
+                }
+                if(p == n()) {
+                    return base(0);
+                }
+                if(p != q) {
+                    res = -res;
+                    // Normalize values before moving them between row accumulators.
+                    b[q].normalize();
+                    b[p].normalize();
+                    // Symmetric permutation, storing only the upper triangle.
+                    for(size_t i = 0; i < q; i++) {
+                        std::swap(b[i][q], b[i][p]);
+                    }
+                    for(size_t i = q + 1; i < p; i++) {
+                        std::swap(b[q][i], b[i][p]);
+                        b[q][i] = -b[q].normalize(i);
+                        b[i][p] = -b[i].normalize(p);
+                    }
+                    for(size_t i = p + 1; i < n(); i++) {
+                        std::swap(b[q][i], b[p][i]);
+                    }
+                    b[q][p] = -b[q].normalize(p);
+                }
+                b[k].normalize();
+                b[q].normalize();
+                res *= b[k][q];
+                base inv = base(1) / b[k][q];
+                for(size_t i = k + 2; i + 1 < n(); i += 2) {
+                    add_scaled_pair(b[i], b[i + 1], b[k], b[q],
+                                    {b[q][i] * inv, -b[k][i] * inv, b[q][i + 1] * inv, -b[k][i + 1] * inv}, i + 1);
+                }
             }
             return res;
         }
 
         std::pair<base, matrix> inv() const {
             assert(n() == m());
-            matrix b = *this | eye(n());
-            if(size(b.echelonize<reverse>(n())[0]) < n()) {
+            matrix b(n(), 2 * n());
+            for(size_t i = 0; i < n(); i++) {
+                std::ranges::copy(row(i), begin(b[i]));
+                b[i][n() + i] = 1;
+            }
+            // Pivots in the appended identity cannot make A invertible.
+            auto [pivots, free] = b.template gauss_to<normal>(n()).sort_classify(n());
+            if(size(pivots) < n()) {
                 return {0, {}};
             }
             base det = 1;
             for(size_t i = 0; i < n(); i++) {
                 det *= b[i][i];
-                b[i] *= base(1) / b[i][i];
             }
-            return {det, b.submatrix(std::views::all, std::views::drop(n()))};
+            matrix res = b.submatrix(std::views::all, std::views::drop(n()));
+            back_substitute(b, pivots, res);
+            return {det, std::move(res)};
         }
 
-        // Can also just run gauss on T() | eye(m)
-        // but it would be slower :(
         auto kernel() const {
-            auto A = *this;
-            auto [pivots, free] = A.template echelonize<reverse>();
-            matrix sols(size(free), m());
-            for(size_t j = 0; j < size(pivots); j++) {
-                base scale = base(1) / A[j][pivots[j]];
-                for(size_t i = 0; i < size(free); i++) {
-                    sols[i][pivots[j]] = A[j][free[i]] * scale;
-                }
-            }
-            for(size_t i = 0; i < size(free); i++) {
-                sols[i][free[i]] = -1;
-            }
-            return sols;
+            return kernel_of(*this);
         }
 
         // [solution, basis], transposed
-        std::optional<std::array<matrix, 2>> solve(matrix t) const {
-            matrix sols = (*this | t).kernel();
-            if(sols.n() < t.m() || matrix(sols.submatrix(
-                std::views::drop(sols.n() - t.m()),
-                std::views::drop(m())
-            )) != -eye(t.m())) {
+        std::optional<std::array<matrix, 2>> solve(matrix const& t) const {
+            matrix sols = kernel_of(*this | t);
+            if(sols.n() < t.m() ||
+               matrix(sols.submatrix(std::views::drop(sols.n() - t.m()), std::views::drop(m()))) != -eye(t.m())) {
                 return std::nullopt;
             } else {
-                return std::array{
-                    matrix(sols.submatrix(std::views::drop(sols.n() - t.m()), std::views::take(m()))),
-                    matrix(sols.submatrix(std::views::take(sols.n() - t.m()), std::views::take(m())))
-                };
+                for(auto &row: sols) {
+                    row.resize(m());
+                }
+                auto first = begin(sols) + (sols.n() - t.m());
+                matrix sol(std::make_move_iterator(first), std::make_move_iterator(end(sols)));
+                sols.erase(first, end(sols));
+                return std::array{std::move(sol), std::move(sols)};
             }
         }
 
@@ -299,11 +482,137 @@ namespace cp_algo::linalg {
                     free.push_back(j);
                 }
             }
-            return std::array{pivots, free};
+            return std::array{std::move(pivots), std::move(free)};
+        }
+
+    private:
+        // Own the working matrix so augmented temporaries do not need a copy.
+        static matrix kernel_of(matrix A) {
+            auto [pivots, free] = A.echelonize();
+            matrix rhs(size(pivots), size(free));
+            for(size_t i = 0; i < size(pivots); i++) {
+                for(size_t j = 0; j < size(free); j++) {
+                    rhs[i][j] = A[i][free[j]];
+                }
+            }
+            back_substitute(A, pivots, rhs);
+            matrix sols(size(free), A.m());
+            for(size_t j = 0; j < size(pivots); j++) {
+                for(size_t i = 0; i < size(free); i++) {
+                    sols[i][pivots[j]] = rhs[j][i];
+                }
+            }
+            for(size_t i = 0; i < size(free); i++) {
+                sols[i][free[i]] = -1;
+            }
+            return sols;
+        }
+
+        // Solve an upper-echelon system for the supplied right-hand sides.
+        static void back_substitute(matrix const& A, auto const& pivots, matrix& b) {
+            for(size_t i = size(pivots); i-- > 0;) {
+                b[i].normalize();
+                b[i] *= base(1) / A[i][pivots[i]];
+                for(size_t j = 0; j < i; j++) {
+                    b[j].add_scaled(b[i], -A[j][pivots[i]]);
+                }
+            }
+        }
+
+        static void add_scaled_pair(vec_t& x, vec_t& y, vec_t const& p, vec_t const& q, std::array<base, 4> c,
+                                    size_t first = 0) {
+            if constexpr(requires { vec_t::add_scaled_pair(x, y, p, q, c, first); }) {
+                vec_t::add_scaled_pair(x, y, p, q, c, first);
+            } else {
+                x.add_scaled(p, c[0], first);
+                x.add_scaled(q, c[1], first);
+                y.add_scaled(p, c[2], first);
+                y.add_scaled(q, c[3], first);
+            }
+        }
+        // Determine the sequential pivot coefficients before updating the full rows.
+        template<gauss_mode mode, size_t count>
+        void reduce_batch(size_t dst, size_t src, size_t lim) {
+            static_assert(count <= 8);
+            std::array<typename vec_t::Base const*, count> sources;
+            std::array<size_t, count> pivots;
+            std::array<base, count> inverses;
+            size_t first = lim;
+            for(size_t t = 0; t < count; t++) {
+                sources[t] = &row(src + t);
+                auto [p, inv] = row(src + t).find_pivot();
+                pivots[t] = p;
+                inverses[t] = p < lim ? inv : base(0);
+                first = std::min(first, p);
+            }
+            if(first == lim) {
+                return;
+            }
+            std::array<base, 2 * count> c{};
+            for(size_t r = 0; r < 2; r++) {
+                for(size_t t = 0; t < count; t++) {
+                    if(pivots[t] >= lim) {
+                        continue;
+                    }
+                    base value = row(dst + r).normalize(pivots[t]);
+                    if constexpr(mode == normal) {
+                        // Fewer than eight canonical products fit in a 64-bit accumulator.
+                        uint64_t sum = value.getr();
+                        for(size_t h = 0; h < t; h++) {
+                            sum += uint64_t(c[r * count + h].getr()) * (*sources[h])[pivots[t]].getr();
+                        }
+                        value.setr(sum % base::mod());
+                    }
+                    c[r * count + t] = -value * inverses[t];
+                }
+            }
+            vec_t::template add_scaled_batch<count, 2>({&row(dst), &row(dst + 1)}, sources, c, first);
+        }
+        // Fuse two sequential reductions, accounting for the first one's effect
+        // on the second pivot before updating either destination row.
+        template<gauss_mode mode>
+        void reduce_pair(size_t dst, size_t src, size_t lim) {
+            auto &p = row(src), &q = row(src + 1);
+            auto [u, pu] = p.find_pivot();
+            auto [v, qv] = q.find_pivot();
+            if(u >= lim || v >= lim) {
+                for(size_t j = dst; j < dst + 2; j++) {
+                    if(u < lim) {
+                        row(j).reduce_by(p);
+                    }
+                    if(v < lim) {
+                        row(j).reduce_by(q);
+                    }
+                }
+                return;
+            }
+            // Canonical reduction coefficients fit in a 64-bit product.
+            auto mul = [](base x, base y) {
+                if constexpr(impl::use_strassen<vec_t>) {
+                    x.setr(uint64_t(x.getr()) * y.getr() % base::mod());
+                    return x;
+                } else {
+                    return x * y;
+                }
+            };
+            auto scales = [&](vec_t& a) {
+                base s = mul(-a.normalize(u), pu);
+                base t = -a.normalize(v);
+                // Reverse elimination has already cleared p[v] within the pivot block.
+                if constexpr(mode == normal) {
+                    t -= mul(s, p[v]);
+                }
+                t = mul(t, qv);
+                return std::array{s, t};
+            };
+            auto a = scales(row(dst)), b = scales(row(dst + 1));
+            add_scaled_pair(row(dst), row(dst + 1), p, q, {a[0], a[1], b[0], b[1]}, std::min(u, v));
         }
     };
     template<typename base_t>
-    auto operator *(base_t t, matrix<base_t> const& A) {return A * t;}
+    auto operator*(base_t t, matrix<base_t> const& A) {
+        return A * t;
+    }
 }
 #pragma GCC pop_options
 #endif // CP_ALGO_LINALG_MATRIX_HPP

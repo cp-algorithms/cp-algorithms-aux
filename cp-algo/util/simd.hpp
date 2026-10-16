@@ -6,7 +6,7 @@
 #include <memory>
 
 #if defined(__x86_64__) && !defined(CP_ALGO_DISABLE_AVX2)
-#define CP_ALGO_SIMD_AVX2_TARGET _Pragma("GCC target(\"avx2\")")
+#define CP_ALGO_SIMD_AVX2_TARGET _Pragma("GCC target(\"avx2,fma\")")
 #else
 #define CP_ALGO_SIMD_AVX2_TARGET
 #endif
@@ -81,6 +81,16 @@ namespace cp_algo {
         return swap_bytes(x);
     }
 
+    // x - mod where x >= mod, for x in [0, 2 mod). Unsigned, so it holds up to mod < 2^31;
+    // zero upper halves of 64-bit lanes stay zero.
+    inline u32x8 reduce_once(u32x8 x, uint32_t mod) {
+        auto y = x - mod;
+        return x < y ? x : y;
+    }
+    inline u64x4 reduce_once(u64x4 x, uint32_t mod) {
+        return u64x4(reduce_once(u32x8(x), mod));
+    }
+
     inline u64x4 montgomery_mul(u64x4 x, u64x4 y, uint32_t mod, uint32_t imod) {
 #ifdef __AVX2__
         return montgomery_reduce(u64x4(_mm256_mul_epu32(__m256i(x), __m256i(y))), mod, imod);
@@ -98,7 +108,7 @@ namespace cp_algo {
     }
 
     template<std::size_t Align = 32>
-    inline bool is_aligned(const auto* p) noexcept {
+    inline bool is_aligned(const auto *p) noexcept {
         return (reinterpret_cast<std::uintptr_t>(p) % Align) == 0;
     }
 

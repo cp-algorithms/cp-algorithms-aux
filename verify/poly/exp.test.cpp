@@ -1,9 +1,11 @@
 // @brief Exp of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/exp_of_formal_power_series"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
-#include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/series/exp.hpp"
+
 
 using namespace std;
 using namespace cp_algo::math;
@@ -16,8 +18,8 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector a(n);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
-    polyn(a).exp_inplace(n).print(n);
+    for(auto &it: a) {cin >> it;}
+    exp(polyn(std::move(a)), n).print(n);
 }
 
 signed main() {

@@ -60,8 +60,11 @@ jobs:
         run: python3 .verify-helper/scripts/generate_minified.py
 
       - name: Set up competitive-verifier
-        uses: adamant-pwn/actions/setup@patch-1
+        uses: competitive-verifier/actions/setup@v2
         with:
+          # Floor pins the first release without the malicious polyfill.io
+          # script (removed in competitive-verifier 4.1.2).
+          package: "competitive-verifier>=4.1.2"
           cache-pip: false
 
       - name: Docs
@@ -208,7 +211,8 @@ jobs:
   publish_preview:
     if: >
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'pull_request'
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -229,45 +233,20 @@ jobs:
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
-          pattern: "[0-9]*"
+          name: pr-preview
           path: public
 
-      - name: Get PR number from artifact
+      - name: Validate preview identity and contents
         id: preview
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -t preview_dirs < <(find public -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
-          if [ "${#preview_dirs[@]}" -ne 1 ]; then
-            printf 'Expected exactly one PR preview artifact, found %s.\n' "${#preview_dirs[@]}"
-            printf '%s\n' "${preview_dirs[@]}"
-            exit 1
-          fi
-          pr_number="${preview_dirs[0]}"
-          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
-          echo "url=https://lib.cp-algorithms.com/$pr_number/" >> "$GITHUB_OUTPUT"
-
-      - name: Check PR state
-        id: pr_state
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = Number('${{ steps.preview.outputs.number }}')
-            const { owner, repo } = context.repo
-            const { data: pull } = await github.rest.pulls.get({
-              owner,
-              repo,
-              pull_number: prNumber,
-            })
-
-            const workflowSha = context.payload.workflow_run.head_sha
-            core.setOutput('state', pull.state)
-            core.setOutput('head_sha', pull.head.sha)
-            core.setOutput('publish', pull.state === 'open' && pull.head.sha === workflowSha ? 'true' : 'false')
-            core.setOutput('delete', pull.state !== 'open' ? 'true' : 'false')
+            const validate = require('./.github/scripts/preview.cjs')
+            await validate({github, context, core})
 
       - name: Prepare Pages state branch
         id: pages_state
+        if: steps.preview.outputs.publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -288,35 +267,18 @@ jobs:
         shell: bash
         env:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-          PR_HEAD_SHA: ${{ steps.pr_state.outputs.head_sha }}
-          PR_STATE: ${{ steps.pr_state.outputs.state }}
-          SHOULD_DELETE: ${{ steps.pr_state.outputs.delete }}
-          SHOULD_PUBLISH: ${{ steps.pr_state.outputs.publish }}
+          PR_NUMBER: ${{ steps.preview.outputs.number }}
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
         run: |
           set -euo pipefail
-          pr_number="${{ steps.preview.outputs.number }}"
-
-          if [ "$SHOULD_PUBLISH" = "true" ]; then
-            rm -rf "_pages/$pr_number"
-            mkdir -p "_pages/$pr_number"
-            cp -a "public/$pr_number/." "_pages/$pr_number/"
-            commit_message="Preview for #$pr_number ($HEAD_SHA) at ${{ steps.preview.outputs.url }}"
-          elif [ "$SHOULD_DELETE" = "true" ]; then
-            if [ ! -d "_pages/$pr_number" ]; then
-              echo "PR #$pr_number is $PR_STATE and no preview directory exists."
-              echo "changed=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            rm -rf "_pages/$pr_number"
-            commit_message="Delete preview for #$pr_number"
-          else
-            echo "Skipping stale preview for #$pr_number; PR head is $PR_HEAD_SHA and workflow head is $HEAD_SHA."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          rm -rf "_pages/$PR_NUMBER"
+          mkdir -p "_pages/$PR_NUMBER"
+          cp -a public/site/. "_pages/$PR_NUMBER/"
+          commit_message="Preview for #$PR_NUMBER ($HEAD_SHA) at $PREVIEW_URL"
 
           touch _pages/.nojekyll
-          git -C _pages add -A "$pr_number" .nojekyll
+          git -C _pages add -A -- "$PR_NUMBER" .nojekyll
           if git -C _pages diff --cached --quiet; then
             echo "No Pages state changes"
             echo "changed=false" >> "$GITHUB_OUTPUT"

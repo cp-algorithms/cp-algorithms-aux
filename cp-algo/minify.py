@@ -7,6 +7,21 @@ Removes comments, extra whitespace, and compresses the code.
 import re
 import sys
 
+def compress_code(code):
+    code = re.sub(r'\s+', ' ', code)
+    operators = '+-*/%=<>!&|^~:.[]#'
+    punctuation = operators + ',;?(){}'
+
+    def separator(match):
+        left = code[match.start() - 1:match.start()]
+        right = code[match.end():match.end() + 1]
+        # Removing this boundary could turn > = into >=, + + into ++, etc.
+        if left and right and left in operators and right in operators:
+            return ' '
+        return '' if left in punctuation or right in punctuation else ' '
+
+    return re.sub(' ', separator, code)
+
 def minify_cpp(code):
     # Remove comments while preserving strings and macro continuations
     lines = code.split('\n')
@@ -50,7 +65,7 @@ def minify_cpp(code):
     code = '\n'.join(cleaned_lines)
     
     # Remove multi-line comments (but preserve #line directives content)
-    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    code = re.sub(r'/\*.*?\*/', ' ', code, flags=re.DOTALL)
     
     # Handle multi-line macros: join lines that end with backslash
     lines = code.split('\n')
@@ -99,9 +114,7 @@ def minify_cpp(code):
                 if current:
                     code_part = ''.join(current)
                     # Compress the code part
-                    code_part = re.sub(r'\s+', ' ', code_part)
-                    code_part = re.sub(r'\s*([+\-*/%=<>!&|^~,;:?(){}[\]])\s*', r'\1', code_part)
-                    result.append(code_part)
+                    result.append(compress_code(code_part))
                     current = []
                 
                 # Now collect the entire string literal
@@ -131,9 +144,7 @@ def minify_cpp(code):
         # Handle any remaining code
         if current:
             code_part = ''.join(current)
-            code_part = re.sub(r'\s+', ' ', code_part)
-            code_part = re.sub(r'\s*([+\-*/%=<>!&|^~,;:?(){}[\]])\s*', r'\1', code_part)
-            result.append(code_part)
+            result.append(compress_code(code_part))
         
         return ''.join(result)
     
@@ -160,8 +171,8 @@ def minify_cpp(code):
                     # Previous line might be a macro invocation, keep separate
                     result_lines.append(line)
                 else:
-                    # Safe to join
-                    result_lines[-1] += line
+                    # A newline also separates identifiers and operator tokens.
+                    result_lines[-1] += ' ' + line
             else:
                 # Previous line is a preprocessor directive or this is first line
                 result_lines.append(line)

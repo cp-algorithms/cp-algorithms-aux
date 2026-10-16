@@ -1,17 +1,16 @@
 #ifndef CP_ALGO_LINALG_FROBENIUS_HPP
 #define CP_ALGO_LINALG_FROBENIUS_HPP
-#include "../math/poly.hpp"
+#include "../math/poly/powmod.hpp"
 #include "matrix.hpp"
 #include <algorithm>
 #include <vector>
 #include <ranges>
 namespace cp_algo::linalg {
-    enum frobenius_mode {blocks, full};
+    enum frobenius_mode { blocks, full };
     template<frobenius_mode mode = blocks>
     auto frobenius_form(auto const& A) {
         using matrix = std::decay_t<decltype(A)>;
         using vec_t = matrix::vec_t;
-        using base = typename matrix::base;
         using base = matrix::base;
         using polyn = math::poly_t<base>;
         assert(A.n() == A.m());
@@ -20,25 +19,70 @@ namespace cp_algo::linalg {
         big_vector<vec_t> basis, basis_init;
         while(size(basis) < n) {
             size_t start = size(basis);
+            // Record y_i = x_i + sum_j reductions[i][j] * y_j modulo earlier blocks.
+            big_vector<typename polyn::Vector> reductions;
             auto generate_block = [&](auto x) {
                 while(true) {
-                    vec_t y = x | vec_t::ei(n + 1, size(basis));
-                    for(auto &it: basis) {
-                        y.reduce_by(it);
+                    vec_t y = x;
+                    typename polyn::Vector coefficients;
+                    if constexpr(mode == full) {
+                        y.reserve(2 * n + 1);
+                    } else {
+                        coefficients.resize(size(basis) - start);
+                    }
+                    for(size_t i = 0; i < size(basis); i++) {
+                        auto &it = basis[i];
+                        if constexpr(mode == full) {
+                            y.resize(it.size());
+                            y.reduce_by(it);
+                        } else {
+                            auto [p, inv] = it.find_pivot();
+                            base scale = -y.normalize(p) * inv;
+                            y.add_scaled(it, scale, p);
+                            if(i >= start) {
+                                coefficients[i - start] = scale;
+                            }
+                        }
+                    }
+                    if constexpr(mode == full) {
+                        y.push_back(1);
                     }
                     y.normalize();
-                    if(std::ranges::count(y | std::views::take(n), base(0)) == int(n)) {
-                        return polyn(typename polyn::Vector(begin(y) + n, end(y)));
+                    if(y.find_pivot().first >= n) {
+                        if constexpr(mode == full) {
+                            return polyn(typename polyn::Vector(begin(y) + n, end(y)));
+                        } else {
+                            // Expand the dependency through the triangular reduction history.
+                            coefficients.push_back(1);
+                            for(size_t i = size(reductions); i-- > 0;) {
+                                for(size_t j = 0; j < i; j++) {
+                                    coefficients[j] += coefficients[i] * reductions[i][j];
+                                }
+                            }
+                            return polyn(std::move(coefficients));
+                        }
                     } else {
-                        basis_init.push_back(x);
-                        basis.push_back(y);
-                        x = A.apply(x);
+                        if constexpr(mode == blocks) {
+                            reductions.push_back(std::move(coefficients));
+                        }
+                        basis.push_back(std::move(y));
+                        if constexpr(mode == full) {
+                            basis_init.push_back(std::move(x));
+                            x = A.apply(basis_init.back());
+                        } else {
+                            x = A.apply(x);
+                        }
                     }
                 }
             };
-            auto full_rec = generate_block(vec_t::random(n));
+            auto x = vec_t::random(n);
+            // Choose a random representative already reduced against earlier blocks.
+            for(auto &row: basis) {
+                x[row.find_pivot().first] = 0;
+            }
+            auto full_rec = generate_block(std::move(x));
             // Extra trimming to make it block-diagonal (expensive)
-            if constexpr (mode == full) {
+            if constexpr(mode == full) {
                 if(full_rec.mod_xk(start) != polyn()) {
                     auto charp = full_rec.div_xk(start);
                     auto x = basis_init[start];
@@ -51,25 +95,26 @@ namespace cp_algo::linalg {
                     full_rec = generate_block(x.normalize());
                 }
             }
-            charps.push_back(full_rec.div_xk(start));
+            charps.push_back(full_rec.div_xk(mode == full ? start : 0));
         }
         // Find transform matrices while we're at it...
-        if constexpr (mode == full) {
+        if constexpr(mode == full) {
+            for(auto &row: basis) {
+                row.resize(2 * n + 1);
+            }
             for(size_t i = 0; i < n; i++) {
                 for(size_t j = i + 1; j < n; j++) {
                     basis[i].reduce_by(basis[j]);
                 }
                 basis[i].normalize();
             }
-            auto T = matrix(basis_init);
-            auto Tinv = matrix(basis);
+            auto T = matrix(std::move(basis_init));
+            auto Tinv = matrix(std::move(basis));
             std::ignore = Tinv.sort_classify(n);
             for(size_t i = 0; i < n; i++) {
-                Tinv[i] = vec_t(
-                    Tinv[i] | std::views::drop(n) | std::views::take(n)
-                ) * (base(1) / Tinv[i][i]);
+                Tinv[i] = vec_t(Tinv[i] | std::views::drop(n) | std::views::take(n)) * (base(1) / Tinv[i][i]);
             }
-            return std::tuple{T, Tinv, charps};
+            return std::tuple{std::move(T), std::move(Tinv), std::move(charps)};
         } else {
             return charps;
         }
@@ -78,24 +123,35 @@ namespace cp_algo::linalg {
     template<typename base>
     auto with_frobenius(matrix<base> const& A, auto &&callback) {
         auto [T, Tinv, charps] = frobenius_form<full>(A);
-        big_vector<matrix<base>> blocks;
-        for(auto charp: charps) {
-            matrix<base> block(charp.deg());
+        // Apply each diagonal block to its rows of T without forming S.
+        matrix<base> ST(A.n());
+        size_t start = 0;
+        for(auto const& charp: charps) {
+            size_t d = charp.deg();
             auto xk = callback(charp);
-            for(size_t i = 0; i < block.n(); i++) {
-                std::ranges::copy(xk.a, begin(block[i]));
-                xk = xk.mul_xk(1) % charp;
+            for(size_t i = 0; i < d; i++) {
+                for(size_t j = 0; j < xk.a.size(); j++) {
+                    ST[start + i].add_scaled(T[start + j], xk[j]);
+                }
+                if(i + 1 < d) {
+                    xk = xk.mul_xk(1) % charp;
+                }
             }
-            blocks.push_back(block);
+            start += d;
         }
-        auto S = matrix<base>::block_diagonal(blocks);
-        return Tinv * S * T;
+        return Tinv * ST.normalize();
     }
 
     template<typename base>
     auto frobenius_pow(matrix<base> const& A, uint64_t k) {
+        if(k <= 2) {
+            return A.pow(k);
+        }
         return with_frobenius(A, [k](auto const& charp) {
-            return math::poly_t<base>::xk(1).powmod(k, charp);
+            if(charp.deg() == 1) {
+                return math::poly_t<base>(bpow(-charp[0] / charp[1], k));
+            }
+            return math::powmod(math::poly_t<base>::xk(1), k, charp);
         });
     }
 };

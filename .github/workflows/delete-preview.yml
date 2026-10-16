@@ -46,9 +46,12 @@ jobs:
         id: delete_preview
         if: steps.state.outputs.exists == 'true'
         shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          pr_number="${{ github.event.pull_request.number }}"
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          pr_number="$PR_NUMBER"
 
           if [ ! -d "_pages/$pr_number" ]; then
             echo "Preview directory _pages/$pr_number does not exist."
@@ -57,7 +60,7 @@ jobs:
           fi
 
           rm -rf "_pages/$pr_number"
-          git -C _pages add -A "$pr_number"
+          git -C _pages add -A -- "$pr_number"
 
           if git -C _pages diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"

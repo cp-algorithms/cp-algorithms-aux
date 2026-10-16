@@ -1,7 +1,8 @@
 #ifndef CP_ALGO_MATH_POLY_IMPL_EUCLID_HPP
 #define CP_ALGO_MATH_POLY_IMPL_EUCLID_HPP
 #include "../../affine.hpp"
-#include "../../fft.hpp"
+#include "../div.hpp"
+#include <optional>
 #include <functional>
 #include <algorithm>
 #include <numeric>
@@ -17,20 +18,22 @@ namespace cp_algo::math::poly::impl {
         std::list<std::decay_t<poly>>,
         linfrac<std::decay_t<poly>>>;
 
-    template<typename poly>
+    template<bool quotients = true, typename poly>
     gcd_result<poly> half_gcd(poly &&A, poly &&B) {
         assert(A.deg() >= B.deg());
         size_t m = size(A.a) / 2;
         if(B.deg() < (int)m) {
             return {};
         }
-        auto [ai, R] = A.divmod(B);
-        std::tie(A, B) = {B, R};
-        std::list a = {ai};
+        auto [ai, R] = divmod(A, B);
+        A = std::move(B);
+        B = std::move(R);
+        std::list<std::decay_t<poly>> a;
+        if constexpr(quotients) {a.push_back(ai);}
         auto T = -linfrac(ai).adj();
 
         auto advance = [&](size_t k) {
-            auto [ak, Tk] = half_gcd(A.div_xk(k), B.div_xk(k));
+            auto [ak, Tk] = half_gcd<quotients>(A.div_xk(k), B.div_xk(k));
             a.splice(end(a), ak);
             T.prepend(Tk);
             return Tk;
@@ -43,35 +46,41 @@ namespace cp_algo::math::poly::impl {
         }
         return {std::move(a), std::move(T)};
     }
-    template<typename poly>
+    template<bool extended = true, bool quotients = true, typename poly>
     gcd_result<poly> full_gcd(poly &&A, poly &&B) {
         using poly_t = std::decay_t<poly>;
         std::list<poly_t> ak;
         big_vector<linfrac<poly_t>> trs;
         while(!B.is_zero()) {
-            auto [a0, R] = A.divmod(B);
-            ak.push_back(a0);
-            trs.push_back(-linfrac(a0).adj());
-            std::tie(A, B) = {B, R};
+            auto [a0, R] = divmod(A, B);
+            if constexpr(extended) {trs.push_back(-linfrac(a0).adj());}
+            if constexpr(quotients) {ak.push_back(std::move(a0));}
+            A = std::move(B);
+            B = std::move(R);
 
-            auto [a, Tr] = half_gcd(A, B);
+            auto [a, Tr] = half_gcd<quotients>(A, B);
             ak.splice(end(ak), a);
-            trs.push_back(Tr);
+            if constexpr(extended) {trs.push_back(std::move(Tr));}
         }
-        return {ak, std::accumulate(rbegin(trs), rend(trs), linfrac<poly_t>{}, std::multiplies{})};
+        if constexpr(extended) {
+            return {std::move(ak), std::accumulate(rbegin(trs), rend(trs), linfrac<poly_t>{}, std::multiplies{})};
+        } else {
+            return {std::move(ak), {}};
+        }
     }
 
     // computes product of linfrac on [L, R)
     auto convergent(auto L, auto R) {
         using poly = decltype(L)::value_type;
-        if(R == next(L)) {
+        if(L == R) {
+            return linfrac<poly>{};
+        } else if(R == next(L)) {
             return linfrac(*L);
         } else {
+            // split so that both halves have approximately equal total degree
             int s = std::transform_reduce(L, R, 0, std::plus{}, std::mem_fn(&poly::deg));
-            auto M = L;
-            for(int c = M->deg(); 2 * c <= s; M++) {
-                c += next(M)->deg();
-            }
+            auto M = next(L);
+            for(int c = L->deg(); next(M) != R && 2 * c < s; c += M->deg(), ++M) {}
             return convergent(L, M) * convergent(M, R);
         }
     }
@@ -81,10 +90,13 @@ namespace cp_algo::math::poly::impl {
         if(R2.is_zero()) {
             return poly(1);
         }
-        auto [a, Tr] = full_gcd(R1, R2);
+        auto [a, Tr] = half_gcd(R1, R2);
+        // The stopping degree bound needs at most one quotient beyond the halfway point.
+        if(!R2.is_zero()) {a.push_back(divmod(R1, R2)[0]);}
         a.emplace_back();
         auto pref = begin(a);
-        for(int delta = (int)d - a.front().deg(); delta >= 0; pref++) {
+        // An exact finite expansion can end before the degree bound is crossed.
+        for(int delta = (int)d - a.front().deg(); next(pref) != end(a) && delta >= 0; pref++) {
             delta -= pref->deg() + next(pref)->deg();
         }
         return convergent(begin(a), pref).a;
@@ -93,11 +105,11 @@ namespace cp_algo::math::poly::impl {
     template<typename poly>
     std::optional<poly> inv_mod(poly p, poly q) {
         assert(!q.is_zero());
-        auto [a, Tr] = full_gcd(q, p);
+        auto [a, Tr] = full_gcd<true, false>(q, p);
         if(q.deg() != 0) {
             return std::nullopt;
         }
-        return Tr.b / q[0];
+        return std::move(Tr.b) / q[0];
     }
 }
 #pragma GCC pop_options

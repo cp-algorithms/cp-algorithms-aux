@@ -3,3 +3,6 @@ main.test.cpp
 verify_files.json
 cp-algo/min-bundled
 cp-algo/min/min-bundled
+/.mcp/
+__pycache__/
+*.gch

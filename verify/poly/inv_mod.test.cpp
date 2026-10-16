@@ -1,7 +1,12 @@
 // @brief Inv of Polynomials
 #define PROBLEM "https://judge.yosupo.jp/problem/inv_of_polynomials"
-#include "cp-algo/math/poly.hpp"
 #include <bits/stdc++.h>
+#pragma GCC optimize("O3,unroll-loops")
+//#include <bits/allocator.h>
+#pragma GCC target("avx2")
+#include <iostream>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/euclid.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -14,9 +19,9 @@ void solve() {
     int n, m;
     cin >> n >> m;
     polyn::Vector a(n), b(m);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
-    copy_n(istream_iterator<base>(cin), m, begin(b));
-    auto res = polyn(a).inv_mod(polyn(b));
+    for(auto &it: a) {cin >> it;}
+    for(auto &it: b) {cin >> it;}
+    auto res = inv_mod(polyn(std::move(a)), polyn(b));
     if(res) {
         cout << res->deg() + 1 << endl;
         res->print();

@@ -1,9 +1,10 @@
 // @brief Pow of Power Series
 #define PROBLEM "https://judge.yosupo.jp/problem/pow_of_formal_power_series"
+#include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
-#include "cp-algo/math/poly.hpp"
-#include <bits/stdc++.h>
+#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/math/poly/series/pow.hpp"
 
 using namespace std;
 using namespace cp_algo::math;
@@ -17,8 +18,8 @@ void solve() {
     int64_t m;
     cin >> n >> m;
     polyn::Vector a(n);
-    copy_n(istream_iterator<base>(cin), n, begin(a));
-    polyn(a).pow(m, n).print(n);
+    for(auto &it: a) {cin >> it;}
+    pow(polyn(std::move(a)), m, n).print(n);
 }
 
 signed main() {

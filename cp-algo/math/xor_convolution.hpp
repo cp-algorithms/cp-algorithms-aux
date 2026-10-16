@@ -9,15 +9,23 @@ namespace cp_algo::math {
     void xor_transform(auto &&a) {
         if constexpr (N == 1) {
             return;
+        } else if constexpr (N == 2) {
+            auto x = a[0] + a[1], y = a[0] - a[1];
+            a[0] = x;
+            a[1] = y;
         } else {
-            constexpr auto half = N / 2;
-            xor_transform<half>(&a[0]);
-            xor_transform<half>(&a[half]);
-            for (uint32_t i = 0; i < half; i++) {
-                auto x = a[i] + a[i + half];
-                auto y = a[i] - a[i + half];
-                a[i] = x;
-                a[i + half] = y;
+            constexpr auto q = N / 4;
+            for (size_t j = 0; j < 4; j++) {
+                xor_transform<q>(&a[j * q]);
+            }
+            // Combine two stages without storing the intermediate butterflies.
+            for (size_t i = 0; i < q; i++) {
+                auto x0 = a[i] + a[i + q], x1 = a[i] - a[i + q];
+                auto x2 = a[i + 2 * q] + a[i + 3 * q], x3 = a[i + 2 * q] - a[i + 3 * q];
+                a[i] = x0 + x2;
+                a[i + q] = x1 + x3;
+                a[i + 2 * q] = x0 - x2;
+                a[i + 3 * q] = x1 - x3;
             }
         }
     }

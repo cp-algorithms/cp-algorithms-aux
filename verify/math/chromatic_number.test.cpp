@@ -8,7 +8,7 @@
 #define CP_ALGO_CHECKPOINT
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/math/subset_convolution.hpp"
-#include "cp-algo/math/poly.hpp"
+#include "cp-algo/math/poly/eval.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;

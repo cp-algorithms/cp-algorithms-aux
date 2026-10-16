@@ -15,16 +15,16 @@ namespace cp_algo::math {
 #define CP_ALGO_SUBSET_CONVOLUTION_MAX_LOGN 20
 #endif
     const size_t max_logn = CP_ALGO_SUBSET_CONVOLUTION_MAX_LOGN;
-    
+
     template<auto N>
     inline void xor_transform(auto &&a) {
-        if constexpr (N >> max_logn) {
+        if constexpr(N >> max_logn) {
             throw std::runtime_error("N too large for xor_transform");
-        } else if constexpr (N <= 32) {
-            for (size_t i = 1; i < N; i *= 2) {
-                for (size_t j = 0; j < N; j += 2 * i) {
-                    for (size_t k = j; k < j + i; k++) {
-                        for (size_t z = 0; z < max_logn; z++) {
+        } else if constexpr(N <= 32) {
+            for(size_t i = 1; i < N; i *= 2) {
+                for(size_t j = 0; j < N; j += 2 * i) {
+                    for(size_t k = j; k < j + i; k++) {
+                        for(size_t z = 0; z < max_logn; z++) {
                             auto x = a[k][z] + a[k + i][z];
                             auto y = a[k][z] - a[k + i][z];
                             a[k][z] = x;
@@ -34,25 +34,25 @@ namespace cp_algo::math {
                 }
             }
         } else {
-            auto add = [&](auto &a, auto &b) __attribute__((always_inline)) {
+            auto add = [&] [[gnu::always_inline]] (auto &a, auto &b) {
                 auto x = a + b, y = a - b;
                 a = x, b = y;
             };
             constexpr auto quar = N / 4;
 
-            for (size_t i = 0; i < (size_t)quar; i++) {
+            for(size_t i = 0; i < (size_t)quar; i++) {
                 auto x0 = a[i + (size_t)quar * 0];
                 auto x1 = a[i + (size_t)quar * 1];
                 auto x2 = a[i + (size_t)quar * 2];
                 auto x3 = a[i + (size_t)quar * 3];
 
-                #pragma GCC unroll max_logn
-                for (size_t z = 0; z < max_logn; z++) {
+#pragma GCC unroll max_logn
+                for(size_t z = 0; z < max_logn; z++) {
                     add(x0[z], x2[z]);
                     add(x1[z], x3[z]);
                 }
-                #pragma GCC unroll max_logn
-                for (size_t z = 0; z < max_logn; z++) {
+#pragma GCC unroll max_logn
+                for(size_t z = 0; z < max_logn; z++) {
                     add(x0[z], x1[z]);
                     add(x2[z], x3[z]);
                 }
@@ -68,14 +68,14 @@ namespace cp_algo::math {
             xor_transform<quar>(&a[quar * 3]);
         }
     }
-    
+
     inline void xor_transform(auto &&a, auto n) {
         with_bit_floor(n, [&]<auto NN>() {
             assert(NN == n);
             xor_transform<NN>(a);
         });
     }
-    
+
     inline void xor_transform(auto &&a) {
         xor_transform(a, std::size(a));
     }
@@ -83,112 +83,104 @@ namespace cp_algo::math {
     // Generic rank vectors processor with variadic inputs
     // Assumes output[0] = 0, caller is responsible for handling rank 0
     // Returns the output array
-    auto on_rank_vectors(auto &&cb, auto const& ...inputs) {
+    auto on_rank_vectors(auto &&cb, auto const&... inputs) {
         static_assert(sizeof...(inputs) >= 1, "on_rank_vectors requires at least one input");
-        
-        // Create tuple of input references once
-        auto input_tuple = std::forward_as_tuple(inputs...);
-        auto const& first_input = std::get<0>(input_tuple);
+
+        auto const& first_input = std::get<0>(std::tie(inputs...));
         using base = std::decay_t<decltype(first_input[0])>;
         big_vector<base> out(std::size(first_input));
-        
+
         auto N = std::size(first_input);
         constexpr size_t K = 4;
         N = std::max(N, 2 * K);
         const size_t n = std::bit_width(N) - 1;
-        const size_t T = std::min<size_t>(n - 3, 3);
+        const size_t T = std::min<size_t>(n - 3, 2);
         const size_t bottoms = 1 << (n - T - 1);
         const auto M = std::size(first_input);
-        
-        // Create array buffers for each input
-        auto create_buffers = [bottoms]<typename... Args>(const Args&...) {
-            return std::make_tuple(
-                big_vector<std::array<typename std::decay_t<Args>::value_type, max_logn>>(bottoms)...
-            );
-        };
-        auto buffers = std::apply(create_buffers, input_tuple);
-        
+
+        auto buffers = std::tuple{
+            big_vector<std::array<std::ranges::range_value_t<decltype(inputs)>, max_logn>>(bottoms)...};
+
         checkpoint("alloc buffers");
         big_vector<uint32_t> counts(2 * bottoms);
         for(size_t i = 1; i < 2 * bottoms; i++) {
             counts[i] = (uint32_t)std::popcount(i);
         }
         checkpoint("prepare");
-        
+
         for(size_t top = 0; top < N / 2; top += bottoms) {
             // Clear all buffers
             std::apply([bottoms](auto&... bufs) {
                 (..., memset(bufs.data(), 0, sizeof(bufs[0]) * bottoms));
             }, buffers);
             checkpoint("memset");
-            
-            // Initialize buffers from inputs
-            std::apply([&](auto const&... inps) {
-                std::apply([&](auto&... bufs) {
-                    auto init_one = [&](auto const& inp, auto& buf) {
-                        for(size_t i = 0; i < M; i += 2 * bottoms) {
-                            bool parity = __builtin_parity(uint32_t((i >> 1) & top));
-                            size_t limit = std::min(M, i + 2 * bottoms) - i;
-                            uint32_t count = (uint32_t)std::popcount(i) - 1;
-                            for(size_t bottom = (i == 0); bottom < limit; bottom++) {
-                                if (parity) {
-                                    buf[bottom >> 1][count + counts[bottom]] -= inp[i + bottom];
-                                } else {
-                                    buf[bottom >> 1][count + counts[bottom]] += inp[i + bottom];
-                                }
+
+            std::apply([&](auto&... bufs) {
+                auto init_one = [&](auto const& inp, auto &buf) {
+                    for(size_t i = 0; i < M; i += 2 * bottoms) {
+                        bool parity = std::popcount(uint32_t((i >> 1) & top)) % 2;
+                        size_t limit = std::min(M, i + 2 * bottoms) - i;
+                        uint32_t count = (uint32_t)std::popcount(i) - 1;
+                        for(size_t bottom = (i == 0); bottom < limit; bottom++) {
+                            if(parity) {
+                                buf[bottom >> 1][count + counts[bottom]] -= inp[i + bottom];
+                            } else {
+                                buf[bottom >> 1][count + counts[bottom]] += inp[i + bottom];
                             }
                         }
-                    };
-                    (init_one(inps, bufs), ...);
-                }, buffers);
-            }, input_tuple);
-            
+                    }
+                };
+                (init_one(inputs, bufs), ...);
+            }, buffers);
+
             checkpoint("init");
             std::apply([](auto&... bufs) {
                 (..., xor_transform(bufs));
             }, buffers);
             checkpoint("transform");
-            
+
             assert(bottoms % K == 0);
             for(size_t i = 0; i < bottoms; i += K) {
-                std::apply([&](auto&... bufs) {
-                    auto extract_one = [&](auto& buf) {
-                        std::array<u64x4, max_logn> aa;
+                std::apply(
+                    [&](auto&... bufs) {
+                        auto extract_one = [&](auto &buf) {
+                            std::array<u64x4, max_logn> aa;
+                            for(size_t j = 0; j < max_logn; j++) {
+                                for(size_t z = 0; z < K; z++) {
+                                    aa[j][z] = buf[i + z][j].getr();
+                                }
+                            }
+                            return aa;
+                        };
+
+                        auto aa_tuple = std::make_tuple(extract_one(bufs)...);
+                        std::apply(cb, aa_tuple);
+
+                        // Write results back: only first array needs to be written
+                        auto &first_buf = std::get<0>(std::forward_as_tuple(bufs...));
+                        const auto &first_aa = std::get<0>(aa_tuple);
                         for(size_t j = 0; j < max_logn; j++) {
                             for(size_t z = 0; z < K; z++) {
-                                aa[j][z] = buf[i + z][j].getr();
+                                first_buf[i + z][j].setr((uint32_t)first_aa[j][z]);
                             }
                         }
-                        return aa;
-                    };
-                    
-                    auto aa_tuple = std::make_tuple(extract_one(bufs)...);
-                    std::apply(cb, aa_tuple);
-                    
-                    // Write results back: only first array needs to be written
-                    auto& first_buf = std::get<0>(std::forward_as_tuple(bufs...));
-                    const auto& first_aa = std::get<0>(aa_tuple);
-                    for(size_t j = 0; j < max_logn; j++) {
-                        for(size_t z = 0; z < K; z++) {
-                            first_buf[i + z][j].setr((uint32_t)first_aa[j][z]);
-                        }
-                    }
-                }, buffers);
+                    },
+                    buffers);
             }
-            
+
             checkpoint("dot");
-            auto& first_buf = std::get<0>(buffers);
+            auto &first_buf = std::get<0>(buffers);
             xor_transform(first_buf);
             checkpoint("transform");
-            
+
             // Gather results from first buffer
 
             for(size_t i = 0; i < M; i += 2 * bottoms) {
-                bool parity = __builtin_parity(uint32_t((i >> 1) & top));
+                bool parity = std::popcount(uint32_t((i >> 1) & top)) % 2;
                 size_t limit = std::min(M, i + 2 * bottoms) - i;
                 uint32_t count = (uint32_t)std::popcount(i) - 1;
                 for(size_t bottom = (i == 0); bottom < limit; bottom++) {
-                    if (parity) {
+                    if(parity) {
                         out[i + bottom] -= first_buf[bottom >> 1][count + counts[bottom]];
                     } else {
                         out[i + bottom] += first_buf[bottom >> 1][count + counts[bottom]];
@@ -198,37 +190,44 @@ namespace cp_algo::math {
             checkpoint("gather");
         }
         const base ni = base(N / 2).inv();
-        for(auto& x : out) {x *= ni;}
+        for(auto &x: out) {
+            x *= ni;
+        }
         return out;
     }
 
-    template<typename base>
-    big_vector<base> subset_convolution(std::span<base> f, std::span<base> g) {
+    template<typename value_type>
+    big_vector<std::remove_const_t<value_type>> subset_convolution(std::span<value_type> f, std::span<value_type> g) {
+        using base = std::remove_const_t<value_type>;
         big_vector<base> outpa;
-        constexpr size_t lgn = max_logn;
-        outpa = on_rank_vectors([](auto &a, auto const& b) {
-            std::decay_t<decltype(a)> res = {};
-            const auto mod = base::mod();
-            const auto imod = math::inv2(-mod);
-            const auto r4 = u64x4() + uint64_t(-1) % mod + 1;
-            auto add = [&](size_t i) {
-                for(size_t j = 0; i + j + 1 < lgn; j++) {
-                    res[i + j + 1] += (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[j]));
-                }
-                if constexpr (lgn >= 20) if (i == 15) {
-                    for(size_t k = 0; k < lgn; k++) {
-                        res[k] -= (res[k] >= base::modmod8()) & base::modmod8();
+        const size_t lgn = std::min<size_t>(max_logn, std::bit_width(f.size()) - 1);
+        outpa = on_rank_vectors(
+            [lgn](auto &a, auto const& b) {
+                std::decay_t<decltype(a)> res = {};
+                const auto mod = base::mod();
+                const auto imod = math::inv2(-mod);
+                const auto r4 = u64x4() + uint64_t(-1) % mod + 1;
+                auto add = [&](size_t i) {
+                    for(size_t j = 0; i + j + 1 < lgn; j++) {
+                        res[i + j + 1] += (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[j]));
                     }
+                    if(i == 15) {
+                        for(size_t k = 0; k < lgn; k++) {
+                            res[k] -= (res[k] >= base::modmod8()) & base::modmod8();
+                        }
+                    }
+                };
+                for(size_t i = 0; i < lgn; i++) {
+                    add(i);
                 }
-            };
-            for(size_t i = 0; i < lgn; i++) { add(i); }
-            for(size_t k = 0; k < lgn; k++) {
-                res[k] = montgomery_reduce(res[k], mod, imod);
-                res[k] = montgomery_mul(res[k], r4, mod, imod);
-                a[k] = res[k] >= mod ? res[k] - mod : res[k];
-            }
-        }, f, g);
-        
+                for(size_t k = 0; k < max_logn; k++) {
+                    res[k] = montgomery_reduce(res[k], mod, imod);
+                    res[k] = montgomery_mul(res[k], r4, mod, imod);
+                    a[k] = res[k] >= mod ? res[k] - mod : res[k];
+                }
+            },
+            f, g);
+
         outpa[0] = f[0] * g[0];
         for(size_t i = 1; i < std::size(f); i++) {
             outpa[i] += f[i] * g[0] + f[0] * g[i];
@@ -241,31 +240,39 @@ namespace cp_algo::math {
     big_vector<base> subset_div(std::span<base> f, std::span<base> g) {
         big_vector<base> outpa;
         constexpr size_t lgn = max_logn;
-        auto f0 = f[0].getr(), gi = g[0].inv().getr();
-        outpa = on_rank_vectors([f0, gi](auto &a, auto const& b) {
-            static const auto mod = base::mod();
-            static const auto imod = math::inv2(-mod);
-            static const auto gir4 = u64x4() + (uint64_t(-1) % mod + 1) * gi % mod;
-            for(size_t k = 0; k < lgn; k++) {
-                for(size_t i = 0; i < k; i++) {
-                    a[k] -= (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[k - 1 - i]));
-                    a[k] = a[k] >= base::modmod() ? a[k] + base::modmod() : a[k];
+        auto inv = g[0].inv();
+        auto f0 = (f[0] * inv).getr(), gi = inv.getr();
+        const auto mod = base::mod();
+        const auto imod = math::inv2(-mod);
+        const auto gir4 = u64x4() + (uint64_t(-1) % mod + 1) * gi % mod;
+        // Eight products and the subsequent Montgomery reduction fit below 2^64.
+        const size_t period = mod < (1u << 30) ? 8 : 1;
+        const uint64_t bound = uint64_t(period * base::modmod());
+        outpa = on_rank_vectors(
+            [=](auto &a, auto const& b) {
+                for(size_t k = 0; k < lgn; k++) {
+                    for(size_t i = 0; i < k; i++) {
+                        a[k] -= (u64x4)_mm256_mul_epu32(__m256i(a[i]), __m256i(b[k - 1 - i]));
+                        if(i % period == period - 1 || i + 1 == k) {
+                            a[k] = a[k] >= bound ? a[k] + bound : a[k];
+                        }
+                    }
+                    a[k] -= (u64x4)_mm256_mul_epu32(__m256i() + f0, __m256i(b[k]));
+                    a[k] = a[k] >= bound ? a[k] + bound : a[k];
+                    a[k] = montgomery_reduce(a[k], mod, imod);
+                    a[k] = montgomery_mul(a[k], gir4, mod, imod);
+                    a[k] = a[k] >= mod ? a[k] - mod : a[k];
                 }
-                a[k] -= (u64x4)_mm256_mul_epu32(__m256i() + f0, __m256i(b[k]));
-                a[k] = a[k] >= base::modmod() ? a[k] + base::modmod() : a[k];
-                a[k] = montgomery_reduce(a[k], mod, imod);
-                a[k] = montgomery_mul(a[k], gir4, mod, imod);
-                a[k] = a[k] >= mod ? a[k] - mod : a[k];
-            }
-        }, f, g);
-        outpa[0] = f0 * gi;
+            },
+            f, g);
+        outpa[0] = f0;
         checkpoint("fix 0");
         return outpa;
     }
 
     template<typename base>
     big_vector<base> subset_log(std::span<base> g) {
-        if (size(g) == 1) {
+        if(size(g) == 1) {
             assert(g[0] == base(1));
             return big_vector<base>{0};
         }
@@ -279,7 +286,7 @@ namespace cp_algo::math {
 
     template<typename base>
     big_vector<base> subset_exp(std::span<base> g) {
-        if (size(g) == 1) {
+        if(size(g) == 1) {
             assert(g[0] == base(0));
             return big_vector<base>{1};
         }
@@ -293,19 +300,19 @@ namespace cp_algo::math {
 
     template<typename base>
     big_vector<big_vector<base>> subset_compose(std::span<base> f, std::span<base> g, size_t n) {
-        if (size(g) == 1) {
+        if(size(g) == 1) {
             size_t M = size(f);
             big_vector res(n, big_vector<base>{0});
-            big_vector<base> pw(std::max(n, M));
+            big_vector<base> pw(std::max(n, M) + 1);
             pw[0] = 1;
-            for (size_t j = 1; j < M; j++) {
+            for(size_t j = 1; j < M; j++) {
                 pw[j] = pw[j - 1] * g[0];
             }
-            for (size_t i = 0; i < n; i++) {
-                for (size_t j = 0; j < M; j++) {
+            for(size_t i = 0; i < n; i++) {
+                for(size_t j = 0; j < M; j++) {
                     res[i][0] += pw[j] * f[j];
                 }
-                for (size_t j = M; j > i; j--) {
+                for(size_t j = M; j > i; j--) {
                     pw[j] = pw[j - 1] * base(j);
                 }
                 pw[i] = 0;
@@ -340,20 +347,20 @@ namespace cp_algo::math {
     }
 
     template<typename base>
-    big_vector<base> subset_power_projection(big_vector<big_vector<base>> &&fg, std::span<base> g, size_t M) {
-        if (size(g) == 1) {
+    big_vector<base> subset_power_projection(big_vector<big_vector<base>>&& fg, std::span<base> g, size_t M) {
+        if(size(g) == 1) {
             size_t n = size(fg);
             big_vector<base> res(M);
-            big_vector<base> pw(std::max(n, M));
+            big_vector<base> pw(std::max(n, M) + 1);
             pw[0] = 1;
-            for (size_t j = 1; j < M; j++) {
+            for(size_t j = 1; j < M; j++) {
                 pw[j] = pw[j - 1] * g[0];
             }
-            for (size_t i = 0; i < size(fg); i++) {
-                for (size_t j = 0; j < M; j++) {
+            for(size_t i = 0; i < size(fg); i++) {
+                for(size_t j = 0; j < M; j++) {
                     res[j] += pw[j] * fg[i][0];
                 }
-                for (size_t j = M; j > i; j--) {
+                for(size_t j = M; j > i; j--) {
                     pw[j] = pw[j - 1] * base(j);
                 }
                 pw[i] = 0;
@@ -363,9 +370,9 @@ namespace cp_algo::math {
         }
         size_t N = std::size(g);
         fg.emplace_back(N / 2);
-        for(auto&& [i, h]: fg | std::views::enumerate | std::views::reverse | std::views::drop(1)) {
+        for(auto &&[i, h]: fg | std::views::enumerate | std::views::reverse | std::views::drop(1)) {
             auto prev = subset_conv_transpose<base>(std::span(h).last(N / 2), std::span(g).last(N / 2));
-            for (size_t j = 0; j < N / 2; j++) {
+            for(size_t j = 0; j < N / 2; j++) {
                 fg[i + 1][j] += prev[j];
             }
             fg[i + 1].resize(N / 2);

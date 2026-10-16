@@ -30,8 +30,11 @@ jobs:
           submodules: recursive
 
       - name: Set up competitive-verifier
-        uses: adamant-pwn/actions/setup@patch-1
+        uses: competitive-verifier/actions/setup@v2
         with:
+          # Floor pins the first release without the malicious polyfill.io
+          # script (removed in competitive-verifier 4.1.2).
+          package: "competitive-verifier>=4.1.2"
           cache-pip: true
 
       # Initialize your own environment for resolving.
@@ -40,6 +43,9 @@ jobs:
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
           g++ --version
+      - name: Test minifier
+        run: python3 tests/test_minify.py
+
       - name: oj-resolve
         uses: competitive-verifier/actions/oj-resolve@v2
         with:
@@ -63,7 +69,7 @@ jobs:
       - name: Check bundled
         id: test-bundled
         run: |
-          echo "count=$(find .competitive-verifier/bundled/ -type f | wc -l)" >> $GITHUB_OUTPUT
+          echo "count=$(find .competitive-verifier/bundled/ -type f | wc -l)" >> "$GITHUB_OUTPUT"
       - name: Upload bundled
         uses: actions/upload-artifact@v4
         if: steps.test-bundled.outputs.count > 0
@@ -117,8 +123,11 @@ jobs:
         uses: competitive-verifier/actions/download-verify-artifact@v2
 
       - name: Set up competitive-verifier
-        uses: adamant-pwn/actions/setup@patch-1
+        uses: competitive-verifier/actions/setup@v2
         with:
+          # Floor pins the first release without the malicious polyfill.io
+          # script (removed in competitive-verifier 4.1.2).
+          package: "competitive-verifier>=4.1.2"
           cache-pip: true
 
       - name: Use GCC 14.2
@@ -188,8 +197,11 @@ jobs:
         run: python3 .verify-helper/scripts/generate_minified.py
   
       - name: Set up competitive-verifier
-        uses: adamant-pwn/actions/setup@patch-1
+        uses: competitive-verifier/actions/setup@v2
         with:
+          # Floor pins the first release without the malicious polyfill.io
+          # script (removed in competitive-verifier 4.1.2).
+          package: "competitive-verifier>=4.1.2"
           cache-pip: true
 
       - name: Merge results
@@ -249,12 +261,21 @@ jobs:
           source: _jekyll
           destination: _site
 
+      - name: Stage PR preview artifact
+        if: github.event_name == 'pull_request'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir preview-artifact
+          cp -a _site preview-artifact/site
+          python3 -c 'import json, os; json.dump({"number": int(os.environ["PR_NUMBER"])}, open("preview-artifact/pr.json", "w"))'
+
       - name: Upload PR preview
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.pull_request.number }}
-          path: _site
+          name: pr-preview
+          path: preview-artifact
           if-no-files-found: error
           retention-days: 7
 
@@ -266,3 +287,11 @@ jobs:
           path: ${{github.workspace}}/merged-result.json
           if-no-files-found: error
           retention-days: 3
+
+  preview-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node .github/scripts/test_preview.cjs

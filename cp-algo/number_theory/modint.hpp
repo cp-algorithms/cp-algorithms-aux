@@ -3,6 +3,7 @@
 #include "../math/common.hpp"
 #include <iostream>
 #include <cassert>
+#include <type_traits>
 namespace cp_algo::math {
 
     template<typename modint, typename _Int>
@@ -102,17 +103,22 @@ namespace cp_algo::math {
         if(in >> r) {x.setr(r);}
         return in;
     }
-    // Read a signed 64-bit integer and reduce it modulo mod().
-    // Failed extraction leaves x unchanged; already-reduced input skips division.
+    // Read a signed integer with the modint's storage width, then reduce it.
+    // Failed extraction leaves x unchanged.
     template<modint_type modint>
     decltype(std::cin)& operator>>(decltype(std::cin)& in, modint& x) {
-        int64_t r;
-        if(in >> r) {
-            if(uint64_t(r) >= uint64_t(modint::mod())) {
-                r %= int64_t(modint::mod());
-                if(r < 0) {r += modint::mod();}
+        using UInt = typename modint::UInt;
+        std::make_signed_t<UInt> value;
+        if(in >> value) {
+            UInt magnitude = value < 0 ? -UInt(value) : UInt(value);
+            bool reduce = true;
+            if constexpr(requires { modint::m_transform(UInt{}); }) {
+                // Montgomery conversion already reduces any word for odd moduli.
+                reduce = modint::mod() % 2 == 0;
             }
-            x.setr(typename modint::UInt(r));
+            if(reduce && magnitude >= UInt(modint::mod())) {magnitude %= modint::mod();}
+            x.setr(magnitude);
+            if(value < 0) {x = -x;}
         }
         return in;
     }
@@ -139,25 +145,6 @@ namespace cp_algo::math {
     struct dynamic_modint: modint_base<dynamic_modint<Int>, Int> {
         using Base = modint_base<dynamic_modint<Int>, Int>;
         using Base::Base;
-
-        friend decltype(std::cin)& operator>>(decltype(std::cin)& in, dynamic_modint& x) {
-            int64_t r;
-            if(in >> r) {
-                uint64_t magnitude = r < 0 ? -uint64_t(r) : uint64_t(r);
-                // Montgomery conversion accepts any unsigned word for an odd modulus.
-                if(Base::bits >= 32 && mod() % 2 && magnitude <= typename Base::UInt(-1)) {
-                    x.setr(typename Base::UInt(magnitude));
-                    if(r < 0) {x = -x;}
-                } else {
-                    if(uint64_t(r) >= uint64_t(mod())) {
-                        r %= int64_t(mod());
-                        if(r < 0) {r += mod();}
-                    }
-                    x.setr(typename Base::UInt(r));
-                }
-            }
-            return in;
-        }
 
         // Out of line, so that the hot path stays as small as it was.
         [[gnu::noinline, gnu::cold]] static Base::UInt m_reduce_reduced(Base::UInt2 ab) {

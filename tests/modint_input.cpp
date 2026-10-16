@@ -7,6 +7,7 @@
 #include <random>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace cp_algo::math;
@@ -17,6 +18,9 @@ template<class T> uint64_t reference(int64_t value) {
 }
 
 template<class T> void check() {
+    using Input = std::make_signed_t<typename T::UInt>;
+    constexpr int64_t lo = std::numeric_limits<Input>::min();
+    constexpr int64_t hi = std::numeric_limits<Input>::max();
     int64_t m = T::mod();
     {
         std::stringstream input;
@@ -34,13 +38,15 @@ template<class T> void check() {
             assert(bad.fail() && value.getr() == before);
         }
     }
-    std::vector<int64_t> values{0, 1, -1, m - 1, m, -m, -m + 1,
-        INT32_MIN, INT32_MAX, int64_t(UINT32_MAX), int64_t(UINT32_MAX) + 1,
-        -int64_t(UINT32_MAX) - 1, INT64_MIN, INT64_MAX};
-    if(m < INT64_MAX) { values.push_back(m + 1); }
+    std::vector<int64_t> values{0, 1, -1, m - 1, m, -m, -m + 1, lo, hi};
+    for(int64_t v : {int64_t(INT32_MIN), int64_t(INT32_MAX), int64_t(3000000000), int64_t(UINT32_MAX),
+                    int64_t(UINT32_MAX) + 1, -int64_t(UINT32_MAX) - 1}) {
+        if(lo <= v && v <= hi) {values.push_back(v);}
+    }
+    if(m < hi) {values.push_back(m + 1);}
     std::mt19937_64 random(627491);
     for(int i = 0; i < 1024; i++) {
-        values.push_back(std::bit_cast<int64_t>(random()));
+        values.push_back(std::bit_cast<Input>(typename T::UInt(random())));
     }
     std::stringstream input;
     for(auto v : values) { input << v << ' '; }
@@ -54,7 +60,11 @@ template<class T> void check() {
         assert((value * value).getr() == __uint128_t(expected) * expected % uint64_t(m));
     }
 
-    for(std::string text : {"", " \t\n", "word", "+", "-", "9223372036854775808", "-9223372036854775809"}) {
+    std::vector<std::string> invalid{"", " \t\n", "word", "+", "-", "9223372036854775808", "-9223372036854775809"};
+    if constexpr(sizeof(Input) == 4) {
+        invalid.insert(invalid.end(), {"2147483648", "-2147483649", "3000000000"});
+    }
+    for(auto const& text : invalid) {
         std::istringstream bad(text);
         T value = 7;
         auto before = value.getr();
@@ -90,9 +100,10 @@ template<class T> void check() {
         assert(input.fail() && c.getr() == before);
     }
     {
-        std::istringstream input("ff -ff 7fffffffffffffff -8000000000000000");
+        std::istringstream input(sizeof(Input) == 4 ? "ff -ff 7fffffff -80000000" :
+                                                    "ff -ff 7fffffffffffffff -8000000000000000");
         input >> std::hex;
-        for(int64_t v : {int64_t(255), int64_t(-255), INT64_MAX, INT64_MIN}) {
+        for(int64_t v : {int64_t(255), int64_t(-255), hi, lo}) {
             T value;
             input >> value;
             assert(!input.fail() && value.getr() == reference<T>(v));

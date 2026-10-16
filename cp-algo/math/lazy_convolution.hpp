@@ -24,8 +24,8 @@ namespace cp_algo::math {
             cdq(l, m);
             auto A_pref = std::span(A).subspan(0, std::min(m, r - l));
             auto B_pref = std::span(B).subspan(0, std::min(l, r - l));
-            big_vector<base> A_suf(std::from_range, std::span(A).subspan(l, m - l));
-            big_vector<base> B_suf(std::from_range, std::span(B).subspan(l, m - l));
+            big_vector<base> A_suf(A.begin() + l, A.begin() + m);
+            big_vector<base> B_suf(B.begin() + l, B.begin() + m);
             convolution_prefix(A_suf, B_pref, r - l);
             convolution_prefix(B_suf, A_pref, r - l);
             A_suf.resize(r - l);
@@ -57,7 +57,7 @@ namespace cp_algo::math {
             auto m = (l + r) / 2;
             cdq(l, m);
             auto A_pref = std::span(A).subspan(0, r - l);
-            big_vector<base> B_suf(std::from_range, std::span(B).subspan(l, m - l));
+            big_vector<base> B_suf(B.begin() + l, B.begin() + m);
             convolution_prefix(B_suf, A_pref, r - l);
             B_suf.resize(r - l);
             for(size_t i = m; i < r; i++) {

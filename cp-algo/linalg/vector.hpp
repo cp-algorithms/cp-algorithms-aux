@@ -115,6 +115,8 @@ namespace cp_algo::linalg {
 
         void add_scaled(Base const& b, base scale, size_t i = 0) override {
             static_assert(base::bits >= 64, "Only wide modint types for linalg");
+            // Lazy SIMD accumulation needs 16 * mod()^2 < 2^64, not just room for two residues.
+            // Wider supported scalar moduli use ordinary modular arithmetic.
             if(base::mod() >= (1LL << 30)) {
                 Base::add_scaled(b, scale, i);
                 return;

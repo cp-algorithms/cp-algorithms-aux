@@ -185,20 +185,10 @@ namespace cp_algo::math {
         }
 
     private:
-        static thread_local Int m;
+        static inline thread_local Int m = 1;
         // im: -1 / mod modulo 2^bits for lazy residues and 0 for reduced ones; inverse: the same
         // for every odd mod; rm: the value of remod().
-        static thread_local Base::UInt im, r2, inverse, rm;
+        static inline thread_local Base::UInt im = -1, r2 = 0, inverse = -1, rm = 2;
     };
-    template<typename Int>
-    Int thread_local dynamic_modint<Int>::m = 1;
-    template<typename Int>
-    dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::im = -1;
-    template<typename Int>
-    dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::r2 = 0;
-    template<typename Int>
-    dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::inverse = -1;
-    template<typename Int>
-    dynamic_modint<Int>::Base::UInt thread_local dynamic_modint<Int>::rm = 2;
 }
 #endif // CP_ALGO_MATH_MODINT_HPP

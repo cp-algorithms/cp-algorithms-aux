@@ -48,13 +48,13 @@ namespace cp_algo::math {
             return pw[k].is_zero() ? pw[k] = pow(B0, k, n - k) : pw[k];
         };
 
-        std::function<poly_t<T>(poly_t<T> const&, int, int)> compose_dac = [&getpow, &compose_dac](poly_t<T> const& f, int m, int N) {
+        auto compose_dac = [&getpow](this auto const& self, poly_t<T> const& f, int m, int N) -> poly_t<T> {
             if(f.deg() <= 0) {
                 return f;
             }
             int k = m / 2;
             auto [f0, f1] = std::make_pair(f.mod_xk(k), f.div_xk(k));
-            auto [A, B] = std::make_pair(compose_dac(f0, k, N), compose_dac(f1, m - k, N - k));
+            auto [A, B] = std::make_pair(self(f0, k, N), self(f1, m - k, N - k));
             return (A + (B.mod_xk(N - k) * getpow(k).mod_xk(N - k)).mul_xk(k)).mod_xk(N);
         };
 

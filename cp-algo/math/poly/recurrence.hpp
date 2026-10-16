@@ -60,7 +60,7 @@ namespace cp_algo::math {
     T kth_rec(poly_t<T> P, poly_t<T> Q, int64_t k) {
         assert(k >= 0 && Q[0] != T(0));
         T polynomial_part = 0;
-        if(P.deg() >= Q.deg()) {
+        if(k > Q.deg() && P.deg() >= Q.deg()) {
             auto [quotient, remainder] = divmod(std::move(P), Q);
             polynomial_part = k <= quotient.deg() ? quotient[int(k)] : T(0);
             P = std::move(remainder);

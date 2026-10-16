@@ -92,6 +92,16 @@ template<typename T> void powers() {
     assert(threw);
 }
 int main() {
+    // Copies of an FPS share its generator, including move-only captures and their lifetime.
+    int generated = 0;
+    fps<int> owned([p = std::make_unique<int>(7), &generated](size_t n, auto const&) {
+        generated++;
+        return *p + int(n);
+    });
+    auto shared = owned;
+    assert(owned[3] == 10 && shared[2] == 9 && generated == 4);
+    owned = fps<int>();
+    assert(shared[4] == 11 && generated == 5);
     powers<modint<998244353>>();
     powers<modint<1000000007>>();
     products<modint<998244353>>();

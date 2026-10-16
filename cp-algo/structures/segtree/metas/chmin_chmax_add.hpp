@@ -18,7 +18,7 @@ namespace cp_algo::structures::segtree::metas {
             int64_t val;
             size_t count = 1;
             int64_t second = std::max(inf, -inf, comp);
-            static const Comp comp;
+            static constexpr Comp comp{};
 
             data combine(data const& t) const {
                 return comp(val, t.val) ? data{val, count, std::min(second, t.val, comp)}

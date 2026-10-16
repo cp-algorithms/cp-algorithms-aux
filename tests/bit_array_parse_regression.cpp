@@ -27,6 +27,14 @@ template <class Bits> void check() {
             c += rng() % 2;
         parse(input);
     }
+    // std::span<char> does not promise SIMD alignment.
+    std::vector<char> storage(129 + 32, '1');
+    for(size_t offset = 0; offset < 32; offset++) {
+        auto input = std::span<char>(storage).subspan(offset, 129);
+        cp_algo::structures::from_string(bits, input);
+        auto actual = cp_algo::structures::to_string(bits);
+        assert(std::string(actual.begin(), actual.end()) == std::string(129, '1'));
+    }
 }
 int main() {
     check<cp_algo::structures::dynamic_bit_array>();

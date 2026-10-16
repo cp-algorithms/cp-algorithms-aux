@@ -17,8 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pages: write
-      id-token: write
     outputs:
       upload_pages: ${{ steps.upload_pages.outcome == 'success' }}
     steps:

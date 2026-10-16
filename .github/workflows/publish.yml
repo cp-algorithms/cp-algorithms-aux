@@ -15,17 +15,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish_main:
+  guard:
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+    outputs:
+      current_main: ${{ steps.current_main.outputs.current }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+          fetch-depth: 2147483647
+          submodules: recursive
+
+      - name: Confirm verified commit is still main
+        id: current_main
+        shell: bash
+        run: |
+          git fetch --no-tags origin main
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping stale publish for $(git rev-parse HEAD); main is $(git rev-parse origin/main)."
+          fi
+
+  publish_main:
+    needs: guard
+    if: needs.guard.outputs.current_main == 'true'
+    runs-on: ubuntu-latest
+    permissions:
       actions: read
       contents: write
       pages: write
-      id-token: write
     outputs:
       upload_pages: ${{ steps.upload_pages.outcome == 'success' }}
     steps:
@@ -218,14 +245,14 @@ jobs:
       actions: read
       contents: write
       pull-requests: read
-      pages: write
-      id-token: write
     outputs:
       upload_pages: ${{ steps.upload_pages.outcome == 'success' }}
       preview_url: ${{ steps.preview.outputs.url }}
     steps:
       - uses: actions/checkout@v4
         with:
+          # Load the validator from the trusted default branch, never the PR head.
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
 
       - name: Download PR preview artifact

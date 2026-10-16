@@ -17,6 +17,9 @@ namespace cp_algo::structures {
         for(; i + width <= (int64_t)std::size(bits); i += width) {
             arr.word(i / width) = read_bits64(bits.data() + i);
         }
+        if(i < (int64_t)std::size(bits)) {
+            arr.word(i / width) = 0;
+        }
         for(; i < (int64_t)std::size(bits); i++) {
             if(bits[i] & 1) {
                 arr.set(i);

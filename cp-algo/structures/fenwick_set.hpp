@@ -2,9 +2,10 @@
 #define CP_ALGO_STRUCTURES_FENWICK_SET_HPP
 #include "fenwick.hpp"
 #include "bit_array.hpp"
+#include <ranges>
 namespace cp_algo::structures {
     template<size_t maxc>
-    using popcount_array = std::array<int, maxc / bit_width<uint64_t> + 1>;
+    using popcount_array = std::array<int, (maxc + bit_width<uint64_t> - 1) / bit_width<uint64_t> + 1>;
     // fenwick-based set for [0, maxc)
     template<size_t maxc>
     struct fenwick_set: fenwick<int, popcount_array<maxc>> {
@@ -14,10 +15,11 @@ namespace cp_algo::structures {
         bit_array<maxc> bits;
 
         fenwick_set(): Base(popcount_array<maxc>{}) {}
-        fenwick_set(auto &&range): fenwick_set() {
+        template<std::ranges::range Range>
+        fenwick_set(Range &&range): fenwick_set() {
             for(auto x: range) {
-                Base::data[x / word + 1] += 1;
                 if(!bits.test(x)) {
+                    Base::data[x / word + 1] += 1;
                     sz++;
                     bits.flip(x);
                 }

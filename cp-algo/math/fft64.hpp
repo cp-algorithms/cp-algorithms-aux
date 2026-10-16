@@ -103,7 +103,8 @@ namespace cp_algo::math::fft {
                     if(i >= k) {
                         return;
                     }
-                    res[i] = llround(x[0]) + (llround(x[1]) << 16) + (llround(x[2]) << 32) + (llround(x[3]) << 48);
+                    res[i] = uint64_t(llround(x[0])) + (uint64_t(llround(x[1])) << 16) +
+                             (uint64_t(llround(x[2])) << 32) + (uint64_t(llround(x[3])) << 48);
                     res[i] *= mul;
                 };
                 set_i(i, re, cur);

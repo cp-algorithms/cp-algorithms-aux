@@ -22,11 +22,12 @@ namespace cp_algo::math::poly::impl {
         auto [q0, q1] = q.bisect();
         auto qq = q0 * q0 - (q1 * q1).mul_xk_inplace(1);
         inv_inplace(qq, k / 2 - q.deg() / 2, (n + 1) / 2 + q.deg() / 2);
-        size_t N = fft::com_size(size(q0.a), size(qq.a));
+        size_t offset = q.deg() / 2;
+        size_t M = offset + (n + 1) / 2;
+        size_t N = std::max(fft::com_size(std::max(size(q0.a), size(q1.a)), size(qq.a)), (M + 1) / 2);
         auto q0f = fft::spectrum<base>(q0.a, 2 * N);
         auto q1f = fft::spectrum<base>(q1.a, 2 * N);
         auto qqf = fft::spectrum<base>(qq.a, 2 * N);
-        size_t M = q0.deg() + (n + 1) / 2;
         typename poly::Vector A, B;
         A.resize((M + fft::flen - 1) / fft::flen * fft::flen);
         B.resize((M + fft::flen - 1) / fft::flen * fft::flen);
@@ -34,8 +35,8 @@ namespace cp_algo::math::poly::impl {
         std::move(q1f).multiply(qqf, B, M);
         q.a.resize(n + 1);
         for(size_t i = 0; i < n; i += 2) {
-            q.a[i] = A[q0.deg() + i / 2];
-            q.a[i + 1] = -B[q0.deg() + i / 2];
+            q.a[i] = A[offset + i / 2];
+            q.a[i + 1] = -B[offset + i / 2];
         }
         q.a.pop_back();
         q.normalize();
@@ -58,6 +59,13 @@ namespace cp_algo::math {
     template<typename T>
     T kth_rec(poly_t<T> P, poly_t<T> Q, int64_t k) {
         assert(k >= 0 && Q[0] != T(0));
+        T polynomial_part = 0;
+        if(k > Q.deg() && P.deg() >= Q.deg()) {
+            auto [quotient, remainder] = divmod(std::move(P), Q);
+            polynomial_part = k <= quotient.deg() ? quotient[int(k)] : T(0);
+            P = std::move(remainder);
+        }
+        if(P.is_zero()) {return polynomial_part;}
         while(k > Q.deg()) {
             size_t n = Q.a.size();
             auto [Q0, Q1] = Q.bisect();
@@ -91,7 +99,7 @@ namespace cp_algo::math {
         }
         size_t n = size_t(k) + 1;
         P.mul_truncate(inv(std::move(Q), n), n);
-        return P[(int)k];
+        return polynomial_part + P[(int)k];
     }
 }
 #pragma GCC pop_options

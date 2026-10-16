@@ -31,7 +31,7 @@ namespace cp_algo::graph {
                 mst.push_back(idx);
             }
         }
-        return {total, mst};
+        return {total, std::move(mst)};
     }
 }
 #endif // CP_ALGO_GRAPH_MST_HPP

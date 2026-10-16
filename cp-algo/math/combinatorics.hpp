@@ -9,39 +9,34 @@ namespace cp_algo::math {
     // Beware of usage with dynamic mod
     template<typename T>
     T fact(auto n) {
-        static big_vector<T> F(maxn);
-        static bool init = false;
-        if(!init) {
+        static const auto F = [] {
+            big_vector<T> F(maxn);
             F[0] = T(1);
             for(int i = 1; i < maxn; i++) {
                 F[i] = F[i - 1] * T(i);
             }
-            init = true;
-        }
+            return F;
+        }();
         return F[n];
     }
     // Only works for modint types
     template<typename T>
     T rfact(auto n) {
-        static big_vector<T> F(maxn);
-        static bool init = false;
-        if(!init) {
+        static const auto F = [] {
+            big_vector<T> F(maxn);
             int t = (int)std::min<int64_t>(T::mod(), maxn) - 1;
             F[t] = T(1) / fact<T>(t);
             for(int i = t - 1; i >= 0; i--) {
                 F[i] = F[i + 1] * T(i + 1);
             }
-            init = true;
-        }
+            return F;
+        }();
         return F[n];
     }
     template<typename T, int base>
     T pow_fixed(int n) {
-        static big_vector<T> prec_low(1 << 16);
-        static big_vector<T> prec_high(1 << 16);
-        static bool init = false;
-        if(!init) {
-            init = true;
+        static const auto prec = [] {
+            big_vector<T> prec_low(1 << 16), prec_high(1 << 16);
             prec_low[0] = prec_high[0] = T(1);
             T step_low = T(base);
             T step_high = bpow(T(base), 1 << 16);
@@ -49,8 +44,9 @@ namespace cp_algo::math {
                 prec_low[i] = prec_low[i - 1] * step_low;
                 prec_high[i] = prec_high[i - 1] * step_high;
             }
-        }
-        return prec_low[n & 0xFFFF] * prec_high[n >> 16];
+            return std::pair{std::move(prec_low), std::move(prec_high)};
+        }();
+        return prec.first[n & 0xFFFF] * prec.second[n >> 16];
     }
     template<typename T>
     big_vector<T> bulk_invs(auto const& args) {

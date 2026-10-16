@@ -84,23 +84,13 @@ namespace cp_algo::math::fft {
         }
         template<class Idx>
             requires requires(Idx const& idx) { idx[0]; }
-        base& operator[](Idx const& idx) {
-            return data[linear_index(idx)];
-        }
-        template<class Idx>
-            requires requires(Idx const& idx) { idx[0]; }
-        base const& operator[](Idx const& idx) const {
-            return data[linear_index(idx)];
+        auto& operator[](this auto&& self, Idx const& idx) {
+            return self.data[self.linear_index(idx)];
         }
         template<std::convertible_to<size_t>... Args>
-        base& operator[](Args... args) {
-            size_t idx[] = {static_cast<size_t>(args)...};
-            return data[linear_index(idx)];
-        }
-        template<std::convertible_to<size_t>... Args>
-        base const& operator[](Args... args) const {
-            size_t idx[] = {static_cast<size_t>(args)...};
-            return data[linear_index(idx)];
+        auto& operator[](this auto&& self, Args... args) {
+            std::array<size_t, sizeof...(Args)> idx{static_cast<size_t>(args)...};
+            return self.data[self.linear_index(idx)];
         }
         void read() {
             for(auto &it: data) {

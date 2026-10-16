@@ -74,10 +74,9 @@ namespace cp_algo::math {
         }
         // Input must already satisfy 0 <= value < mod(); no reduction or range check.
         // Failed extraction leaves the value unchanged.
-        decltype(std::cin)& read_reduced(decltype(std::cin)& in = std::cin) {
+        void read_reduced(decltype(std::cin)& in = std::cin) {
             UInt value;
             if(in >> value) {to_modint().setr(value);}
-            return in;
         }
 
         // Only use these if you really know what you're doing!

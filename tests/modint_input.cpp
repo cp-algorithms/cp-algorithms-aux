@@ -27,7 +27,7 @@ template<class T> void check() {
         for(int64_t v : {int64_t(0), m / 2, m - 1}) {input << v << ' ';}
         for(int64_t v : {int64_t(0), m / 2, m - 1}) {
             T value;
-            assert(&value.read_reduced(input) == &input);
+            value.read_reduced(input);
             assert(input && value.getr() == uint64_t(v));
         }
         for(std::string text : {"", "word", "18446744073709551616"}) {

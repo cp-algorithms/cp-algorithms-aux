@@ -86,9 +86,7 @@ namespace cp_algo::math {
     auto on_rank_vectors(auto &&cb, auto const&... inputs) {
         static_assert(sizeof...(inputs) >= 1, "on_rank_vectors requires at least one input");
 
-        // Create tuple of input references once
-        auto input_tuple = std::forward_as_tuple(inputs...);
-        auto const& first_input = std::get<0>(input_tuple);
+        auto const& first_input = std::get<0>(std::tie(inputs...));
         using base = std::decay_t<decltype(first_input[0])>;
         big_vector<base> out(std::size(first_input));
 
@@ -100,12 +98,8 @@ namespace cp_algo::math {
         const size_t bottoms = 1 << (n - T - 1);
         const auto M = std::size(first_input);
 
-        // Create array buffers for each input
-        auto create_buffers = [bottoms]<typename... Args>(const Args&...) {
-            return std::make_tuple(
-                big_vector<std::array<typename std::decay_t<Args>::value_type, max_logn>>(bottoms)...);
-        };
-        auto buffers = std::apply(create_buffers, input_tuple);
+        auto buffers = std::tuple{
+            big_vector<std::array<std::ranges::range_value_t<decltype(inputs)>, max_logn>>(bottoms)...};
 
         checkpoint("alloc buffers");
         big_vector<uint32_t> counts(2 * bottoms);
@@ -121,30 +115,23 @@ namespace cp_algo::math {
             }, buffers);
             checkpoint("memset");
 
-            // Initialize buffers from inputs
-            std::apply(
-                [&](auto const&... inps) {
-                    std::apply(
-                        [&](auto&... bufs) {
-                            auto init_one = [&](auto const& inp, auto &buf) {
-                                for(size_t i = 0; i < M; i += 2 * bottoms) {
-                                    bool parity = __builtin_parity(uint32_t((i >> 1) & top));
-                                    size_t limit = std::min(M, i + 2 * bottoms) - i;
-                                    uint32_t count = (uint32_t)std::popcount(i) - 1;
-                                    for(size_t bottom = (i == 0); bottom < limit; bottom++) {
-                                        if(parity) {
-                                            buf[bottom >> 1][count + counts[bottom]] -= inp[i + bottom];
-                                        } else {
-                                            buf[bottom >> 1][count + counts[bottom]] += inp[i + bottom];
-                                        }
-                                    }
-                                }
-                            };
-                            (init_one(inps, bufs), ...);
-                        },
-                        buffers);
-                },
-                input_tuple);
+            std::apply([&](auto&... bufs) {
+                auto init_one = [&](auto const& inp, auto &buf) {
+                    for(size_t i = 0; i < M; i += 2 * bottoms) {
+                        bool parity = std::popcount(uint32_t((i >> 1) & top)) % 2;
+                        size_t limit = std::min(M, i + 2 * bottoms) - i;
+                        uint32_t count = (uint32_t)std::popcount(i) - 1;
+                        for(size_t bottom = (i == 0); bottom < limit; bottom++) {
+                            if(parity) {
+                                buf[bottom >> 1][count + counts[bottom]] -= inp[i + bottom];
+                            } else {
+                                buf[bottom >> 1][count + counts[bottom]] += inp[i + bottom];
+                            }
+                        }
+                    }
+                };
+                (init_one(inputs, bufs), ...);
+            }, buffers);
 
             checkpoint("init");
             std::apply([](auto&... bufs) {
@@ -189,7 +176,7 @@ namespace cp_algo::math {
             // Gather results from first buffer
 
             for(size_t i = 0; i < M; i += 2 * bottoms) {
-                bool parity = __builtin_parity(uint32_t((i >> 1) & top));
+                bool parity = std::popcount(uint32_t((i >> 1) & top)) % 2;
                 size_t limit = std::min(M, i + 2 * bottoms) - i;
                 uint32_t count = (uint32_t)std::popcount(i) - 1;
                 for(size_t bottom = (i == 0); bottom < limit; bottom++) {

@@ -137,10 +137,7 @@ namespace cp_algo::graph {
     
     template<weighted_graph_type graph>
     shortest_path_context single_source_shortest_path(graph const& g, node_index s) {
-        bool negative_edges = false;
-        for (auto e: g.edges()) {
-            negative_edges |= e.w < 0;
-        }
+        bool negative_edges = std::ranges::any_of(g.edges(), [](auto const& e) { return e.w < 0; });
         return negative_edges ? deep_spfa(g, s) : dijkstra(g, s);
     }
 

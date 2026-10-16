@@ -11,7 +11,8 @@ namespace cp_algo::graph {
     struct graph_traits : std::false_type {};
 
     template<typename T>
-    struct graph_traits<T, std::void_t<typename T::edge_t, decltype(T::mode)>> : std::true_type {
+        requires requires { typename T::edge_t; T::mode; }
+    struct graph_traits<T> : std::true_type {
         using edge_t = typename T::edge_t;
         static constexpr auto mode = T::mode;
         static constexpr bool is_directed = mode == directed;

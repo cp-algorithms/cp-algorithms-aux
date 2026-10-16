@@ -9,6 +9,7 @@
 #include <vector>
 #include <string>
 #include <cstddef>
+#include <bit>
 #include <iostream>
 #include <forward_list>
 
@@ -24,7 +25,7 @@ namespace cp_algo {
     template<typename T, size_t Align = 32>
     class big_alloc {
         static_assert(Align >= alignof(void*), "Align must be at least pointer-size");
-        static_assert(std::popcount(Align) == 1, "Align must be a power of two");
+        static_assert(std::has_single_bit(Align), "Align must be a power of two");
 
     public:
         using value_type = T;
@@ -33,7 +34,6 @@ namespace cp_algo {
             using other = big_alloc<U, Align>;
         };
         constexpr bool operator==(const big_alloc&) const = default;
-        constexpr bool operator!=(const big_alloc&) const = default;
 
         big_alloc() noexcept = default;
         template<typename U, std::size_t A>

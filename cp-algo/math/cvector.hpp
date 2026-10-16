@@ -398,7 +398,7 @@ namespace cp_algo::math::fft {
                 }
             }
             for(size_t offset = 0; offset < n; offset += part) {
-                transform<false, 0, 0, -1, true>(n, false, offset, part);
+                transform<false, 0, 0, true>(n, false, offset, part);
             }
             checkpoint("fft");
         }
@@ -411,7 +411,7 @@ namespace cp_algo::math::fft {
             dot_fused16<0>(t, 0, n);
             checkpoint("dot");
             for(size_t offset = 0; offset < n; offset += part) {
-                transform<true, 0, 0, -1, true>(n, false, offset, part);
+                transform<true, 0, 0, true>(n, false, offset, part);
             }
             if(part < n) {
                 vpoint cvrt = {vz + real(roots[4]), vz - imag(roots[4])};
@@ -647,12 +647,12 @@ namespace cp_algo::math::fft {
             }
             checkpoint("sweep forward");
             for(size_t offset = 0; offset < n; offset += block) {
-                transform<false, n, block, 0, true>(n, false, offset, block);
+                transform<false, n, block, true>(n, false, offset, block);
                 if constexpr(!Square) {
-                    b.transform<false, n, block, 0, true>(n, false, offset, block);
+                    b.transform<false, n, block, true>(n, false, offset, block);
                 }
                 dot_fused16<n, Square>(b, offset, block);
-                transform<true, n, block, 0, true>(n, false, offset, block);
+                transform<true, n, block, true>(n, false, offset, block);
             }
             checkpoint("blocks");
             sweep8<true, 2, sweep_tile>();
@@ -671,14 +671,10 @@ namespace cp_algo::math::fft {
             return fused_part() >= 16 * dot_tile;
         }
         // Tile two radix-four stages together before descending into each child.
-        template<bool inverse, size_t fixed = 0, size_t range_fixed = 0, int top_fixed = -1, bool omit16 = false>
-        void transform(size_t input_n, bool parity, size_t range_offset = 0, size_t range_length = 0,
-                       int top_only = 0) {
+        template<bool inverse, size_t fixed = 0, size_t range_fixed = 0, bool omit16 = false>
+        void transform(size_t input_n, bool parity, size_t range_offset = 0, size_t range_length = 0) {
             if constexpr(range_fixed) {
                 range_length = range_fixed;
-            }
-            if constexpr(top_fixed >= 0) {
-                top_only = top_fixed;
             }
             const size_t n = fixed ? fixed : input_n;
             if constexpr(!range_fixed) {
@@ -779,67 +775,7 @@ namespace cp_algo::math::fft {
                     run.template operator()<false>();
                 }
             };
-            if(top_only) {
-                size_t offset = range_offset, length = range_length;
-                if(top_only == 1) {
-                    butterfly(offset, length, 0, length / 4);
-                    return;
-                }
-                if(top_only == 3) {
-                    size_t h = length / 64;
-                    for(size_t j = 0; j < h; j += 512) {
-                        size_t end = std::min(h, j + 512);
-                        auto stage0 = [&]() {
-                            for(size_t t = 0; t < 16; t++) {
-                                butterfly(offset, length, j + t * h, end + t * h);
-                            }
-                        };
-                        auto stage1 = [&]() {
-                            for(size_t q = 0; q < 4; q++) {
-                                for(size_t t = 0; t < 4; t++) {
-                                    butterfly(offset + q * length / 4, length / 4, j + t * h, end + t * h);
-                                }
-                            }
-                        };
-                        auto stage2 = [&]() {
-                            for(size_t q = 0; q < 16; q++) {
-                                butterfly(offset + q * length / 16, length / 16, j, end);
-                            }
-                        };
-                        if constexpr(inverse) {
-                            stage2();
-                            stage1();
-                            stage0();
-                        } else {
-                            stage0();
-                            stage1();
-                            stage2();
-                        }
-                    }
-                    return;
-                }
-                size_t step = length / 16;
-                for(size_t j = 0; j < step; j += 256) {
-                    size_t end = std::min(step, j + 256);
-                    if constexpr(inverse) {
-                        for(size_t t = 0; t < 4; t++) {
-                            butterfly(offset + t * length / 4, length / 4, j, end);
-                        }
-                        for(size_t t = 0; t < 4; t++) {
-                            butterfly(offset, length, j + t * step, end + t * step);
-                        }
-                    } else {
-                        for(size_t t = 0; t < 4; t++) {
-                            butterfly(offset, length, j + t * step, end + t * step);
-                        }
-                        for(size_t t = 0; t < 4; t++) {
-                            butterfly(offset + t * length / 4, length / 4, j, end);
-                        }
-                    }
-                }
-                return;
-            }
-            auto recurse = [&](auto &&self, size_t offset, size_t length) -> void {
+            auto recurse = [&](this auto const& self, size_t offset, size_t length) -> void {
                 if(length < 4 * flen) {
                     return;
                 }
@@ -847,7 +783,7 @@ namespace cp_algo::math::fft {
                     size_t step = length / 16;
                     if constexpr(inverse) {
                         for(size_t t = 0; t < 16; t++) {
-                            self(self, offset + t * step, step);
+                            self(offset + t * step, step);
                         }
                     }
                     for(size_t j = 0; j < step; j += 256) {
@@ -870,29 +806,29 @@ namespace cp_algo::math::fft {
                     }
                     if constexpr(!inverse) {
                         for(size_t t = 0; t < 16; t++) {
-                            self(self, offset + t * step, step);
+                            self(offset + t * step, step);
                         }
                     }
                 } else if(length >= (size_t(1) << (6 + parity))) {
                     auto finish = [&]<bool par>() {
                         constexpr size_t chunk = size_t(1) << (6 + par);
                         constexpr size_t bottom = size_t(1) << (4 + par);
-                        auto small = [&]<size_t L> [[gnu::always_inline]] (auto &&self, size_t pos) -> void {
+                        auto small = [&]<size_t L> [[gnu::always_inline]] (this auto const& self, size_t pos) -> void {
                             if constexpr(inverse && L > bottom) {
                                 for(size_t q = 0; q < 4; q++) {
-                                    self.template operator()<L / 4>(self, pos + q * (L / 4));
+                                    self.template operator()<L / 4>(pos + q * (L / 4));
                                 }
                             }
                             butterfly(pos, L, 0, L / 4);
                             if constexpr(!inverse && L > bottom) {
                                 for(size_t q = 0; q < 4; q++) {
-                                    self.template operator()<L / 4>(self, pos + q * (L / 4));
+                                    self.template operator()<L / 4>(pos + q * (L / 4));
                                 }
                             }
                         };
                         for(size_t leaf = offset; leaf < offset + length; leaf += chunk) {
                             if constexpr(inverse) {
-                                small.template operator()<chunk>(small, leaf);
+                                small.template operator()<chunk>(leaf);
                                 size_t level =
                                     std::min<size_t>(std::countr_one(leaf + chunk - 1), std::countr_zero(length));
                                 for(size_t lvl = 6 + 2 + par; lvl <= level; lvl += 2) {
@@ -906,7 +842,7 @@ namespace cp_algo::math::fft {
                                     size_t len = size_t(1) << lvl;
                                     butterfly(leaf & ~(len - 1), len, 0, len / 4);
                                 }
-                                small.template operator()<chunk>(small, leaf);
+                                small.template operator()<chunk>(leaf);
                             }
                         }
                     };
@@ -937,7 +873,7 @@ namespace cp_algo::math::fft {
                 }
             };
             // Radix two is performed separately at the leaves.
-            recurse(recurse, range_offset, range_length ? range_length : n);
+            recurse(range_offset, range_length ? range_length : n);
         }
         // Shortest butterfly that uses the shear rotation; the fixed 2^24 transform reads its
         // shear roots from a table, so they are worth using down to the last in-block level.

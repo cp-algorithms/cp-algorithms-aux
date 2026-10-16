@@ -10,7 +10,7 @@ namespace cp_algo::math {
         int64_t scale; // value * base^scale
 
         decimal(int64_t v=0, int64_t s=0): value(bigint<base>(v)), scale(s) {}
-        decimal(bigint<base> v, int64_t s=0): value(v), scale(s) {}
+        decimal(bigint<base> v, int64_t s=0): value(std::move(v)), scale(s) {}
 
         decimal& operator *= (const decimal &other) {
             value *= other.value;
@@ -49,7 +49,7 @@ namespace cp_algo::math {
         auto split() const {
             auto int_part = scale >= -ssize(value.digits) ? value.top(ssize(value.digits) + scale) : bigint<base>(0);
             auto frac_part = *this - decimal(int_part);
-            return std::pair{int_part, frac_part};
+            return std::pair{std::move(int_part), std::move(frac_part)};
         }
         void print() {
             auto [int_part, frac_part] = split();
@@ -99,6 +99,7 @@ namespace cp_algo::math {
             if (value.digits.empty()) return -inf;
             return ssize(value.digits) + scale;
         }
+        // The value must be nonzero.
         decimal inv(int64_t precision) {
             assert(precision >= 0);
             int64_t lead = llround((double)bigint<base>::Base / (double)value.digits.back());
@@ -130,23 +131,23 @@ namespace cp_algo::math {
         uint64_t remainder = 0;
 
         auto n = ssize(a.digits);
+        quotient.digits.resize(n);
         for (auto i = n - 1; i >= 0; i--) {
             __uint128_t val = (__uint128_t)remainder * bigint<base>::Base + a.digits[i];
             uint64_t q = uint64_t(val / divisor);
             remainder = uint64_t(val % divisor);
-            quotient.digits.push_back(q);
+            quotient.digits[i] = q;
         }
-        std::ranges::reverse(quotient.digits);
         quotient.negative = (neg_a ^ neg_b);
         quotient.normalize();
         
         bigint<base> rem{int64_t(remainder)};
-        rem.negative = neg_a;
-        rem.normalize();
+        rem.negative = neg_a && remainder != 0;
         
-        return std::pair{quotient, rem};
+        return std::pair{std::move(quotient), std::move(rem)};
     }
 
+    // Truncate the quotient toward zero; the divisor must be nonzero.
     template<base_v base>
     std::pair<bigint<base>, bigint<base>> divmod(bigint<base> const& a, bigint<base> const& b) {
         if(a.negative || b.negative) {
@@ -157,7 +158,7 @@ namespace cp_algo::math {
             remainder.negative = a.negative;
             quotient.normalize();
             remainder.normalize();
-            return std::pair{quotient, remainder};
+            return std::pair{std::move(quotient), std::move(remainder)};
         }
         if (a < b) {
             return std::pair{bigint<base>(0), a};
@@ -180,7 +181,7 @@ namespace cp_algo::math {
             d -= 1;
             r += b;
         }
-        return std::pair{d, r};
+        return std::pair{std::move(d), std::move(r)};
     }
 }
 

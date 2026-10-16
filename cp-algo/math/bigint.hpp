@@ -19,38 +19,16 @@ namespace cp_algo::math {
         bool negative = false;
 
         auto operator <=> (bigint const& other) const {
-            // Handle zero cases
-            if (digits.empty() && other.digits.empty()) {
-                return std::strong_ordering::equal;
+            auto sign = [](bigint const& x) { return x.digits.empty() ? 0 : x.negative ? -1 : 1; };
+            if(auto cmp = sign(*this) <=> sign(other); cmp != 0) {
+                return cmp;
             }
-            if (digits.empty()) {
-                return other.negative ? std::strong_ordering::greater : std::strong_ordering::less;
+            auto cmp = digits.size() <=> other.digits.size();
+            if(cmp == 0) {
+                cmp = std::lexicographical_compare_three_way(
+                    digits.rbegin(), digits.rend(), other.digits.rbegin(), other.digits.rend());
             }
-            if (other.digits.empty()) {
-                return negative ? std::strong_ordering::less : std::strong_ordering::greater;
-            }
-            
-            // Handle sign differences
-            if (negative != other.negative) {
-                return negative ? std::strong_ordering::less : std::strong_ordering::greater;
-            }
-            
-            // Both have the same sign - compare magnitudes
-            if (digits.size() != other.digits.size()) {
-                auto size_cmp = digits.size() <=> other.digits.size();
-                // If both negative, reverse the comparison
-                return negative ? 0 <=> size_cmp : size_cmp;
-            }
-            
-            // Same size, compare digits from most significant to least
-            for (auto i = ssize(digits) - 1; i >= 0; i--) {
-                auto digit_cmp = digits[i] <=> other.digits[i];
-                if (digit_cmp != std::strong_ordering::equal) {
-                    return negative ? 0 <=> digit_cmp : digit_cmp;
-                }
-            }
-            
-            return std::strong_ordering::equal;
+            return !digits.empty() && negative ? 0 <=> cmp : cmp;
         }
 
         bigint() {}
@@ -79,13 +57,13 @@ namespace cp_algo::math {
             }
         }
         bigint pad(size_t to_add) const {
-            return bigint{big_basic_string<uint64_t>(to_add, 0) + digits, negative}.normalize();
+            return bigint{big_basic_string<uint64_t>(to_add, 0) + digits, negative};
         }
         bigint drop(size_t to_drop) const {
-            return bigint{digits.substr(std::min(to_drop, size(digits))), negative}.normalize();
+            return bigint{digits.substr(std::min(to_drop, size(digits))), negative};
         }
         bigint take(size_t to_keep) const {
-            return bigint{digits.substr(0, std::min(to_keep, size(digits))), negative}.normalize();
+            return bigint{digits.substr(0, std::min(to_keep, size(digits))), negative};
         }
         bigint top(size_t to_keep) const {
             if (to_keep >= size(digits)) {
@@ -180,16 +158,21 @@ namespace cp_algo::math {
         bigint(int64_t x) {
             negative = x < 0;
             uint64_t magnitude = negative ? -uint64_t(x) : uint64_t(x);
-            while(magnitude) {
-                digits.push_back(magnitude % Base);
-                magnitude /= Base;
+            digits = magnitude ? big_basic_string<uint64_t>{magnitude} : big_basic_string<uint64_t>{};
+            if(magnitude >= Base) [[unlikely]] {
+                digits[0] = magnitude % Base;
+                digits.push_back(magnitude / Base);
             }
         }
+        // Valid digits in the selected base, optionally prefixed by a minus sign.
         bigint(std::span<char> s): negative(false) {
             if (size(s) < digit_length) {
                 int64_t val = 0;
                 std::from_chars(s.data(), s.data() + size(s), val, sub_base);
-                *this = bigint(val);
+                // This short input fits in one limb; avoid the general scalar constructor.
+                negative = val < 0;
+                uint64_t magnitude = negative ? -uint64_t(val) : uint64_t(val);
+                digits = magnitude ? big_basic_string<uint64_t>{magnitude} : big_basic_string<uint64_t>{};
                 return;
             }
             if (!empty(s) && s[0] == '-') {
@@ -249,6 +232,10 @@ namespace cp_algo::math {
             }
         }
         bigint& operator *= (int64_t other) {
+            if (digits.empty()) {
+                negative = false;
+                return *this;
+            }
             if (other < 0) {
                 negative ^= 1;
             }
@@ -256,7 +243,7 @@ namespace cp_algo::math {
             if (magnitude == 0) {
                 return *this = bigint(0);
             } else if (magnitude == 1) {
-                return normalize();
+                return *this;
             }
             uint64_t carry = 0;
             for (auto &d: digits) {
@@ -268,7 +255,7 @@ namespace cp_algo::math {
                 digits.push_back(carry % base);
                 carry /= base;
             }
-            return normalize();
+            return *this;
         }
         bigint operator * (int64_t other) const {
             return bigint(*this) *= other;

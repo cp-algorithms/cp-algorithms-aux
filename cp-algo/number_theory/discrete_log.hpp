@@ -3,19 +3,32 @@
 #include "euler.hpp"
 #include <optional>
 namespace cp_algo::math {
-    // Find min non-negative x s.t. a*b^x = c (mod m)
+    // Find min non-negative x s.t. a*b^x = c (mod m).
+    // Nonnegative a, b, c; 0 < m <= max(make_signed_t<_Int>).
     template<typename _Int>
     std::optional<_Int> discrete_log(_Int b, _Int c, _Int m, _Int a = 1) {
-        if(std::abs(a - c) % m == 0) {
-            return 0;
-        }
-        if(std::gcd(a, m) != std::gcd(int64_t(a) * b, int64_t(m))) {
-            auto res = discrete_log(b, c, m, _Int(int64_t(a) * b % m));
-            return res ? std::optional(*res + 1) : res;
-        }
-        // a * b^x is periodic here
         using Int = std::make_signed_t<_Int>;
         using base = dynamic_modint<Int>;
+        using Wide = typename base::Int2;
+        using WideUInt = typename base::UInt2;
+        assert(m > 0 && m <= _Int(std::numeric_limits<Int>::max()));
+        if((Wide(a) - Wide(c)) % m == 0) {
+            return 0;
+        }
+        _Int next = _Int(WideUInt(a) * b % m);
+        if(std::gcd(a, m) != std::gcd(next, m)) {
+            auto res = discrete_log(b, c, m, next);
+            return res ? std::optional(*res + 1) : res;
+        }
+        // Remove the multiplier's annihilator before computing the period.
+        auto g = std::gcd(a, m);
+        if(c % g != 0) {
+            return std::nullopt;
+        }
+        if(g != 1) {
+            return discrete_log(b, _Int(c / g), _Int(m / g), _Int(a / g));
+        }
+        // a * b^x is periodic here
         return base::with_mod(m, [&]() -> std::optional<_Int> {
             int sqrtmod = std::max(1, (int)std::sqrt(m) / 2);
             big_map<_Int, int> small;

@@ -3,6 +3,7 @@
 #include "../math/common.hpp"
 #include <iostream>
 #include <cassert>
+#include <limits>
 namespace cp_algo::math {
 
     template<typename modint, typename _Int>
@@ -22,9 +23,12 @@ namespace cp_algo::math {
             return UInt2(mod()) * mod();
         }
         constexpr modint_base() = default;
+        // Reduce any signed double-width value, including values below -mod()^2.
         constexpr modint_base(Int2 rr) {
-            to_modint().setr(UInt((rr + modmod()) % mod()));
+            Int2 residue = rr % Int2(mod());
+            to_modint().setr(UInt(residue < 0 ? residue + mod() : residue));
         }
+        // Fermat inversion: mod() must be prime and the residue nonzero.
         constexpr modint inv() const {
             return bpow(to_modint(), mod() - 2);
         }
@@ -108,6 +112,8 @@ namespace cp_algo::math {
 
     template<auto m>
     struct modint: modint_base<modint<m>, decltype(m)> {
+        // Two reduced residues must fit the unsigned storage word.
+        static_assert(m > 0 && m <= std::numeric_limits<std::make_signed_t<decltype(m)>>::max());
         using Base = modint_base<modint<m>, decltype(m)>;
         using Base::Base;
         static constexpr Base::Int mod() { return m; }
@@ -166,6 +172,8 @@ namespace cp_algo::math {
         static Base::UInt imod() { return im; }
         static Base::UInt2 pw128() { return r2; }
         static void switch_mod(Int nm) {
+            // Positive signed moduli ensure two canonical residues fit UInt.
+            assert(nm > 0 && nm <= Int(std::numeric_limits<std::make_signed_t<Int>>::max()));
             m = nm;
             bool lazy = m % 2 && typename Base::UInt(m) <= typename Base::UInt(-1) / 4;
             rm = typename Base::UInt(m) * (lazy ? 2 : 1);

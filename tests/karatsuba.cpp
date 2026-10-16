@@ -1,3 +1,4 @@
+#include <bits/stdc++.h>
 #pragma GCC target("avx2,pclmul")
 #include "cp-algo/math/karatsuba.hpp"
 #include <random>

@@ -22,8 +22,8 @@ void solve() {
     cin >> n;
     uint32_t N = 1u << n;
     cp_algo::big_vector<base> a(N), b(N);
-    for (auto &it : a) {cin >> it;}
-    for (auto &it : b) {cin >> it;}
+    for (auto &it : a) {cp_algo::math::read_reduced(cin, it);}
+    for (auto &it : b) {cp_algo::math::read_reduced(cin, it);}
     cp_algo::checkpoint("read");
     cp_algo::math::xor_convolution_inplace(a, b);
     for (auto it : a) {cout << it << ' ';}

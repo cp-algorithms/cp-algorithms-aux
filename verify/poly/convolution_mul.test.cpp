@@ -26,14 +26,14 @@ void solve() {
     cp_algo::checkpoint("find lg");
     base a0, b0, as = 0, bs = 0;
     cp_algo::big_vector<base> a(p-1), b(p-1);
-    cin >> a0;
+    cp_algo::math::read_reduced(cin, a0);
     for(int i = 1; i <= p - 1; i++) {
-        cin >> a[lg[i]];
+        cp_algo::math::read_reduced(cin, a[lg[i]]);
         as += a[lg[i]];
     }
-    cin >> b0;
+    cp_algo::math::read_reduced(cin, b0);
     for(int i = 1; i <= p - 1; i++) {
-        cin >> b[lg[i]];
+        cp_algo::math::read_reduced(cin, b[lg[i]]);
         bs += b[lg[i]];
     }
     cp_algo::checkpoint("read");

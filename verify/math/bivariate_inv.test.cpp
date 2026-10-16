@@ -19,7 +19,7 @@ void solve() {
     cin >> n >> m;
     std::array<size_t, 2> dim{m, n};
     multivar<base> a(dim);
-    a.read();
+    a.read_reduced();
     auto b = multivar_inv(a, dim);
     b.print();
     cp_algo::checkpoint<1>();

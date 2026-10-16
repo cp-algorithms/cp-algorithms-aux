@@ -17,8 +17,8 @@ void solve() {
     int n, m, k;
     cin >> n >> m >> k;
     matrix<base> a(n, m), b(m, k);
-    for(auto &row : a) for(auto &x : row) cp_algo::math::read_reduced(cin, x);
-    for(auto &row : b) for(auto &x : row) cp_algo::math::read_reduced(cin, x);
+    a.read_reduced();
+    b.read_reduced();
     auto c = a * b;
     for(size_t i = 0; i < c.n(); i++) {
         c[i].print();

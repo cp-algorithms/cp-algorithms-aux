@@ -19,8 +19,8 @@ void solve() {
     cp_algo::big_vector<size_t> N(k);
     for(auto &n: N) cin >> n;
     multivar<base> a(N), b(N);
-    a.read();
-    b.read();
+    a.read_reduced();
+    b.read_reduced();
     a.mul(b);
     a.print();
     cp_algo::checkpoint<1>();

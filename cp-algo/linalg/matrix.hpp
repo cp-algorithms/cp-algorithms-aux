@@ -45,11 +45,9 @@ namespace cp_algo::linalg {
             }
         }
 
-        auto &row(size_t i) { return (*this)[i]; }
-        auto const& row(size_t i) const { return (*this)[i]; }
+        auto &row(this auto&& self, size_t i) { return self[i]; }
 
-        auto elements() { return *this | std::views::join; }
-        auto elements() const { return *this | std::views::join; }
+        auto elements(this auto&& self) { return self | std::views::join; }
 
         matrix operator-() const {
             return *this | std::views::transform([](auto const& x) { return vec_t(-x); });
@@ -122,7 +120,7 @@ namespace cp_algo::linalg {
         }
         static matrix random(size_t n, size_t m) {
             matrix res(n, m);
-            std::ranges::generate(res, std::bind(vec_t::random, m));
+            std::ranges::generate(res, [m] { return vec_t::random(m); });
             return res;
         }
         static matrix random(size_t n) {

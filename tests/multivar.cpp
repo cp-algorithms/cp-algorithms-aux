@@ -22,6 +22,14 @@ big_vector<T> naive(big_vector<size_t> const& dims, big_vector<T> const& a, big_
 }
 
 template<typename T> void check() {
+    fft::multivar<T> indexed(big_vector<size_t>{3, 4});
+    std::array<size_t, 2> index{1, 2};
+    static_assert(std::same_as<decltype(indexed[index]), T&>);
+    static_assert(std::same_as<decltype(std::as_const(indexed)[index]), T const&>);
+    static_assert(std::same_as<decltype(indexed[1, 2]), T&>);
+    static_assert(std::same_as<decltype(std::as_const(indexed)[1, 2]), T const&>);
+    indexed[1, 2] = 17;
+    assert((indexed[index] == T(17) && std::as_const(indexed)[1, 2] == T(17)));
     std::mt19937 rng(59321);
     std::vector<big_vector<size_t>> shapes{{}, {1}, {2}, {3}, {4}, {1, 2, 1, 3},
         {2, 2, 2, 2, 2, 2}, {2, 2, 2, 2, 2, 2, 2}, {3, 3, 3, 3},

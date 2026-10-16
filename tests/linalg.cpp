@@ -183,6 +183,11 @@ void check_pairs() {
 }
 
 int main() {
+    using M = matrix<modint<998244353>>;
+    static_assert(std::same_as<decltype(std::declval<M&>().row(0)), M::vec_t&>);
+    static_assert(std::same_as<decltype(std::declval<M const&>().row(0)), M::vec_t const&>);
+    static_assert(std::same_as<std::ranges::range_reference_t<decltype(std::declval<M&>().elements())>, M::base&>);
+    static_assert(std::same_as<std::ranges::range_reference_t<decltype(std::declval<M const&>().elements())>, M::base const&>);
     check_accumulation<modint<998244353LL>>();
     check_accumulation<modint<1000000007LL>>();
     check_accumulation<modint<1073741789LL>>();

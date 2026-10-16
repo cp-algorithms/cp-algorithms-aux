@@ -167,8 +167,7 @@ namespace cp_algo::math {
             return a[idx];
         }
 
-        bool operator == (const poly_t &t) const {return a == t.a;}
-        bool operator != (const poly_t &t) const {return a != t.a;}
+        bool operator == (const poly_t &t) const = default;
 
         size_t trailing_xk() const { // Let p(x) = x^k * t(x), return k
             if(is_zero()) {

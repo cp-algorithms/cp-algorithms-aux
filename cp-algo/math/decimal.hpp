@@ -10,7 +10,7 @@ namespace cp_algo::math {
         int64_t scale; // value * base^scale
 
         decimal(int64_t v=0, int64_t s=0): value(bigint<base>(v)), scale(s) {}
-        decimal(bigint<base> v, int64_t s=0): value(v), scale(s) {}
+        decimal(bigint<base> v, int64_t s=0): value(std::move(v)), scale(s) {}
 
         decimal& operator *= (const decimal &other) {
             value *= other.value;
@@ -49,7 +49,7 @@ namespace cp_algo::math {
         auto split() const {
             auto int_part = scale >= -ssize(value.digits) ? value.top(ssize(value.digits) + scale) : bigint<base>(0);
             auto frac_part = *this - decimal(int_part);
-            return std::pair{int_part, frac_part};
+            return std::pair{std::move(int_part), std::move(frac_part)};
         }
         void print() {
             auto [int_part, frac_part] = split();
@@ -139,7 +139,7 @@ namespace cp_algo::math {
         bigint<base> rem{int64_t(remainder)};
         rem.negative = neg_a;
         
-        return std::pair{quotient, rem};
+        return std::pair{std::move(quotient), std::move(rem)};
     }
 
     template<base_v base>
@@ -165,7 +165,7 @@ namespace cp_algo::math {
             d -= 1;
             r += b;
         }
-        return std::pair{d, r};
+        return std::pair{std::move(d), std::move(r)};
     }
 }
 

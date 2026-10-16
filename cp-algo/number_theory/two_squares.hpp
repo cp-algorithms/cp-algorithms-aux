@@ -10,6 +10,7 @@
 namespace cp_algo::math {
     template<typename T>
     using gaussint = complex<T>;
+    // Prime p == 2 or p == 1 (mod 4), with p <= INT64_MAX. Coefficients are signed.
     template<typename _Int>
     auto two_squares_prime_any(_Int p) {
         using Int = std::make_signed_t<_Int>;
@@ -34,9 +35,9 @@ namespace cp_algo::math {
         });
     }
 
+    // 0 <= n <= max(make_signed_t<Int>); signed Gaussian coefficients avoid wrapping conjugates.
     template<typename Int>
     big_vector<gaussint<std::make_signed_t<Int>>> two_squares_all(Int n) {
-        using coefficient = std::make_signed_t<Int>;
         if(n == 0) {
             return {0};
         }
@@ -45,36 +46,32 @@ namespace cp_algo::math {
         for(auto p: primes) {
             cnt[p]++;
         }
-        big_vector<gaussint<coefficient>> res = {1};
+        big_vector<gaussint<std::make_signed_t<Int>>> res = {1};
         for(auto [p, c]: cnt) {
-            big_vector<gaussint<coefficient>> nres;
-            if(p % 4 == 3) {
-                if(c % 2 == 0) {
-                    auto mul = bpow(gaussint<coefficient>(p), c / 2);
-                    for(auto p: res) {
-                        nres.push_back(p * mul);
-                    }
+            if(p % 4 == 3 && c % 2) {
+                return {};
+            }
+            if(p % 4 != 1) {
+                auto mul = p == 2 ? bpow(gaussint<std::make_signed_t<Int>>(1, 1), c) : bpow(gaussint<std::make_signed_t<Int>>(p), c / 2);
+                for(auto &value: res) {
+                    value *= mul;
                 }
-            } else if(p % 4 == 1) {
+            } else {
+                big_vector<gaussint<std::make_signed_t<Int>>> nres;
                 auto base = two_squares_prime_any(p);
                 for(int i = 0; i <= c; i++) {
                     auto mul = bpow(base, i) * bpow(conj(base), c - i);
-                    for(auto p: res) {
-                        nres.push_back(p * mul);
+                    for(auto value: res) {
+                        nres.push_back(value * mul);
                     }
                 }
-            } else if(p % 4 == 2) {
-                auto mul = bpow(gaussint<coefficient>(1, 1), c);
-                for(auto p: res) {
-                    nres.push_back(p * mul);
-                }
+                res = std::move(nres);
             }
-            res = nres;
         }
-        big_vector<gaussint<coefficient>> nres;
+        big_vector<gaussint<std::make_signed_t<Int>>> nres;
         for(auto p: res) {
             while(p.real() < 0 || p.imag() < 0) {
-                p *= gaussint<coefficient>(0, 1);
+                p *= gaussint<std::make_signed_t<Int>>(0, 1);
             }
             nres.push_back(p);
             if(!p.real() || !p.imag()) {

@@ -5,28 +5,31 @@
 #include <cassert>
 namespace cp_algo::math {
 
-    template<typename modint, typename _Int>
-    struct modint_base {
-        using Int = _Int;
+    // M > 0 fixes the modulus; M == 0 uses a thread-local runtime modulus.
+    template<auto M>
+    struct modint {
+        using Int = decltype(M);
         using UInt = std::make_unsigned_t<Int>;
         static constexpr size_t bits = sizeof(Int) * 8;
         using Int2 = std::conditional_t<bits <= 32, int64_t, __int128_t>;
         using UInt2 = std::conditional_t<bits <= 32, uint64_t, __uint128_t>;
         constexpr static Int mod() {
-            return modint::mod();
+            if constexpr(M == 0) {return m;}
+            else {return M;}
         }
         constexpr static UInt remod() {
-            return modint::remod();
+            if constexpr(M == 0) {return rm;}
+            else {return M;}
         }
         constexpr static UInt2 modmod() {
             return UInt2(mod()) * mod();
         }
-        constexpr modint_base() = default;
-        constexpr modint_base(Int2 rr) {
-            to_modint().setr(UInt((rr + modmod()) % mod()));
+        constexpr modint() = default;
+        constexpr modint(Int2 rr) {
+            setr(UInt((rr + modmod()) % mod()));
         }
         constexpr modint inv() const {
-            return bpow(to_modint(), mod() - 2);
+            return bpow(*this, mod() - 2);
         }
         modint operator-() const {
             modint neg;
@@ -34,42 +37,47 @@ namespace cp_algo::math {
             return neg;
         }
         modint& operator/=(const modint& t) {
-            return to_modint() *= t.inv();
+            return *this *= t.inv();
         }
         modint& operator*=(const modint& t) {
-            r = UInt(UInt2(r) * t.r % mod());
-            return to_modint();
+            if constexpr(M == 0) {r = m_reduce(UInt2(r) * t.r);}
+            else {r = UInt(UInt2(r) * t.r % mod());}
+            return *this;
         }
         modint& operator+=(const modint& t) {
             r += t.r;
             r = std::min(r, r - remod());
-            return to_modint();
+            return *this;
         }
         modint& operator-=(const modint& t) {
             r -= t.r;
             r = std::min(r, r + remod());
-            return to_modint();
+            return *this;
         }
-        modint operator+(const modint& t) const { return modint(to_modint()) += t; }
-        modint operator-(const modint& t) const { return modint(to_modint()) -= t; }
-        modint operator*(const modint& t) const { return modint(to_modint()) *= t; }
-        modint operator/(const modint& t) const { return modint(to_modint()) /= t; }
+        modint operator+(const modint& t) const { return modint(*this) += t; }
+        modint operator-(const modint& t) const { return modint(*this) -= t; }
+        modint operator*(const modint& t) const { return modint(*this) *= t; }
+        modint operator/(const modint& t) const { return modint(*this) /= t; }
         // Why <=> doesn't work?..
-        auto operator==(const modint& t) const { return to_modint().getr() == t.getr(); }
-        auto operator!=(const modint& t) const { return to_modint().getr() != t.getr(); }
-        auto operator<=(const modint& t) const { return to_modint().getr() <= t.getr(); }
-        auto operator>=(const modint& t) const { return to_modint().getr() >= t.getr(); }
-        auto operator<(const modint& t) const { return to_modint().getr() < t.getr(); }
-        auto operator>(const modint& t) const { return to_modint().getr() > t.getr(); }
+        auto operator==(const modint& t) const { return getr() == t.getr(); }
+        auto operator!=(const modint& t) const { return getr() != t.getr(); }
+        auto operator<=(const modint& t) const { return getr() <= t.getr(); }
+        auto operator>=(const modint& t) const { return getr() >= t.getr(); }
+        auto operator<(const modint& t) const { return getr() < t.getr(); }
+        auto operator>(const modint& t) const { return getr() > t.getr(); }
         Int rem() const {
-            UInt R = to_modint().getr();
+            UInt R = getr();
             return R - (R > (UInt)mod() / 2) * mod();
         }
         constexpr void setr(UInt rr) {
-            r = rr;
+            if constexpr(M == 0) {r = m_transform(rr);}
+            else {r = rr;}
         }
         constexpr UInt getr() const {
-            return r;
+            if constexpr(M == 0) {
+                UInt res = m_reduce(r);
+                return std::min(res, res - mod());
+            } else {return r;}
         }
 
         // Only use these if you really know what you're doing!
@@ -80,20 +88,79 @@ namespace cp_algo::math {
             if(r >= (UInt)mod()) {
                 r %= mod();
             }
-            return to_modint();
+            return *this;
         }
         void setr_direct(UInt rr) { r = rr; }
         UInt getr_direct() const { return r; }
 
-    protected:
-        UInt r;
+        // Odd moduli up to a quarter of the unsigned word keep Montgomery residues lazily in
+        // [0, 2 mod): remod() = 2 mod, and both 4 mod and ab + q * mod fit. Any other modulus keeps
+        // fully reduced residues, remod() = mod, which is what the sums of modint need then:
+        // an even one without the Montgomery form, a wide odd one with a reduction that subtracts
+        // high words instead of adding double words that would overflow.
+        // Out of line, so that the hot path stays as small as it was.
+        [[gnu::noinline, gnu::cold]] static UInt m_reduce_reduced(UInt2 ab) requires(M == 0) {
+            if(mod() % 2 == 0) {
+                return UInt(ab % mod());
+            }
+            // q * mod has the low word of ab, so the difference of the high words is exact.
+            UInt q = -(UInt(ab) * inverse);
+            auto high = UInt(ab >> bits);
+            auto low = UInt(UInt2(q) * UInt(mod()) >> bits);
+            return high >= low ? high - low : high - low + mod();
+        }
+        static UInt m_reduce(UInt2 ab) requires(M == 0) {
+            if(imod() == 0) [[unlikely]] {
+                return m_reduce_reduced(ab);
+            }
+            UInt2 m = UInt(ab) * imod();
+            return UInt((ab + m * mod()) >> bits);
+        }
+        static UInt m_transform(UInt a) requires(M == 0) {
+            if(mod() % 2 == 0) [[unlikely]] {
+                return a;
+            } else {
+                return m_reduce(a * pw128());
+            }
+        }
+        static UInt imod() requires(M == 0) { return im; }
+        static UInt2 pw128() requires(M == 0) { return r2; }
+        static void switch_mod(Int nm) requires(M == 0) {
+            m = nm;
+            bool lazy = m % 2 && UInt(m) <= UInt(-1) / 4;
+            rm = UInt(m) * (lazy ? 2 : 1);
+            inverse = m % 2 ? inv2(-m) : 0;
+            im = lazy ? inverse : 0;
+            r2 = static_cast<UInt>(static_cast<UInt2>(-1) % m + 1);
+        }
+
+        // Wrapper for temp switching
+        auto static with_mod(Int tmp, auto callback) requires(M == 0) {
+            struct scoped {
+                Int prev = mod();
+                ~scoped() { switch_mod(prev); }
+            } _;
+            switch_mod(tmp);
+            return callback();
+        }
 
     private:
-        constexpr modint& to_modint() { return static_cast<modint&>(*this); }
-        constexpr modint const& to_modint() const { return static_cast<modint const&>(*this); }
+        UInt r;
+        static inline thread_local Int m = 1;
+        // im: -1 / mod modulo 2^bits for lazy residues and 0 for reduced ones; inverse: the same
+        // for every odd mod; rm: the value of remod().
+        static inline thread_local UInt im = -1, r2 = 0, inverse = -1, rm = 2;
     };
-    template<typename modint>
-    concept modint_type = std::is_base_of_v<modint_base<modint, typename modint::Int>, modint>;
+
+    template<typename Int = int>
+    using dynamic_modint = modint<Int(0)>;
+
+    namespace impl {
+        template<typename T> constexpr bool is_modint = false;
+        template<auto M> constexpr bool is_modint<modint<M>> = true;
+    }
+    template<typename T>
+    concept modint_type = impl::is_modint<T>;
     template<modint_type modint>
     decltype(std::cin)& operator>>(decltype(std::cin)& in, modint& x) {
         typename modint::UInt r;
@@ -106,89 +173,5 @@ namespace cp_algo::math {
         return out << x.getr();
     }
 
-    template<auto m>
-    struct modint: modint_base<modint<m>, decltype(m)> {
-        using Base = modint_base<modint<m>, decltype(m)>;
-        using Base::Base;
-        static constexpr Base::Int mod() { return m; }
-        static constexpr Base::UInt remod() { return m; }
-        auto getr() const { return Base::r; }
-    };
-
-    // Odd moduli up to a quarter of the unsigned word keep Montgomery residues lazily in
-    // [0, 2 mod): remod() = 2 mod, and both 4 mod and ab + q * mod fit. Any other modulus keeps
-    // fully reduced residues, remod() = mod, which is what the sums of modint_base need then:
-    // an even one without the Montgomery form, a wide odd one with a reduction that subtracts
-    // high words instead of adding double words that would overflow.
-    template<typename Int = int>
-    struct dynamic_modint: modint_base<dynamic_modint<Int>, Int> {
-        using Base = modint_base<dynamic_modint<Int>, Int>;
-        using Base::Base;
-
-        // Out of line, so that the hot path stays as small as it was.
-        [[gnu::noinline, gnu::cold]] static Base::UInt m_reduce_reduced(Base::UInt2 ab) {
-            if(mod() % 2 == 0) {
-                return typename Base::UInt(ab % mod());
-            }
-            // q * mod has the low word of ab, so the difference of the high words is exact.
-            typename Base::UInt q = -(typename Base::UInt(ab) * inverse);
-            auto high = typename Base::UInt(ab >> Base::bits);
-            auto low = typename Base::UInt(typename Base::UInt2(q) * typename Base::UInt(mod()) >> Base::bits);
-            return high >= low ? high - low : high - low + mod();
-        }
-        static Base::UInt m_reduce(Base::UInt2 ab) {
-            if(imod() == 0) [[unlikely]] {
-                return m_reduce_reduced(ab);
-            }
-            typename Base::UInt2 m = typename Base::UInt(ab) * imod();
-            return typename Base::UInt((ab + m * mod()) >> Base::bits);
-        }
-        static Base::UInt m_transform(Base::UInt a) {
-            if(mod() % 2 == 0) [[unlikely]] {
-                return a;
-            } else {
-                return m_reduce(a * pw128());
-            }
-        }
-        dynamic_modint& operator*=(const dynamic_modint& t) {
-            Base::r = m_reduce(typename Base::UInt2(Base::r) * t.r);
-            return *this;
-        }
-        void setr(Base::UInt rr) {
-            Base::r = m_transform(rr);
-        }
-        Base::UInt getr() const {
-            typename Base::UInt res = m_reduce(Base::r);
-            return std::min(res, res - mod());
-        }
-        static Int mod() { return m; }
-        static Base::UInt remod() { return rm; }
-        static Base::UInt imod() { return im; }
-        static Base::UInt2 pw128() { return r2; }
-        static void switch_mod(Int nm) {
-            m = nm;
-            bool lazy = m % 2 && typename Base::UInt(m) <= typename Base::UInt(-1) / 4;
-            rm = typename Base::UInt(m) * (lazy ? 2 : 1);
-            inverse = m % 2 ? inv2(-m) : 0;
-            im = lazy ? inverse : 0;
-            r2 = static_cast<Base::UInt>(static_cast<Base::UInt2>(-1) % m + 1);
-        }
-
-        // Wrapper for temp switching
-        auto static with_mod(Int tmp, auto callback) {
-            struct scoped {
-                Int prev = mod();
-                ~scoped() { switch_mod(prev); }
-            } _;
-            switch_mod(tmp);
-            return callback();
-        }
-
-    private:
-        static inline thread_local Int m = 1;
-        // im: -1 / mod modulo 2^bits for lazy residues and 0 for reduced ones; inverse: the same
-        // for every odd mod; rm: the value of remod().
-        static inline thread_local Base::UInt im = -1, r2 = 0, inverse = -1, rm = 2;
-    };
 }
 #endif // CP_ALGO_MATH_MODINT_HPP

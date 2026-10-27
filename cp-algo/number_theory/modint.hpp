@@ -3,6 +3,8 @@
 #include "../math/common.hpp"
 #include <iostream>
 #include <cassert>
+#include <concepts>
+#include <type_traits>
 namespace cp_algo::math {
 
     // M > 0 fixes the modulus; M == 0 uses a thread-local runtime modulus.
@@ -79,7 +81,6 @@ namespace cp_algo::math {
                 return std::min(res, res - mod());
             } else {return r;}
         }
-
         // Only use these if you really know what you're doing!
         static uint64_t modmod8() { return uint64_t(8 * modmod()); }
         void add_unsafe(UInt t) { r += t; }
@@ -161,12 +162,36 @@ namespace cp_algo::math {
     }
     template<typename T>
     concept modint_type = impl::is_modint<T>;
-    template<modint_type modint>
-    decltype(std::cin)& operator>>(decltype(std::cin)& in, modint& x) {
-        typename modint::UInt r;
-        auto &res = in >> r;
-        x.setr(r);
-        return res;
+    // Choose the input integer type explicitly. Reduce before narrowing to storage.
+    // Failed extraction leaves x unchanged, including for signed minima.
+    template<std::integral Int, auto M, class Stream> requires (!std::same_as<Int, bool>)
+    void read(modint<M>& x, Stream& in, std::type_identity<Int>) {
+        using base = modint<M>;
+        using UInt = std::common_type_t<std::make_unsigned_t<Int>, typename base::UInt>;
+        Int value;
+        if(in >> value) {
+            // Convert before negating so the signed minimum is supported too.
+            UInt magnitude = value < 0 ? -UInt(value) : UInt(value);
+            bool reduce = true;
+            if constexpr(M == 0 && sizeof(UInt) == sizeof(typename base::UInt)) {
+                // Montgomery conversion already reduces any word for odd moduli.
+                reduce = base::mod() % 2 == 0;
+            }
+            if(reduce && magnitude >= UInt(base::mod())) {magnitude %= UInt(base::mod());}
+            x.setr(typename base::UInt(magnitude));
+            if(value < 0) {x = -x;}
+        }
+    }
+    // Input must already satisfy 0 <= value < mod(); no reduction or range check.
+    // Failed extraction leaves x unchanged.
+    template<auto M, class Stream>
+    void read_reduced(modint<M>& x, Stream& in, std::type_identity<void>) {
+        typename modint<M>::UInt value;
+        if(in >> value) {x.setr(value);}
+    }
+    template<auto M, class Stream>
+    void write(modint<M> const& x, Stream& out, std::type_identity<void>) {
+        out << x.getr();
     }
     template<modint_type modint>
     decltype(std::cout)& operator<<(decltype(std::cout)& out, modint const& x) {

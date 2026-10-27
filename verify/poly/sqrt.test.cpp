@@ -3,8 +3,11 @@
 #pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/series/sqrt.hpp"
 #include "cp-algo/math/poly/series.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -17,7 +20,7 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector a(n);
-    for(auto &it: a) {cin >> it;}
+    read_reduced(a);
     auto res = sqrt(polyn(std::move(a)), n);
     if(res) {
         res->print(n);

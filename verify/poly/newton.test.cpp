@@ -5,7 +5,10 @@
 #pragma GCC target("avx2")
 
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/eval.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -18,8 +21,8 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector a(n), p(n);
-    for(auto &it: a) {cin >> it;}
-    for(auto &it: p) {cin >> it;}
+    read_reduced(a);
+    read_reduced(p);
     to_newton(polyn(std::move(a)), p).print(n);
 }
 

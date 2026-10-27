@@ -5,8 +5,11 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/number_theory/euler.hpp"
 #include "cp-algo/math/fft.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 
@@ -26,14 +29,14 @@ void solve() {
     cp_algo::checkpoint("find lg");
     base a0, b0, as = 0, bs = 0;
     cp_algo::big_vector<base> a(p-1), b(p-1);
-    cin >> a0;
+    read_reduced(a0);
     for(int i = 1; i <= p - 1; i++) {
-        cin >> a[lg[i]];
+        read_reduced(a[lg[i]]);
         as += a[lg[i]];
     }
-    cin >> b0;
+    read_reduced(b0);
     for(int i = 1; i <= p - 1; i++) {
-        cin >> b[lg[i]];
+        read_reduced(b[lg[i]]);
         bs += b[lg[i]];
     }
     cp_algo::checkpoint("read");

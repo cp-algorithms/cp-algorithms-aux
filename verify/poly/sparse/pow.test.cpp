@@ -5,7 +5,10 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/sparse/pow.hpp"
+
+using cp_algo::io::read_reduced;
 using namespace std;
 using namespace cp_algo::math;
 using base = modint<998244353>;
@@ -21,7 +24,7 @@ int main() {
     for(int j = 0; j < k; j++) {
         int i;
         cin >> i;
-        cin >> a[i];
+        read_reduced(a[i]);
     }
     pow_sparse(polyn(std::move(a)), m, n).print(n);
 }

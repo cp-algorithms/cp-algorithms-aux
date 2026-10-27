@@ -3,8 +3,11 @@
 
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/euclid.hpp"
 #include "cp-algo/math/poly/powmod.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -38,7 +41,7 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector f(n+1);
-    for(auto &it: f) {cin >> it;}
+    read_reduced(f);
     auto res = find_roots(f);
     cout << res.size() << "\n";
     for(auto &it: res) {cout << it << ' ';}

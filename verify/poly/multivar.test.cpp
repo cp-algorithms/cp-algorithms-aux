@@ -5,7 +5,11 @@
 #define CP_ALGO_CHECKPOINT
 #pragma GCC target("avx2")
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/multivar.hpp"
+
+using cp_algo::io::read_reduced;
+using cp_algo::io::read;
 
 using namespace std;
 using namespace cp_algo::math::fft;
@@ -17,10 +21,12 @@ void solve() {
     int k;
     cin >> k;
     cp_algo::big_vector<size_t> N(k);
-    for(auto &n: N) cin >> n;
+    read(N);
     multivar<base> a(N), b(N);
-    a.read();
-    b.read();
+    read_reduced(a.data);
+    cp_algo::checkpoint("multivar read");
+    read_reduced(b.data);
+    cp_algo::checkpoint("multivar read");
     a.mul(b);
     a.print();
     cp_algo::checkpoint<1>();

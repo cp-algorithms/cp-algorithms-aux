@@ -92,12 +92,6 @@ namespace cp_algo::math::fft {
             std::array<size_t, sizeof...(Args)> idx{static_cast<size_t>(args)...};
             return self.data[self.linear_index(idx)];
         }
-        void read() {
-            for(auto &it: data) {
-                std::cin >> it;
-            }
-            checkpoint("multivar read");
-        }
         void print() {
             for(auto &it: data) {
                 std::cout << it << " ";

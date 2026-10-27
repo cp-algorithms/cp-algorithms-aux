@@ -5,7 +5,10 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_CHECKPOINT
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/fft.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -17,8 +20,8 @@ void solve() {
     int n, m;
     cin >> n >> m;
     cp_algo::big_vector<base> a(n), b(m);
-    for(auto &x: a) {cin >> x;}
-    for(auto &x: b) {cin >> x;}
+    read_reduced(a);
+    read_reduced(b);
     cp_algo::checkpoint("read");
     fft::mul(a, b);
     for(auto x: a) {cout << x << " ";}

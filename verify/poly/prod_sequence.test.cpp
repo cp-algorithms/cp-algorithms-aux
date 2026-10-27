@@ -4,7 +4,10 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/base.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -24,7 +27,7 @@ void solve() {
         cin >> d;
         D += d;
         polyn::Vector a(d + 1);
-        for(auto &it: a) {cin >> it;}
+        read_reduced(a);
         polyn p(std::move(a));
         if(p.deg() == 0) {scalar *= p[0]; continue;}
         // Merge products of comparable sizes as they arrive.

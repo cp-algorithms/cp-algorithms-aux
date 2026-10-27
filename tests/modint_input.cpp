@@ -1,4 +1,5 @@
 #include "cp-algo/number_theory/modint.hpp"
+#include "cp-algo/util/io.hpp"
 #include <bit>
 #include <cassert>
 #include <cstdint>
@@ -11,13 +12,37 @@
 #include <vector>
 
 using namespace cp_algo::math;
+using cp_algo::io::read;
+using cp_algo::io::read_reduced;
 
 template<class T> uint64_t reference(int64_t value) {
     __int128 r = __int128(value) % __int128(T::mod());
     return uint64_t(r < 0 ? r + T::mod() : r);
 }
 
+template<class T, class Int> void explicit_width() {
+    using UInt = std::make_unsigned_t<Int>;
+    std::vector<Int> values{0, 1, std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max()};
+    if constexpr(std::is_signed_v<Int>) {values.push_back(-1);}
+    std::mt19937_64 random(47192);
+    for(int i = 0; i < 128; i++) {values.push_back(std::bit_cast<Int>(UInt(random())));}
+    std::stringstream input;
+    for(Int value: values) {input << value << ' ';}
+    for(Int value: values) {
+        T x;
+        read<Int>(x, input);
+        __int128 expected = __int128(value) % __int128(T::mod());
+        if(expected < 0) {expected += T::mod();}
+        assert(input && x.getr() == uint64_t(expected));
+        assert((x * x).getr() == __uint128_t(expected) * expected % uint64_t(T::mod()));
+    }
+}
+
 template<class T> void check() {
+    explicit_width<T, int32_t>();
+    explicit_width<T, uint32_t>();
+    explicit_width<T, int64_t>();
+    explicit_width<T, uint64_t>();
     using Input = std::make_signed_t<typename T::UInt>;
     constexpr int64_t lo = std::numeric_limits<Input>::min();
     constexpr int64_t hi = std::numeric_limits<Input>::max();
@@ -27,14 +52,14 @@ template<class T> void check() {
         for(int64_t v : {int64_t(0), m / 2, m - 1}) {input << v << ' ';}
         for(int64_t v : {int64_t(0), m / 2, m - 1}) {
             T value;
-            value.read_reduced(input);
+            read_reduced(value, input);
             assert(input && value.getr() == uint64_t(v));
         }
         for(std::string text : {"", "word", "18446744073709551616"}) {
             std::istringstream bad(text);
             T value = 7;
             auto before = value.getr();
-            value.read_reduced(bad);
+            read_reduced(value, bad);
             assert(bad.fail() && value.getr() == before);
         }
     }
@@ -52,7 +77,7 @@ template<class T> void check() {
     for(auto v : values) { input << v << ' '; }
     for(auto v : values) {
         T value = 0;
-        assert(&(input >> value) == &input);
+        read<Input>(value, input);
         assert(input);
         auto expected = reference<T>(v);
         assert(value.getr() == expected);
@@ -68,7 +93,7 @@ template<class T> void check() {
         std::istringstream bad(text);
         T value = 7;
         auto before = value.getr();
-        assert(&(bad >> value) == &bad);
+        read<Input>(value, bad);
         assert(bad.fail());
         assert(value.getr() == before);
     }
@@ -77,7 +102,7 @@ template<class T> void check() {
         bad.setstate(state);
         T value = 7;
         auto before = value.getr();
-        bad >> value;
+        read<Input>(value, bad);
         assert(bad.fail() && value.getr() == before);
     }
     {
@@ -86,17 +111,17 @@ template<class T> void check() {
         T value = 7;
         auto before = value.getr();
         bool threw = false;
-        try { bad >> value; } catch(std::ios_base::failure const&) { threw = true; }
+        try { read<Input>(value, bad); } catch(std::ios_base::failure const&) { threw = true; }
         assert(threw && value.getr() == before);
     }
     {
         std::istringstream input("  +15 -0 12x");
         T a, b, c;
-        input >> a >> b >> c;
+        read<Input>(a, input); read<Input>(b, input); read<Input>(c, input);
         assert(a.getr() == reference<T>(15) && b.getr() == 0 && c.getr() == reference<T>(12));
         assert(input.peek() == 'x');
         auto before = c.getr();
-        input >> c;
+        read<Input>(c, input);
         assert(input.fail() && c.getr() == before);
     }
     {
@@ -105,7 +130,7 @@ template<class T> void check() {
         input >> std::hex;
         for(int64_t v : {int64_t(255), int64_t(-255), hi, lo}) {
             T value;
-            input >> value;
+            read<Input>(value, input);
             assert(!input.fail() && value.getr() == reference<T>(v));
         }
         assert(input.eof());

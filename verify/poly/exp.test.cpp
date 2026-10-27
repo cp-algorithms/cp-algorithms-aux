@@ -4,7 +4,10 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/series/exp.hpp"
+
+using cp_algo::io::read_reduced;
 
 
 using namespace std;
@@ -18,7 +21,7 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector a(n);
-    for(auto &it: a) {cin >> it;}
+    read_reduced(a);
     exp(polyn(std::move(a)), n).print(n);
 }
 

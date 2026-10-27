@@ -58,15 +58,9 @@ namespace cp_algo::linalg {
         virtual base normalize(size_t i) {
             return (*this)[i];
         }
-        void read() {
+        void read() requires requires(std::istream& in, base& x) {in >> x;} {
             for(auto &it: *this) {
                 std::cin >> it;
-            }
-        }
-        // Every input coefficient must already be in [0, base::mod()).
-        void read_reduced() requires math::modint_type<base> {
-            for(auto &it: *this) {
-                it.read_reduced();
             }
         }
         void print() const {

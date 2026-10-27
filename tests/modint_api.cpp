@@ -1,4 +1,5 @@
 #include "cp-algo/number_theory/modint.hpp"
+#include "cp-algo/util/io.hpp"
 #include <cassert>
 #include <concepts>
 #include <cstdint>
@@ -8,6 +9,7 @@
 #include <type_traits>
 
 using namespace cp_algo::math;
+using cp_algo::io::read;
 
 template<class T>
 concept fixed_modulus = requires { typename std::integral_constant<typename T::Int, T::mod()>; };
@@ -61,7 +63,7 @@ int main() {
 
     std::istringstream input("15");
     D value;
-    input >> value;
+    read<int>(value, input);
     std::ostringstream output;
     output << value;
     assert(output.str() == "15");

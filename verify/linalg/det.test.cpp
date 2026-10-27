@@ -5,8 +5,10 @@
 #include <bits/stdc++.h>
 //#include "blazingio/blazingio.min.hpp"
 #define CP_ALGO_CHECKPOINT
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/linalg/matrix.hpp"
 
+using cp_algo::io::read_reduced;
 using namespace std;
 using namespace cp_algo::linalg;
 using namespace cp_algo::math;
@@ -17,7 +19,7 @@ void solve() {
     int n;
     cin >> n;
     matrix<modint<mod>> a(n, n);
-    a.read();
+    read_reduced(a);
     cout << a.det() << "\n";
 }
 

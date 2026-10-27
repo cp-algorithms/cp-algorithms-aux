@@ -4,7 +4,10 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 //#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/linalg/matrix.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::linalg;
@@ -17,8 +20,8 @@ void solve() {
     int n, m, k;
     cin >> n >> m >> k;
     matrix<base> a(n, m), b(m, k);
-    a.read_reduced();
-    b.read_reduced();
+    read_reduced(a);
+    read_reduced(b);
     auto c = a * b;
     for(size_t i = 0; i < c.n(); i++) {
         c[i].print();

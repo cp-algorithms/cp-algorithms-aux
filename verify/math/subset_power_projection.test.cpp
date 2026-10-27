@@ -6,9 +6,12 @@
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #define CP_ALGO_CHECKPOINT
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/math/subset_convolution.hpp"
 #include <bits/stdc++.h>
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 
@@ -20,9 +23,9 @@ void solve() {
     cin >> n >> M;
     size_t N = 1 << n;
     cp_algo::big_vector<base> g(N);
-    for(auto &it: g) {cin >> it;}
+    read_reduced(g);
     cp_algo::big_vector<base> w(N);
-    for(auto &it: w) {cin >> it;}
+    read_reduced(w);
     cp_algo::checkpoint("read");
     auto c = cp_algo::math::subset_power_projection<base>(g, w, M);
     for(auto &it: c) {cout << it << ' ';}

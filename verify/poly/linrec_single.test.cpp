@@ -4,7 +4,10 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/recurrence.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -17,8 +20,8 @@ void solve() {
     int64_t d, k;
     cin >> d >> k;
     polyn::Vector a(d), c(d);
-    for(auto &it: a) {cin >> it;}
-    for(auto &it: c) {cin >> it;}
+    read_reduced(a);
+    read_reduced(c);
     polyn Q = polyn(1) - polyn(c).mul_xk_inplace(1);
     polyn P = (polyn(std::move(a)) * Q).mod_xk_inplace(d);
     cout << kth_rec(std::move(P), std::move(Q), k) << endl;

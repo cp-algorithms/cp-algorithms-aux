@@ -6,11 +6,14 @@
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #define CP_ALGO_CHECKPOINT
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/util/big_alloc.hpp"
 #include "cp-algo/util/checkpoint.hpp"
 #include "cp-algo/math/xor_convolution.hpp"
 #include <bits/stdc++.h>
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 
@@ -22,8 +25,8 @@ void solve() {
     cin >> n;
     uint32_t N = 1u << n;
     cp_algo::big_vector<base> a(N), b(N);
-    for (auto &it : a) {it.read_reduced();}
-    for (auto &it : b) {it.read_reduced();}
+    read_reduced(a);
+    read_reduced(b);
     cp_algo::checkpoint("read");
     cp_algo::math::xor_convolution_inplace(a, b);
     for (auto it : a) {cout << it << ' ';}

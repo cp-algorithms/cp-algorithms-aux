@@ -4,10 +4,13 @@
 #pragma GCC target("avx2")
 #include <iostream>
 //#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/util/big_alloc.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/number_theory/dirichlet.hpp"
 #include <bits/stdc++.h>
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -19,7 +22,7 @@ void solve() {
     auto [_, m] = floor_stats(n);
     cp_algo::big_vector<base> G(m+1);
     for (int i = 1; i <= m; ++i) {
-        cin >> G[i];
+        read_reduced(G[i]);
     }
     auto F = Dirichlet_div(views::repeat(base(1)), G, n);
     for (int i = 1; i <= m; ++i) {

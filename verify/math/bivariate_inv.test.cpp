@@ -6,7 +6,10 @@
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/multivar_inv.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math::fft;
@@ -19,7 +22,8 @@ void solve() {
     cin >> n >> m;
     std::array<size_t, 2> dim{m, n};
     multivar<base> a(dim);
-    a.read_reduced();
+    read_reduced(a.data);
+    cp_algo::checkpoint("multivar read");
     auto b = multivar_inv(a, dim);
     b.print();
     cp_algo::checkpoint<1>();

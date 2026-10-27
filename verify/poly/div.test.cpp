@@ -2,7 +2,10 @@
 #define PROBLEM "https://judge.yosupo.jp/problem/division_of_polynomials"
 #include <bits/stdc++.h>
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/div.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -15,8 +18,8 @@ void solve() {
     int n, m;
     cin >> n >> m;
     polyn::Vector a(n), b(m);
-    for(auto &it: a) {cin >> it;}
-    for(auto &it: b) {cin >> it;}
+    read_reduced(a);
+    read_reduced(b);
     auto [q, r] = divmod(polyn(std::move(a)), polyn(std::move(b)));
     cout << q.deg() + 1 << ' ' << r.deg() + 1 << "\n";
     q.print();

@@ -6,7 +6,10 @@
 #pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/euclid.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -19,8 +22,8 @@ void solve() {
     int n, m;
     cin >> n >> m;
     polyn::Vector a(n), b(m);
-    for(auto &it: a) {cin >> it;}
-    for(auto &it: b) {cin >> it;}
+    read_reduced(a);
+    read_reduced(b);
     auto res = inv_mod(polyn(std::move(a)), polyn(b));
     if(res) {
         cout << res->deg() + 1 << endl;

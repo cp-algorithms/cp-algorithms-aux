@@ -84,22 +84,16 @@ namespace cp_algo::linalg {
         // Make sure the result is matrix, not Base
         matrix& operator*=(matrix const& t) { return *this = *this * t; }
 
-        void read_transposed() {
+        void read_transposed() requires requires(std::istream& in, base& x) {in >> x;} {
             for(size_t j = 0; j < m(); j++) {
                 for(size_t i = 0; i < n(); i++) {
                     std::cin >> (*this)[i][j];
                 }
             }
         }
-        void read() {
+        void read() requires requires(std::istream& in, base& x) {in >> x;} {
             for(auto &it: *this) {
                 it.read();
-            }
-        }
-        // Every input coefficient must already be in [0, base::mod()).
-        void read_reduced() requires math::modint_type<base> {
-            for(auto &it: *this) {
-                it.read_reduced();
             }
         }
         void print() const {

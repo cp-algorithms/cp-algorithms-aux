@@ -6,8 +6,11 @@
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
 #define CP_ALGO_CHECKPOINT
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/karatsuba.hpp"
 #include <bits/stdc++.h>
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 
@@ -18,8 +21,8 @@ void solve() {
     size_t n, m;
     cin >> n >> m;
     cp_algo::big_vector<base> a(n), b(m);
-    for (auto &x : a) cin >> x;
-    for (auto &x : b) cin >> x;
+    read_reduced(a);
+    read_reduced(b);
     auto c = cp_algo::math::karatsuba(a, b);
     for (auto x : c) cout << x << " ";
     cout << "\n";

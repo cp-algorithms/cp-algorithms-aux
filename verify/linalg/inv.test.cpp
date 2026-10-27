@@ -3,8 +3,10 @@
 #include <bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/linalg/block_inverse.hpp"
 
+using cp_algo::io::read_reduced;
 using namespace std;
 using namespace cp_algo::linalg;
 using namespace cp_algo::math;
@@ -15,7 +17,7 @@ void solve() {
     int n;
     cin >> n;
     matrix<modint<mod>> a(n, n);
-    a.read();
+    read_reduced(a);
     auto [d, ai] = block_inverse(a);
     if(d == 0) {
         cout << -1 << "\n";

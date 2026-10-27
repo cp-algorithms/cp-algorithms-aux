@@ -4,7 +4,11 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/fft.hpp"
+
+using cp_algo::io::read_reduced;
+using cp_algo::io::write;
 
 using namespace cp_algo::math;
 using base = modint<998244353>;
@@ -15,9 +19,9 @@ int main() {
     int n, m;
     std::cin >> n >> m;
     cp_algo::big_vector<base> a(n), b(m);
-    for(auto &x: a) {std::cin >> x;}
-    for(auto &x: b) {std::cin >> x;}
+    read_reduced(a);
+    read_reduced(b);
     fft::mul(a, b);
-    for(auto x: a) {std::cout << x << ' ';}
+    write(a);
     std::cout << '\n';
 }

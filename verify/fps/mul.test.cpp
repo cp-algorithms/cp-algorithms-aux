@@ -4,7 +4,9 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/fps.hpp"
+using cp_algo::io::read_reduced;
 using namespace cp_algo::math;
 using base = modint<998244353>;
 using polyn = poly_t<base>;
@@ -14,8 +16,8 @@ int main() {
     int n, m;
     std::cin >> n >> m;
     polyn::Vector a(n), b(m);
-    for(auto &x: a) {std::cin >> x;}
-    for(auto &x: b) {std::cin >> x;}
+    read_reduced(a);
+    read_reduced(b);
     fps<base> stream([b = std::move(b)](size_t i, auto const&) {
         return i < b.size() ? b[i] : base(0);
     });

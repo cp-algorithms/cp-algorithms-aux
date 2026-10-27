@@ -4,10 +4,12 @@
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
 //#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/linalg/matrix.hpp"
 
 const int64_t mod = 998244353;
 
+using cp_algo::io::read_reduced;
 using namespace std;
 using cp_algo::math::modint;
 using cp_algo::linalg::matrix;
@@ -19,7 +21,7 @@ void solve() {
     matrix<modint<mod>> A(n + 1);
     for(int i: views::iota(0, n)) {
         for(int j: views::iota(0, n)) {
-            cin >> A[i][j];
+            read_reduced(A[i][j]);
         }
     }
     for(int i: views::iota(0, n)) {

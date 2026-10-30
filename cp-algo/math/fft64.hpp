@@ -1,3 +1,5 @@
+// Licensed under GPL-3.0-only with the online-judge exception.
+// See cp-algo/LICENSE and cp-algo/ONLINE-JUDGE-EXCEPTION.
 #ifndef CP_ALGO_MATH_FFT64_HPP
 #define CP_ALGO_MATH_FFT64_HPP
 #include "../random/rng.hpp"

@@ -23,6 +23,11 @@ def compress_code(code):
     return re.sub(' ', separator, code)
 
 def minify_cpp(code):
+    license_notice = (
+        '// Licensed under GPL-3.0-only with the online-judge exception.\n'
+        '// See cp-algo/LICENSE and cp-algo/ONLINE-JUDGE-EXCEPTION.\n'
+    )
+    prefix = license_notice if license_notice in code else ''
     # Remove comments while preserving strings and macro continuations
     lines = code.split('\n')
     cleaned_lines = []
@@ -179,7 +184,7 @@ def minify_cpp(code):
     
     code = '\n'.join(result_lines)
     
-    return code
+    return prefix + code
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:

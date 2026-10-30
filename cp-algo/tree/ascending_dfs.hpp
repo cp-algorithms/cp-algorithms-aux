@@ -1,3 +1,5 @@
+// Licensed under GPL-3.0-only with the online-judge exception.
+// See cp-algo/LICENSE and cp-algo/ONLINE-JUDGE-EXCEPTION.
 #ifndef CP_ALGO_TREE_ASCENDING_DFS_HPP
 #define CP_ALGO_TREE_ASCENDING_DFS_HPP
 #include "../util/big_alloc.hpp"

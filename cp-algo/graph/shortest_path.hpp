@@ -1,3 +1,5 @@
+// Licensed under GPL-3.0-only with the online-judge exception.
+// See cp-algo/LICENSE and cp-algo/ONLINE-JUDGE-EXCEPTION.
 #ifndef CP_ALGO_GRAPH_SHORTEST_PATH_HPP
 #define CP_ALGO_GRAPH_SHORTEST_PATH_HPP
 #include "base.hpp"

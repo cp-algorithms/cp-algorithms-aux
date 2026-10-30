@@ -14,6 +14,18 @@ spec.loader.exec_module(minifier)
 
 
 class MinifierTests(unittest.TestCase):
+    def test_library_notice_survives_bundling_and_repeated_minification(self):
+        root = Path(__file__).resolve().parents[1]
+        headers = [root / 'cp-algo/util/bit.hpp', root / 'cp-algo/util/generator.hpp']
+        notice = ''.join(headers[0].read_text().splitlines(keepends=True)[:2])
+        result = minifier.minify_cpp('\n'.join(p.read_text() for p in headers))
+        self.assertTrue(result.startswith(notice))
+        self.assertEqual(result.count(notice), 1)
+        repeated = minifier.minify_cpp(result)
+        self.assertTrue(repeated.startswith(notice))
+        self.assertEqual(repeated.count(notice), 1)
+        self.assertNotIn('GPL', minifier.minify_cpp('int x = 1;'))
+
     def test_existing_compound_operators(self):
         code = 'x >>= 1; y += 2; ++z; p->member; a <=> b;'
         result = minifier.minify_cpp(code)

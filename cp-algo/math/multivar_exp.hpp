@@ -1,3 +1,5 @@
+// Licensed under GPL-3.0-only with the online-judge exception.
+// See cp-algo/LICENSE and cp-algo/ONLINE-JUDGE-EXCEPTION.
 #ifndef CP_ALGO_MATH_MULTIVAR_EXP_HPP
 #define CP_ALGO_MATH_MULTIVAR_EXP_HPP
 #include "multivar_inv.hpp"

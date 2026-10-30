@@ -1,0 +1,11 @@
+cp-algorithms Online-Judge Exception 1.0
+
+This is an additional permission under section 7 of the GNU General Public License, version 3 (GPLv3), for the cp-algorithms library code to which this exception is expressly applied (the Library).
+
+You may copy, modify, combine, compile and submit the Library as part of a solution to a competitive-programming problem on an online judge. This includes live contests, contests with prizes, practice and off-contest submissions. The judge may receive, store, compile, execute and evaluate the submission, and display or provide copies of it through its submission pages and archives.
+
+Solely for those activities, you may omit copyright, attribution, license, modification and warranty notices and copies of the license and this exception. You need not license the solution as a whole under GPLv3 or provide corresponding source beyond the submitted material. These permissions cover both modified and unmodified Library code, including bundled and minified forms.
+
+Redistribution outside those activities, including publication in a GitHub repository, a blog, a standalone solution archive or another software project, remains subject to GPLv3. Obtaining Library code from an online-judge submission does not grant an unrestricted right to relicense it or redistribute it elsewhere without complying with GPLv3. This paragraph limits the additional permission only; it does not restrict any rights granted by GPLv3.
+
+This exception applies only to material whose copyright holders have granted it. It does not waive the conditions of separately licensed third-party material included in a submission. The warranty disclaimer and limitation of liability in GPLv3 continue to apply.

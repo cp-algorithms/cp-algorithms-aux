@@ -290,7 +290,47 @@ namespace cp_algo::math {
             }
             to_metabase();
             other.to_metabase();
-            fft::conv_simple(digits, other.digits);
+            if constexpr(base == x16) {
+                // Balanced FFT digits retain the same integer and transform length.
+                // Keep the final digit unsigned so a carry cannot grow the transform.
+                auto balance = [](auto& a) {
+                    uint64_t carry = 0;
+                    for(size_t i = 0; i + 1 < a.size(); i++) {
+                        uint64_t value = a[i] + carry;
+                        carry = (value + meta_base / 2) / meta_base;
+                        // Wrap negative digits here; the FFT view reads them as int64_t.
+                        a[i] = value - carry * meta_base;
+                    }
+                    a.back() += carry;
+                };
+                balance(digits);
+                balance(other.digits);
+                auto signed_digits = std::views::transform([](uint64_t digit) {
+                    return int64_t(digit);
+                });
+                size_t need = digits.size() + other.digits.size() - 1;
+                size_t N = std::max(fft::flen, std::bit_ceil(need) / 2);
+                fft::dft_simple A(digits | signed_digits, N), B(other.digits | signed_digits, N);
+                A.dot(B);
+                digits.resize(need);
+                A.recover_mod(digits, need);
+                size_t count = (need + 3) / 4;
+                digits.resize(4 * count);
+                __int128 carry = 0;
+                for(size_t i = 0; i < count; i++) {
+                    __int128 value = 0;
+                    for(int j = 3; j >= 0; j--) value = value * meta_base + int64_t(digits[4 * i + j]);
+                    value += carry;
+                    digits[i] = uint64_t(value) & (Base - 1);
+                    // A negative coefficient needs floor carry, not truncation toward zero.
+                    carry = value >> 60;
+                }
+                digits.resize(count);
+                if(carry) digits.push_back(uint64_t(carry));
+                return normalize();
+            } else {
+                fft::conv_simple(digits, other.digits);
+            }
             from_metabase();
             return normalize();
         }

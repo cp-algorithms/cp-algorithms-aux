@@ -102,6 +102,7 @@ namespace cp_algo::math {
         // The value must be nonzero.
         decimal inv(int64_t precision) {
             assert(precision >= 0);
+            ++precision; // One guard limb bounds the quotient error below one half.
             int64_t lead = llround((double)bigint<base>::Base / (double)value.digits.back());
             if(value.negative) {lead = -lead;}
             decimal d(bigint<base>(lead), -ssize(value.digits) - scale);
@@ -111,7 +112,7 @@ namespace cp_algo::math {
             // low limbs still matter. Include enough input limbs before stopping.
             while(cur <= size_t(precision) || -amend.magnitude() < precision) {
                 d += d * amend;
-                cur = 2 * (1 - amend.magnitude());
+                cur = std::min<int64_t>(2 * (1 - amend.magnitude()), precision + 2);
                 d = d.trunc(cur);
                 amend = decimal(1) - trunc(cur) * d;
             }

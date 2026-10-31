@@ -24,11 +24,19 @@ namespace cp_algo::math::fft {
         void recover_mod(auto &res, size_t k) {
             cv.ifft();
             size_t n = cv.size();
+            // Finite coefficients whose nearest integer fits int64_t.
+            // Truncation and the exact fractional remainder preserve llround's
+            // ties-away-from-zero rule independently of the rounding mode.
+            auto recover_integer = [](double x) -> int64_t {
+                int64_t q = static_cast<int64_t>(x);
+                double f = x - static_cast<double>(q);
+                return q + (f >= 0.5) - (f <= -0.5);
+            };
             for(size_t i = 0; i < std::min(k, n); i++) {
-                res[i] = llround(real(cv.get(i)));
+                res[i] = recover_integer(real(cv.get(i)));
             }
             for(size_t i = n; i < k; i++) {
-                res[i] = llround(imag(cv.get(i - n)));
+                res[i] = recover_integer(imag(cv.get(i - n)));
             }
             cp_algo::checkpoint("recover mod");
         }

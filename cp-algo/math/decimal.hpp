@@ -107,7 +107,9 @@ namespace cp_algo::math {
             decimal d(bigint<base>(lead), -ssize(value.digits) - scale);
             size_t cur = 2;
             decimal amend = decimal(1) - trunc(cur) * d;
-            while(-amend.magnitude() < precision) {
+            // A truncated divisor can have an exact reciprocal while its omitted
+            // low limbs still matter. Include enough input limbs before stopping.
+            while(cur <= size_t(precision) || -amend.magnitude() < precision) {
                 d += d * amend;
                 cur = 2 * (1 - amend.magnitude());
                 d = d.trunc(cur);

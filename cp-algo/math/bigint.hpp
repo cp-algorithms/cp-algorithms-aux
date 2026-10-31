@@ -7,14 +7,14 @@
 namespace cp_algo::math {
     enum base_v {
         x10 = uint64_t(1e16),
-        x16 = uint64_t(1ull << 60)
+        x16 = uint64_t(1ull << 56)
     };
     template<base_v base = x10>
     struct bigint {
         static constexpr uint64_t Base = uint64_t(base);
-        static constexpr uint16_t digit_length = base == x10 ? 16 : 15;
+        static constexpr uint16_t digit_length = base == x10 ? 16 : 14;
         static constexpr uint16_t sub_base = base == x10 ? 10 : 16;
-        static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e4) : uint32_t(1 << 15);
+        static constexpr uint32_t meta_base = base == x10 ? uint32_t(1e4) : uint32_t(1 << 14);
         big_basic_string<uint64_t> digits;
         bool negative = false;
 

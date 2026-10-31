@@ -21,14 +21,16 @@ namespace cp_algo::math::fft {
             cv.dot(t.cv);
         }
 
+        // Requires FE_TONEAREST and finite coefficients rounding into int64_t.
+        // Integer convolution recovery requires FFT error strictly below 0.5.
         void recover_mod(auto &res, size_t k) {
             cv.ifft();
             size_t n = cv.size();
             for(size_t i = 0; i < std::min(k, n); i++) {
-                res[i] = llround(real(cv.get(i)));
+                res[i] = int64_t(std::nearbyint(real(cv.get(i))));
             }
             for(size_t i = n; i < k; i++) {
-                res[i] = llround(imag(cv.get(i - n)));
+                res[i] = int64_t(std::nearbyint(imag(cv.get(i - n))));
             }
             cp_algo::checkpoint("recover mod");
         }

@@ -53,8 +53,11 @@ namespace cp_algo::math {
         }
         void print() {
             auto [int_part, frac_part] = split();
+            if(value.negative && int_part.digits.empty() && !value.digits.empty()) {
+                std::cout << '-';
+            }
             print_bigint(std::cout, int_part);
-            if (frac_part.value != bigint<base>(0)) {
+            if (!frac_part.value.digits.empty()) {
                 std::cout << '.';
                 std::cout << std::string(bigint<base>::digit_length * (-frac_part.magnitude()), '0');
                 frac_part.value.negative = false;
@@ -79,7 +82,7 @@ namespace cp_algo::math {
             } else {
                 auto res = value.top(ssize(value.digits) + scale);
                 if (value.digits[-scale - 1] * 2 >= bigint<base>::Base) {
-                    res += 1;
+                    res += value.negative ? -1 : 1;
                 }
                 return res;
             }
@@ -96,10 +99,12 @@ namespace cp_algo::math {
             if (value.digits.empty()) return -inf;
             return ssize(value.digits) + scale;
         }
+        // The value must be nonzero.
         decimal inv(int64_t precision) {
             assert(precision >= 0);
             int64_t lead = llround((double)bigint<base>::Base / (double)value.digits.back());
-            decimal d(bigint<base>(lead), -ssize(value.digits));
+            if(value.negative) {lead = -lead;}
+            decimal d(bigint<base>(lead), -ssize(value.digits) - scale);
             size_t cur = 2;
             decimal amend = decimal(1) - trunc(cur) * d;
             while(-amend.magnitude() < precision) {
@@ -120,30 +125,41 @@ namespace cp_algo::math {
         }
         bool neg_a = a.negative;
         bool neg_b = b < 0;
-        b = std::abs(b);
+        uint64_t divisor = neg_b ? -uint64_t(b) : uint64_t(b);
         
         bigint<base> quotient;
         uint64_t remainder = 0;
 
         auto n = ssize(a.digits);
+        quotient.digits.resize(n);
         for (auto i = n - 1; i >= 0; i--) {
             __uint128_t val = (__uint128_t)remainder * bigint<base>::Base + a.digits[i];
-            uint64_t q = uint64_t(val / b);
-            remainder = uint64_t(val % b);
-            quotient.digits.push_back(q);
+            uint64_t q = uint64_t(val / divisor);
+            remainder = uint64_t(val % divisor);
+            quotient.digits[i] = q;
         }
-        std::ranges::reverse(quotient.digits);
         quotient.negative = (neg_a ^ neg_b);
         quotient.normalize();
         
         bigint<base> rem{int64_t(remainder)};
-        rem.negative = neg_a;
+        rem.negative = neg_a && remainder != 0;
         
         return std::pair{std::move(quotient), std::move(rem)};
     }
 
+    // Truncate the quotient toward zero; the divisor must be nonzero.
     template<base_v base>
-    auto divmod(bigint<base> const& a, bigint<base> const& b) {
+    std::pair<bigint<base>, bigint<base>> divmod(bigint<base> const& a, bigint<base> const& b) {
+        if(a.negative || b.negative) {
+            auto magnitude_a = a, magnitude_b = b;
+            magnitude_a.negative = magnitude_b.negative = false;
+            auto [quotient, remainder] = divmod(magnitude_a, magnitude_b);
+            quotient.negative = a.negative != b.negative;
+            remainder.negative = a.negative;
+            quotient.normalize();
+            remainder.normalize();
+            return std::pair{std::move(quotient), std::move(remainder)};
+        }
         if (a < b) {
             return std::pair{bigint<base>(0), a};
         }

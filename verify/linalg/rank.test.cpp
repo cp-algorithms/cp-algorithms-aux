@@ -4,7 +4,10 @@
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
 //#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/linalg/matrix.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -19,10 +22,14 @@ void solve() {
     matrix<base> A;
     if(n < m) {
         A = matrix<base>(n, m);
-        A.read();
+        read_reduced(A);
     } else {
         A = matrix<base>(m, n);
-        A.read_transposed();
+        for(size_t j = 0; j < A.m(); j++) {
+            for(size_t i = 0; i < A.n(); i++) {
+                read_reduced(A[i][j]);
+            }
+        }
     }
     cout << A.rank() << "\n";
 }

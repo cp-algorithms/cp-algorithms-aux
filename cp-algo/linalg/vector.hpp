@@ -58,7 +58,7 @@ namespace cp_algo::linalg {
         virtual base normalize(size_t i) {
             return (*this)[i];
         }
-        void read() {
+        void read() requires requires(std::istream& in, base& x) {in >> x;} {
             for(auto &it: *this) {
                 std::cin >> it;
             }

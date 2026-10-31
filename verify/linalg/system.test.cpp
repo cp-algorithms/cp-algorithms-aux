@@ -4,7 +4,10 @@
 #pragma GCC target("avx2")
 #include <bits/stdc++.h>
 //#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/linalg/matrix.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::linalg;
@@ -16,8 +19,8 @@ void solve() {
     int n, m;
     cin >> n >> m;
     matrix<modint<mod>> A(n, m), b(n, 1);
-    A.read();
-    b.read();
+    read_reduced(A);
+    read_reduced(b);
     auto x = A.solve(b);
     if(!x) {
         cout << -1 << "\n";

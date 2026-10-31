@@ -6,7 +6,10 @@
 #pragma GCC target("avx2")
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/recurrence.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -19,7 +22,7 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector a(n);
-    for(auto &it: a) {cin >> it;}
+    read_reduced(a);
     auto Q = min_rec(polyn(std::move(a)), n);
     int d = Q.deg();
     cout << d << endl;

@@ -5,8 +5,11 @@
 #pragma GCC optimize("O3,unroll-loops")
 #pragma GCC target("avx2")
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/combinatorics.hpp"
 #include "cp-algo/math/poly/base.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -19,7 +22,7 @@ void solve() {
     int n, m, c;
     cin >> n >> m >> c;
     polyn::Vector a(n);
-    for(auto &it: a) {cin >> it;}
+    read_reduced(a);
 
     // f(x) = prod_j(x-j) * sum_i (-1)^(n-1-i) f(i) / (i! (n-1-i)! (x-i)).
     // The sums for consecutive x are one convolution with coefficients 1/j of log(1/(1-x)).

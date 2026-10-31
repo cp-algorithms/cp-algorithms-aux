@@ -72,3 +72,43 @@ preserve performance on the supported contest inputs.
   workflows. Never interpolate them into JavaScript or shell source. Validate
   identity using GitHub metadata and pass data through inputs or environment
   variables. Do not publish untrusted fork HTML on the production site's origin.
+
+## Before opening or updating a PR
+
+- Read the affected headers, callers, verifier tasks, existing issues, overlapping
+  PRs, and review threads. Make the smallest change that addresses the supported
+  use case. Keep unrelated fixes and infrastructure work in separate PRs.
+- Explain important invariants and preconditions near the API. New public
+  methods, overloads, and convenience wrappers need a concrete caller and a
+  reason the existing interface is insufficient.
+- Check the final diff against current main. Do not carry already-merged shared
+  infrastructure as new work, overwrite another contributor's changes, or
+  silently change a documented contract while fixing a different problem.
+- Assess automated review findings yourself. Separate bugs introduced by the
+  change from existing issues, unsupported inputs, and style suggestions.
+  A successful AI-review check is not evidence that tests or verification ran.
+- Credit external code and ideas and preserve attribution and compatible
+  licensing. Briefly disclose material AI assistance and human-review limits;
+  do not claim a review, test run, or judge acceptance that did not happen.
+
+## Communication with maintainers
+
+- Lead with the concrete problem and resulting behavior. Assume no knowledge of
+  local work. A routine PR usually needs one or two short paragraphs, normally
+  below 200 words; expand only for essential reproduction or tradeoffs.
+- Include a minimal failing example for a bug, the supported input contract,
+  and any relevant API or performance cost. Give compiler, flags, inputs, and
+  comparable before/after measurements when performance affects the decision.
+- Mention manual checks and limitations that CI does not show. Do not repeat
+  passing check summaries, test counts, or a routine Validation section.
+  Keep bulky logs and benchmark details in supporting material.
+- Use plain, direct language. Omit generic praise, internal task history,
+  implementation inventories, repeated summaries, and unnecessary jargon.
+- Reply in the relevant review thread with the concrete change or a short
+  technical reason for disagreeing. Check the latest code before declaring a
+  finding fixed. Do not repeatedly ping maintainers without new information.
+- Update the title and description to match the final diff. In GitHub messages,
+  use one source line per paragraph or list item and let the interface wrap it.
+- Before requesting review, reread the diff and exact message as its recipient:
+  make the problem, evidence, limitations, and remaining decision clear.
+

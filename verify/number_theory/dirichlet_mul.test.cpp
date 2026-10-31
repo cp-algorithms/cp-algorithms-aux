@@ -6,10 +6,13 @@
 #define CP_ALGO_CHECKPOINT
 #include <iostream>
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/util/big_alloc.hpp"
 #include "cp-algo/number_theory/modint.hpp"
 #include "cp-algo/number_theory/dirichlet.hpp"
 #include "cp-algo/util/checkpoint.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -21,10 +24,10 @@ void solve() {
     auto [_, m] = floor_stats(n);
     cp_algo::big_vector<base> F(m+1), G(m+1);
     for (int i = 1; i <= m; ++i) {
-        cin >> F[i];
+        read_reduced(F[i]);
     }
     for (int i = 1; i <= m; ++i) {
-        cin >> G[i];
+        read_reduced(G[i]);
     }
     cp_algo::checkpoint("read");
     auto H = Dirichlet_mul(F, G, n);

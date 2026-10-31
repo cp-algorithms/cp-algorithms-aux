@@ -5,7 +5,10 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_MAXN ((1 << 19) + 1)
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/poly/transform.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -18,7 +21,7 @@ void solve() {
     int n;
     cin >> n;
     polyn::Vector f(n);
-    for(auto &x : f) cin >> x;
+    read_reduced(f);
     prefix_sum(polyn(std::move(f))).print(n + 1);
 
 }

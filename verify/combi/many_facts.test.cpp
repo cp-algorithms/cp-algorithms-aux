@@ -5,8 +5,10 @@
 #define CP_ALGO_CHECKPOINT
 #include <bits/stdc++.h>
 //#include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/math/factorials.hpp"
 
+using cp_algo::io::read_reduced;
 using namespace std;
 using base = cp_algo::math::modint<998244353>;
 
@@ -14,7 +16,7 @@ void solve() {
     int n;
     cin >> n;
     cp_algo::big_vector<base> args(n);
-    for(auto &x : args) {cin >> x;}
+    read_reduced(args);
     cp_algo::checkpoint("read");
     auto res = facts<true, 100'000>(args);
     for(auto it: res) {cout << it << "\n";}

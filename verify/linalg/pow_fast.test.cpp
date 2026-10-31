@@ -5,7 +5,10 @@
 #pragma GCC target("avx2")
 #define CP_ALGO_MAXN 256
 #include "blazingio/blazingio.min.hpp"
+#include "cp-algo/util/io.hpp"
 #include "cp-algo/linalg/frobenius.hpp"
+
+using cp_algo::io::read_reduced;
 
 using namespace std;
 using namespace cp_algo::math;
@@ -20,7 +23,7 @@ void solve() {
     uint64_t k;
     cin >> n >> k;
     matrix<base> A(n);
-    A.read();
+    read_reduced(A);
     frobenius_pow(A, k).print();
 }
 

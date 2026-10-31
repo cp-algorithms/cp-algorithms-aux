@@ -115,6 +115,12 @@ namespace cp_algo::linalg {
 
         void add_scaled(Base const& b, base scale, size_t i = 0) override {
             static_assert(base::bits >= 64, "Only wide modint types for linalg");
+            // Lazy SIMD accumulation needs 16 * mod()^2 < 2^64, not just room for two residues.
+            // Wider supported scalar moduli use ordinary modular arithmetic.
+            if(base::mod() >= (1LL << 30)) {
+                Base::add_scaled(b, scale, i);
+                return;
+            }
             if(scale != base(0)) {
                 assert(Base::size() == b.size());
                 size_t n = size(*this);
@@ -184,7 +190,7 @@ namespace cp_algo::linalg {
         // Two source contributions to two distinct rows; sources must be normalized.
         static void add_scaled_pair(modint_vec& x, modint_vec& y, Base const& p, Base const& q, std::array<base, 4> c,
                                     size_t first = 0) {
-            if(std::ranges::find(c, base(0)) != c.end()) {
+            if(base::mod() >= (1LL << 30) || std::ranges::find(c, base(0)) != c.end()) {
                 x.add_scaled(p, c[0], first);
                 x.add_scaled(q, c[1], first);
                 y.add_scaled(p, c[2], first);

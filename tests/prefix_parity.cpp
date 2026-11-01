@@ -8,6 +8,17 @@ template<class T> void check() {
         typename poly_t<T>::Vector a(n);
         for(auto &x : a) x = rng() % T::mod();
         poly_t<T> p(a);
+        typename poly_t<T>::Vector hv(n / 2 + 2);
+        for(auto &x: hv) x = rng() % T::mod();
+        poly_t<T> h(hv), expected;
+        auto d = p;
+        for(auto c: hv) {
+            expected += d * c;
+            d = deriv(deriv(d));
+        }
+        assert(apply_diff_even(p, h) == expected);
+        assert(apply_diff_even(p, h) == apply_diff(p, h.x2()));
+        assert(apply_diff_even(p, poly_t<T>{}).is_zero());
         auto q = prefix_sum(p);
         assert(q[0] == T(0));
         for(int x = -5; x <= 55; ++x) assert(q.eval(T(x + 1)) - q.eval(T(x)) == p.eval(T(x)));

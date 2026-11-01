@@ -90,6 +90,20 @@ namespace poly::impl {
     poly_t<T> apply_diff(poly_t<T> p, poly_t<T> g) { // g(D) p(x)
         return borel(forward_corr(invborel(std::move(p)), std::move(g)));
     }
+namespace poly::impl {
+    // Correlate with h(x^2), supplied without its zero odd coefficients.
+    template<typename T>
+    auto even_corr_parts(poly_t<T> const& p, poly_t<T> h) {
+        auto parts = p.bisect();
+        for(auto &part: parts) {part = forward_corr(std::move(part), h);}
+        return parts;
+    }
+}
+    template<typename T>
+    poly_t<T> apply_diff_even(poly_t<T> p, poly_t<T> h) { // h(D^2) p(x)
+        auto parts = poly::impl::even_corr_parts(invborel(std::move(p)), std::move(h));
+        return borel(parts[0].x2() + parts[1].x2().mul_xk(1));
+    }
     template<typename T>
     poly_t<T> shift(poly_t<T> p, std::type_identity_t<T> c) { // p(x+c)
         auto g = mulx(expx<T>(p.deg() + 1), c);
@@ -106,12 +120,11 @@ namespace poly::impl {
         kernel.mul_truncate(inv(Sx<T>(m), m), m);
         kernel = mulx(std::move(kernel), half * half);
         p = invborel(std::move(p));
-        auto parts = p.bisect();
+        auto parts = poly::impl::even_corr_parts(p, std::move(kernel));
         typename poly_t<T>::Vector result(n + 1);
         for(size_t parity = 0; parity < 2; ++parity) {
-            auto corr = forward_corr(std::move(parts[parity]), kernel);
             for(size_t k = parity; k < n; k += 2) {
-                result[k + 1] = corr[k / 2] - half * p[k + 1];
+                result[k + 1] = parts[parity][k / 2] - half * p[k + 1];
             }
         }
         return borel(poly_t<T>(std::move(result)));

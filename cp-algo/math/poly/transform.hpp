@@ -95,14 +95,15 @@ namespace poly::impl {
     template<typename T>
     auto even_corr_parts(poly_t<T> const& p, poly_t<T> h) {
         auto parts = p.bisect();
-        for(auto &part: parts) {part = forward_corr(std::move(part), h);}
+        parts[0] = forward_corr(std::move(parts[0]), h);
+        parts[1] = forward_corr(std::move(parts[1]), std::move(h));
         return parts;
     }
 }
     template<typename T>
     poly_t<T> apply_diff_even(poly_t<T> p, poly_t<T> h) { // h(D^2) p(x)
         auto parts = poly::impl::even_corr_parts(invborel(std::move(p)), std::move(h));
-        return borel(parts[0].x2() + parts[1].x2().mul_xk(1));
+        return borel(poly_t<T>::interleave(parts[0], parts[1]));
     }
     // q' = h(D^2)p, q(0) = 0. Factorials through degree(p)+1 must be invertible.
     template<typename T>

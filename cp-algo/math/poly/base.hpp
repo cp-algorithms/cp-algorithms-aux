@@ -193,13 +193,15 @@ namespace cp_algo::math {
             return Vector(n, 1);
         }
 
-        poly_t x2() const { // P(x) -> P(x^2)
-            Vector res(2 * a.size());
-            for(size_t i = 0; i < a.size(); i++) {
-                res[2 * i] = a[i];
-            }
+        // P0(x^2) + xP1(x^2), inverse of bisect().
+        static poly_t interleave(poly_t const& p0, poly_t const& p1) {
+            size_t n0 = p0.a.size(), n1 = p1.a.size();
+            Vector res(std::max(n0 ? 2 * n0 - 1 : 0, 2 * n1));
+            for(size_t i = 0; i < n0; ++i) {res[2 * i] = p0.a[i];}
+            for(size_t i = 0; i < n1; ++i) {res[2 * i + 1] = p1.a[i];}
             return res;
         }
+        poly_t x2() const {return interleave(*this, {});}
 
         // Return {P0, P1}, where P(x) = P0(x^2) + xP1(x^2)
         std::array<poly_t, 2> bisect(size_t n) const {

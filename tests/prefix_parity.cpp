@@ -27,10 +27,21 @@ template<class T> void check() {
         assert(q[0] == T(0));
         for(int x = -5; x <= 55; ++x) assert(q.eval(T(x + 1)) - q.eval(T(x)) == p.eval(T(x)));
     }
+    for(int n0 = 0; n0 <= 24; ++n0) for(int n1 = 0; n1 <= 24; ++n1) {
+        typename poly_t<T>::Vector a(n0), b(n1);
+        for(auto &x: a) x = rng() % T::mod();
+        for(auto &x: b) x = rng() % T::mod();
+        poly_t<T> p0(a), p1(b);
+        auto p = poly_t<T>::interleave(p0, p1);
+        assert(p.bisect()[0] == p0 && p.bisect()[1] == p1);
+        for(int k = 0; k < 50; ++k) assert(p[k] == (k % 2 ? p1[k / 2] : p0[k / 2]));
+        assert(poly_t<T>::interleave(p.bisect()[0], p.bisect()[1]) == p);
+        for(int k = 0; k < 50; ++k) assert(p0.x2()[k] == (k % 2 ? T(0) : p0[k / 2]));
+    }
     assert(prefix_sum(poly_t<T>{}).is_zero());
     for(size_t n = 0; n <= 24; ++n) {
         auto c = Cx<T>(n), s = Sx<T>(n), e = expx<T>(2 * n);
-        auto combined = c.x2() + s.x2().mul_xk(1);
+        auto combined = poly_t<T>::interleave(c, s);
         assert(combined == e);
         T factorial = 1;
         for(size_t j = 0; j < 2 * n; ++j) {

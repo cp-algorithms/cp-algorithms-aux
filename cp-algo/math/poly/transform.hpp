@@ -82,8 +82,28 @@ namespace cp_algo::math {
     // q(0) = 0 and q(x+1) - q(x) = p(x).
     template<typename T>
     poly_t<T> prefix_sum(poly_t<T> p) {
-        auto g = inv(expx<T>(p.deg() + 2).div_xk(1), p.deg() + 1);
-        return integr(apply_diff(std::move(p), std::move(g)));
+        if(p.is_zero()) {return {};}
+        size_t n = p.a.size(), m = (n + 1) / 2;
+        typename poly_t<T>::Vector c(m), s(m), result(n + 1);
+        T half = T(1) / T(2), quarter = half * half, scale = 1;
+        // t/(exp(t)-1) = (t/2)*coth(t/2) - t/2: only the linear term is odd.
+        for(size_t j = 0; j < m; ++j) {
+            c[j] = scale * rfact<T>(2 * j);
+            s[j] = scale * rfact<T>(2 * j + 1);
+            scale *= quarter;
+        }
+        auto kernel = poly_t<T>(std::move(c));
+        kernel.mul_truncate(inv(poly_t<T>(std::move(s)), m), m);
+        p = invborel(std::move(p));
+        for(size_t parity = 0; parity < 2; ++parity) {
+            typename poly_t<T>::Vector a((n + 1 - parity) / 2);
+            for(size_t j = 0; j < a.size(); ++j) {a[j] = p.a[2 * j + parity];}
+            auto corr = forward_corr(poly_t<T>(std::move(a)), kernel);
+            for(size_t k = parity; k < n; k += 2) {
+                result[k + 1] = (corr[k / 2] - half * p[k + 1]) * rfact<T>(k + 1);
+            }
+        }
+        return result;
     }
 }
 #pragma GCC pop_options

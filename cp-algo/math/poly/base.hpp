@@ -197,8 +197,15 @@ namespace cp_algo::math {
         static poly_t interleave(poly_t const& p0, poly_t const& p1) {
             size_t n0 = p0.a.size(), n1 = p1.a.size();
             Vector res(std::max(n0 ? 2 * n0 - 1 : 0, 2 * n1));
-            for(size_t i = 0; i < n0; ++i) {res[2 * i] = p0.a[i];}
-            for(size_t i = 0; i < n1; ++i) {res[2 * i + 1] = p1.a[i];}
+            size_t i = 0;
+            if(n0 && n1) {
+                for(; i < std::min(n0, n1); ++i) {
+                    res[2 * i] = p0.a[i];
+                    res[2 * i + 1] = p1.a[i];
+                }
+            }
+            for(size_t j = i; j < n0; ++j) {res[2 * j] = p0.a[j];}
+            for(size_t j = i; j < n1; ++j) {res[2 * j + 1] = p1.a[j];}
             return res;
         }
         poly_t x2() const {return interleave(*this, {});}

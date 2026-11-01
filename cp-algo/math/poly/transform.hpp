@@ -30,8 +30,24 @@ namespace cp_algo::math {
         for(int i = 0; i <= p.deg(); i++) {p.a[i] *= rfact<T>(i);}
         return p;
     }
+namespace poly::impl {
+    template<typename T, size_t Step, size_t Offset>
+    poly_t<T> factorial_series(size_t n) {
+        typename poly_t<T>::Vector a(n);
+        for(size_t i = 0; i < n; ++i) {a[i] = rfact<T>(int(Step * i + Offset));}
+        return a;
+    }
+}
     template<typename T>
-    poly_t<T> expx(size_t n) {return borel(poly_t<T>::ones(n));}
+    poly_t<T> expx(size_t n) {return poly::impl::factorial_series<T, 1, 0>(n);}
+
+    // C(x) = sum x^j/(2j)!, so cosh(x) = C(x^2).
+    template<typename T>
+    poly_t<T> Cx(size_t n) {return poly::impl::factorial_series<T, 2, 0>(n);}
+
+    // S(x) = sum x^j/(2j+1)!, so sinh(x) = x*S(x^2).
+    template<typename T>
+    poly_t<T> Sx(size_t n) {return poly::impl::factorial_series<T, 2, 1>(n);}
 
     template<typename T>
     poly_t<T> log1px(size_t n) {
@@ -84,26 +100,21 @@ namespace cp_algo::math {
     poly_t<T> prefix_sum(poly_t<T> p) {
         if(p.is_zero()) {return {};}
         size_t n = p.a.size(), m = (n + 1) / 2;
-        typename poly_t<T>::Vector c(m), s(m), result(n + 1);
-        T half = T(1) / T(2), quarter = half * half, scale = 1;
-        // t/(exp(t)-1) = (t/2)*coth(t/2) - t/2: only the linear term is odd.
-        for(size_t j = 0; j < m; ++j) {
-            c[j] = scale * rfact<T>(2 * j);
-            s[j] = scale * rfact<T>(2 * j + 1);
-            scale *= quarter;
-        }
-        auto kernel = poly_t<T>(std::move(c));
-        kernel.mul_truncate(inv(poly_t<T>(std::move(s)), m), m);
+        T half = T(1) / T(2);
+        // t/(exp(t)-1) = C(t^2/4)/S(t^2/4) - t/2.
+        auto kernel = Cx<T>(m);
+        kernel.mul_truncate(inv(Sx<T>(m), m), m);
+        kernel = mulx(std::move(kernel), half * half);
         p = invborel(std::move(p));
+        auto parts = p.bisect();
+        typename poly_t<T>::Vector result(n + 1);
         for(size_t parity = 0; parity < 2; ++parity) {
-            typename poly_t<T>::Vector a((n + 1 - parity) / 2);
-            for(size_t j = 0; j < a.size(); ++j) {a[j] = p.a[2 * j + parity];}
-            auto corr = forward_corr(poly_t<T>(std::move(a)), kernel);
+            auto corr = forward_corr(std::move(parts[parity]), kernel);
             for(size_t k = parity; k < n; k += 2) {
-                result[k + 1] = (corr[k / 2] - half * p[k + 1]) * rfact<T>(k + 1);
+                result[k + 1] = corr[k / 2] - half * p[k + 1];
             }
         }
-        return result;
+        return borel(poly_t<T>(std::move(result)));
     }
 }
 #pragma GCC pop_options

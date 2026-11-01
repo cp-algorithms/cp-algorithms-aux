@@ -93,6 +93,8 @@ namespace cp_algo::math::fft {
             }
         }
 
+        // Requires FE_TONEAREST and finite coefficients rounding into int64_t.
+        // Integer convolution recovery requires FFT error strictly below 0.5.
         void recover_mod(auto &res, size_t k) {
             size_t n = cv[0].size();
             uint64_t cur = 1, step = bpow(ifactor, n);
@@ -103,7 +105,7 @@ namespace cp_algo::math::fft {
                     if(i >= k) {
                         return;
                     }
-                    res[i] = llround(x[0]) + (llround(x[1]) << 16) + (llround(x[2]) << 32) + (llround(x[3]) << 48);
+                    res[i] = int64_t(std::nearbyint(x[0])) + (int64_t(std::nearbyint(x[1])) << 16) + (int64_t(std::nearbyint(x[2])) << 32) + (int64_t(std::nearbyint(x[3])) << 48);
                     res[i] *= mul;
                 };
                 set_i(i, re, cur);

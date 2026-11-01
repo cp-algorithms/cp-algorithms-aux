@@ -129,16 +129,14 @@ namespace poly::impl {
         if(p.is_zero()) {return {};}
         size_t m = (p.a.size() + 1) / 2;
         T half = T(1) / T(2);
-        // exp(D) shifts by one: (exp(D)-1)q = p, where D = d/dx.
-        // Write exp(t)-1 = t*A(t). Since A(0)=1 and D is nilpotent on
-        // bounded-degree polynomials, A(D) is invertible: q' = A(D)^(-1)p.
-        // A(t)^(-1) = t/(exp(t)-1) = H(t^2)-t/2, H(z) = C(z/4)/S(z/4).
+        // exp(D) shifts by one, so (exp(D)-1)q = p, D = d/dx.
+        // A(t) = (exp(t)-1)/t has A(0)=1, hence q' = A(D)^(-1)p.
+        // A(t)^(-1) = H(t^2)-t/2, where H(z) = C(z/4)/S(z/4).
         auto H = Cx<T>(m);
         H.mul_truncate(inv(Sx<T>(m), m), m);
         H = mulx(std::move(H), half * half);
-        // (exp(D)-1)q = p implies q' = H(D^2)p - p'/2.
         auto q = integr_apply_diff_even(p, std::move(H));
-        // q(x) = integral_0^x H(D^2)p(t) dt - (p(x)-p(0))/2.
+        // Subtract (p(x)-p(0))/2 to keep q(0)=0.
         for(size_t k = 1; k < p.a.size(); ++k) {q.a[k] -= half * p[k];}
         return q;
     }

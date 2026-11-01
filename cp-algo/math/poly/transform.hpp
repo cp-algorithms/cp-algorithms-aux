@@ -127,15 +127,18 @@ namespace poly::impl {
     template<typename T>
     poly_t<T> prefix_sum(poly_t<T> p) {
         if(p.is_zero()) {return {};}
-        size_t n = p.a.size(), m = (n + 1) / 2;
+        size_t m = (p.a.size() + 1) / 2;
         T half = T(1) / T(2);
-        // t/(exp(t)-1) = C(t^2/4)/S(t^2/4) - t/2.
-        auto kernel = Cx<T>(m);
-        kernel.mul_truncate(inv(Sx<T>(m), m), m);
-        kernel = mulx(std::move(kernel), half * half);
-        // (exp(D)-1)q = p, hence q' = H(D^2)p - p'/2.
-        auto q = integr_apply_diff_even(p, std::move(kernel));
-        // Subtract (p(x)-p(0))/2, preserving q(0)=0.
+        // exp(D) shifts by one: (exp(D)-1)q = p, where D = d/dx.
+        // Write exp(t)-1 = t*A(t). Since A(0)=1 and D is nilpotent on
+        // bounded-degree polynomials, A(D) is invertible: q' = A(D)^(-1)p.
+        // A(t)^(-1) = t/(exp(t)-1) = H(t^2)-t/2, H(z) = C(z/4)/S(z/4).
+        auto H = Cx<T>(m);
+        H.mul_truncate(inv(Sx<T>(m), m), m);
+        H = mulx(std::move(H), half * half);
+        // (exp(D)-1)q = p implies q' = H(D^2)p - p'/2.
+        auto q = integr_apply_diff_even(p, std::move(H));
+        // q(x) = integral_0^x H(D^2)p(t) dt - (p(x)-p(0))/2.
         for(size_t k = 1; k < p.a.size(); ++k) {q.a[k] -= half * p[k];}
         return q;
     }

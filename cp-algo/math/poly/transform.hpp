@@ -104,6 +104,19 @@ namespace poly::impl {
         auto parts = poly::impl::even_corr_parts(invborel(std::move(p)), std::move(h));
         return borel(parts[0].x2() + parts[1].x2().mul_xk(1));
     }
+    // q' = h(D^2)p, q(0) = 0. Factorials through degree(p)+1 must be invertible.
+    template<typename T>
+    poly_t<T> integr_apply_diff_even(poly_t<T> p, poly_t<T> h) {
+        size_t n = p.a.size();
+        auto parts = poly::impl::even_corr_parts(invborel(std::move(p)), std::move(h));
+        typename poly_t<T>::Vector result(n + 1);
+        for(size_t parity = 0; parity < 2; ++parity) {
+            for(size_t k = parity; k < n; k += 2) {
+                result[k + 1] = parts[parity][k / 2] * rfact<T>(int(k + 1));
+            }
+        }
+        return result;
+    }
     template<typename T>
     poly_t<T> shift(poly_t<T> p, std::type_identity_t<T> c) { // p(x+c)
         auto g = mulx(expx<T>(p.deg() + 1), c);
@@ -119,15 +132,11 @@ namespace poly::impl {
         auto kernel = Cx<T>(m);
         kernel.mul_truncate(inv(Sx<T>(m), m), m);
         kernel = mulx(std::move(kernel), half * half);
-        p = invborel(std::move(p));
-        auto parts = poly::impl::even_corr_parts(p, std::move(kernel));
-        typename poly_t<T>::Vector result(n + 1);
-        for(size_t parity = 0; parity < 2; ++parity) {
-            for(size_t k = parity; k < n; k += 2) {
-                result[k + 1] = parts[parity][k / 2] - half * p[k + 1];
-            }
-        }
-        return borel(poly_t<T>(std::move(result)));
+        // (exp(D)-1)q = p, hence q' = H(D^2)p - p'/2.
+        auto q = integr_apply_diff_even(p, std::move(kernel));
+        // Subtract (p(x)-p(0))/2, preserving q(0)=0.
+        for(size_t k = 1; k < p.a.size(); ++k) {q.a[k] -= half * p[k];}
+        return q;
     }
 }
 #pragma GCC pop_options

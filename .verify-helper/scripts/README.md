@@ -17,19 +17,18 @@ This directory contains scripts to generate and manage minified code versions fo
 
 ## GitHub Actions Integration
 
-The workflow in `.github/workflows/verify.yml` automatically:
-1. Generates bundled files (via `oj-resolve`)
-2. Calls `generate_minified.py` to create minified versions in both locations
-3. Calls `inject_minified_docs.py` to add them to documentation
-4. Commits and pushes the `cp-algo/min/` directory updates to the repository
-5. Builds the Jekyll site with all three code versions displayed
+Two workflows use these scripts:
+
+1. `.github/workflows/verify.yml` bundles the files with `oj-resolve`, runs `generate_minified.py` and runs `inject_minified_docs.py`.
+2. After a successful `verify` run on `main`, `.github/workflows/publish.yml` runs the scripts again, commits the `cp-algo/min/` updates and builds the Jekyll site.
 
 ## Website Display
 
-On the library website (https://lib.cp-algorithms.com), each file will now show three code tabs:
-- **default**: Original source code
-- **bundled**: Bundled version with all dependencies inlined
-- **minified**: Minified version (typically 35-50% size reduction from source)
+Each file on the [library site](https://lib.cp-algorithms.com) shows up to 4 code tabs:
+- **default**: original source code
+- **bundled**: all dependencies inlined
+- **minified**: minified source, about 35% smaller in total than the original
+- **minified + bundled**: the bundled version, minified
 
 ## Local Usage
 

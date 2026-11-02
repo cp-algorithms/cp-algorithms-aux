@@ -1,7 +1,9 @@
 #ifndef CP_ALGO_MATH_POLY_TRANSFORM_HPP
 #define CP_ALGO_MATH_POLY_TRANSFORM_HPP
 #include "calculus.hpp"
+#include "coefficient_view.hpp"
 #include "series/inv.hpp"
+#include <ranges>
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math {
     // Multiply coefficient k by c^k, i.e. substitute cx for x.
@@ -70,9 +72,47 @@ namespace cp_algo::math {
         a.substr_inplace(d, n);
         return a;
     }
+namespace poly::impl {
+    // Defer conversion from factorial basis so integration can share it.
     template<typename T>
-    poly_t<T> apply_diff(poly_t<T> p, poly_t<T> g) { // g(D) p(x)
-        return borel(forward_corr(invborel(std::move(p)), std::move(g)));
+    struct diff_result {
+        poly_t<T> coefficients;
+        operator poly_t<T>() const& {return borel(coefficients);}
+        operator poly_t<T>() && {return borel(std::move(coefficients));}
+    };
+}
+    // In factorial basis, integration is multiplication by x.
+    template<typename T>
+    poly_t<T> integr(poly::impl::diff_result<T> p) {
+        return borel(std::move(p.coefficients).mul_xk(1));
+    }
+
+    // g(D)p; materialize as poly_t, or integrate before materializing.
+    // Input and output factorials must be invertible and within the cache.
+    template<typename P, typename G>
+    auto apply_diff(P&& p, G&& g) {
+        using T = typename std::remove_cvref_t<P>::base;
+        auto [values, offset, stride] = poly::impl::layout_of(g);
+        if(offset >= p.a.size()) {return poly::impl::diff_result<T>{};}
+        auto h = [&] {
+            if constexpr(std::same_as<std::remove_cvref_t<G>, poly_t<T>>) {return std::forward<G>(g);}
+            else {return poly_t<T>(std::ranges::to<typename poly_t<T>::Vector>(values));}
+        }();
+        if(offset == 0 && stride == 1) {return poly::impl::diff_result<T>{forward_corr(invborel(std::forward<P>(p)), std::move(h))};}
+        size_t n = p.a.size() - offset;
+        typename poly_t<T>::Vector result;
+        result.reserve(n + 1); // Leave room for integration.
+        result.resize(n);
+        size_t count = std::min(size_t(stride), n);
+        for(size_t j = 0; j < count; ++j) {
+            poly_t<T> part;
+            part.a.resize((n - 1 - j) / stride + 1);
+            for(size_t i = 0, k = j; i < part.a.size(); ++i, k += stride) {part.a[i] = p[k + offset] * fact<T>(int(k + offset));}
+            part.normalize();
+            part = forward_corr(std::move(part), j + 1 == count ? std::move(h) : h);
+            std::ranges::copy(part.a, (result | std::views::drop(j) | std::views::stride(stride)).begin());
+        }
+        return poly::impl::diff_result<T>{std::move(result)};
     }
     template<typename T>
     poly_t<T> shift(poly_t<T> p, std::type_identity_t<T> c) { // p(x+c)
@@ -82,8 +122,19 @@ namespace cp_algo::math {
     // q(0) = 0 and q(x+1) - q(x) = p(x).
     template<typename T>
     poly_t<T> prefix_sum(poly_t<T> p) {
-        auto g = inv(expx<T>(p.deg() + 2).div_xk(1), p.deg() + 1);
-        return integr(apply_diff(std::move(p), std::move(g)));
+        if(p.is_zero()) {return {};}
+        size_t m = (p.a.size() + 1) / 2;
+        T half = T(1) / T(2);
+        // exp(D) shifts by one, so (exp(D)-1)q = p, D = d/dx.
+        // A(t) = (exp(t)-1)/t has A(0)=1, hence q' = A(D)^(-1)p.
+        // A(t)^(-1) = H(t^2)-t/2, where H(z) = C(z/4)/S(z/4).
+        auto [C, S] = expx<T>(2 * m).bisect();
+        C.mul_truncate(inv(std::move(S), m), m);
+        auto H = mulx(std::move(C), half * half);
+        auto q = integr(apply_diff(p, dilate<2>(std::move(H))));
+        // Subtract (p(x)-p(0))/2 to keep q(0)=0.
+        for(size_t k = 1; k < p.a.size(); ++k) {q.a[k] -= half * p[k];}
+        return q;
     }
 }
 #pragma GCC pop_options

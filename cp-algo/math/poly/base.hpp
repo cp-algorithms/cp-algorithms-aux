@@ -1,10 +1,50 @@
 #ifndef CP_ALGO_MATH_POLY_BASE_HPP
 #define CP_ALGO_MATH_POLY_BASE_HPP
 #include "../fft.hpp"
+#include "coefficient_view.hpp"
 #include <array>
+#include <functional>
 #include <iostream>
+#include <span>
 #include <utility>
 CP_ALGO_SIMD_PRAGMA_PUSH
+namespace cp_algo::math::poly::impl {
+    template<int Sign, typename P, std::ranges::input_range R>
+    P& add_coefficients(P& p, R&& r) {
+        using T = P::base;
+        auto layout = coefficient_layout(r);
+        auto add = [&](std::span<T const> values) -> P& {
+            size_t n = values.size();
+            if(!n) {return p.normalize();}
+            size_t extent = layout.extent(n);
+            if(layout.stride == 1 && layout.offset >= p.a.size()) {
+                p.a.reserve(extent);
+                p.a.resize(layout.offset);
+                if constexpr(Sign == 1) {p.a.insert(p.a.end(), values.begin(), values.end());}
+                else {for(T c: values) {p.a.push_back(-c);}}
+            } else {
+                p.a.resize(std::max(p.a.size(), extent));
+                auto out = p.a | std::views::drop(layout.offset) | std::views::stride(layout.stride);
+                if constexpr(Sign == 1) {std::ranges::transform(out, values, out.begin(), std::plus{});}
+                else {std::ranges::transform(out, values, out.begin(), std::minus{});}
+            }
+            return p.normalize();
+        };
+        using V = decltype(layout.values);
+        if constexpr(std::ranges::contiguous_range<V> && std::ranges::sized_range<V> &&
+                     std::same_as<std::ranges::range_value_t<V>, T>) {
+            auto src = std::ranges::data(layout.values);
+            auto less = std::less<T const*>{};
+            if(p.a.empty() || std::ranges::empty(layout.values) ||
+               (layout.offset == 0 && layout.stride == 1 && src == p.a.data()) ||
+               !less(src, p.a.data() + p.a.size()) || !less(p.a.data(), src + std::ranges::size(layout.values))) {
+                return add(layout.values);
+            }
+        }
+        // Overlapping or non-contiguous views may read p; snapshot them before resizing.
+        return add(std::ranges::to<typename P::Vector>(layout.values));
+    }
+}
 namespace cp_algo::math {
     template<typename T> struct poly_t;
     template<typename T>
@@ -32,16 +72,12 @@ namespace cp_algo::math {
             return *this;
         }
         friend poly_t operator -(poly_t p) {p.negate_inplace(); return p;}
-        poly_t& operator += (poly_t const& t) {
-            a.resize(std::max(size(a), size(t.a)));
-            std::ranges::transform(a, t.a, begin(a), std::plus{});
-            return normalize();
-        }
-        poly_t& operator -= (poly_t const& t) {
-            a.resize(std::max(size(a), size(t.a)));
-            std::ranges::transform(a, t.a, begin(a), std::minus{});
-            return normalize();
-        }
+        poly_t& operator += (poly_t const& t) {return *this += t.a;}
+        poly_t& operator -= (poly_t const& t) {return *this -= t.a;}
+        template<std::ranges::input_range R>
+        poly_t& operator += (R&& r) {return poly::impl::add_coefficients<1>(*this, std::forward<R>(r));}
+        template<std::ranges::input_range R>
+        poly_t& operator -= (R&& r) {return poly::impl::add_coefficients<-1>(*this, std::forward<R>(r));}
         friend poly_t operator + (poly_t p, poly_t const& t) {p += t; return p;}
         friend poly_t operator - (poly_t p, poly_t const& t) {p -= t; return p;}
 
@@ -194,21 +230,16 @@ namespace cp_algo::math {
         }
 
         poly_t x2() const { // P(x) -> P(x^2)
-            Vector res(2 * a.size());
-            for(size_t i = 0; i < a.size(); i++) {
-                res[2 * i] = a[i];
-            }
+            Vector res(a.empty() ? 0 : 2 * a.size() - 1);
+            for(size_t i = 0; i < a.size(); ++i) {res[2 * i] = a[i];}
             return res;
         }
 
         // Return {P0, P1}, where P(x) = P0(x^2) + xP1(x^2)
         std::array<poly_t, 2> bisect(size_t n) const {
-            n = std::min(n, size(a));
-            Vector res[2];
-            for(size_t i = 0; i < n; i++) {
-                res[i % 2].push_back(a[i]);
-            }
-            return {std::move(res[0]), std::move(res[1])};
+            auto prefix = a | std::views::take(std::min(n, a.size()));
+            return {std::ranges::to<Vector>(prefix | std::views::stride(2)),
+                    std::ranges::to<Vector>(prefix | std::views::drop(1) | std::views::stride(2))};
         }
         std::array<poly_t, 2> bisect() const {
             return bisect(size(a));

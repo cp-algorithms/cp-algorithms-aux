@@ -20,7 +20,8 @@ namespace cp_algo::math::poly::impl {
             return inv_inplace(q, k - 1, n + 1).div_xk_inplace(1);
         }
         auto [q0, q1] = q.bisect();
-        auto qq = q0 * q0 - (q1 * q1).mul_xk_inplace(1);
+        auto qq = q0 * q0;
+        qq -= mul_xk(q1 * q1, 1);
         inv_inplace(qq, k / 2 - q.deg() / 2, (n + 1) / 2 + q.deg() / 2);
         size_t N = fft::com_size(size(q0.a), size(qq.a));
         auto q0f = fft::spectrum<base>(q0.a, 2 * N);
@@ -81,11 +82,13 @@ namespace cp_algo::math {
                 std::move(f).multiply(g, res, 2 * N);
                 return res;
             };
-            Q = poly_t<T>(squared(Q0f)) - poly_t<T>(squared(Q1f)).mul_xk_inplace(1);
+            Q = squared(Q0f);
+            Q -= mul_xk(poly_t<T>(squared(Q1f)), 1);
             if(k % 2) {
                 P = poly_t<T>(times(std::move(Q0f), P1f)) - poly_t<T>(times(std::move(Q1f), P0f));
             } else {
-                P = poly_t<T>(times(std::move(Q0f), P0f)) - poly_t<T>(times(std::move(Q1f), P1f)).mul_xk_inplace(1);
+                P = times(std::move(Q0f), P0f);
+                P -= mul_xk(poly_t<T>(times(std::move(Q1f), P1f)), 1);
             }
             k /= 2;
         }

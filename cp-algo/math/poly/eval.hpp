@@ -40,7 +40,7 @@ namespace cp_algo::math::poly::impl {
         auto [q, rem] = divmod(std::move(p), tree[2 * v]);
         auto a = to_newton(std::move(rem), tree, 2 * v, l, m);
         auto b = to_newton(std::move(q), tree, 2 * v + 1, m, r);
-        a += b.mul_xk_inplace(m - l);
+        a += mul_xk(std::move(b), m - l);
         return a;
     }
 }

@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math::fps_detail {
@@ -260,6 +261,11 @@ namespace cp_algo::math {
             requires std::invocable<F&, size_t, big_vector<T> const&>
         explicit fps(F f): data(std::make_shared<state>(std::move(f))) {}
         T operator[](size_t n) const { return data->get(n); }
+        // A bounded view sharing this FPS; reading ahead also computes the missing prefix.
+        auto prefix_view(size_t n) const {
+            return std::views::iota(size_t(0), n) |
+                   std::views::transform([p = *this](size_t i) {return p[i];});
+        }
         poly_t<T> prefix(size_t n) const {
             if(n) {
                 data->get(n - 1);

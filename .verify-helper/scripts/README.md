@@ -20,7 +20,9 @@ This directory contains scripts to generate and manage minified code versions fo
 Two workflows use these scripts:
 
 1. `.github/workflows/verify.yml` bundles the files with `oj-resolve`, runs `generate_minified.py` and runs `inject_minified_docs.py`.
-2. After a successful `verify` run on `main`, `.github/workflows/publish.yml` runs the scripts again, commits the `cp-algo/min/` updates and builds the Jekyll site.
+2. After a successful `verify` run on `main`, `.github/workflows/publish.yml` runs the scripts again. If `cp-algo/min/` changed, it commits the update and skips the site build. Otherwise it builds and deploys the Jekyll site.
+
+The bot's commit does not start a new workflow run. After a minified update, the site is rebuilt by the next push to `main`.
 
 ## Website Display
 

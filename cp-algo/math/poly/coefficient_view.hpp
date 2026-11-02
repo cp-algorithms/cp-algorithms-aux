@@ -18,49 +18,29 @@ namespace poly::impl {
         else {return std::ranges::ref_view(r);}
     }
 }
-    // Possible support at offset + j*stride; stored values may also be zero.
+    // Support at offset + j*stride; random-access storage also gives a view including the zeros.
+    // Iterators refer to this view. Stored values may be zero; borrowed storage must stay alive.
     template<std::ranges::view V, typename Stride>
-    struct coefficient_layout_t {
-        V values;
-        size_t offset;
-        Stride stride;
-        size_t extent(size_t n) const {
-            if(!n) {return 0;}
-            size_t limit = size_t(std::numeric_limits<ptrdiff_t>::max());
-            assert(stride > 0 && offset < limit);
-            assert(n - 1 <= (limit - 1 - offset) / stride);
-            return offset + (n - 1) * stride + 1;
-        }
-    };
-    template<std::ranges::range R> requires(std::is_lvalue_reference_v<R> || std::ranges::viewable_range<R>)
-    auto coefficient_layout(R&& r) {
-        if constexpr(requires { std::forward<R>(r).coefficient_layout(); }) {
-            return std::forward<R>(r).coefficient_layout();
-        } else {
-            return coefficient_layout_t{poly::impl::range_view(std::forward<R>(r)), 0,
-                                        std::integral_constant<size_t, 1>{}};
-        }
-    }
-
-    // A read-only view of x^offset * p(x^stride), including the zeros.
-    // Store ranges as std::views::all does; also borrow move-only lvalue views.
-    // Iterators refer to this view and must not outlive it or its underlying storage.
-    template<std::ranges::view V, typename Stride>
-        requires std::ranges::random_access_range<V const> && std::ranges::sized_range<V const>
     struct coefficient_view: std::ranges::view_interface<coefficient_view<V, Stride>> {
-        V coefficients;
+        V values;
         size_t offset;
         Stride stride;
         using value_type = std::ranges::range_value_t<V>;
 
-        coefficient_view(V coefficients, size_t offset, Stride stride):
-            coefficients(std::move(coefficients)), offset(offset), stride(stride) {
+        coefficient_view(V values, size_t offset, Stride stride):
+            values(std::move(values)), offset(offset), stride(stride) {
             assert(stride > 0);
         }
-        size_t size() const {return coefficient_layout().extent(std::ranges::size(coefficients));}
+        size_t extent(size_t n) const {
+            if(!n) {return 0;}
+            size_t limit = size_t(std::numeric_limits<ptrdiff_t>::max());
+            assert(offset < limit && n - 1 <= (limit - 1 - offset) / stride);
+            return offset + (n - 1) * stride + 1;
+        }
+        size_t size() const requires std::ranges::sized_range<V const> {return extent(std::ranges::size(values));}
         value_type operator[](size_t i) const {
             if(i < offset || (i - offset) % stride) {return {};}
-            return std::ranges::begin(coefficients)[(i - offset) / stride];
+            return std::ranges::begin(values)[(i - offset) / stride];
         }
 
         struct iterator {
@@ -84,13 +64,23 @@ namespace poly::impl {
             friend difference_type operator-(iterator a, iterator b) {return a.index - b.index;}
             auto operator<=>(iterator const&) const = default;
         };
-        iterator begin() const {return {this, 0};}
-        iterator end() const {return {this, ptrdiff_t(size())};}
+        iterator begin() const requires std::ranges::random_access_range<V const> {return {this, 0};}
+        iterator end() const requires std::ranges::random_access_range<V const> && std::ranges::sized_range<V const> {
+            return {this, ptrdiff_t(size())};
+        }
 
         auto coefficient_layout(this auto&& self) {
-            return coefficient_layout_t{poly::impl::range_view(std::forward<decltype(self)>(self).coefficients), self.offset, self.stride};
+            return cp_algo::math::coefficient_view{poly::impl::range_view(std::forward<decltype(self)>(self).values), self.offset, self.stride};
         }
     };
+    template<std::ranges::range R> requires(std::is_lvalue_reference_v<R> || std::ranges::viewable_range<R>)
+    auto coefficient_layout(R&& r) {
+        if constexpr(requires { std::forward<R>(r).coefficient_layout(); }) {
+            return std::forward<R>(r).coefficient_layout();
+        } else {
+            return coefficient_view{poly::impl::range_view(std::forward<R>(r)), 0, std::integral_constant<size_t, 1>{}};
+        }
+    }
 
 namespace poly::impl {
     template<typename P>

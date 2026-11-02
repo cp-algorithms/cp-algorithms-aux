@@ -13,7 +13,7 @@ namespace cp_algo::math {
             auto [Ff, Fdf] = FFd(f, 2 * len);
             Ff.div_xk_inplace(len);
             Ff.mul_truncate(inv(std::move(Fdf), len), len);
-            f -= Ff.mul_xk_inplace(len);
+            f -= mul_xk(std::move(Ff), len);
         }
         f.mod_xk_inplace(n);
         return f;

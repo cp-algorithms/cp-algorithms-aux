@@ -55,7 +55,8 @@ namespace cp_algo::math {
             int k = m / 2;
             auto [f0, f1] = std::make_pair(f.mod_xk(k), f.div_xk(k));
             auto [A, B] = std::make_pair(self(f0, k, N), self(f1, m - k, N - k));
-            return (A + (B.mod_xk(N - k) * getpow(k).mod_xk(N - k)).mul_xk(k)).mod_xk(N);
+            A += mul_xk(B.mod_xk(N - k) * getpow(k).mod_xk(N - k), k);
+            return std::move(A).mod_xk(N);
         };
 
         int r = n / q;
@@ -72,7 +73,8 @@ namespace cp_algo::math {
             B1p[i] = (B1p[i - 1] * B1.mod_xk(n - i * q)).mod_xk(n - i * q);
         }
         while(r >= 0) {
-            ans += (AB0.mod_xk(n - r * q) * rfact<T>(r) * B1p[r]).mul_xk(r * q).mod_xk(n);
+            auto term = (AB0.mod_xk(n - r * q) * rfact<T>(r) * B1p[r]).mod_xk(n - r * q);
+            ans += mul_xk(std::move(term), r * q);
             r--;
             if(r >= 0) {
                 AB0 = (integr(AB0 * Bd) + A[r] * fact<T>(r)).mod_xk(n);

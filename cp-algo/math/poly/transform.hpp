@@ -32,24 +32,8 @@ namespace cp_algo::math {
         for(int i = 0; i <= p.deg(); i++) {p.a[i] *= rfact<T>(i);}
         return p;
     }
-namespace poly::impl {
-    template<typename T, size_t Step, size_t Offset>
-    poly_t<T> factorial_series(size_t n) {
-        typename poly_t<T>::Vector a(n);
-        for(size_t i = 0; i < n; ++i) {a[i] = rfact<T>(int(Step * i + Offset));}
-        return a;
-    }
-}
     template<typename T>
-    poly_t<T> expx(size_t n) {return poly::impl::factorial_series<T, 1, 0>(n);}
-
-    // C(x) = sum x^j/(2j)!, so cosh(x) = C(x^2).
-    template<typename T>
-    poly_t<T> Cx(size_t n) {return poly::impl::factorial_series<T, 2, 0>(n);}
-
-    // S(x) = sum x^j/(2j+1)!, so sinh(x) = x*S(x^2).
-    template<typename T>
-    poly_t<T> Sx(size_t n) {return poly::impl::factorial_series<T, 2, 1>(n);}
+    poly_t<T> expx(size_t n) {return borel(poly_t<T>::ones(n));}
 
     template<typename T>
     poly_t<T> log1px(size_t n) {
@@ -105,12 +89,16 @@ namespace poly::impl {
 
     // g(D)p; materialize as poly_t, or integrate before materializing.
     // Input and output factorials must be invertible and within the cache.
-    template<typename T, std::ranges::input_range R>
-    auto apply_diff(poly_t<T> const& p, R&& g) {
-        auto [values, offset, stride] = coefficient_layout(g);
-        poly_t<T> h(std::ranges::to<typename poly_t<T>::Vector>(values));
+    template<typename P, typename G>
+    auto apply_diff(P&& p, G&& g) {
+        using T = typename std::remove_cvref_t<P>::base;
+        auto [values, offset, stride] = poly::impl::layout_of(g);
         if(offset >= p.a.size()) {return poly::impl::diff_result<T>{};}
-        if(offset == 0 && stride == 1) {return poly::impl::diff_result<T>{forward_corr(invborel(p), std::move(h))};}
+        auto h = [&] {
+            if constexpr(std::same_as<std::remove_cvref_t<G>, poly_t<T>>) {return std::forward<G>(g);}
+            else {return poly_t<T>(std::ranges::to<typename poly_t<T>::Vector>(values));}
+        }();
+        if(offset == 0 && stride == 1) {return poly::impl::diff_result<T>{forward_corr(invborel(std::forward<P>(p)), std::move(h))};}
         size_t n = p.a.size() - offset;
         typename poly_t<T>::Vector result;
         result.reserve(n + 1); // Leave room for integration.
@@ -122,13 +110,9 @@ namespace poly::impl {
             for(size_t i = 0, k = j; i < part.a.size(); ++i, k += stride) {part.a[i] = p[k + offset] * fact<T>(int(k + offset));}
             part.normalize();
             part = forward_corr(std::move(part), j + 1 == count ? std::move(h) : h);
-            for(size_t i = 0, k = j; i < part.a.size(); ++i, k += stride) {result[k] = part[i];}
+            std::ranges::copy(part.a, (result | std::views::drop(j) | std::views::stride(stride)).begin());
         }
         return poly::impl::diff_result<T>{std::move(result)};
-    }
-    template<typename T>
-    auto apply_diff(poly_t<T> p, poly_t<T> g) {
-        return poly::impl::diff_result<T>{forward_corr(invborel(std::move(p)), std::move(g))};
     }
     template<typename T>
     poly_t<T> shift(poly_t<T> p, std::type_identity_t<T> c) { // p(x+c)
@@ -144,9 +128,9 @@ namespace poly::impl {
         // exp(D) shifts by one, so (exp(D)-1)q = p, D = d/dx.
         // A(t) = (exp(t)-1)/t has A(0)=1, hence q' = A(D)^(-1)p.
         // A(t)^(-1) = H(t^2)-t/2, where H(z) = C(z/4)/S(z/4).
-        auto H = Cx<T>(m);
-        H.mul_truncate(inv(Sx<T>(m), m), m);
-        H = mulx(std::move(H), half * half);
+        auto [C, S] = expx<T>(2 * m).bisect();
+        C.mul_truncate(inv(std::move(S), m), m);
+        auto H = mulx(std::move(C), half * half);
         auto q = integr(apply_diff(p, dilate<2>(std::move(H))));
         // Subtract (p(x)-p(0))/2 to keep q(0)=0.
         for(size_t k = 1; k < p.a.size(); ++k) {q.a[k] -= half * p[k];}

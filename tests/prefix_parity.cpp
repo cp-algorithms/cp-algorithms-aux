@@ -60,16 +60,17 @@ template<class T> void check() {
         for(auto &x: a) x = rng() % T::mod();
         for(auto &x: b) x = rng() % T::mod();
         poly_t<T> p0(a), p1(b);
-        auto p = poly_t<T>::interleave(p0, p1);
+        auto p = p0.x2() + p1.x2().mul_xk(1);
         assert(p.bisect()[0] == p0 && p.bisect()[1] == p1);
         for(int k = 0; k < 50; ++k) assert(p[k] == (k % 2 ? p1[k / 2] : p0[k / 2]));
-        assert(poly_t<T>::interleave(p.bisect()[0], p.bisect()[1]) == p);
+        assert(p.bisect()[0].x2() + p.bisect()[1].x2().mul_xk(1) == p);
         for(int k = 0; k < 50; ++k) assert(p0.x2()[k] == (k % 2 ? T(0) : p0[k / 2]));
     }
     assert(prefix_sum(poly_t<T>{}).is_zero());
     for(size_t n = 0; n <= 24; ++n) {
-        auto c = Cx<T>(n), s = Sx<T>(n), e = expx<T>(2 * n);
-        auto combined = poly_t<T>::interleave(c, s);
+        auto e = expx<T>(2 * n);
+        auto [c, s] = e.bisect();
+        auto combined = c.x2() + s.x2().mul_xk(1);
         assert(combined == e);
         T factorial = 1;
         for(size_t j = 0; j < 2 * n; ++j) {

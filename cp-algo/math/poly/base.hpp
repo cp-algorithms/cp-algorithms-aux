@@ -24,12 +24,9 @@ namespace cp_algo::math::poly::impl {
                 else {for(T c: values) {p.a.push_back(-c);}}
             } else {
                 p.a.resize(std::max(p.a.size(), extent));
-                size_t i = layout.offset;
-                for(T c: values) {
-                    if constexpr(Sign == 1) {p.a[i] += c;}
-                    else {p.a[i] -= c;}
-                    i += layout.stride;
-                }
+                auto out = p.a | std::views::drop(layout.offset) | std::views::stride(layout.stride);
+                if constexpr(Sign == 1) {std::ranges::transform(out, values, out.begin(), std::plus{});}
+                else {std::ranges::transform(out, values, out.begin(), std::minus{});}
             }
             return p.normalize();
         };
@@ -39,6 +36,7 @@ namespace cp_algo::math::poly::impl {
             auto src = std::ranges::data(layout.values);
             auto less = std::less<T const*>{};
             if(p.a.empty() || std::ranges::empty(layout.values) ||
+               (layout.offset == 0 && layout.stride == 1 && src == p.a.data()) ||
                !less(src, p.a.data() + p.a.size()) || !less(p.a.data(), src + std::ranges::size(layout.values))) {
                 return add(layout.values);
             }
@@ -74,16 +72,8 @@ namespace cp_algo::math {
             return *this;
         }
         friend poly_t operator -(poly_t p) {p.negate_inplace(); return p;}
-        poly_t& operator += (poly_t const& t) {
-            a.resize(std::max(size(a), size(t.a)));
-            std::ranges::transform(a, t.a, begin(a), std::plus{});
-            return normalize();
-        }
-        poly_t& operator -= (poly_t const& t) {
-            a.resize(std::max(size(a), size(t.a)));
-            std::ranges::transform(a, t.a, begin(a), std::minus{});
-            return normalize();
-        }
+        poly_t& operator += (poly_t const& t) {return *this += t.a;}
+        poly_t& operator -= (poly_t const& t) {return *this -= t.a;}
         template<std::ranges::input_range R>
         poly_t& operator += (R&& r) {return poly::impl::add_coefficients<1>(*this, std::forward<R>(r));}
         template<std::ranges::input_range R>
@@ -239,31 +229,17 @@ namespace cp_algo::math {
             return Vector(n, 1);
         }
 
-        // P0(x^2) + xP1(x^2), inverse of bisect().
-        static poly_t interleave(poly_t const& p0, poly_t const& p1) {
-            size_t n0 = p0.a.size(), n1 = p1.a.size();
-            Vector res(std::max(n0 ? 2 * n0 - 1 : 0, 2 * n1));
-            size_t i = 0;
-            if(n0 && n1) {
-                for(; i < std::min(n0, n1); ++i) {
-                    res[2 * i] = p0.a[i];
-                    res[2 * i + 1] = p1.a[i];
-                }
-            }
-            for(size_t j = i; j < n0; ++j) {res[2 * j] = p0.a[j];}
-            for(size_t j = i; j < n1; ++j) {res[2 * j + 1] = p1.a[j];}
+        poly_t x2() const { // P(x) -> P(x^2)
+            Vector res(a.empty() ? 0 : 2 * a.size() - 1);
+            for(size_t i = 0; i < a.size(); ++i) {res[2 * i] = a[i];}
             return res;
         }
-        poly_t x2() const {return interleave(*this, {});}
 
         // Return {P0, P1}, where P(x) = P0(x^2) + xP1(x^2)
         std::array<poly_t, 2> bisect(size_t n) const {
-            n = std::min(n, size(a));
-            Vector res[2];
-            for(size_t i = 0; i < n; i++) {
-                res[i % 2].push_back(a[i]);
-            }
-            return {std::move(res[0]), std::move(res[1])};
+            auto prefix = a | std::views::take(n);
+            return {std::ranges::to<Vector>(prefix | std::views::stride(2)),
+                    std::ranges::to<Vector>(prefix | std::views::drop(1) | std::views::stride(2))};
         }
         std::array<poly_t, 2> bisect() const {
             return bisect(size(a));

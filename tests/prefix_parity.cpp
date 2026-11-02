@@ -44,6 +44,9 @@ template<class T> void check() {
         for(auto c: hv) {ordinary += d1 * c; d1 = deriv(d1);}
         assert(poly_t<T>(apply_diff(p, h)) == ordinary);
         assert(deriv(integr(apply_diff(p, h))) == ordinary);
+        auto tail = h.a | std::views::drop(1);
+        poly_t<T> from_view = apply_diff(p, dilated_view{tail, size_t(2)});
+        assert(from_view == poly_t<T>(apply_diff(p, dilate<2>(h.div_xk(1)))));
         auto deferred = apply_diff(poly_t<T>(a), dilate(poly_t<T>(hv), 2));
         assert(poly_t<T>(deferred) == expected);
         assert(deriv(integr(deferred)) == expected);

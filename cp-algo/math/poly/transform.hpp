@@ -3,7 +3,6 @@
 #include "calculus.hpp"
 #include "series/inv.hpp"
 #include <ranges>
-#include <vector>
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math {
     // Multiply coefficient k by c^k, i.e. substitute cx for x.
@@ -105,60 +104,43 @@ namespace poly::impl {
         return dilated_view{std::views::all(std::forward<P>(p).a), std::integral_constant<size_t, Stride>{}};
     }
 namespace poly::impl {
-    // Own the correlations; defer conversion from factorial basis.
-    template<typename T, typename Stride = size_t>
+    // Defer conversion from factorial basis so integration can share it.
+    template<typename T>
     struct diff_result {
-        std::vector<poly_t<T>> parts;
-        Stride stride;
-
-        poly_t<T> eval(int offset = 0) const {
-            size_t n = 0;
-            for(size_t j = 0; j < parts.size(); ++j) {
-                if(!parts[j].is_zero()) {n = std::max(n, stride * parts[j].deg() + j + 1);}
-            }
-            if(n == 0) {return {};}
-            typename poly_t<T>::Vector result(n + offset);
-            for(size_t j = 0; j < parts.size(); ++j) {
-                for(int i = 0; i <= parts[j].deg(); ++i) {
-                    int k = int(stride * i + j) + offset;
-                    result[k] = parts[j][i] * rfact<T>(k);
-                }
-            }
-            return result;
-        }
-        operator poly_t<T>() const& {return eval();}
-        operator poly_t<T>() && {
-            if(stride == 1 && !parts.empty()) {return borel(std::move(parts[0]));}
-            return eval();
-        }
+        poly_t<T> coefficients;
+        operator poly_t<T>() const& {return borel(coefficients);}
+        operator poly_t<T>() && {return borel(std::move(coefficients));}
     };
 }
-    template<typename T, typename Stride>
-    poly_t<T> integr(poly::impl::diff_result<T, Stride> const& p) {return p.eval(1);}
+    // In factorial basis, integration is multiplication by x.
+    template<typename T>
+    poly_t<T> integr(poly::impl::diff_result<T> p) {
+        return borel(std::move(p.coefficients).mul_xk(1));
+    }
 
     // g(D)p; materialize as poly_t, or integrate before materializing.
     // Input and output factorials must be invertible and within the cache.
     template<typename T, std::ranges::view V, typename Stride>
     auto apply_diff(poly_t<T> const& p, dilated_view<V, Stride> g) {
-        size_t count = std::min(size_t(g.stride), p.a.size());
-        poly::impl::diff_result<T, Stride> result{{}, g.stride};
-        result.parts.resize(count);
         typename poly_t<T>::Vector coefficients(std::ranges::begin(g.coefficients), std::ranges::end(g.coefficients));
         poly_t<T> h(std::move(coefficients));
+        typename poly_t<T>::Vector result;
+        result.reserve(p.a.size() + 1); // Leave room for integration.
+        result.resize(p.a.size());
+        size_t count = std::min(size_t(g.stride), p.a.size());
         for(size_t j = 0; j < count; ++j) {
-            auto &part = result.parts[j];
+            poly_t<T> part;
             part.a.resize((p.a.size() - 1 - j) / g.stride + 1);
             for(size_t i = 0, k = j; i < part.a.size(); ++i, k += g.stride) {part.a[i] = p[k] * fact<T>(int(k));}
             part.normalize();
             part = forward_corr(std::move(part), j + 1 == count ? std::move(h) : h);
+            for(size_t i = 0, k = j; i < part.a.size(); ++i, k += g.stride) {result[k] = part[i];}
         }
-        return result;
+        return poly::impl::diff_result<T>{std::move(result)};
     }
     template<typename T>
     auto apply_diff(poly_t<T> p, poly_t<T> g) {
-        poly::impl::diff_result<T> result{{}, 1};
-        result.parts.push_back(forward_corr(invborel(std::move(p)), std::move(g)));
-        return result;
+        return poly::impl::diff_result<T>{forward_corr(invborel(std::move(p)), std::move(g))};
     }
     template<typename T>
     poly_t<T> shift(poly_t<T> p, std::type_identity_t<T> c) { // p(x+c)

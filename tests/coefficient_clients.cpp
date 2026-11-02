@@ -1,6 +1,8 @@
 #include "cp-algo/math/newton.hpp"
 #include "cp-algo/math/poly/compose.hpp"
 #include <cassert>
+#include <cstddef>
+#include <limits>
 #include <random>
 #include <utility>
 using namespace cp_algo::math;
@@ -24,6 +26,7 @@ int main() {
         }
         assert(q == P(expected));
         auto original = p;
+        assert(p.bisect(std::numeric_limits<size_t>::max()) == p.bisect());
         p += p;
         assert(p == original * T(2));
         p -= p;

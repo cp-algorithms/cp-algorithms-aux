@@ -237,7 +237,7 @@ namespace cp_algo::math {
 
         // Return {P0, P1}, where P(x) = P0(x^2) + xP1(x^2)
         std::array<poly_t, 2> bisect(size_t n) const {
-            auto prefix = a | std::views::take(n);
+            auto prefix = a | std::views::take(std::min(n, a.size()));
             return {std::ranges::to<Vector>(prefix | std::views::stride(2)),
                     std::ranges::to<Vector>(prefix | std::views::drop(1) | std::views::stride(2))};
         }

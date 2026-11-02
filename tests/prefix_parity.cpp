@@ -16,35 +16,37 @@ template<class T> void check() {
             expected += d * c;
             d = deriv(deriv(d));
         }
-        assert(apply_diff_even(p, h) == expected);
-        assert(apply_diff_even(p, h) == apply_diff(p, h.x2()));
-        assert(apply_diff_even(p, poly_t<T>{}).is_zero());
-        auto integrated = apply_diff_even(p, h, integrate{1});
-        // integr uses small_inv, whose full cache must be invertible.
-        if constexpr(T::mod() >= maxn) {assert(integrated == integr(apply_diff_even(p, h)));}
-        assert(integrated[0] == T(0));
-        assert(deriv(integrated) == expected);
-        assert(apply_diff_even(p, poly_t<T>{}, integrate{1}).is_zero());
-        for(int r: {0, 1, 2, 3, 50}) {
-            auto antiderivative = expected;
-            for(int j = 0; j < r; ++j) {
-                typename poly_t<T>::Vector a(antiderivative.a.size() + 1);
-                for(int i = 0; i <= antiderivative.deg(); ++i) {a[i + 1] = antiderivative[i] / T(i + 1);}
-                antiderivative = std::move(a);
-            }
-            assert(apply_diff_even(p, h, integrate{r}) == antiderivative);
-            assert(apply_diff(p, h.x2(), integrate{r}) == antiderivative);
-            assert(apply_diff_even(p, h, differentiate{r}) == deriv(expected, r));
-            assert(apply_diff(p, h.x2(), differentiate{r}) == deriv(expected, r));
+        for(size_t stride: {1, 2, 3, 4, 7, 64}) {
+            auto expected = poly_t<T>{};
+            auto d = p;
+            for(auto c: hv) {expected += d * c; d = deriv(d, int(stride));}
+            poly_t<T> actual = apply_diff(p, dilate(h, stride));
+            assert(actual == expected);
+            auto integrated = integr(apply_diff(p, dilate(h, stride)));
+            assert(integrated[0] == T(0));
+            assert(deriv(integrated) == expected);
+            assert(poly_t<T>(apply_diff(p, dilate(poly_t<T>{}, stride))).is_zero());
+            auto owning = dilate(poly_t<T>(hv), stride);
+            assert(poly_t<T>(apply_diff(p, std::move(owning))) == expected);
         }
+        auto check_static = [&]<size_t Stride>() {
+            poly_t<T> a = apply_diff(p, dilate<Stride>(h));
+            poly_t<T> b = apply_diff(p, dilate(h, Stride));
+            assert(a == b);
+            assert(integr(apply_diff(p, dilate<Stride>(poly_t<T>(hv)))) == integr(apply_diff(p, dilate(h, Stride))));
+        };
+        check_static.template operator()<1>();
+        check_static.template operator()<2>();
+        check_static.template operator()<3>();
+        check_static.template operator()<64>();
+        auto d1 = p;
         auto ordinary = poly_t<T>{};
-        d = p;
-        for(auto c: hv) {ordinary += d * c; d = deriv(d);}
-        assert(apply_diff(p, h) == ordinary);
-        assert(apply_diff(p, h, differentiate{2}) == deriv(ordinary, 2));
-        auto primitive = apply_diff(p, h, integrate{2});
-        assert(primitive[0] == T(0) && primitive[1] == T(0));
-        assert(deriv(primitive, 2) == ordinary);
+        for(auto c: hv) {ordinary += d1 * c; d1 = deriv(d1);}
+        assert(poly_t<T>(apply_diff(p, h)) == ordinary);
+        assert(deriv(integr(apply_diff(p, h))) == ordinary);
+        auto deferred = apply_diff(poly_t<T>(a), dilate(poly_t<T>(hv), 2));
+        assert(poly_t<T>(deferred) == expected);
+        assert(deriv(integr(deferred)) == expected);
         auto q = prefix_sum(p);
         assert(q[0] == T(0));
         for(int x = -5; x <= 55; ++x) assert(q.eval(T(x + 1)) - q.eval(T(x)) == p.eval(T(x)));

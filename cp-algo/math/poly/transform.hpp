@@ -2,6 +2,8 @@
 #define CP_ALGO_MATH_POLY_TRANSFORM_HPP
 #include "calculus.hpp"
 #include "series/inv.hpp"
+#include <ranges>
+#include <vector>
 CP_ALGO_SIMD_PRAGMA_PUSH
 namespace cp_algo::math {
     // Multiply coefficient k by c^k, i.e. substitute cx for x.
@@ -86,61 +88,77 @@ namespace poly::impl {
         a.substr_inplace(d, n);
         return a;
     }
-    struct integrate {
-        int order = 1;
-        int shift() const {assert(order >= 0); return order;}
+    template<std::ranges::view V, typename Stride>
+    struct dilated_view {
+        V coefficients;
+        Stride stride;
     };
-    struct differentiate {
-        int order = 1;
-        int shift() const {assert(order >= 0); return -order;}
-    };
+    // Represent p(x^stride) without inserting zero coefficients.
+    template<typename P>
+    auto dilate(P&& p, size_t stride) {
+        assert(stride > 0);
+        return dilated_view{std::views::all(std::forward<P>(p).a), stride};
+    }
+    template<size_t Stride, typename P>
+    auto dilate(P&& p) {
+        static_assert(Stride > 0);
+        return dilated_view{std::views::all(std::forward<P>(p).a), std::integral_constant<size_t, Stride>{}};
+    }
 namespace poly::impl {
-    // Write interleaved factorial-basis coefficients, shifted by s.
-    template<typename T, size_t N>
-    poly_t<T> write_borel_parts(std::array<poly_t<T>, N> const& parts, int s) {
-        int n = 0;
-        for(size_t j = 0; j < N; ++j) {
-            if(!parts[j].is_zero()) {n = std::max(n, int(N * parts[j].deg() + j) + 1);}
-        }
-        if(n == 0 || n + s <= 0) {return {};}
-        typename poly_t<T>::Vector result(n + s);
-        for(int j = 0; j < int(N); ++j) {
-            int first = s + j < 0 ? (-s - j + int(N) - 1) / int(N) : 0;
-            for(int i = first; i <= parts[j].deg(); ++i) {
-                int k = int(N) * i + j + s;
-                result[k] = parts[j][i] * rfact<T>(k);
+    // Own the correlations; defer conversion from factorial basis.
+    template<typename T, typename Stride = size_t>
+    struct diff_result {
+        std::vector<poly_t<T>> parts;
+        Stride stride;
+
+        poly_t<T> eval(int offset = 0) const {
+            size_t n = 0;
+            for(size_t j = 0; j < parts.size(); ++j) {
+                if(!parts[j].is_zero()) {n = std::max(n, stride * parts[j].deg() + j + 1);}
             }
+            if(n == 0) {return {};}
+            typename poly_t<T>::Vector result(n + offset);
+            for(size_t j = 0; j < parts.size(); ++j) {
+                for(int i = 0; i <= parts[j].deg(); ++i) {
+                    int k = int(stride * i + j) + offset;
+                    result[k] = parts[j][i] * rfact<T>(k);
+                }
+            }
+            return result;
+        }
+        operator poly_t<T>() const& {return eval();}
+        operator poly_t<T>() && {
+            if(stride == 1 && !parts.empty()) {return borel(std::move(parts[0]));}
+            return eval();
+        }
+    };
+}
+    template<typename T, typename Stride>
+    poly_t<T> integr(poly::impl::diff_result<T, Stride> const& p) {return p.eval(1);}
+
+    // g(D)p; materialize as poly_t, or integrate before materializing.
+    // Input and output factorials must be invertible and within the cache.
+    template<typename T, std::ranges::view V, typename Stride>
+    auto apply_diff(poly_t<T> const& p, dilated_view<V, Stride> g) {
+        size_t count = std::min(size_t(g.stride), p.a.size());
+        poly::impl::diff_result<T, Stride> result{{}, g.stride};
+        result.parts.resize(count);
+        typename poly_t<T>::Vector coefficients(std::ranges::begin(g.coefficients), std::ranges::end(g.coefficients));
+        poly_t<T> h(std::move(coefficients));
+        for(size_t j = 0; j < count; ++j) {
+            auto &part = result.parts[j];
+            part.a.resize((p.a.size() - 1 - j) / g.stride + 1);
+            for(size_t i = 0, k = j; i < part.a.size(); ++i, k += g.stride) {part.a[i] = p[k] * fact<T>(int(k));}
+            part.normalize();
+            part = forward_corr(std::move(part), j + 1 == count ? std::move(h) : h);
         }
         return result;
     }
-    // Split factorial-basis coefficients and correlate each half with h.
     template<typename T>
-    auto even_diff_parts(poly_t<T> const& p, poly_t<T> h) {
-        std::array<poly_t<T>, 2> parts;
-        for(int j = 0; j < 2; ++j) {
-            parts[j].a.resize((p.a.size() + 1 - j) / 2);
-            for(int i = j; i <= p.deg(); i += 2) {parts[j].a[i / 2] = p[i] * fact<T>(i);}
-            parts[j].normalize();
-        }
-        parts[0] = forward_corr(std::move(parts[0]), h);
-        parts[1] = forward_corr(std::move(parts[1]), std::move(h));
-        return parts;
-    }
-}
-    // Apply g(D), then out. Integration constants are zero.
-    // Input and output factorials must be invertible and within the cache.
-    template<typename T, typename Output = integrate>
-    poly_t<T> apply_diff(poly_t<T> p, poly_t<T> g, Output out = {0}) {
-        auto q = forward_corr(invborel(std::move(p)), std::move(g));
-        int s = out.shift();
-        if(s == 0) {return borel(std::move(q));}
-        return poly::impl::write_borel_parts<T, 1>({std::move(q)}, s);
-    }
-    // Apply h(D^2), then out, with the same conditions as apply_diff.
-    template<typename T, typename Output = integrate>
-    poly_t<T> apply_diff_even(poly_t<T> const& p, poly_t<T> h, Output out = {0}) {
-        auto parts = poly::impl::even_diff_parts(p, std::move(h));
-        return poly::impl::write_borel_parts(parts, out.shift());
+    auto apply_diff(poly_t<T> p, poly_t<T> g) {
+        poly::impl::diff_result<T> result{{}, 1};
+        result.parts.push_back(forward_corr(invborel(std::move(p)), std::move(g)));
+        return result;
     }
     template<typename T>
     poly_t<T> shift(poly_t<T> p, std::type_identity_t<T> c) { // p(x+c)
@@ -159,7 +177,7 @@ namespace poly::impl {
         auto H = Cx<T>(m);
         H.mul_truncate(inv(Sx<T>(m), m), m);
         H = mulx(std::move(H), half * half);
-        auto q = apply_diff_even(p, std::move(H), integrate{1});
+        auto q = integr(apply_diff(p, dilate<2>(std::move(H))));
         // Subtract (p(x)-p(0))/2 to keep q(0)=0.
         for(size_t k = 1; k < p.a.size(); ++k) {q.a[k] -= half * p[k];}
         return q;

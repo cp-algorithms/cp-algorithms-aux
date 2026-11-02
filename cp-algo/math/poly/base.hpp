@@ -1,10 +1,52 @@
 #ifndef CP_ALGO_MATH_POLY_BASE_HPP
 #define CP_ALGO_MATH_POLY_BASE_HPP
 #include "../fft.hpp"
+#include "coefficient_view.hpp"
 #include <array>
+#include <functional>
 #include <iostream>
+#include <span>
 #include <utility>
 CP_ALGO_SIMD_PRAGMA_PUSH
+namespace cp_algo::math::poly::impl {
+    template<int Sign, typename P, std::ranges::input_range R>
+    P& add_coefficients(P& p, R&& r) {
+        using T = P::base;
+        auto layout = coefficient_layout(r);
+        auto add = [&](std::span<T const> values) -> P& {
+            size_t n = values.size();
+            if(!n) {return p.normalize();}
+            size_t extent = layout.extent(n);
+            if(layout.stride == 1 && layout.offset >= p.a.size()) {
+                p.a.reserve(extent);
+                p.a.resize(layout.offset);
+                if constexpr(Sign == 1) {p.a.insert(p.a.end(), values.begin(), values.end());}
+                else {for(T c: values) {p.a.push_back(-c);}}
+            } else {
+                p.a.resize(std::max(p.a.size(), extent));
+                size_t i = layout.offset;
+                for(T c: values) {
+                    if constexpr(Sign == 1) {p.a[i] += c;}
+                    else {p.a[i] -= c;}
+                    i += layout.stride;
+                }
+            }
+            return p.normalize();
+        };
+        using V = decltype(layout.values);
+        if constexpr(std::ranges::contiguous_range<V> && std::ranges::sized_range<V> &&
+                     std::same_as<std::ranges::range_value_t<V>, T>) {
+            auto src = std::ranges::data(layout.values);
+            auto less = std::less<T const*>{};
+            if(p.a.empty() || std::ranges::empty(layout.values) ||
+               !less(src, p.a.data() + p.a.size()) || !less(p.a.data(), src + std::ranges::size(layout.values))) {
+                return add(layout.values);
+            }
+        }
+        // Overlapping or non-contiguous views may read p; snapshot them before resizing.
+        return add(std::ranges::to<typename P::Vector>(layout.values));
+    }
+}
 namespace cp_algo::math {
     template<typename T> struct poly_t;
     template<typename T>
@@ -42,6 +84,10 @@ namespace cp_algo::math {
             std::ranges::transform(a, t.a, begin(a), std::minus{});
             return normalize();
         }
+        template<std::ranges::input_range R>
+        poly_t& operator += (R&& r) {return poly::impl::add_coefficients<1>(*this, std::forward<R>(r));}
+        template<std::ranges::input_range R>
+        poly_t& operator -= (R&& r) {return poly::impl::add_coefficients<-1>(*this, std::forward<R>(r));}
         friend poly_t operator + (poly_t p, poly_t const& t) {p += t; return p;}
         friend poly_t operator - (poly_t p, poly_t const& t) {p -= t; return p;}
 

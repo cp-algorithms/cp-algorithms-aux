@@ -1,6 +1,7 @@
 #include "cp-algo/math/poly/transform.hpp"
 #include <cassert>
 #include <random>
+#include <ranges>
 using namespace cp_algo::math;
 template<class T> void check() {
     std::mt19937 rng(42);
@@ -45,7 +46,7 @@ template<class T> void check() {
         assert(poly_t<T>(apply_diff(p, h)) == ordinary);
         assert(deriv(integr(apply_diff(p, h))) == ordinary);
         auto tail = h.a | std::views::drop(1);
-        poly_t<T> from_view = apply_diff(p, dilated_view{tail, size_t(2)});
+        poly_t<T> from_view = apply_diff(p, dilate(tail, 2));
         assert(from_view == poly_t<T>(apply_diff(p, dilate<2>(h.div_xk(1)))));
         auto deferred = apply_diff(poly_t<T>(a), dilate(poly_t<T>(hv), 2));
         assert(poly_t<T>(deferred) == expected);

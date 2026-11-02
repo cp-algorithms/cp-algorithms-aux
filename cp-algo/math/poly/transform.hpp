@@ -1,6 +1,7 @@
 #ifndef CP_ALGO_MATH_POLY_TRANSFORM_HPP
 #define CP_ALGO_MATH_POLY_TRANSFORM_HPP
 #include "calculus.hpp"
+#include "coefficient_view.hpp"
 #include "series/inv.hpp"
 #include <ranges>
 CP_ALGO_SIMD_PRAGMA_PUSH
@@ -87,22 +88,6 @@ namespace poly::impl {
         a.substr_inplace(d, n);
         return a;
     }
-    template<std::ranges::view V, typename Stride>
-    struct dilated_view {
-        V coefficients;
-        Stride stride;
-    };
-    // Represent p(x^stride) without inserting zero coefficients.
-    template<typename P>
-    auto dilate(P&& p, size_t stride) {
-        assert(stride > 0);
-        return dilated_view{std::views::all(std::forward<P>(p).a), stride};
-    }
-    template<size_t Stride, typename P>
-    auto dilate(P&& p) {
-        static_assert(Stride > 0);
-        return dilated_view{std::views::all(std::forward<P>(p).a), std::integral_constant<size_t, Stride>{}};
-    }
 namespace poly::impl {
     // Defer conversion from factorial basis so integration can share it.
     template<typename T>
@@ -120,21 +105,24 @@ namespace poly::impl {
 
     // g(D)p; materialize as poly_t, or integrate before materializing.
     // Input and output factorials must be invertible and within the cache.
-    template<typename T, std::ranges::view V, typename Stride>
-    auto apply_diff(poly_t<T> const& p, dilated_view<V, Stride> g) {
-        typename poly_t<T>::Vector coefficients(std::ranges::begin(g.coefficients), std::ranges::end(g.coefficients));
-        poly_t<T> h(std::move(coefficients));
+    template<typename T, std::ranges::input_range R>
+    auto apply_diff(poly_t<T> const& p, R&& g) {
+        auto [values, offset, stride] = coefficient_layout(g);
+        poly_t<T> h(std::ranges::to<typename poly_t<T>::Vector>(values));
+        if(offset >= p.a.size()) {return poly::impl::diff_result<T>{};}
+        if(offset == 0 && stride == 1) {return poly::impl::diff_result<T>{forward_corr(invborel(p), std::move(h))};}
+        size_t n = p.a.size() - offset;
         typename poly_t<T>::Vector result;
-        result.reserve(p.a.size() + 1); // Leave room for integration.
-        result.resize(p.a.size());
-        size_t count = std::min(size_t(g.stride), p.a.size());
+        result.reserve(n + 1); // Leave room for integration.
+        result.resize(n);
+        size_t count = std::min(size_t(stride), n);
         for(size_t j = 0; j < count; ++j) {
             poly_t<T> part;
-            part.a.resize((p.a.size() - 1 - j) / g.stride + 1);
-            for(size_t i = 0, k = j; i < part.a.size(); ++i, k += g.stride) {part.a[i] = p[k] * fact<T>(int(k));}
+            part.a.resize((n - 1 - j) / stride + 1);
+            for(size_t i = 0, k = j; i < part.a.size(); ++i, k += stride) {part.a[i] = p[k + offset] * fact<T>(int(k + offset));}
             part.normalize();
             part = forward_corr(std::move(part), j + 1 == count ? std::move(h) : h);
-            for(size_t i = 0, k = j; i < part.a.size(); ++i, k += g.stride) {result[k] = part[i];}
+            for(size_t i = 0, k = j; i < part.a.size(); ++i, k += stride) {result[k] = part[i];}
         }
         return poly::impl::diff_result<T>{std::move(result)};
     }

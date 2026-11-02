@@ -69,7 +69,7 @@ jobs:
       - name: Check bundled
         id: test-bundled
         run: |
-          echo "count=$(find .competitive-verifier/bundled/ -type f | wc -l)" >> $GITHUB_OUTPUT
+          echo "count=$(find .competitive-verifier/bundled/ -type f | wc -l)" >> "$GITHUB_OUTPUT"
       - name: Upload bundled
         uses: actions/upload-artifact@v4
         if: steps.test-bundled.outputs.count > 0
@@ -129,11 +129,13 @@ jobs:
           # script (removed in competitive-verifier 4.1.2).
           package: "competitive-verifier>=4.1.2"
           cache-pip: true
+
       - name: Use GCC 14.2
         run: |
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
           g++ --version
+
       - name: Verify
         uses: competitive-verifier/actions/verify@v2
         with:
@@ -243,6 +245,40 @@ jobs:
           path: ${{github.workspace}}/merged-result.json
           key: ${{ runner.os }}-verify-result-${{ github.sha }}
 
+      - name: Configure PR preview base URL
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          {
+            echo 'url: https://lib.cp-algorithms.com'
+            echo 'baseurl: "/${{ github.event.pull_request.number }}"'
+          } >> _jekyll/_config.yml
+
+      - name: Build PR preview with Jekyll
+        if: github.event_name == 'pull_request'
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: _jekyll
+          destination: _site
+
+      - name: Stage PR preview artifact
+        if: github.event_name == 'pull_request'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir preview-artifact
+          cp -a _site preview-artifact/site
+          python3 -c 'import json, os; json.dump({"number": int(os.environ["PR_NUMBER"])}, open("preview-artifact/pr.json", "w"))'
+
+      - name: Upload PR preview
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-preview
+          path: preview-artifact
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Upload merged result for publish
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
@@ -251,3 +287,11 @@ jobs:
           path: ${{github.workspace}}/merged-result.json
           if-no-files-found: error
           retention-days: 3
+
+  preview-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node .github/scripts/test_preview.cjs

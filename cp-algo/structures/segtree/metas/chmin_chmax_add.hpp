@@ -6,6 +6,8 @@
 #include <cstdint>
 namespace cp_algo::structures::segtree::metas {
     struct chmin_chmax_sum_meta: base_meta<chmin_chmax_sum_meta> {
+        // Values, clamp bounds, and values after addition must stay strictly in (-inf, inf).
+        // Segment sums must fit int64_t. The endpoints are reserved sentinels, not data.
         static constexpr int64_t inf = 1e12;
 
         using meta = chmin_chmax_sum_meta;
@@ -16,7 +18,7 @@ namespace cp_algo::structures::segtree::metas {
             int64_t val;
             size_t count = 1;
             int64_t second = std::max(inf, -inf, comp);
-            static const Comp comp;
+            static constexpr Comp comp{};
 
             data combine(data const& t) const {
                 return comp(val, t.val) ? data{val, count, std::min(second, t.val, comp)}

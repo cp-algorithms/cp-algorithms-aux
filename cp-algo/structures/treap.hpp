@@ -118,7 +118,7 @@ namespace cp_algo::structures::treap {
                     cur->set(L, st.back());
                     st.pop_back();
                 }
-                if(!st.empty() && st.back()->prior < cur->prior) {
+                if(!st.empty() && st.back()->prior <= cur->prior) {
                     st.back()->set(R, cur);
                 }
                 st.push_back(cur);

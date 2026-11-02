@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <array>
 #include <bit>
+#include <cstring>
 
 #if defined(__x86_64__) && !defined(CP_ALGO_DISABLE_AVX2)
 #define CP_ALGO_BIT_OPS_TARGET _Pragma("GCC target(\"avx2,bmi,bmi2,lzcnt,popcnt\")")
@@ -52,7 +53,9 @@ namespace cp_algo {
     }
 
     inline uint32_t read_bits(char const* p) {
-        return _mm256_movemask_epi8(__m256i(vector_cast<u8x32 const>(p[0]) + (127 - '0')));
+        u8x32 bytes;
+        std::memcpy(&bytes, p, sizeof(bytes));
+        return _mm256_movemask_epi8(__m256i(bytes + (127 - '0')));
     }
     inline uint64_t read_bits64(char const* p) {
         return read_bits(p) | (uint64_t(read_bits(p + 32)) << 32);

@@ -10,6 +10,8 @@
 namespace cp_algo::structures {
     template<int sigma = 26, char mch = 'a'>
     struct eertree {
+        // Symbols are mch + [0, sigma); byte value 255 after subtracting mch is reserved.
+        static_assert(0 < sigma && sigma <= 255);
         eertree(size_t q) {
             q += 2;
             s = big_string(q, -1);
@@ -38,7 +40,7 @@ namespace cp_algo::structures {
         }
         
         void add_letter(char c) {
-            c -= 'a';
+            c -= mch;
             s[n++] = c;
             last = get_link(last);
             int v = get(last, c);
@@ -47,7 +49,7 @@ namespace cp_algo::structures {
                 link[v] = get(get_link(link[last]), c);
                 par[v] = last;
                 len[v] = len[last] + 2;
-                to.push(last, (v << 8) | c);
+                to.push(last, (v << 8) | (unsigned char)c);
                 if(last < 2) root_to[last][(unsigned char)c] = v;
             }
             last = v;

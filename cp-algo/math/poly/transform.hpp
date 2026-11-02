@@ -86,37 +86,61 @@ namespace poly::impl {
         a.substr_inplace(d, n);
         return a;
     }
-    template<typename T>
-    poly_t<T> apply_diff(poly_t<T> p, poly_t<T> g) { // g(D) p(x)
-        return borel(forward_corr(invborel(std::move(p)), std::move(g)));
-    }
+    struct integrate {
+        int order = 1;
+        int shift() const {assert(order >= 0); return order;}
+    };
+    struct differentiate {
+        int order = 1;
+        int shift() const {assert(order >= 0); return -order;}
+    };
 namespace poly::impl {
-    // Correlate with h(x^2), supplied without its zero odd coefficients.
+    // Write interleaved factorial-basis coefficients, shifted by s.
+    template<typename T, size_t N>
+    poly_t<T> write_borel_parts(std::array<poly_t<T>, N> const& parts, int s) {
+        int n = 0;
+        for(size_t j = 0; j < N; ++j) {
+            if(!parts[j].is_zero()) {n = std::max(n, int(N * parts[j].deg() + j) + 1);}
+        }
+        if(n == 0 || n + s <= 0) {return {};}
+        typename poly_t<T>::Vector result(n + s);
+        for(int j = 0; j < int(N); ++j) {
+            int first = s + j < 0 ? (-s - j + int(N) - 1) / int(N) : 0;
+            for(int i = first; i <= parts[j].deg(); ++i) {
+                int k = int(N) * i + j + s;
+                result[k] = parts[j][i] * rfact<T>(k);
+            }
+        }
+        return result;
+    }
+    // Split factorial-basis coefficients and correlate each half with h.
     template<typename T>
-    auto even_corr_parts(poly_t<T> const& p, poly_t<T> h) {
-        auto parts = p.bisect();
+    auto even_diff_parts(poly_t<T> const& p, poly_t<T> h) {
+        std::array<poly_t<T>, 2> parts;
+        for(int j = 0; j < 2; ++j) {
+            parts[j].a.resize((p.a.size() + 1 - j) / 2);
+            for(int i = j; i <= p.deg(); i += 2) {parts[j].a[i / 2] = p[i] * fact<T>(i);}
+            parts[j].normalize();
+        }
         parts[0] = forward_corr(std::move(parts[0]), h);
         parts[1] = forward_corr(std::move(parts[1]), std::move(h));
         return parts;
     }
 }
-    template<typename T>
-    poly_t<T> apply_diff_even(poly_t<T> p, poly_t<T> h) { // h(D^2) p(x)
-        auto parts = poly::impl::even_corr_parts(invborel(std::move(p)), std::move(h));
-        return borel(poly_t<T>::interleave(parts[0], parts[1]));
+    // Apply g(D), then out. Integration constants are zero.
+    // Input and output factorials must be invertible and within the cache.
+    template<typename T, typename Output = integrate>
+    poly_t<T> apply_diff(poly_t<T> p, poly_t<T> g, Output out = {0}) {
+        auto q = forward_corr(invborel(std::move(p)), std::move(g));
+        int s = out.shift();
+        if(s == 0) {return borel(std::move(q));}
+        return poly::impl::write_borel_parts<T, 1>({std::move(q)}, s);
     }
-    // q' = h(D^2)p, q(0) = 0. Factorials through degree(p)+1 must be invertible.
-    template<typename T>
-    poly_t<T> integr_apply_diff_even(poly_t<T> p, poly_t<T> h) {
-        size_t n = p.a.size();
-        auto parts = poly::impl::even_corr_parts(invborel(std::move(p)), std::move(h));
-        typename poly_t<T>::Vector result(n + 1);
-        for(size_t parity = 0; parity < 2; ++parity) {
-            for(size_t k = parity; k < n; k += 2) {
-                result[k + 1] = parts[parity][k / 2] * rfact<T>(int(k + 1));
-            }
-        }
-        return result;
+    // Apply h(D^2), then out, with the same conditions as apply_diff.
+    template<typename T, typename Output = integrate>
+    poly_t<T> apply_diff_even(poly_t<T> const& p, poly_t<T> h, Output out = {0}) {
+        auto parts = poly::impl::even_diff_parts(p, std::move(h));
+        return poly::impl::write_borel_parts(parts, out.shift());
     }
     template<typename T>
     poly_t<T> shift(poly_t<T> p, std::type_identity_t<T> c) { // p(x+c)
@@ -135,7 +159,7 @@ namespace poly::impl {
         auto H = Cx<T>(m);
         H.mul_truncate(inv(Sx<T>(m), m), m);
         H = mulx(std::move(H), half * half);
-        auto q = integr_apply_diff_even(p, std::move(H));
+        auto q = apply_diff_even(p, std::move(H), integrate{1});
         // Subtract (p(x)-p(0))/2 to keep q(0)=0.
         for(size_t k = 1; k < p.a.size(); ++k) {q.a[k] -= half * p[k];}
         return q;

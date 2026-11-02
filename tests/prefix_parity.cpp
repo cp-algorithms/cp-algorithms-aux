@@ -19,10 +19,32 @@ template<class T> void check() {
         assert(apply_diff_even(p, h) == expected);
         assert(apply_diff_even(p, h) == apply_diff(p, h.x2()));
         assert(apply_diff_even(p, poly_t<T>{}).is_zero());
-        auto integrated = integr_apply_diff_even(p, h);
+        auto integrated = apply_diff_even(p, h, integrate{1});
+        // integr uses small_inv, whose full cache must be invertible.
+        if constexpr(T::mod() >= maxn) {assert(integrated == integr(apply_diff_even(p, h)));}
         assert(integrated[0] == T(0));
         assert(deriv(integrated) == expected);
-        assert(integr_apply_diff_even(p, poly_t<T>{}).is_zero());
+        assert(apply_diff_even(p, poly_t<T>{}, integrate{1}).is_zero());
+        for(int r: {0, 1, 2, 3, 50}) {
+            auto antiderivative = expected;
+            for(int j = 0; j < r; ++j) {
+                typename poly_t<T>::Vector a(antiderivative.a.size() + 1);
+                for(int i = 0; i <= antiderivative.deg(); ++i) {a[i + 1] = antiderivative[i] / T(i + 1);}
+                antiderivative = std::move(a);
+            }
+            assert(apply_diff_even(p, h, integrate{r}) == antiderivative);
+            assert(apply_diff(p, h.x2(), integrate{r}) == antiderivative);
+            assert(apply_diff_even(p, h, differentiate{r}) == deriv(expected, r));
+            assert(apply_diff(p, h.x2(), differentiate{r}) == deriv(expected, r));
+        }
+        auto ordinary = poly_t<T>{};
+        d = p;
+        for(auto c: hv) {ordinary += d * c; d = deriv(d);}
+        assert(apply_diff(p, h) == ordinary);
+        assert(apply_diff(p, h, differentiate{2}) == deriv(ordinary, 2));
+        auto primitive = apply_diff(p, h, integrate{2});
+        assert(primitive[0] == T(0) && primitive[1] == T(0));
+        assert(deriv(primitive, 2) == ordinary);
         auto q = prefix_sum(p);
         assert(q[0] == T(0));
         for(int x = -5; x <= 55; ++x) assert(q.eval(T(x + 1)) - q.eval(T(x)) == p.eval(T(x)));
